@@ -1,9 +1,17 @@
+//
+//  StatisticsView.swift
+//  MyMoney
+//
+//  Created by Ronak Punase on 03/08/25.
+//
+
+
 import SwiftUI
 import PDFKit
 import Foundation
 
 struct StatisticsView: View {
-    let transactions: [TransactionRecord]
+    let transactions: [Transaction]
     
     private var totalIncome: Decimal {
         transactions.filter { $0.amount > 0 }.reduce(0) { $0 + $1.amount }

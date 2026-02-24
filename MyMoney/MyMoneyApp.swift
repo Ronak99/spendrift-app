@@ -7,8 +7,9 @@
 
 import SwiftUI
 
+// MARK: - App Entry Point
 @main
-struct MyMoneyApp: App {
+struct PDFDataExtractorApp: App {
     var body: some Scene {
         WindowGroup {
             ContentView()

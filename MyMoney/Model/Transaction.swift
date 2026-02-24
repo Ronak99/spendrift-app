@@ -7,10 +7,9 @@
 
 
 import SwiftUI
-import PDFKit
 import Foundation
 
-struct Transaction: Identifiable, Codable {
+struct Transaction: Identifiable, Codable, Hashable {
     var id = UUID()
     let date: Date
     let rawDate: String  // Keep original format like "01 Jul"
