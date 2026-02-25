@@ -10,11 +10,16 @@ import SwiftData
 
 struct CategoriesView: View {
     @Environment(\.modelContext) private var modelContext
-    @Query(filter: #Predicate<TransactionCategory> { $0.type.rawValue == "income" }, sort: \TransactionCategory.name) 
-    private var incomeCategories: [TransactionCategory]
+    @Query(sort: \TransactionCategory.name)
+    private var allCategories: [TransactionCategory]
     
-    @Query(filter: #Predicate<TransactionCategory> { $0.type.rawValue == "expense" }, sort: \TransactionCategory.name)
-    private var expenseCategories: [TransactionCategory]
+    private var incomeCategories: [TransactionCategory] {
+        allCategories.filter { $0.type == .income }
+    }
+    
+    private var expenseCategories: [TransactionCategory] {
+        allCategories.filter { $0.type == .expense }
+    }
     
     @State private var viewModel = CategoryViewModel()
     @State private var showCreateSheet = false

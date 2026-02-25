@@ -7,7 +7,7 @@
 
 import Foundation
 import SwiftData
-
+ 
 @Model
 final class TransactionCategory {
     @Attribute(.unique) var id: UUID
