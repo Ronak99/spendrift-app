@@ -74,31 +74,31 @@ class PdfManager {
     }
     
     private func extractDataFromDocument(_ pdfDocument: PDFDocument, startTime: CFAbsoluteTime) {
-        DispatchQueue.global(qos: .userInitiated).async { [weak self] in
-            let extractedText = self?.parser.extractTextFromPDF(pdfDocument) ?? ""
-            let transactions = self?.parser.parseTransactionsFromText(from: extractedText) ?? []
-            
-            let processingTime = CFAbsoluteTimeGetCurrent() - startTime
-            
-            let result = PDFExtractionResult(
-                transactions: transactions,
-                extractedText: extractedText,
-                pageCount: pdfDocument.pageCount,
-                processingTime: processingTime
-            )
-          
-            DispatchQueue.main.async {
-                self?.isProcessing = false
-                self?.transactions = transactions
-                self?.extractionResult = result
-                self?.rawText = extractedText
-                
-                print("Extraction completed:")
-                print("- Pages processed: \(pdfDocument.pageCount)")
-                print("- Transactions found: \(transactions.count)")
-                print("- Processing time: \(String(format: "%.2f", processingTime))s")
-            }
-        }
+//        DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+//            let extractedText = self?.parser.extractTextFromPDF(pdfDocument) ?? ""
+//            let transactions = self?.parser.parseTransactionsFromText(extractedText) ?? []
+//            
+//            let processingTime = CFAbsoluteTimeGetCurrent() - startTime
+//            
+//            let result = PDFExtractionResult(
+//                transactions: transactions,
+//                extractedText: extractedText,
+//                pageCount: pdfDocument.pageCount,
+//                processingTime: processingTime
+//            )
+//          
+//            DispatchQueue.main.async {
+//                self?.isProcessing = false
+//                self?.transactions = transactions
+//                self?.extractionResult = result
+//                self?.rawText = extractedText
+//                
+//                print("Extraction completed:")
+//                print("- Pages processed: \(pdfDocument.pageCount)")
+//                print("- Transactions found: \(transactions.count)")
+//                print("- Processing time: \(String(format: "%.2f", processingTime))s")
+//            }
+//        }
     }
     
     func unlockWithPassword() {

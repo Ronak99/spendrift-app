@@ -14,11 +14,13 @@ struct StatisticsView: View {
     let transactions: [Transaction]
     
     private var totalIncome: Decimal {
-        transactions.filter { $0.amount > 0 }.reduce(0) { $0 + $1.amount }
+        let amount = transactions.filter { $0.amount > 0 }.reduce(0) { $0 + $1.amount }
+        return Decimal(amount)
     }
     
     private var totalExpenses: Decimal {
-        transactions.filter { $0.amount < 0 }.reduce(0) { $0 + $1.amount }
+        let amount = transactions.filter { $0.amount < 0 }.reduce(0) { $0 + $1.amount }
+        return Decimal(amount)
     }
     
     private var netAmount: Decimal {
@@ -37,8 +39,8 @@ struct StatisticsView: View {
             if let firstTransaction = transactions.first,
                let lastTransaction = transactions.last {
                 Section("Date Range") {
-                    StatRow(title: "From", value: firstTransaction.formattedDate)
-                    StatRow(title: "To", value: lastTransaction.formattedDate)
+                    StatRow(title: "From", value: firstTransaction.date.formatDate)
+                    StatRow(title: "To", value: lastTransaction.date.formatDate)
                 }
             }
         }

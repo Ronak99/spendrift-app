@@ -2,77 +2,83 @@
 //  ContentView.swift
 //  MyMoney
 //
-//  Created by Ronak Punase on 03/08/25.
+//  Created by Ronak Punase on 25/02/26.
 //
 
 import SwiftUI
 
 struct ContentView: View {
-    @State private var pdfManager = PdfManager()
+    @AppStorage("themeColor") private var themeColorName: String = "Blue"
     @State private var selectedTab = 0
+    @State private var showCreateTransaction = false
     
     var body: some View {
-        NavigationView {
-            VStack {
-                if pdfManager.isProcessing {
-                    ProgressView("Processing PDF...")
-                        .padding()
-                } else {
-                    TabView(selection: $selectedTab) {
-                        TransactionsView(transactions: pdfManager.transactions)
-                            .tabItem {
-                                Image(systemName: "list.bullet")
-                                Text("Transactions")
-                            }
-                            .tag(0)
-                        
-                        StatisticsView(transactions: pdfManager.transactions)
-                            .tabItem {
-                                Image(systemName: "chart.bar.fill")
-                                Text("Statistics")
-                            }
-                            .tag(1)
-                        
-                        DebugView(text: pdfManager.rawText)
-                            .tabItem {
-                                Image(systemName: "doc.text")
-                                Text("Raw Text")
-                            }
-                            .tag(2)
-                    }
+        TabView(selection: $selectedTab) {
+            TransactionsView()
+                .tabItem {
+                    Image(systemName: "list.bullet")
+                    Text("Transactions")
                 }
-            }
-            .navigationTitle("PDF Data Extractor")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("Extract") {
-                        pdfManager.extractDataFromPDF()
-                    }
-                    .disabled(pdfManager.isProcessing)
+                .tag(0)
+            
+            ImportView()
+                .tabItem {
+                    Image(systemName: "square.and.arrow.down")
+                    Text("Import")
                 }
-            }
-            .alert("Password Required", isPresented: $pdfManager.showPasswordAlert) {
-                SecureField("Enter PDF password", text: $pdfManager.passwordInput)
-                Button("Unlock") {
-                    pdfManager.unlockWithPassword()
+                .tag(1)
+            
+            AccountsView()
+                .tabItem {
+                    Image(systemName: "creditcard")
+                    Text("Accounts")
                 }
-                Button("Cancel", role: .cancel) {
-                    pdfManager.cancelPasswordPrompt()
+                .tag(2)
+            
+            CategoriesView()
+                .tabItem {
+                    Image(systemName: "folder")
+                    Text("Categories")
                 }
-            } message: {
-                Text("This PDF is password protected.")
-            }
-            .alert("Error", isPresented: $pdfManager.showErrorAlert) {
-                Button("OK") { }
-            } message: {
-                Text(pdfManager.errorMessage)
-            }
+                .tag(3)
+            
+            SettingsView()
+                .tabItem {
+                    Image(systemName: "gearshape")
+                    Text("Settings")
+                }
+                .tag(4)
+        }
+        .tint(Color.themeColors[themeColorName] ?? .blue)
+        .onAppear {
+            QuickActionsManager.setupQuickActions()
+        }
+        .onOpenURL { url in
+            handleQuickAction(url: url)
+        }
+        .sheet(isPresented: $showCreateTransaction) {
+            UpdateTransactionSheet(transaction: nil)
+        }
+    }
+    
+    private func handleQuickAction(url: URL) {
+        guard url.scheme == "mymoney" else { return }
+        
+        switch url.host {
+        case "createTransaction":
+            showCreateTransaction = true
+            selectedTab = 0
+        case "importStatement":
+            selectedTab = 1
+        case "search":
+            selectedTab = 0
+        default:
+            break
         }
     }
 }
 
-
 #Preview {
     ContentView()
+        .modelContainer(for: [Transaction.self, Account.self, TransactionCategory.self], inMemory: true)
 }

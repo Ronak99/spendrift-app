@@ -2,17 +2,20 @@
 //  MyMoneyApp.swift
 //  MyMoney
 //
-//  Created by Ronak Punase on 03/08/25.
+//  Created by Ronak Punase on 25/02/26.
 //
 
 import SwiftUI
+import SwiftData
 
-// MARK: - App Entry Point
 @main
-struct PDFDataExtractorApp: App {
+struct MyMoneyApp: App {
+    @UIApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
+    
     var body: some Scene {
         WindowGroup {
             ContentView()
         }
+        .modelContainer(for: [Transaction.self, Account.self, TransactionCategory.self])
     }
 }

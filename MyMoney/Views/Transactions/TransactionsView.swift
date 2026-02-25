@@ -2,57 +2,151 @@
 //  TransactionsView.swift
 //  MyMoney
 //
-//  Created by Ronak Punase on 03/08/25.
+//  Created by Ronak Punase on 25/02/26.
 //
 
-
 import SwiftUI
+import SwiftData
 
 struct TransactionsView: View {
-    let transactions: [Transaction] // Your transactions array
-
-       var groupedByDate: [String: [Transaction]] {
-           Dictionary(grouping: transactions, by: { $0.rawDate })
-       }
-
+    @Environment(\.modelContext) private var modelContext
+    @Query(sort: \Transaction.date, order: .reverse) private var allTransactions: [Transaction]
+    @State private var viewModel = TransactionViewModel()
+    @State private var showCreateSheet = false
+    @State private var selectedTransaction: Transaction?
+    
+    private var transactions: [Transaction] {
+        allTransactions.filter { transaction in
+            transaction.date >= viewModel.startOfMonth && transaction.date <= viewModel.endOfMonth
+        }
+    }
+    
+    private var groupedTransactions: [String: [Transaction]] {
+        transactions.groupedByDate
+    }
+    
+    private var totalExpenses: Double {
+        transactions.totalExpenses
+    }
+    
+    private var totalIncome: Double {
+        transactions.totalIncome
+    }
+    
+    private var savings: Double {
+        transactions.savings
+    }
+    
     var body: some View {
-        List {
-            ForEach(groupedByDate.keys.sorted(),
-                    id: \.self) {
-                date in Section {
-                    ForEach(groupedByDate[date] ?? [],
-                            id: \.self) {
-                        transaction in
+        NavigationStack {
+            VStack(spacing: 0) {
+                // Header with date selector
+                VStack(spacing: 16) {
+                    CapsuleDateSelector(
+                        date: viewModel.selectedDate,
+                        onPrevious: { viewModel.decrementMonth() },
+                        onNext: { viewModel.incrementMonth() }
+                    )
+                    .padding(.horizontal)
+                    .padding(.top, 8)
+                    
+                    // Statistics bar
+                    HStack(spacing: 20) {
                         VStack(alignment: .leading, spacing: 4) {
-                            HStack {
-                                Text(transaction.formattedDate)
-                                    .font(.caption)
-                                    .foregroundColor(.secondary)
-                                Spacer()
-                                Text(transaction.formattedAmount)
-                                    .font(.headline)
-                                    .foregroundColor(transaction.amount < 0 ? .red : .green)
-                            }
-                            Text(transaction.transactionDetails)
-                                .font(.body)
-                            Text("Balance: \(transaction.formattedBalance)")
+                            Text("Expenses")
                                 .font(.caption)
                                 .foregroundColor(.secondary)
+                            Text(totalExpenses.formatCurrency)
+                                .font(.headline)
+                                .foregroundColor(.red)
                         }
-                        .padding(.vertical, 2)
+                        
+                        Spacer()
+                        
+                        VStack(alignment: .center, spacing: 4) {
+                            Text("Income")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                            Text(totalIncome.formatCurrency)
+                                .font(.headline)
+                                .foregroundColor(.green)
+                        }
+                        
+                        Spacer()
+                        
+                        VStack(alignment: .trailing, spacing: 4) {
+                            Text("Savings")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                            Text(savings.formatCurrency)
+                                .font(.headline)
+                                .foregroundColor(savings >= 0 ? .green : .red)
+                        }
                     }
-                } header: {
-                    Text(date)
+                    .padding(.horizontal)
+                    .padding(.bottom, 8)
+                }
+                .background(Color(.systemBackground))
+                
+                // Transaction list
+                if transactions.isEmpty {
+                    EmptyStateView(
+                        icon: "tray",
+                        title: "No Transactions",
+                        description: "Get started by adding your first transaction for \(viewModel.selectedDate.monthYear)",
+                        actionTitle: "Add Transaction",
+                        action: { showCreateSheet = true }
+                    )
+                } else {
+                    List {
+                        ForEach(groupedTransactions.keys.sorted(by: >), id: \.self) { dateKey in
+                            Section {
+                                ForEach(groupedTransactions[dateKey] ?? [], id: \.id) { transaction in
+                                    TransactionListItem(transaction: transaction)
+                                        .contentShape(Rectangle())
+                                        .onTapGesture {
+                                            selectedTransaction = transaction
+                                        }
+                                }
+                                .onDelete { indexSet in
+                                    deleteTransactions(at: indexSet, for: dateKey)
+                                }
+                            } header: {
+                                Text(dateKey)
+                            }
+                        }
+                    }
+                    .listStyle(.insetGrouped)
                 }
             }
+            .navigationTitle("Transactions")
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button(action: { showCreateSheet = true }) {
+                        Image(systemName: "plus")
+                    }
+                }
+            }
+            .sheet(isPresented: $showCreateSheet) {
+                UpdateTransactionSheet(transaction: nil)
+            }
+            .sheet(item: $selectedTransaction) { transaction in
+                UpdateTransactionSheet(transaction: transaction)
+            }
         }
+    }
+    
+    private func deleteTransactions(at offsets: IndexSet, for dateKey: String) {
+        guard let transactionsForDate = groupedTransactions[dateKey] else { return }
+        for index in offsets {
+            let transaction = transactionsForDate[index]
+            modelContext.delete(transaction)
+        }
+        try? modelContext.save()
     }
 }
 
 #Preview {
-    TransactionsView(transactions: [
-        Transaction(date: .now, rawDate: "01 Jul", receiverUPI: "receiver", transactionDetails: "123", amount: 12.0, balance: 1300.0, transactionType: .nft),
-        Transaction(date: .now, rawDate: "01 Jul", receiverUPI: "receiver", transactionDetails: "123", amount: 12.0, balance: 1300.0, transactionType: .nft),
-        Transaction(date: .now, rawDate: "02 Jul", receiverUPI: "receiver", transactionDetails: "123", amount: 12.0, balance: 1300.0, transactionType: .nft)
-    ])
+    TransactionsView()
+        .modelContainer(for: [Transaction.self, Account.self, TransactionCategory.self], inMemory: true)
 }
