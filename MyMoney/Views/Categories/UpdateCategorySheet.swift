@@ -16,7 +16,12 @@ struct UpdateCategorySheet: View {
     
     @State private var name: String = ""
     @State private var type: CategoryType = .expense
-    @State private var icon: CategoryIcon = .unknown
+    @State private var icon: CategoryIcon = .unknown {
+        didSet {
+            print("Something changed")
+        }
+        
+    }
     
     private var isValid: Bool {
         !name.isEmpty
@@ -42,9 +47,7 @@ struct UpdateCategorySheet: View {
                     TextField("Enter category name", text: $name)
                 }
                 
-                Section("Icon") {
-                    IconGridPicker(icons: availableIcons, selectedIcon: $icon)
-                }
+                IconGridPicker(icons: availableIcons, selectedIcon: $icon)
             }
             .navigationTitle(category == nil ? "New Category" : "Edit Category")
             .navigationBarTitleDisplayMode(.inline)

@@ -95,7 +95,7 @@ struct IconGridPicker<T: RawRepresentable & CaseIterable & Hashable>: View where
         case "insurance":
             return "shield"
         default:
-            return "circle"
+            return "xmark"
         }
     }
 }

@@ -16,7 +16,12 @@ struct UpdateAccountSheet: View {
     
     @State private var name: String = ""
     @State private var balance: String = ""
-    @State private var icon: AccountIcon = .unknown
+//    @State private var icon: AccountIcon = .unknown
+    @State var icon = AccountIcon.sbi {
+        didSet {
+            print("Setting to \(icon)")
+        }
+    }
     
     private var isValid: Bool {
         !name.isEmpty && !balance.isEmpty && Double(balance) != nil

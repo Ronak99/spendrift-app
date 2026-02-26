@@ -122,7 +122,9 @@ struct TransactionsView: View {
             .navigationTitle("Transactions")
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    Button(action: { showCreateSheet = true }) {
+                    Button(action: {
+                        showCreateSheet = true
+                    }) {
                         Image(systemName: "plus")
                     }
                 }

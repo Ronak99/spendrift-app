@@ -20,34 +20,26 @@ struct ContentView: View {
                     Text("Transactions")
                 }
                 .tag(0)
-            
-            ImportView()
-                .tabItem {
-                    Image(systemName: "square.and.arrow.down")
-                    Text("Import")
-                }
-                .tag(1)
-            
             AccountsView()
                 .tabItem {
                     Image(systemName: "creditcard")
                     Text("Accounts")
                 }
-                .tag(2)
+                .tag(1)
             
             CategoriesView()
                 .tabItem {
                     Image(systemName: "folder")
                     Text("Categories")
                 }
-                .tag(3)
+                .tag(2)
             
             SettingsView()
                 .tabItem {
                     Image(systemName: "gearshape")
                     Text("Settings")
                 }
-                .tag(4)
+                .tag(3)
         }
         .tint(Color.themeColors[themeColorName] ?? .blue)
         .onAppear {
@@ -67,10 +59,6 @@ struct ContentView: View {
         switch url.host {
         case "createTransaction":
             showCreateTransaction = true
-            selectedTab = 0
-        case "importStatement":
-            selectedTab = 1
-        case "search":
             selectedTab = 0
         default:
             break
