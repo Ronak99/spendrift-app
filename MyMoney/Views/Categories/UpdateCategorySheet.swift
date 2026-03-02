@@ -33,22 +33,23 @@ struct UpdateCategorySheet: View {
     
     var body: some View {
         NavigationStack {
-            Form {
-                Section("Category Type") {
+            VStack {
+                Form {
                     Picker("Type", selection: $type) {
-                        ForEach(CategoryType.allCases, id: \.self) { categoryType in
-                            Text(categoryType.rawValue.capitalized).tag(categoryType)
+                        ForEach(
+                            CategoryType.allCases,
+                            id: \.self
+                        ) { categoryType in
+                            Text(categoryType.rawValue.capitalized)
+                                .tag(categoryType)
                         }
                     }
                     .pickerStyle(.segmented)
-                }
-                
-                Section("Category Name") {
                     TextField("Enter category name", text: $name)
+                    IconGridPicker(icons: Array(CategoryIcon.allCases), selectedIcon: $icon)
                 }
-                
-                IconGridPicker(icons: availableIcons, selectedIcon: $icon)
             }
+            
             .navigationTitle(category == nil ? "New Category" : "Edit Category")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

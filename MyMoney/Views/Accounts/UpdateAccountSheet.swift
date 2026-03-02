@@ -39,9 +39,7 @@ struct UpdateAccountSheet: View {
                         .keyboardType(.decimalPad)
                 }
                 
-                Section("Icon") {
-                    IconGridPicker(icons: Array(AccountIcon.allCases), selectedIcon: $icon)
-                }
+                IconGridPicker(icons: Array(AccountIcon.allCases), selectedIcon: $icon)
             }
             .navigationTitle(account == nil ? "New Account" : "Edit Account")
             .navigationBarTitleDisplayMode(.inline)

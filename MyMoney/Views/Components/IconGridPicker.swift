@@ -17,16 +17,22 @@ struct IconGridPicker<T: RawRepresentable & CaseIterable & Hashable>: View where
             ForEach(Array(icons), id: \.self) { icon in
                 Button(action: {
                     selectedIcon = icon
+                    print("An icon was selected: \(icon), \(selectedIcon)")
                 }) {
                     ZStack {
                         Circle()
-                            .fill(selectedIcon == icon ? Color.accentColor.opacity(0.2) : Color(.systemGray6))
+                            .fill(
+                                selectedIcon == icon ? Color.accentColor
+                                    .opacity(0.2) : Color(.systemGray6)
+                            )
                             .frame(width: 60, height: 60)
-                        
+                            
                         Image(systemName: iconName(for: icon))
                             .font(.title2)
-                            .foregroundColor(selectedIcon == icon ? .accentColor : .primary)
-                        
+                            .foregroundColor(
+                                selectedIcon == icon ? .accentColor : .primary
+                            )
+                            
                         if selectedIcon == icon {
                             Image(systemName: "checkmark.circle.fill")
                                 .font(.caption)
@@ -37,6 +43,7 @@ struct IconGridPicker<T: RawRepresentable & CaseIterable & Hashable>: View where
                 }
             }
         }
+        .buttonStyle(.borderless)
         .padding()
     }
     
