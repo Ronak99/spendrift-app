@@ -50,6 +50,7 @@ struct SettingsView: View {
                                     }
                                 }
                             }
+                            .buttonStyle(.borderless)
                         }
                     }
                     .padding(.vertical, 8)

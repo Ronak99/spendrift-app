@@ -16,12 +16,7 @@ struct UpdateCategorySheet: View {
     
     @State private var name: String = ""
     @State private var type: CategoryType = .expense
-    @State private var icon: CategoryIcon = .unknown {
-        didSet {
-            print("Something changed")
-        }
-        
-    }
+    @State private var icon: CategoryIcon = .unknown
     
     private var isValid: Bool {
         !name.isEmpty
