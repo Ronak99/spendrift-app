@@ -10,11 +10,16 @@ import SwiftData
 
 struct CategoriesView: View {
     @Environment(\.modelContext) private var modelContext
-    @Query(filter: #Predicate<TransactionCategory> { $0.type.rawValue == "income" }, sort: \TransactionCategory.name) 
-    private var incomeCategories: [TransactionCategory]
+    @Query(sort: \TransactionCategory.name)
+    private var allCategories: [TransactionCategory]
     
-    @Query(filter: #Predicate<TransactionCategory> { $0.type.rawValue == "expense" }, sort: \TransactionCategory.name)
-    private var expenseCategories: [TransactionCategory]
+    private var incomeCategories: [TransactionCategory] {
+        allCategories.filter { $0.type == .income }
+    }
+    
+    private var expenseCategories: [TransactionCategory] {
+        allCategories.filter { $0.type == .expense }
+    }
     
     @State private var viewModel = CategoryViewModel()
     @State private var showCreateSheet = false
@@ -74,6 +79,7 @@ struct CategoriesView: View {
                     }
                 }
             }
+            .onAppear(perform: seedDefaultCategoriesIfNeeded)
             .sheet(isPresented: $showCreateSheet) {
                 UpdateCategorySheet(category: nil)
             }
@@ -87,6 +93,17 @@ struct CategoriesView: View {
         for index in offsets {
             modelContext.delete(categories[index])
         }
+        try? modelContext.save()
+    }
+    
+    private func seedDefaultCategoriesIfNeeded() {
+        guard allCategories.isEmpty else { return }
+        
+        let defaults = TransactionCategory.defaultCategories()
+        for category in defaults {
+            modelContext.insert(category)
+        }
+        
         try? modelContext.save()
     }
 }

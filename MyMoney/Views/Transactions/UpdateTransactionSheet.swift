@@ -30,69 +30,83 @@ struct UpdateTransactionSheet: View {
     }
     
     private var isValid: Bool {
-        !notes.isEmpty && !amount.isEmpty && Double(amount) != nil && Double(amount)! > 0
+        !amount.isEmpty && selectedAccount != nil && selectedCategory != nil && Double(amount) != nil && Double(
+            amount
+        )! > 0
     }
     
     var body: some View {
         NavigationStack {
             Form {
-                Section("Transaction Type") {
-                    Picker("Type", selection: $transactionType) {
-                        ForEach(TransactionType.allCases.filter { $0 != .none }, id: \.self) { type in
+                Picker("Type", selection: $transactionType) {
+                    ForEach(
+                        TransactionType.allCases.filter { $0 != .none
+                        },
+                        id: \.self) { type in
                             Text(type.rawValue.capitalized).tag(type)
                         }
-                    }
-                    .pickerStyle(.segmented)
                 }
+                .pickerStyle(.palette)
                 
-                Section("Account") {
-                    Button(action: { showAccountPicker = true }) {
-                        HStack {
-                            Text("Account")
-                            Spacer()
-                            Text(selectedAccount?.name ?? "Select Account")
-                                .foregroundColor(.secondary)
-                            Image(systemName: "chevron.right")
-                                .font(.caption)
-                                .foregroundColor(.secondary)
-                        }
+                    
+                Button(action: { showAccountPicker = true }) {
+                    HStack {
+                        Text("Account")
+                        Spacer()
+                        Text(selectedAccount?.name ?? "Select Account")
+                            .foregroundColor(.secondary)
+                        Image(systemName: "chevron.right")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
                     }
                 }
                 
-                Section("Category") {
-                    Button(action: { showCategoryPicker = true }) {
-                        HStack {
-                            Text("Category")
-                            Spacer()
-                            Text(selectedCategory?.name ?? "Select Category")
-                                .foregroundColor(.secondary)
-                            Image(systemName: "chevron.right")
-                                .font(.caption)
-                                .foregroundColor(.secondary)
-                        }
+                
+                Button(action: { showCategoryPicker = true }) {
+                    HStack {
+                        Text("Category")
+                        Spacer()
+                        Text(selectedCategory?.name ?? "Select Category")
+                            .foregroundColor(.secondary)
+                        Image(systemName: "chevron.right")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
                     }
                 }
                 
-                Section("Date & Time") {
-                    DatePicker("Date", selection: $date, displayedComponents: [.date, .hourAndMinute])
-                }
                 
-                Section("Amount") {
+                DatePicker(
+                    "Date",
+                    selection: $date,
+                    displayedComponents: [.date, .hourAndMinute]
+                ).tint(.accentColor)
+                
+                
+                
+                HStack {
+                    Text("Amount")
+                    Spacer()
                     TextField("0.00", text: $amount)
                         .keyboardType(.decimalPad)
+                        .multilineTextAlignment(.trailing)
                 }
+                
                 
                 Section("Notes") {
                     TextField("Add notes", text: $notes, axis: .vertical)
                         .lineLimit(3...6)
                 }
             }
-            .navigationTitle(transaction == nil ? "New Transaction" : "Edit Transaction")
+            .navigationTitle(
+                transaction == nil ? "New Transaction" : "Edit Transaction"
+            )
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") {
+                    Button {
                         dismiss()
+                    } label: {
+                        Image(systemName: "xmark")
                     }
                 }
                 ToolbarItem(placement: .confirmationAction) {
@@ -103,10 +117,16 @@ struct UpdateTransactionSheet: View {
                 }
             }
             .sheet(isPresented: $showAccountPicker) {
-                AccountPickerSheet(selectedAccount: $selectedAccount, accounts: accounts)
+                AccountPickerSheet(
+                    selectedAccount: $selectedAccount,
+                    accounts: accounts
+                )
             }
             .sheet(isPresented: $showCategoryPicker) {
-                CategoryPickerSheet(selectedCategory: $selectedCategory, categories: filteredCategories)
+                CategoryPickerSheet(
+                    selectedCategory: $selectedCategory,
+                    categories: filteredCategories
+                )
             }
             .onAppear {
                 if let transaction = transaction {
@@ -212,5 +232,8 @@ struct CategoryPickerSheet: View {
 
 #Preview {
     UpdateTransactionSheet(transaction: nil)
-        .modelContainer(for: [Transaction.self, Account.self, TransactionCategory.self], inMemory: true)
+        .modelContainer(
+            for: [Transaction.self, Account.self, TransactionCategory.self],
+            inMemory: true
+        )
 }

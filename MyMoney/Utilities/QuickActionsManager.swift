@@ -17,23 +17,7 @@ class QuickActionsManager {
             userInfo: nil
         )
         
-        let importStatement = UIApplicationShortcutItem(
-            type: "com.mymoney.importStatement",
-            localizedTitle: "Import Statement",
-            localizedSubtitle: "Import bank statement",
-            icon: UIApplicationShortcutIcon(systemImageName: "square.and.arrow.down"),
-            userInfo: nil
-        )
-        
-        let search = UIApplicationShortcutItem(
-            type: "com.mymoney.search",
-            localizedTitle: "Search",
-            localizedSubtitle: "Search for a transaction",
-            icon: UIApplicationShortcutIcon(systemImageName: "magnifyingglass"),
-            userInfo: nil
-        )
-        
-        UIApplication.shared.shortcutItems = [createTransaction, importStatement, search]
+        UIApplication.shared.shortcutItems = [createTransaction]
     }
     
     static func handleQuickAction(_ shortcutItem: UIApplicationShortcutItem) -> String? {

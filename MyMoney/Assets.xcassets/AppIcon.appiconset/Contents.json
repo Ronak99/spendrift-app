@@ -1,6 +1,7 @@
 {
   "images" : [
     {
+      "filename" : "wallet_icon.png",
       "idiom" : "universal",
       "platform" : "ios",
       "size" : "1024x1024"
@@ -12,6 +13,7 @@
           "value" : "dark"
         }
       ],
+      "filename" : "wallet_icon 1.png",
       "idiom" : "universal",
       "platform" : "ios",
       "size" : "1024x1024"
