@@ -79,6 +79,7 @@ struct CategoriesView: View {
                     }
                 }
             }
+            .onAppear(perform: seedDefaultCategoriesIfNeeded)
             .sheet(isPresented: $showCreateSheet) {
                 UpdateCategorySheet(category: nil)
             }
@@ -92,6 +93,17 @@ struct CategoriesView: View {
         for index in offsets {
             modelContext.delete(categories[index])
         }
+        try? modelContext.save()
+    }
+    
+    private func seedDefaultCategoriesIfNeeded() {
+        guard allCategories.isEmpty else { return }
+        
+        let defaults = TransactionCategory.defaultCategories()
+        for category in defaults {
+            modelContext.insert(category)
+        }
+        
         try? modelContext.save()
     }
 }
