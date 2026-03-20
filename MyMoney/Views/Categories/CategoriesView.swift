@@ -24,11 +24,26 @@ struct CategoriesView: View {
     @State private var viewModel = CategoryViewModel()
     @State private var showCreateSheet = false
     @State private var selectedCategory: TransactionCategory?
+    @State private var searchText = ""
+    
+    private var filteredIncomeCategories: [TransactionCategory] {
+        if searchText.isEmpty { return incomeCategories }
+        return incomeCategories.filter { $0.name.localizedCaseInsensitiveContains(searchText) }
+    }
+    
+    private var filteredExpenseCategories: [TransactionCategory] {
+        if searchText.isEmpty { return expenseCategories }
+        return expenseCategories.filter { $0.name.localizedCaseInsensitiveContains(searchText) }
+    }
+    
+    private var hasSearchResults: Bool {
+        !filteredIncomeCategories.isEmpty || !filteredExpenseCategories.isEmpty
+    }
     
     var body: some View {
         NavigationStack {
             Group {
-                if incomeCategories.isEmpty && expenseCategories.isEmpty {
+                if allCategories.isEmpty {
                     EmptyStateView(
                         icon: "folder",
                         title: "No Categories",
@@ -38,9 +53,9 @@ struct CategoriesView: View {
                     )
                 } else {
                     List {
-                        if !incomeCategories.isEmpty {
+                        if !filteredIncomeCategories.isEmpty {
                             Section("Income") {
-                                ForEach(incomeCategories) { category in
+                                ForEach(filteredIncomeCategories) { category in
                                     CategoryListItem(category: category)
                                         .contentShape(Rectangle())
                                         .onTapGesture {
@@ -48,14 +63,14 @@ struct CategoriesView: View {
                                         }
                                 }
                                 .onDelete { indexSet in
-                                    deleteCategories(at: indexSet, from: incomeCategories)
+                                    deleteCategories(at: indexSet, from: filteredIncomeCategories)
                                 }
                             }
                         }
                         
-                        if !expenseCategories.isEmpty {
+                        if !filteredExpenseCategories.isEmpty {
                             Section("Expense") {
-                                ForEach(expenseCategories) { category in
+                                ForEach(filteredExpenseCategories) { category in
                                     CategoryListItem(category: category)
                                         .contentShape(Rectangle())
                                         .onTapGesture {
@@ -63,12 +78,18 @@ struct CategoriesView: View {
                                         }
                                 }
                                 .onDelete { indexSet in
-                                    deleteCategories(at: indexSet, from: expenseCategories)
+                                    deleteCategories(at: indexSet, from: filteredExpenseCategories)
                                 }
                             }
                         }
                     }
                     .listStyle(.insetGrouped)
+                    .overlay {
+                        if !searchText.isEmpty && !hasSearchResults {
+                            ContentUnavailableView.search(text: searchText)
+                        }
+                    }
+                    .searchable(text: $searchText, prompt: "Search categories")
                 }
             }
             .navigationTitle("Categories")
