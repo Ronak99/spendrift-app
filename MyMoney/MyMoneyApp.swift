@@ -14,11 +14,16 @@ import SwiftData
 struct MyMoneyApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
     
+    private var isUITesting: Bool {
+        ProcessInfo.processInfo.arguments.contains("-UITesting")
+    }
+    
     var body: some Scene {
         WindowGroup {
             ContentView()
         }
-        .modelContainer(for: [Transaction.self, Account.self, TransactionCategory.self])
+        .modelContainer(for: [Transaction.self, Account.self, TransactionCategory.self],
+                         inMemory: isUITesting)
     }
 }
 
