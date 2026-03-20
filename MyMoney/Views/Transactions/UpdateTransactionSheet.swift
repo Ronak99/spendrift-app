@@ -184,6 +184,9 @@ struct UpdateTransactionSheet: View {
                     transactionType = transaction.transactionType
                     selectedAccount = transaction.account
                     selectedCategory = transaction.category
+                } else {
+                    selectedAccount = accounts.first
+                    selectedCategory = categories.first
                 }
             }
         }
