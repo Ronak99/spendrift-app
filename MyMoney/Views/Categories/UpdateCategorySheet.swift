@@ -13,6 +13,7 @@ struct UpdateCategorySheet: View {
     @Environment(\.dismiss) private var dismiss
     
     let category: TransactionCategory?
+    var onCreated: ((TransactionCategory) -> Void)?
     
     @State private var name: String = ""
     @State private var type: CategoryType = .expense
@@ -77,13 +78,13 @@ struct UpdateCategorySheet: View {
             category.type = type
             category.icon = icon
         } else {
-            // Create new
             let newCategory = TransactionCategory(
                 name: name,
                 type: type,
                 icon: icon
             )
             modelContext.insert(newCategory)
+            onCreated?(newCategory)
         }
         
         try? modelContext.save()

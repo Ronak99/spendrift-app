@@ -24,6 +24,7 @@ struct UpdateTransactionSheet: View {
     @State private var selectedCategory: TransactionCategory?
     @State private var showAccountPicker = false
     @State private var showCategoryPicker = false
+    @State private var showCreateCategorySheet = false
     
     private var filteredCategories: [TransactionCategory] {
         categories.filter { $0.type.rawValue == transactionType.rawValue }
@@ -36,7 +37,7 @@ struct UpdateTransactionSheet: View {
     }
     
     private var categoryText : String {
-        if categories.isEmpty {
+        if filteredCategories.isEmpty {
             return "Create Category"
         } else {
             if selectedCategory?.name != nil {
@@ -86,7 +87,13 @@ struct UpdateTransactionSheet: View {
                 }
                 
                 
-                Button(action: { showCategoryPicker = true }) {
+                Button(action: {
+                    if filteredCategories.isEmpty {
+                        showCreateCategorySheet = true
+                    } else {
+                        showCategoryPicker = true
+                    }
+                }) {
                     HStack {
                         Text("Category")
                         Spacer()
@@ -151,6 +158,11 @@ struct UpdateTransactionSheet: View {
                     selectedCategory: $selectedCategory,
                     categories: filteredCategories
                 )
+            }
+            .sheet(isPresented: $showCreateCategorySheet) {
+                UpdateCategorySheet(category: nil) { newCategory in
+                    selectedCategory = newCategory
+                }
             }
             .onAppear {
                 if let transaction = transaction {
@@ -229,6 +241,8 @@ struct CategoryPickerSheet: View {
     @Binding var selectedCategory: TransactionCategory?
     let categories: [TransactionCategory]
     
+    @State private var showCreateCategorySheet = false
+    
     var body: some View {
         NavigationStack {
             List {
@@ -250,6 +264,21 @@ struct CategoryPickerSheet: View {
             }
             .navigationTitle("Select Category")
             .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button {
+                        showCreateCategorySheet = true
+                    } label: {
+                        Image(systemName: "plus")
+                    }
+                }
+            }
+            .sheet(isPresented: $showCreateCategorySheet) {
+                UpdateCategorySheet(category: nil) { newCategory in
+                    selectedCategory = newCategory
+                    dismiss()
+                }
+            }
         }
     }
 }
