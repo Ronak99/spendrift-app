@@ -271,11 +271,17 @@ struct CategoryPickerSheet: View {
     let categories: [TransactionCategory]
     
     @State private var showCreateCategorySheet = false
+    @State private var searchText = ""
+    
+    private var filteredCategories: [TransactionCategory] {
+        if searchText.isEmpty { return categories }
+        return categories.filter { $0.name.localizedCaseInsensitiveContains(searchText) }
+    }
     
     var body: some View {
         NavigationStack {
             List {
-                ForEach(categories) { category in
+                ForEach(filteredCategories) { category in
                     Button(action: {
                         selectedCategory = category
                         dismiss()
@@ -291,6 +297,12 @@ struct CategoryPickerSheet: View {
                     }
                 }
             }
+            .overlay {
+                if !searchText.isEmpty && filteredCategories.isEmpty {
+                    ContentUnavailableView.search(text: searchText)
+                }
+            }
+            .searchable(text: $searchText, prompt: "Search categories")
             .navigationTitle("Select Category")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
