@@ -13,6 +13,7 @@ struct UpdateAccountSheet: View {
     @Environment(\.dismiss) private var dismiss
     
     let account: Account?
+    var onCreated: ((Account) -> Void)? = nil
     
     @State private var name: String = ""
     @State private var balance: String = ""
@@ -82,6 +83,7 @@ struct UpdateAccountSheet: View {
                 icon: icon
             )
             modelContext.insert(newAccount)
+            onCreated?(newAccount)
         }
         
         try? modelContext.save()

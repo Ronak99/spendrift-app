@@ -23,6 +23,7 @@ struct UpdateTransactionSheet: View {
     @State private var selectedAccount: Account?
     @State private var selectedCategory: TransactionCategory?
     @State private var showAccountPicker = false
+    @State private var showCreateAccountSheet = false
     @State private var showCategoryPicker = false
     @State private var showCreateCategorySheet = false
     
@@ -74,7 +75,13 @@ struct UpdateTransactionSheet: View {
                 .pickerStyle(.palette)
                 
                     
-                Button(action: { showAccountPicker = true }) {
+                Button(action: {
+                    if accounts.isEmpty {
+                        showCreateAccountSheet = true
+                    } else {
+                        showAccountPicker = true
+                    }
+                }) {
                     HStack {
                         Text("Account")
                         Spacer()
@@ -153,6 +160,11 @@ struct UpdateTransactionSheet: View {
                     accounts: accounts
                 )
             }
+            .sheet(isPresented: $showCreateAccountSheet) {
+                UpdateAccountSheet(account: nil) { newAccount in
+                    selectedAccount = newAccount
+                }
+            }
             .sheet(isPresented: $showCategoryPicker) {
                 CategoryPickerSheet(
                     selectedCategory: $selectedCategory,
@@ -211,6 +223,8 @@ struct AccountPickerSheet: View {
     @Binding var selectedAccount: Account?
     let accounts: [Account]
     
+    @State private var showCreateAccountSheet = false
+    
     var body: some View {
         NavigationStack {
             List {
@@ -232,6 +246,21 @@ struct AccountPickerSheet: View {
             }
             .navigationTitle("Select Account")
             .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button {
+                        showCreateAccountSheet = true
+                    } label: {
+                        Image(systemName: "plus")
+                    }
+                }
+            }
+            .sheet(isPresented: $showCreateAccountSheet) {
+                UpdateAccountSheet(account: nil) { newAccount in
+                    selectedAccount = newAccount
+                    dismiss()
+                }
+            }
         }
     }
 }
