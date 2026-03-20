@@ -35,6 +35,30 @@ struct UpdateTransactionSheet: View {
         )! > 0
     }
     
+    private var categoryText : String {
+        if categories.isEmpty {
+            return "Create Category"
+        } else {
+            if selectedCategory?.name != nil {
+                return selectedCategory!.name
+            } else {
+                return "Select Category"
+            }
+        }
+    }
+    
+    private var accountText : String {
+        if accounts.isEmpty {
+            return "Create Account"
+        } else {
+            if selectedAccount?.name != nil {
+                return selectedAccount!.name
+            } else {
+                return "Select Account"
+            }
+        }
+    }
+    
     var body: some View {
         NavigationStack {
             Form {
@@ -53,7 +77,7 @@ struct UpdateTransactionSheet: View {
                     HStack {
                         Text("Account")
                         Spacer()
-                        Text(selectedAccount?.name ?? "Select Account")
+                        Text(accountText)
                             .foregroundColor(.secondary)
                         Image(systemName: "chevron.right")
                             .font(.caption)
@@ -66,7 +90,7 @@ struct UpdateTransactionSheet: View {
                     HStack {
                         Text("Category")
                         Spacer()
-                        Text(selectedCategory?.name ?? "Select Category")
+                        Text(categoryText)
                             .foregroundColor(.secondary)
                         Image(systemName: "chevron.right")
                             .font(.caption)
