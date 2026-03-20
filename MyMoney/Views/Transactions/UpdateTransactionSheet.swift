@@ -24,6 +24,7 @@ struct UpdateTransactionSheet: View {
     @State private var selectedCategory: TransactionCategory?
     @State private var showAccountPicker = false
     @State private var showCategoryPicker = false
+    @State private var showCreateCategorySheet = false
     
     private var filteredCategories: [TransactionCategory] {
         categories.filter { $0.type.rawValue == transactionType.rawValue }
@@ -33,6 +34,30 @@ struct UpdateTransactionSheet: View {
         !amount.isEmpty && selectedAccount != nil && selectedCategory != nil && Double(amount) != nil && Double(
             amount
         )! > 0
+    }
+    
+    private var categoryText : String {
+        if filteredCategories.isEmpty {
+            return "Create Category"
+        } else {
+            if selectedCategory?.name != nil {
+                return selectedCategory!.name
+            } else {
+                return "Select Category"
+            }
+        }
+    }
+    
+    private var accountText : String {
+        if accounts.isEmpty {
+            return "Create Account"
+        } else {
+            if selectedAccount?.name != nil {
+                return selectedAccount!.name
+            } else {
+                return "Select Account"
+            }
+        }
     }
     
     var body: some View {
@@ -53,7 +78,7 @@ struct UpdateTransactionSheet: View {
                     HStack {
                         Text("Account")
                         Spacer()
-                        Text(selectedAccount?.name ?? "Select Account")
+                        Text(accountText)
                             .foregroundColor(.secondary)
                         Image(systemName: "chevron.right")
                             .font(.caption)
@@ -62,11 +87,17 @@ struct UpdateTransactionSheet: View {
                 }
                 
                 
-                Button(action: { showCategoryPicker = true }) {
+                Button(action: {
+                    if filteredCategories.isEmpty {
+                        showCreateCategorySheet = true
+                    } else {
+                        showCategoryPicker = true
+                    }
+                }) {
                     HStack {
                         Text("Category")
                         Spacer()
-                        Text(selectedCategory?.name ?? "Select Category")
+                        Text(categoryText)
                             .foregroundColor(.secondary)
                         Image(systemName: "chevron.right")
                             .font(.caption)
@@ -127,6 +158,11 @@ struct UpdateTransactionSheet: View {
                     selectedCategory: $selectedCategory,
                     categories: filteredCategories
                 )
+            }
+            .sheet(isPresented: $showCreateCategorySheet) {
+                UpdateCategorySheet(category: nil) { newCategory in
+                    selectedCategory = newCategory
+                }
             }
             .onAppear {
                 if let transaction = transaction {
@@ -205,6 +241,8 @@ struct CategoryPickerSheet: View {
     @Binding var selectedCategory: TransactionCategory?
     let categories: [TransactionCategory]
     
+    @State private var showCreateCategorySheet = false
+    
     var body: some View {
         NavigationStack {
             List {
@@ -226,6 +264,21 @@ struct CategoryPickerSheet: View {
             }
             .navigationTitle("Select Category")
             .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button {
+                        showCreateCategorySheet = true
+                    } label: {
+                        Image(systemName: "plus")
+                    }
+                }
+            }
+            .sheet(isPresented: $showCreateCategorySheet) {
+                UpdateCategorySheet(category: nil) { newCategory in
+                    selectedCategory = newCategory
+                    dismiss()
+                }
+            }
         }
     }
 }
