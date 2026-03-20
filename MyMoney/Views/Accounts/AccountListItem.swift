@@ -29,7 +29,7 @@ struct AccountListItem: View {
                     .font(.headline)
                     .foregroundColor(.primary)
                 
-                Text("Balance: \(account.balance.formatCurrency)")
+                Text("Balance: \(account.currentBalance.formatCurrency)")
                     .font(.caption)
                     .foregroundColor(.secondary)
             }

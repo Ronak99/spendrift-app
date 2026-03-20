@@ -19,6 +19,17 @@ final class Account {
     @Relationship(deleteRule: .cascade, inverse: \Transaction.account)
     var transactions: [Transaction]?
     
+    var currentBalance: Double {
+        let txns = transactions ?? []
+        let income = txns
+            .filter { $0.transactionType == .income }
+            .reduce(0) { $0 + $1.amount }
+        let expense = txns
+            .filter { $0.transactionType == .expense }
+            .reduce(0) { $0 + $1.amount }
+        return balance + income - expense
+    }
+    
     init(id: UUID = UUID(), name: String, balance: Double = 0, createdOn: Date = Date(), icon: AccountIcon = .unknown) {
         self.id = id
         self.name = name
