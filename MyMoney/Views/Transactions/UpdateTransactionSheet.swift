@@ -15,6 +15,7 @@ struct UpdateTransactionSheet: View {
     @Query(sort: \TransactionCategory.name) private var categories: [TransactionCategory]
     
     let transaction: Transaction?
+    let draft: VoiceTransactionDraft?
     
     @State private var notes: String = ""
     @State private var amount: String = ""
@@ -61,6 +62,11 @@ struct UpdateTransactionSheet: View {
         }
     }
     
+    init(transaction: Transaction?, draft: VoiceTransactionDraft? = nil) {
+        self.transaction = transaction
+        self.draft = draft
+    }
+
     var body: some View {
         NavigationStack {
             Form {
@@ -185,8 +191,17 @@ struct UpdateTransactionSheet: View {
                     selectedAccount = transaction.account
                     selectedCategory = transaction.category
                 } else {
-                    selectedAccount = accounts.first
-                    selectedCategory = categories.first
+                    selectedAccount = draft?.account ?? accounts.first
+                    transactionType = draft?.transactionType ?? .expense
+                    selectedCategory = draft?.category ?? categories.first(where: {
+                        $0.type == (transactionType == .expense ? .expense : .income)
+                    })
+                    if let draft {
+                        notes = draft.notes
+                        if let amount = draft.amount {
+                            self.amount = String(amount)
+                        }
+                    }
                 }
             }
         }

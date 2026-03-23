@@ -15,6 +15,7 @@ final class Account {
     var balance: Double
     var createdOn: Date
     var icon: AccountIcon
+    var isPrimary: Bool
     
     @Relationship(deleteRule: .cascade, inverse: \Transaction.account)
     var transactions: [Transaction]?
@@ -30,12 +31,20 @@ final class Account {
         return balance + income - expense
     }
     
-    init(id: UUID = UUID(), name: String, balance: Double = 0, createdOn: Date = Date(), icon: AccountIcon = .unknown) {
+    init(
+        id: UUID = UUID(),
+        name: String,
+        balance: Double = 0,
+        createdOn: Date = Date(),
+        icon: AccountIcon = .unknown,
+        isPrimary: Bool = false
+    ) {
         self.id = id
         self.name = name
         self.balance = balance
         self.createdOn = createdOn
         self.icon = icon
+        self.isPrimary = isPrimary
         self.transactions = []
     }
 }

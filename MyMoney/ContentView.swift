@@ -6,8 +6,11 @@
 //
 
 import SwiftUI
+import SwiftData
 
 struct ContentView: View {
+    @Environment(\.modelContext) private var modelContext
+    @Query(sort: \TransactionCategory.name) private var categories: [TransactionCategory]
     @AppStorage("themeColor") private var themeColorName: String = "Blue"
     @State private var selectedTab = 0
     @State private var showCreateTransaction = false
@@ -44,6 +47,7 @@ struct ContentView: View {
         .tint(Color.themeColors[themeColorName] ?? .blue)
         .onAppear {
             QuickActionsManager.setupQuickActions()
+            seedDefaultCategoriesIfNeeded()
         }
         .onOpenURL { url in
             handleQuickAction(url: url)
@@ -63,6 +67,15 @@ struct ContentView: View {
         default:
             break
         }
+    }
+
+    private func seedDefaultCategoriesIfNeeded() {
+        guard categories.isEmpty else { return }
+        let defaults = TransactionCategory.defaultCategories()
+        for category in defaults {
+            modelContext.insert(category)
+        }
+        try? modelContext.save()
     }
 }
 
