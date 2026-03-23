@@ -12,24 +12,52 @@ import Testing
 
 struct VoiceTransactionPipelineTests {
     @Test
-    func parserExtractsAmountAndExpense() {
-        let intent = TransactionIntentParser.parse("Paid 20rs to the cab driver")
-        #expect(intent.amount == 20)
-        #expect(intent.transactionType == .expense)
-        #expect(intent.hints.contains("cab"))
+    func decodeOpenAISuccessPayload() throws {
+        let raw = """
+        {
+          "status": "success",
+          "transaction": {
+            "notes": "Cab fare",
+            "amount": 120,
+            "date": "2026-03-23T10:00:00Z",
+            "transactionType": "expense",
+            "category": "Transportation"
+          }
+        }
+        """
+        let data = try #require(raw.data(using: .utf8))
+        let payload = try JSONDecoder().decode(OpenAIVoiceTransactionPayload.self, from: data)
+        #expect(payload.status == "success")
+        #expect(payload.transaction?.amount == 120)
+        #expect(payload.transaction?.transactionType == "expense")
     }
 
     @Test
-    func categoryMatcherFindsTransportationForMetro() {
-        let metroIntent = TransactionIntentParser.parse("I paid 120 rs in metro station")
+    func creatorRejectsCategoryOutsideDynamicList() throws {
+        let payload = OpenAIVoiceTransactionPayload(
+            status: "success",
+            transaction: OpenAIVoiceTransaction(
+                notes: "Metro ride",
+                amount: 50,
+                date: "2026-03-23T10:00:00Z",
+                transactionType: "expense",
+                category: "Unknown Category"
+            ),
+            reason: nil
+        )
+        let primary = Account(name: "SBI", balance: 1000, icon: .sbi, isPrimary: true)
         let categories = [
             TransactionCategory(name: "Transportation", type: .expense),
             TransactionCategory(name: "Shopping", type: .expense)
         ]
+        let draftResult = VoiceTransactionCreator.buildDraftFromAIPayload(
+            payload: payload,
+            accounts: [primary],
+            categories: categories
+        )
 
-        let match = CategoryMatcher.match(intent: metroIntent, categories: categories)
-        #expect(match.category?.name == "Transportation")
-        #expect(match.confidence > 0.85)
+        #expect(draftResult.failure == nil)
+        #expect(draftResult.draft?.category == nil)
     }
 
     @Test
@@ -48,11 +76,19 @@ struct VoiceTransactionPipelineTests {
         context.insert(account)
         context.insert(category)
 
-        let intent = TransactionIntentParser.parse("Paid 50 rs to cab")
-        let match = CategoryMatcher.match(intent: intent, categories: [category])
-        let result = VoiceTransactionCreator.createFromVoice(
-            intent: intent,
-            match: match,
+        let payload = OpenAIVoiceTransactionPayload(
+            status: "success",
+            transaction: OpenAIVoiceTransaction(
+                notes: "Cab",
+                amount: 50,
+                date: "2026-03-23T10:00:00Z",
+                transactionType: "expense",
+                category: "Transportation"
+            ),
+            reason: nil
+        )
+        let result = VoiceTransactionCreator.createFromAIVoice(
+            payload: payload,
             accounts: [account],
             categories: [category],
             modelContext: context

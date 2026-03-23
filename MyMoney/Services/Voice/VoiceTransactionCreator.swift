@@ -17,11 +17,14 @@ struct VoiceTransactionDraft {
 }
 
 enum VoiceCreateFailure: Equatable {
+    case aiError(String)
+    case invalidJSON
     case noPrimaryAccount
     case noCategoriesForType
     case amountMissing
     case categoryMissing
     case unknownType
+    case invalidDate
 }
 
 enum VoiceCreateResult {
@@ -31,40 +34,70 @@ enum VoiceCreateResult {
 }
 
 enum VoiceTransactionCreator {
-    static let highConfidenceThreshold = 0.85
-    static let mediumConfidenceThreshold = 0.60
-
-    static func buildDraft(
-        intent: ParsedTransactionIntent,
-        match: CategoryMatchResult,
+    static func buildDraftFromAIPayload(
+        payload: OpenAIVoiceTransactionPayload,
         accounts: [Account],
         categories: [TransactionCategory]
-    ) -> VoiceTransactionDraft {
-        let type = intent.transactionType ?? .expense
-        let primary = resolvePrimaryAccount(from: accounts)
-        let category = match.category ?? categories.first(where: { $0.type == (type == .expense ? .expense : .income) })
+    ) -> (draft: VoiceTransactionDraft?, failure: VoiceCreateFailure?) {
+        if payload.status == "error" {
+            return (nil, .aiError(payload.reason ?? "Unknown AI parsing error"))
+        }
 
-        return VoiceTransactionDraft(
-            notes: intent.notes,
-            amount: intent.amount,
-            transactionType: type,
-            account: primary,
-            category: category
+        guard payload.status == "success", let transaction = payload.transaction else {
+            return (nil, .invalidJSON)
+        }
+
+        guard let transactionType = TransactionType(rawValue: transaction.transactionType) else {
+            return (nil, .unknownType)
+        }
+        let dateFormatter = ISO8601DateFormatter()
+        guard dateFormatter.date(from: transaction.date) != nil else {
+            return (nil, .invalidDate)
+        }
+
+        let typeCategory: CategoryType = transactionType == .expense ? .expense : .income
+        let category = categories.first(where: {
+            $0.type == typeCategory && $0.name.caseInsensitiveCompare(transaction.category ?? "") == .orderedSame
+        })
+        let primary = resolvePrimaryAccount(from: accounts)
+
+        return (
+            VoiceTransactionDraft(
+                notes: transaction.notes,
+                amount: transaction.amount,
+                transactionType: transactionType,
+                account: primary,
+                category: category
+            ),
+            nil
         )
     }
 
-    static func createFromVoice(
-        intent: ParsedTransactionIntent,
-        match: CategoryMatchResult,
+    static func createFromAIVoice(
+        payload: OpenAIVoiceTransactionPayload,
         accounts: [Account],
         categories: [TransactionCategory],
         modelContext: ModelContext
     ) -> VoiceCreateResult {
-        let draft = buildDraft(intent: intent, match: match, accounts: accounts, categories: categories)
-
-        guard intent.transactionType != nil else {
-            return .needsManualEntry(draft, failure: .unknownType)
+        let buildResult = buildDraftFromAIPayload(payload: payload, accounts: accounts, categories: categories)
+        if let failure = buildResult.failure {
+            let fallbackDraft = VoiceTransactionDraft(
+                notes: payload.transaction?.notes ?? "",
+                amount: payload.transaction?.amount,
+                transactionType: TransactionType(rawValue: payload.transaction?.transactionType ?? "") ?? .expense,
+                account: resolvePrimaryAccount(from: accounts),
+                category: nil
+            )
+            return .needsManualEntry(fallbackDraft, failure: failure)
         }
+
+        guard let draft = buildResult.draft else {
+            return .needsManualEntry(
+                VoiceTransactionDraft(notes: "", amount: nil, transactionType: .expense, account: nil, category: nil),
+                failure: .invalidJSON
+            )
+        }
+
         guard let amount = draft.amount, amount > 0 else {
             return .needsManualEntry(draft, failure: .amountMissing)
         }
@@ -80,14 +113,6 @@ enum VoiceTransactionCreator {
             return .needsManualEntry(draft, failure: .categoryMissing)
         }
 
-        let overallConfidence = combinedConfidence(intent: intent, categoryConfidence: match.confidence)
-        if overallConfidence < mediumConfidenceThreshold {
-            return .needsManualEntry(draft, failure: .categoryMissing)
-        }
-        if overallConfidence < highConfidenceThreshold {
-            return .needsConfirmation(draft, reason: "Medium confidence transcript parsing")
-        }
-
         let transaction = Transaction(
             notes: draft.notes,
             amount: amount,
@@ -99,10 +124,6 @@ enum VoiceTransactionCreator {
         modelContext.insert(transaction)
         try? modelContext.save()
         return .created(transaction)
-    }
-
-    static func combinedConfidence(intent: ParsedTransactionIntent, categoryConfidence: Double) -> Double {
-        min(1.0, (intent.confidence * 0.6) + (categoryConfidence * 0.4))
     }
 
     static func resolvePrimaryAccount(from accounts: [Account]) -> Account? {

@@ -7,7 +7,6 @@
 
 import AVFoundation
 import Foundation
-import Speech
 
 @Observable
 final class SpeechTranscriptionService {
@@ -15,27 +14,18 @@ final class SpeechTranscriptionService {
         case idle
         case requestingPermissions
         case recording
-        case transcribing
+        case processing
         case failed(String)
     }
 
     var state: RecordingState = .idle
-    var transcript: String = ""
-    var finalTranscript: String = ""
+    var recordedAudioData: Data?
 
-    private let audioEngine = AVAudioEngine()
-    private var request: SFSpeechAudioBufferRecognitionRequest?
-    private var recognitionTask: SFSpeechRecognitionTask?
-    private let speechRecognizer = SFSpeechRecognizer(locale: Locale(identifier: "en_IN"))
+    private var audioRecorder: AVAudioRecorder?
+    private var recordingURL: URL?
 
     func requestPermissions() async -> Bool {
         state = .requestingPermissions
-
-        let speechAuthorized = await withCheckedContinuation { continuation in
-            SFSpeechRecognizer.requestAuthorization { status in
-                continuation.resume(returning: status == .authorized)
-            }
-        }
 
         let micAuthorized = await withCheckedContinuation { continuation in
             AVAudioSession.sharedInstance().requestRecordPermission { granted in
@@ -43,12 +33,12 @@ final class SpeechTranscriptionService {
             }
         }
 
-        if speechAuthorized && micAuthorized {
+        if micAuthorized {
             state = .idle
             return true
         }
 
-        state = .failed("Microphone or speech permission is not granted.")
+        state = .failed("Microphone permission is not granted.")
         return false
     }
 
@@ -56,88 +46,71 @@ final class SpeechTranscriptionService {
         if !(await requestPermissions()) { return }
 
         do {
-            transcript = ""
-            finalTranscript = ""
+            recordedAudioData = nil
 
             let session = AVAudioSession.sharedInstance()
-            try session.setCategory(.record, mode: .measurement, options: .duckOthers)
+            try session.setCategory(.playAndRecord, mode: .default, options: [.duckOthers, .defaultToSpeaker])
             try session.setActive(true, options: .notifyOthersOnDeactivation)
 
-            let recognitionRequest = SFSpeechAudioBufferRecognitionRequest()
-            recognitionRequest.shouldReportPartialResults = true
-            if #available(iOS 13.0, *) {
-                recognitionRequest.requiresOnDeviceRecognition = true
-            }
-            request = recognitionRequest
+            let url = FileManager.default.temporaryDirectory.appendingPathComponent("voice-input-\(UUID().uuidString).m4a")
+            let settings: [String: Any] = [
+                AVFormatIDKey: Int(kAudioFormatMPEG4AAC),
+                AVSampleRateKey: 44_100,
+                AVNumberOfChannelsKey: 1,
+                AVEncoderAudioQualityKey: AVAudioQuality.high.rawValue
+            ]
+            let recorder = try AVAudioRecorder(url: url, settings: settings)
+            recorder.prepareToRecord()
+            recorder.record()
 
-            guard let speechRecognizer, speechRecognizer.isAvailable else {
-                state = .failed("Speech recognizer is not available right now.")
-                return
-            }
-
-            recognitionTask = speechRecognizer.recognitionTask(with: recognitionRequest) { [weak self] result, error in
-                guard let self else { return }
-
-                if let result {
-                    transcript = result.bestTranscription.formattedString
-                    if result.isFinal {
-                        finalTranscript = result.bestTranscription.formattedString
-                    }
-                }
-
-                if let error {
-                    state = .failed(error.localizedDescription)
-                    stopAudioPipeline()
-                }
-            }
-
-            let inputNode = audioEngine.inputNode
-            inputNode.removeTap(onBus: 0)
-            let format = inputNode.outputFormat(forBus: 0)
-            inputNode.installTap(onBus: 0, bufferSize: 1024, format: format) { [weak self] buffer, _ in
-                self?.request?.append(buffer)
-            }
-
-            audioEngine.prepare()
-            try audioEngine.start()
+            recordingURL = url
+            audioRecorder = recorder
             state = .recording
         } catch {
             state = .failed(error.localizedDescription)
-            stopAudioPipeline()
+            cleanup()
         }
     }
 
     func stopRecording() {
-        guard state == .recording || state == .transcribing else { return }
-        state = .transcribing
-        request?.endAudio()
-        stopAudioPipeline()
+        guard state == .recording else { return }
+        state = .processing
 
-        if finalTranscript.isEmpty {
-            finalTranscript = transcript
+        audioRecorder?.stop()
+        audioRecorder = nil
+
+        defer {
+            try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
         }
-        if finalTranscript.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-            state = .failed("No voice input detected.")
-        } else {
+
+        guard let recordingURL else {
+            state = .failed("Could not access recorded audio.")
+            return
+        }
+
+        do {
+            recordedAudioData = try Data(contentsOf: recordingURL)
+            try? FileManager.default.removeItem(at: recordingURL)
+            self.recordingURL = nil
             state = .idle
+        } catch {
+            state = .failed("Could not read recorded audio.")
         }
     }
 
     func reset() {
-        stopAudioPipeline()
-        transcript = ""
-        finalTranscript = ""
+        cleanup()
+        recordedAudioData = nil
         state = .idle
     }
 
-    private func stopAudioPipeline() {
-        if audioEngine.isRunning {
-            audioEngine.stop()
+    private func cleanup() {
+        audioRecorder?.stop()
+        audioRecorder = nil
+        if let recordingURL {
+            try? FileManager.default.removeItem(at: recordingURL)
+            self.recordingURL = nil
         }
-        audioEngine.inputNode.removeTap(onBus: 0)
-        recognitionTask?.cancel()
-        recognitionTask = nil
-        request = nil
         try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
     }
 }

@@ -15,20 +15,28 @@ struct VoiceCaptureView: View {
     @Query(sort: \TransactionCategory.name) private var categories: [TransactionCategory]
 
     @State private var speechService = SpeechTranscriptionService()
+    @State private var openAIService = OpenAIVoiceTransactionService()
     @State private var liveActivityController = VoiceLiveActivityController()
 
     @State private var toastMessage: String?
     @State private var showManualSheet = false
-    @State private var showConfirmAlert = false
     @State private var manualDraft: VoiceTransactionDraft?
-    @State private var pendingConfirmationDraft: VoiceTransactionDraft?
 
     private var isRecording: Bool {
         speechService.state == .recording
     }
 
-    private var transcriptText: String {
-        speechService.transcript.isEmpty ? "Say something like \"Paid 20 rs to cab\"." : speechService.transcript
+    private var helperText: String {
+        switch speechService.state {
+        case .recording:
+            return "Speak your transaction naturally. We will send raw audio to AI and parse JSON."
+        case .processing:
+            return "Analyzing audio..."
+        case .failed(let message):
+            return message
+        default:
+            return "Try: Paid 20 rs to cab driver."
+        }
     }
 
     private var toastAlertBinding: Binding<Bool> {
@@ -53,7 +61,7 @@ struct VoiceCaptureView: View {
 
                 Text(stateLabel)
                     .font(.headline)
-                Text(transcriptText)
+                Text(helperText)
                     .font(.body)
                     .foregroundColor(.secondary)
                     .multilineTextAlignment(.center)
@@ -73,17 +81,6 @@ struct VoiceCaptureView: View {
             }
             .navigationTitle("Voice Recorder")
             .navigationBarTitleDisplayMode(.inline)
-            .alert("Save transaction?", isPresented: $showConfirmAlert, presenting: pendingConfirmationDraft) { draft in
-                Button("Save") {
-                    persistDraft(draft)
-                }
-                Button("Edit", role: .cancel) {
-                    manualDraft = draft
-                    showManualSheet = true
-                }
-            } message: { draft in
-                Text("Detected \(draft.transactionType.rawValue) of \((draft.amount ?? 0).formatCurrency) in \(draft.category?.name ?? "unknown category").")
-            }
             .alert("Voice result", isPresented: toastAlertBinding) {
                 Button("OK", role: .cancel) {}
             } message: {
@@ -112,8 +109,8 @@ struct VoiceCaptureView: View {
             return "Requesting permissions..."
         case .recording:
             return "Recording..."
-        case .transcribing:
-            return "Transcribing..."
+        case .processing:
+            return "Processing..."
         case .failed(let message):
             return "Error: \(message)"
         }
@@ -121,9 +118,11 @@ struct VoiceCaptureView: View {
 
     private func handleRecordButton() {
         if speechService.state == .recording {
-            liveActivityController.update(state: .transcribing, message: "Transcribing...")
+            liveActivityController.update(state: .transcribing, message: "Uploading audio...")
             speechService.stopRecording()
-            processTranscript()
+            Task {
+                await processRecordedAudio()
+            }
         } else {
             Task {
                 liveActivityController.start()
@@ -133,30 +132,54 @@ struct VoiceCaptureView: View {
         }
     }
 
-    private func processTranscript() {
-        let transcript = speechService.finalTranscript.isEmpty ? speechService.transcript : speechService.finalTranscript
-        let intent = TransactionIntentParser.parse(transcript)
-        let categoryMatch = CategoryMatcher.match(intent: intent, categories: categories)
+    private func processRecordedAudio() async {
+        guard let audioData = speechService.recordedAudioData else {
+            toastMessage = "No audio captured. Please try again."
+            liveActivityController.update(state: .failed, message: "No audio captured")
+            return
+        }
 
-        liveActivityController.update(state: .saving, message: "Analyzing...")
+        liveActivityController.update(state: .saving, message: "Analyzing voice JSON...")
 
-        let result = VoiceTransactionCreator.createFromVoice(
-            intent: intent,
-            match: categoryMatch,
-            accounts: accounts,
-            categories: categories,
-            modelContext: modelContext
-        )
+        do {
+            let payload = try await openAIService.parseTransaction(
+                audioData: audioData,
+                categories: categories
+            )
 
+//            let result = VoiceTransactionCreator.createFromAIVoice(
+//                payload: payload,
+//                accounts: accounts,
+//                categories: categories,
+//                modelContext: modelContext
+//            )
+//
+//            handleCreateResult(result)
+        } catch {
+            liveActivityController.update(state: .failed, message: "OpenAI error")
+            toastMessage = error.localizedDescription
+            manualDraft = VoiceTransactionDraft(
+                notes: "",
+                amount: nil,
+                transactionType: .expense,
+                account: accounts.first(where: { $0.isPrimary }),
+                category: nil
+            )
+            showManualSheet = true
+        }
+    }
+
+    private func handleCreateResult(_ result: VoiceCreateResult) {
         switch result {
         case .created:
             liveActivityController.end(message: "Saved")
-            toastMessage = "Transaction saved from voice input."
+            toastMessage = "Transaction saved from AI voice JSON."
             dismiss()
         case .needsConfirmation(let draft, _):
-            pendingConfirmationDraft = draft
-            liveActivityController.update(state: .transcribing, message: "Needs confirmation")
-            showConfirmAlert = true
+            // Requirement says no follow-up question; prefill manual confirmation instead.
+            manualDraft = draft
+            showManualSheet = true
+            liveActivityController.update(state: .transcribing, message: "Review required")
         case .needsManualEntry(let draft, let failure):
             manualDraft = draft
             showManualSheet = true
@@ -165,50 +188,24 @@ struct VoiceCaptureView: View {
         }
     }
 
-    private func persistDraft(_ draft: VoiceTransactionDraft) {
-        guard let amount = draft.amount, amount > 0 else {
-            toastMessage = "Amount missing. Please edit manually."
-            manualDraft = draft
-            showManualSheet = true
-            return
-        }
-        guard let account = draft.account else {
-            toastMessage = "No primary account found. Set one and try again."
-            return
-        }
-        guard let category = draft.category else {
-            toastMessage = "Could not match category. Please edit manually."
-            manualDraft = draft
-            showManualSheet = true
-            return
-        }
-
-        let transaction = Transaction(
-            notes: draft.notes,
-            amount: amount,
-            date: Date(),
-            transactionType: draft.transactionType,
-            category: category,
-            account: account
-        )
-        modelContext.insert(transaction)
-        try? modelContext.save()
-        liveActivityController.end(message: "Saved")
-        dismiss()
-    }
-
     private func failureMessage(for failure: VoiceCreateFailure) -> String {
         switch failure {
+        case .aiError(let reason):
+            return reason
+        case .invalidJSON:
+            return "Model response was not valid JSON."
         case .noPrimaryAccount:
             return "No primary account found. Set a primary account first."
         case .noCategoriesForType:
             return "No categories available for detected transaction type."
         case .amountMissing:
-            return "Could not detect amount from speech."
+            return "Could not detect amount from AI JSON."
         case .categoryMissing:
-            return "Could not confidently match a category."
+            return "Could not confidently match a category from allowed list."
         case .unknownType:
             return "Could not identify if this is income or expense."
+        case .invalidDate:
+            return "Could not parse transaction date from AI JSON."
         }
     }
 }
