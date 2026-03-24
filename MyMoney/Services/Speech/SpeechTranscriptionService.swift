@@ -10,6 +10,10 @@ import Foundation
 
 @Observable
 final class SpeechTranscriptionService {
+    /// Must match `OpenAIVoiceTransactionService` / Realtime `pcm16` session (24 kHz mono).
+    static let realtimeSampleRate: Double = 24_000
+    static let realtimeChannelCount: Int = 1
+
     enum RecordingState: Equatable {
         case idle
         case requestingPermissions
@@ -19,10 +23,29 @@ final class SpeechTranscriptionService {
     }
 
     var state: RecordingState = .idle
+    /// PCM16 LE mono at `realtimeSampleRate`, built from `capturedRecordingURL` when needed.
     var recordedAudioData: Data?
+    /// Playable Linear PCM `.caf` kept until submit or discard (preview = what we encode for API).
+    private(set) var capturedRecordingURL: URL?
 
     private var audioRecorder: AVAudioRecorder?
     private var recordingURL: URL?
+
+    var capturedFileByteCount: Int64 {
+        guard let url = capturedRecordingURL else { return 0 }
+        guard let attrs = try? FileManager.default.attributesOfItem(atPath: url.path),
+              let size = attrs[.size] as? NSNumber else {
+            return 0
+        }
+        return size.int64Value
+    }
+
+    /// Duration implied by PCM byte count (after conversion from captured file).
+    static func derivedPCMdurationSeconds(pcmByteCount: Int) -> Double {
+        let bytesPerSecond = realtimeSampleRate * Double(realtimeChannelCount * MemoryLayout<Int16>.size)
+        guard bytesPerSecond > 0 else { return 0 }
+        return Double(pcmByteCount) / bytesPerSecond
+    }
 
     func requestPermissions() async -> Bool {
         state = .requestingPermissions
@@ -46,6 +69,7 @@ final class SpeechTranscriptionService {
         if !(await requestPermissions()) { return }
 
         do {
+            discardCapture()
             recordedAudioData = nil
 
             let session = AVAudioSession.sharedInstance()
@@ -55,8 +79,8 @@ final class SpeechTranscriptionService {
             let url = FileManager.default.temporaryDirectory.appendingPathComponent("voice-input-\(UUID().uuidString).caf")
             let settings: [String: Any] = [
                 AVFormatIDKey: Int(kAudioFormatLinearPCM),
-                AVSampleRateKey: 24_000,
-                AVNumberOfChannelsKey: 1,
+                AVSampleRateKey: Self.realtimeSampleRate,
+                AVNumberOfChannelsKey: Self.realtimeChannelCount,
                 AVLinearPCMBitDepthKey: 16,
                 AVLinearPCMIsFloatKey: false,
                 AVLinearPCMIsBigEndianKey: false
@@ -74,7 +98,8 @@ final class SpeechTranscriptionService {
         }
     }
 
-    func stopRecording() {
+    /// Stops recording and keeps a playable `.caf` for preview + PCM conversion on submit.
+    func stopRecordingForReview() {
         guard state == .recording else { return }
         state = .processing
 
@@ -85,24 +110,46 @@ final class SpeechTranscriptionService {
             try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
         }
 
-        guard let recordingURL else {
+        guard let sourceURL = recordingURL else {
             state = .failed("Could not access recorded audio.")
             return
         }
+        self.recordingURL = nil
 
+        let dest = FileManager.default.temporaryDirectory.appendingPathComponent("voice-review-\(UUID().uuidString).caf")
         do {
-            recordedAudioData = try loadPCM16Data(from: recordingURL)
-            try? FileManager.default.removeItem(at: recordingURL)
-            self.recordingURL = nil
+            if FileManager.default.fileExists(atPath: dest.path) {
+                try FileManager.default.removeItem(at: dest)
+            }
+            try FileManager.default.moveItem(at: sourceURL, to: dest)
+            capturedRecordingURL = dest
+            recordedAudioData = nil
             state = .idle
         } catch {
-            state = .failed("Could not read recorded audio.")
+            state = .failed("Could not preserve recording for review.")
+            try? FileManager.default.removeItem(at: sourceURL)
         }
+    }
+
+    /// Builds PCM16 for OpenAI Realtime from the captured file.
+    func pcmDataForRealtime() throws -> Data {
+        guard let url = capturedRecordingURL else {
+            throw NSError(domain: "SpeechTranscriptionService", code: -3, userInfo: [NSLocalizedDescriptionKey: "No captured recording"])
+        }
+        return try Self.loadPCM16Data(from: url)
+    }
+
+    func discardCapture() {
+        if let capturedRecordingURL {
+            try? FileManager.default.removeItem(at: capturedRecordingURL)
+            self.capturedRecordingURL = nil
+        }
+        recordedAudioData = nil
     }
 
     func reset() {
         cleanup()
-        recordedAudioData = nil
+        discardCapture()
         state = .idle
     }
 
@@ -116,7 +163,7 @@ final class SpeechTranscriptionService {
         try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
     }
 
-    private func loadPCM16Data(from url: URL) throws -> Data {
+    private static func loadPCM16Data(from url: URL) throws -> Data {
         let file = try AVAudioFile(forReading: url)
         let format = file.processingFormat
         let frameCount = AVAudioFrameCount(file.length)
@@ -127,19 +174,30 @@ final class SpeechTranscriptionService {
 
         let channels = Int(format.channelCount)
         let samples = Int(buffer.frameLength)
-        guard let floatData = buffer.floatChannelData else {
+
+        var pcm = Data(capacity: samples * channels * MemoryLayout<Int16>.size)
+
+        if let floatData = buffer.floatChannelData {
+            for sampleIndex in 0..<samples {
+                for channelIndex in 0..<channels {
+                    let sample = floatData[channelIndex][sampleIndex]
+                    let clamped = max(-1.0, min(1.0, sample))
+                    let scaled = clamped * 32_767.0
+                    var int16LE = Int16(scaled).littleEndian
+                    withUnsafeBytes(of: &int16LE) { pcm.append(contentsOf: $0) }
+                }
+            }
+        } else if let int16Data = buffer.int16ChannelData {
+            for sampleIndex in 0..<samples {
+                for channelIndex in 0..<channels {
+                    var sample = int16Data[channelIndex][sampleIndex].littleEndian
+                    withUnsafeBytes(of: &sample) { pcm.append(contentsOf: $0) }
+                }
+            }
+        } else {
             throw NSError(domain: "SpeechTranscriptionService", code: -2)
         }
 
-        var pcm = Data(capacity: samples * channels * MemoryLayout<Int16>.size)
-        for sampleIndex in 0..<samples {
-            for channelIndex in 0..<channels {
-                let sample = floatData[channelIndex][sampleIndex]
-                let clamped = max(-1.0, min(1.0, sample))
-                var int16 = Int16(clamped * Float(Int16.max))
-                pcm.append(Data(bytes: &int16, count: MemoryLayout<Int16>.size))
-            }
-        }
         return pcm
     }
 }

@@ -42,7 +42,8 @@ enum OpenAIServiceError: LocalizedError, Equatable {
     case badStatusCode(Int, String)
     case missingJSONText
     case invalidJSON(String)
-    case realtimeProtocol(String)
+    /// `recentEventSummary` is a newline-separated log of recent server event types (DEBUG).
+    case realtimeProtocol(message: String, recentEventSummary: String)
 
     var errorDescription: String? {
         switch self {
@@ -55,11 +56,15 @@ enum OpenAIServiceError: LocalizedError, Equatable {
         case .badStatusCode(let code, let body):
             return "OpenAI request failed with status \(code): \(body)"
         case .missingJSONText:
-            return "OpenAI did not return JSON text."
+            var text = "OpenAI did not return JSON text."
+            #if DEBUG
+            text += "\n\nRecent events:\n\(RealtimeDebugLog.shared.summary)"
+            #endif
+            return text
         case .invalidJSON(let raw):
             return "OpenAI returned invalid JSON: \(raw)"
-        case .realtimeProtocol(let message):
-            return "OpenAI Realtime protocol error: \(message)"
+        case .realtimeProtocol(let message, let recent):
+            return "OpenAI Realtime: \(message)\n\nRecent events:\n\(recent)"
         }
     }
 }

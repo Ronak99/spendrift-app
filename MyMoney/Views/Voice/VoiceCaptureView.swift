@@ -17,24 +17,62 @@ struct VoiceCaptureView: View {
     @State private var speechService = SpeechTranscriptionService()
     @State private var openAIService = OpenAIVoiceTransactionService()
     @State private var liveActivityController = VoiceLiveActivityController()
+    @State private var previewPlayer = VoicePreviewPlayer()
 
     @State private var toastMessage: String?
     @State private var showManualSheet = false
     @State private var manualDraft: VoiceTransactionDraft?
 
+    @State private var reviewPCMByteCount = 0
+    @State private var reviewPCMError: String?
+    @State private var isSubmitting = false
+    #if DEBUG
+    @State private var showRealtimeDiagnostics = false
+    @State private var showDiagnosticsSection = false
+    #endif
+
     private var isRecording: Bool {
         speechService.state == .recording
     }
 
+    private var hasReviewCapture: Bool {
+        speechService.capturedRecordingURL != nil
+    }
+
+    private var derivedPCMduration: Double {
+        SpeechTranscriptionService.derivedPCMdurationSeconds(pcmByteCount: reviewPCMByteCount)
+    }
+
+    private var recordingTooShortForSubmit: Bool {
+        reviewPCMByteCount > 0 && derivedPCMduration < 0.1
+    }
+
+    private var canSubmit: Bool {
+        !isSubmitting
+            && hasReviewCapture
+            && reviewPCMByteCount > 0
+            && reviewPCMError == nil
+            && !recordingTooShortForSubmit
+    }
+
     private var helperText: String {
+        if let reviewPCMError {
+            return reviewPCMError
+        }
+        if isSubmitting {
+            return "Sending audio to OpenAI..."
+        }
         switch speechService.state {
         case .recording:
             return "Speak your transaction naturally. We will send raw audio to AI and parse JSON."
         case .processing:
-            return "Analyzing audio..."
+            return "Finishing recording..."
         case .failed(let message):
             return message
         default:
+            if hasReviewCapture {
+                return "What you hear in the preview is what we send. Use Submit when ready."
+            }
             return "Try: Paid 20 rs to cab driver."
         }
     }
@@ -51,11 +89,11 @@ struct VoiceCaptureView: View {
             VStack(spacing: 20) {
                 ZStack {
                     Circle()
-                        .fill(isRecording ? Color.red.opacity(0.2) : Color.accentColor.opacity(0.2))
+                        .fill(circleFillColor)
                         .frame(width: 140, height: 140)
-                    Image(systemName: isRecording ? "waveform.circle.fill" : "mic.circle.fill")
+                    Image(systemName: circleIconName)
                         .font(.system(size: 72))
-                        .foregroundStyle(isRecording ? Color.red : Color.accentColor)
+                        .foregroundStyle(circleIconColor)
                 }
                 .padding(.top, 24)
 
@@ -67,17 +105,25 @@ struct VoiceCaptureView: View {
                     .multilineTextAlignment(.center)
                     .padding(.horizontal)
 
+                if hasReviewCapture, !isRecording {
+                    reviewSection
+                }
+
+                #if DEBUG
+                if showDiagnosticsSection {
+                    DisclosureGroup("Realtime diagnostics", isExpanded: $showRealtimeDiagnostics) {
+                        Text(RealtimeDebugLog.shared.summary)
+                            .font(.caption.monospaced())
+                            .textSelection(.enabled)
+                    }
+                    .padding(.horizontal)
+                }
+                #endif
+
                 Spacer()
 
-                HStack(spacing: 16) {
-                    Button("Close") { dismiss() }
-                        .buttonStyle(.bordered)
-                    Button(actionTitle) {
-                        handleRecordButton()
-                    }
-                    .buttonStyle(.borderedProminent)
-                }
-                .padding(.bottom, 24)
+                controlButtons
+                    .padding(.bottom, 24)
             }
             .navigationTitle("Voice Recorder")
             .navigationBarTitleDisplayMode(.inline)
@@ -94,17 +140,113 @@ struct VoiceCaptureView: View {
                     )
                 }
             }
+            .onDisappear {
+                previewPlayer.stop()
+                speechService.reset()
+            }
         }
     }
 
-    private var actionTitle: String {
-        speechService.state == .recording ? "Stop" : "Start Recording"
+    private var circleFillColor: Color {
+        if isRecording { return Color.red.opacity(0.2) }
+        if hasReviewCapture { return Color.orange.opacity(0.2) }
+        return Color.accentColor.opacity(0.2)
+    }
+
+    private var circleIconName: String {
+        if isRecording { return "waveform.circle.fill" }
+        if hasReviewCapture { return "waveform.circle" }
+        return "mic.circle.fill"
+    }
+
+    private var circleIconColor: Color {
+        if isRecording { return Color.red }
+        if hasReviewCapture { return Color.orange }
+        return Color.accentColor
+    }
+
+    @ViewBuilder
+    private var reviewSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                Text(String(format: "Duration (PCM): %.2f s", derivedPCMduration))
+                Spacer()
+                Text(byteCountLabel)
+                    .foregroundStyle(.secondary)
+            }
+            .font(.subheadline)
+
+            if recordingTooShortForSubmit {
+                Text("Recording is too short to analyze (about 0.1 s minimum). Tap Re-record.")
+                    .font(.caption)
+                    .foregroundStyle(.red)
+            }
+
+            if let err = previewPlayer.lastError {
+                Text(err)
+                    .font(.caption)
+                    .foregroundStyle(.red)
+            }
+
+            HStack(spacing: 12) {
+                Button {
+                    previewPlayer.togglePlay()
+                } label: {
+                    Label(
+                        previewPlayer.isPlaying ? "Pause" : "Play",
+                        systemImage: previewPlayer.isPlaying ? "pause.fill" : "play.fill"
+                    )
+                }
+                .buttonStyle(.bordered)
+
+                Button("Re-record") {
+                    reRecord()
+                }
+                .buttonStyle(.bordered)
+
+                Button("Submit") {
+                    Task { await submitCapturedAudio() }
+                }
+                .buttonStyle(.borderedProminent)
+                .disabled(!canSubmit)
+            }
+        }
+        .padding(.horizontal)
+    }
+
+    private var byteCountLabel: String {
+        guard reviewPCMByteCount > 0 else { return "— bytes" }
+        let f = ByteCountFormatter()
+        f.allowedUnits = .useAll
+        f.countStyle = .memory
+        return f.string(fromByteCount: Int64(reviewPCMByteCount))
+    }
+
+    private var controlButtons: some View {
+        HStack(spacing: 16) {
+            Button("Close") { dismiss() }
+                .buttonStyle(.bordered)
+            if !hasReviewCapture || isRecording {
+                Button(primaryActionTitle) {
+                    handlePrimaryRecordAction()
+                }
+                .disabled(isSubmitting || speechService.state == .processing || speechService.state == .requestingPermissions)
+                .buttonStyle(.borderedProminent)
+            }
+        }
+    }
+
+    private var primaryActionTitle: String {
+        isRecording ? "Stop" : "Start Recording"
     }
 
     private var stateLabel: String {
+        if isSubmitting {
+            return "Submitting..."
+        }
         switch speechService.state {
         case .idle:
-            return "Ready"
+            return hasReviewCapture ? "Review recording" : "Ready"
         case .requestingPermissions:
             return "Requesting permissions..."
         case .recording:
@@ -116,30 +258,77 @@ struct VoiceCaptureView: View {
         }
     }
 
-    private func handleRecordButton() {
+    private func handlePrimaryRecordAction() {
         if speechService.state == .recording {
-            liveActivityController.update(state: .transcribing, message: "Uploading audio...")
-            speechService.stopRecording()
-            Task {
-                await processRecordedAudio()
+            liveActivityController.update(state: .transcribing, message: "Review recording...")
+            speechService.stopRecordingForReview()
+            if let url = speechService.capturedRecordingURL {
+                previewPlayer.prepare(url: url)
+                Task { await refreshReviewPCMStats() }
+            } else {
+                reviewPCMByteCount = 0
+                reviewPCMError = nil
             }
         } else {
             Task {
                 liveActivityController.start()
                 await speechService.startRecording()
                 liveActivityController.update(state: .recording, message: "Listening...")
+                await MainActor.run {
+                    reviewPCMByteCount = 0
+                    reviewPCMError = nil
+                    #if DEBUG
+                    showDiagnosticsSection = false
+                    showRealtimeDiagnostics = false
+                    #endif
+                }
             }
         }
     }
 
-    private func processRecordedAudio() async {
-        guard let audioData = speechService.recordedAudioData else {
-            toastMessage = "No audio captured. Please try again."
-            liveActivityController.update(state: .failed, message: "No audio captured")
+    private func reRecord() {
+        previewPlayer.stop()
+        speechService.discardCapture()
+        reviewPCMByteCount = 0
+        reviewPCMError = nil
+        #if DEBUG
+        showDiagnosticsSection = false
+        showRealtimeDiagnostics = false
+        #endif
+        liveActivityController.update(state: .recording, message: "Tap Start when ready")
+    }
+
+    @MainActor
+    private func refreshReviewPCMStats() async {
+        reviewPCMError = nil
+        do {
+            let data = try speechService.pcmDataForRealtime()
+            reviewPCMByteCount = data.count
+        } catch {
+            reviewPCMByteCount = 0
+            reviewPCMError = "Could not read PCM for this recording: \(error.localizedDescription)"
+        }
+    }
+
+    private func submitCapturedAudio() async {
+        guard canSubmit else { return }
+        isSubmitting = true
+        defer { isSubmitting = false }
+
+        let audioData: Data
+        do {
+            audioData = try speechService.pcmDataForRealtime()
+        } catch {
+            await MainActor.run {
+                toastMessage = error.localizedDescription
+                liveActivityController.update(state: .failed, message: "PCM read failed")
+            }
             return
         }
 
-        liveActivityController.update(state: .saving, message: "Analyzing voice JSON...")
+        await MainActor.run {
+            liveActivityController.update(state: .saving, message: "Analyzing voice JSON...")
+        }
 
         do {
             let payload = try await openAIService.parseTransaction(
@@ -154,18 +343,25 @@ struct VoiceCaptureView: View {
                 modelContext: modelContext
             )
 
-            handleCreateResult(result)
+            await MainActor.run {
+                handleCreateResult(result)
+            }
         } catch {
-            liveActivityController.update(state: .failed, message: "OpenAI error")
-            toastMessage = error.localizedDescription
-            manualDraft = VoiceTransactionDraft(
-                notes: "",
-                amount: nil,
-                transactionType: .expense,
-                account: accounts.first(where: { $0.isPrimary }),
-                category: nil
-            )
-            showManualSheet = true
+            await MainActor.run {
+                liveActivityController.update(state: .failed, message: "OpenAI error")
+                toastMessage = error.localizedDescription
+                #if DEBUG
+                showDiagnosticsSection = true
+                showRealtimeDiagnostics = true
+                #endif
+                manualDraft = VoiceTransactionDraft(
+                    notes: "",
+                    amount: nil,
+                    transactionType: .expense,
+                    account: accounts.first(where: { $0.isPrimary }),
+                    category: nil
+                )
+            }
         }
     }
 
@@ -176,7 +372,6 @@ struct VoiceCaptureView: View {
             toastMessage = "Transaction saved from AI voice JSON."
             dismiss()
         case .needsConfirmation(let draft, _):
-            // Requirement says no follow-up question; prefill manual confirmation instead.
             manualDraft = draft
             showManualSheet = true
             liveActivityController.update(state: .transcribing, message: "Review required")
