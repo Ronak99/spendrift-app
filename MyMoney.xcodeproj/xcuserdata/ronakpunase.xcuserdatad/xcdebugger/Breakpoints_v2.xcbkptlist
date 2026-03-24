@@ -240,6 +240,36 @@
             endingLineNumber = "37"
             landmarkName = "parseTransaction(audioData:categories:)"
             landmarkType = "7">
+            <Locations>
+               <Location
+                  uuid = "55684963-57BD-435B-B327-82D6992BE00A - 8f5225ab4bb0bfbc"
+                  shouldBeEnabled = "Yes"
+                  ignoreCount = "0"
+                  continueAfterRunningActions = "No"
+                  symbolName = "(3) suspend resume partial function for MyMoney.OpenAIVoiceTransactionService.parseTransaction(audioData: Foundation.Data, categories: Swift.Array&lt;MyMoney.TransactionCategory&gt;) async throws -&gt; MyMoney.OpenAIVoiceTransactionPayload"
+                  moduleName = "MyMoney.debug.dylib"
+                  usesParentBreakpointCondition = "Yes"
+                  urlString = "file:///Volumes/ssd/Development/iOS/MyMoney/MyMoney/Services/OpenAI/OpenAIVoiceTransactionService.swift"
+                  startingColumnNumber = "9223372036854775807"
+                  endingColumnNumber = "9223372036854775807"
+                  startingLineNumber = "37"
+                  endingLineNumber = "37">
+               </Location>
+               <Location
+                  uuid = "55684963-57BD-435B-B327-82D6992BE00A - 8f5225ab4bb0bfbc"
+                  shouldBeEnabled = "Yes"
+                  ignoreCount = "0"
+                  continueAfterRunningActions = "No"
+                  symbolName = "(3) suspend resume partial function for MyMoney.OpenAIVoiceTransactionService.parseTransaction(audioData: Foundation.Data, categories: Swift.Array&lt;MyMoney.TransactionCategory&gt;) async throws -&gt; MyMoney.OpenAIVoiceTransactionPayload"
+                  moduleName = "MyMoney.debug.dylib"
+                  usesParentBreakpointCondition = "Yes"
+                  urlString = "file:///Volumes/ssd/Development/iOS/MyMoney/MyMoney/Services/OpenAI/OpenAIVoiceTransactionService.swift"
+                  startingColumnNumber = "9223372036854775807"
+                  endingColumnNumber = "9223372036854775807"
+                  startingLineNumber = "37"
+                  endingLineNumber = "37">
+               </Location>
+            </Locations>
          </BreakpointContent>
       </BreakpointProxy>
       <BreakpointProxy
@@ -762,7 +792,7 @@
          BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
          <BreakpointContent
             uuid = "DC69AEA0-DB41-493E-AE51-D78B565161F3"
-            shouldBeEnabled = "Yes"
+            shouldBeEnabled = "No"
             ignoreCount = "0"
             continueAfterRunningActions = "No"
             filePath = "MyMoney/Services/OpenAI/OpenAIClient.swift"
@@ -770,15 +800,45 @@
             endingColumnNumber = "9223372036854775807"
             startingLineNumber = "78"
             endingLineNumber = "78"
-            landmarkName = "createResponse(apiKey:model:systemPrompt:audioData:audioFormat:)"
+            landmarkName = "collectJSONText(socket:)"
             landmarkType = "7">
+            <Locations>
+               <Location
+                  uuid = "DC69AEA0-DB41-493E-AE51-D78B565161F3 - de49a01ff634226b"
+                  shouldBeEnabled = "Yes"
+                  ignoreCount = "0"
+                  continueAfterRunningActions = "No"
+                  symbolName = "(1) suspend resume partial function for MyMoney.OpenAIClient.collectJSONText(socket: __C.NSURLSessionWebSocketTask) async throws -&gt; Swift.String"
+                  moduleName = "MyMoney.debug.dylib"
+                  usesParentBreakpointCondition = "Yes"
+                  urlString = "file:///Volumes/ssd/Development/iOS/MyMoney/MyMoney/Services/OpenAI/OpenAIClient.swift"
+                  startingColumnNumber = "9223372036854775807"
+                  endingColumnNumber = "9223372036854775807"
+                  startingLineNumber = "79"
+                  endingLineNumber = "79">
+               </Location>
+               <Location
+                  uuid = "DC69AEA0-DB41-493E-AE51-D78B565161F3 - 3ddca55dc6d666d"
+                  shouldBeEnabled = "Yes"
+                  ignoreCount = "0"
+                  continueAfterRunningActions = "No"
+                  symbolName = "(3) suspend resume partial function for MyMoney.OpenAIClient.collectJSONText(socket: __C.NSURLSessionWebSocketTask) async throws -&gt; Swift.String"
+                  moduleName = "MyMoney.debug.dylib"
+                  usesParentBreakpointCondition = "Yes"
+                  urlString = "file:///Volumes/ssd/Development/iOS/MyMoney/MyMoney/Services/OpenAI/OpenAIClient.swift"
+                  startingColumnNumber = "9223372036854775807"
+                  endingColumnNumber = "9223372036854775807"
+                  startingLineNumber = "79"
+                  endingLineNumber = "79">
+               </Location>
+            </Locations>
          </BreakpointContent>
       </BreakpointProxy>
       <BreakpointProxy
          BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
          <BreakpointContent
             uuid = "25F27E45-7530-4D50-888D-72B24199E46E"
-            shouldBeEnabled = "Yes"
+            shouldBeEnabled = "No"
             ignoreCount = "0"
             continueAfterRunningActions = "No"
             filePath = "MyMoney/Services/OpenAI/OpenAIClient.swift"
@@ -786,52 +846,24 @@
             endingColumnNumber = "9223372036854775807"
             startingLineNumber = "81"
             endingLineNumber = "81"
-            landmarkName = "createResponse(apiKey:model:systemPrompt:audioData:audioFormat:)"
+            landmarkName = "collectJSONText(socket:)"
             landmarkType = "7">
-            <Locations>
-               <Location
-                  uuid = "25F27E45-7530-4D50-888D-72B24199E46E - 370860672a9e3428"
-                  shouldBeEnabled = "Yes"
-                  ignoreCount = "0"
-                  continueAfterRunningActions = "No"
-                  symbolName = "(1) suspend resume partial function for MyMoney.OpenAIClient.createResponse(apiKey: Swift.String, model: Swift.String, systemPrompt: Swift.String, audioData: Foundation.Data, audioFormat: Swift.String) async throws -&gt; Swift.String"
-                  moduleName = "MyMoney.debug.dylib"
-                  usesParentBreakpointCondition = "Yes"
-                  urlString = "file:///Volumes/ssd/Development/iOS/MyMoney/MyMoney/Services/OpenAI/OpenAIClient.swift"
-                  startingColumnNumber = "9223372036854775807"
-                  endingColumnNumber = "9223372036854775807"
-                  startingLineNumber = "81"
-                  endingLineNumber = "81">
-               </Location>
-               <Location
-                  uuid = "25F27E45-7530-4D50-888D-72B24199E46E - bedc057a912ca032"
-                  shouldBeEnabled = "Yes"
-                  ignoreCount = "0"
-                  continueAfterRunningActions = "No"
-                  symbolName = "(2) await resume partial function for MyMoney.OpenAIClient.createResponse(apiKey: Swift.String, model: Swift.String, systemPrompt: Swift.String, audioData: Foundation.Data, audioFormat: Swift.String) async throws -&gt; Swift.String"
-                  moduleName = "MyMoney.debug.dylib"
-                  usesParentBreakpointCondition = "Yes"
-                  urlString = "file:///Volumes/ssd/Development/iOS/MyMoney/MyMoney/Services/OpenAI/OpenAIClient.swift"
-                  startingColumnNumber = "9223372036854775807"
-                  endingColumnNumber = "9223372036854775807"
-                  startingLineNumber = "81"
-                  endingLineNumber = "81">
-               </Location>
-               <Location
-                  uuid = "25F27E45-7530-4D50-888D-72B24199E46E - 8ffc59f0505f996d"
-                  shouldBeEnabled = "Yes"
-                  ignoreCount = "0"
-                  continueAfterRunningActions = "No"
-                  symbolName = "(4) suspend resume partial function for MyMoney.OpenAIClient.createResponse(apiKey: Swift.String, model: Swift.String, systemPrompt: Swift.String, audioData: Foundation.Data, audioFormat: Swift.String) async throws -&gt; Swift.String"
-                  moduleName = "MyMoney.debug.dylib"
-                  usesParentBreakpointCondition = "Yes"
-                  urlString = "file:///Volumes/ssd/Development/iOS/MyMoney/MyMoney/Services/OpenAI/OpenAIClient.swift"
-                  startingColumnNumber = "9223372036854775807"
-                  endingColumnNumber = "9223372036854775807"
-                  startingLineNumber = "81"
-                  endingLineNumber = "81">
-               </Location>
-            </Locations>
+         </BreakpointContent>
+      </BreakpointProxy>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            uuid = "8F5CA7EA-6C03-46EA-BE0F-4946171E1C74"
+            shouldBeEnabled = "No"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "MyMoney/Services/OpenAI/OpenAIClient.swift"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "82"
+            endingLineNumber = "82"
+            landmarkName = "collectJSONText(socket:)"
+            landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>
    </Breakpoints>

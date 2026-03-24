@@ -147,14 +147,14 @@ struct VoiceCaptureView: View {
                 categories: categories
             )
 
-//            let result = VoiceTransactionCreator.createFromAIVoice(
-//                payload: payload,
-//                accounts: accounts,
-//                categories: categories,
-//                modelContext: modelContext
-//            )
-//
-//            handleCreateResult(result)
+            let result = VoiceTransactionCreator.createFromAIVoice(
+                payload: payload,
+                accounts: accounts,
+                categories: categories,
+                modelContext: modelContext
+            )
+
+            handleCreateResult(result)
         } catch {
             liveActivityController.update(state: .failed, message: "OpenAI error")
             toastMessage = error.localizedDescription

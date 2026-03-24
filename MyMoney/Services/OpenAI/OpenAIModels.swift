@@ -42,6 +42,7 @@ enum OpenAIServiceError: LocalizedError, Equatable {
     case badStatusCode(Int, String)
     case missingJSONText
     case invalidJSON(String)
+    case realtimeProtocol(String)
 
     var errorDescription: String? {
         switch self {
@@ -57,6 +58,8 @@ enum OpenAIServiceError: LocalizedError, Equatable {
             return "OpenAI did not return JSON text."
         case .invalidJSON(let raw):
             return "OpenAI returned invalid JSON: \(raw)"
+        case .realtimeProtocol(let message):
+            return "OpenAI Realtime protocol error: \(message)"
         }
     }
 }

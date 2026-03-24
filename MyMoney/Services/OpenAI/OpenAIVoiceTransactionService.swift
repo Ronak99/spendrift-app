@@ -9,7 +9,7 @@ import Foundation
 
 struct OpenAIVoiceTransactionService {
     private let client: OpenAIClient
-    private let model = "gpt-4.1"
+    private let model = "gpt-4o-realtime-preview"
 
     init(client: OpenAIClient = OpenAIClient()) {
         self.client = client
@@ -24,7 +24,8 @@ struct OpenAIVoiceTransactionService {
             apiKey: AppSecrets.openAIAPIKey,
             model: model,
             systemPrompt: prompt,
-            audioData: audioData
+            audioData: audioData,
+            audioFormat: "pcm16"
         )
 
         guard let jsonData = rawText.data(using: .utf8) else {
