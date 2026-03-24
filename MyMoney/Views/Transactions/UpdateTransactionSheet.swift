@@ -16,6 +16,8 @@ struct UpdateTransactionSheet: View {
     
     let transaction: Transaction?
     let draft: VoiceTransactionDraft?
+    /// When opening from voice flow, explain why manual entry is needed (avoid competing `.alert`).
+    let voiceReviewHint: String?
     
     @State private var notes: String = ""
     @State private var amount: String = ""
@@ -62,14 +64,22 @@ struct UpdateTransactionSheet: View {
         }
     }
     
-    init(transaction: Transaction?, draft: VoiceTransactionDraft? = nil) {
+    init(transaction: Transaction?, draft: VoiceTransactionDraft? = nil, voiceReviewHint: String? = nil) {
         self.transaction = transaction
         self.draft = draft
+        self.voiceReviewHint = voiceReviewHint
     }
 
     var body: some View {
         NavigationStack {
             Form {
+                if let voiceReviewHint, transaction == nil {
+                    Section {
+                        Text(voiceReviewHint)
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                    }
+                }
                 Picker("Type", selection: $transactionType) {
                     ForEach(
                         TransactionType.allCases.filter { $0 != .none
@@ -276,7 +286,7 @@ struct AccountPickerSheet: View {
             .sheet(isPresented: $showCreateAccountSheet) {
                 UpdateAccountSheet(account: nil) { newAccount in
                     selectedAccount = newAccount
-                    dismiss()
+//                    dismiss()
                 }
             }
         }
@@ -335,7 +345,7 @@ struct CategoryPickerSheet: View {
             .sheet(isPresented: $showCreateCategorySheet) {
                 UpdateCategorySheet(category: nil) { newCategory in
                     selectedCategory = newCategory
-                    dismiss()
+//                    dismiss()
                 }
             }
         }

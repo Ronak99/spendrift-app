@@ -8,6 +8,14 @@
 import SwiftData
 import SwiftUI
 
+/// Stable identity for `sheet(item:)` so optional draft + alert aren’t racing SwiftUI presentation.
+private struct ManualEntrySheetPayload: Identifiable {
+    let id = UUID()
+    let draft: VoiceTransactionDraft
+    /// Shown at top of manual entry when AI needed user review (replaces a competing `.alert`).
+    let reviewHint: String?
+}
+
 struct VoiceCaptureView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
@@ -20,16 +28,12 @@ struct VoiceCaptureView: View {
     @State private var previewPlayer = VoicePreviewPlayer()
 
     @State private var toastMessage: String?
-    @State private var showManualSheet = false
-    @State private var manualDraft: VoiceTransactionDraft?
+    @State private var manualEntrySheet: ManualEntrySheetPayload?
 
-    @State private var reviewPCMByteCount = 0
-    @State private var reviewPCMError: String?
+    @State private var reviewAudioByteCount = 0
+    @State private var reviewCaptureDurationSeconds: Double = 0
+    @State private var reviewCaptureError: String?
     @State private var isSubmitting = false
-    #if DEBUG
-    @State private var showRealtimeDiagnostics = false
-    @State private var showDiagnosticsSection = false
-    #endif
 
     private var isRecording: Bool {
         speechService.state == .recording
@@ -39,32 +43,28 @@ struct VoiceCaptureView: View {
         speechService.capturedRecordingURL != nil
     }
 
-    private var derivedPCMduration: Double {
-        SpeechTranscriptionService.derivedPCMdurationSeconds(pcmByteCount: reviewPCMByteCount)
-    }
-
     private var recordingTooShortForSubmit: Bool {
-        reviewPCMByteCount > 0 && derivedPCMduration < 0.1
+        reviewAudioByteCount > 0 && reviewCaptureDurationSeconds > 0 && reviewCaptureDurationSeconds < 0.1
     }
 
     private var canSubmit: Bool {
         !isSubmitting
             && hasReviewCapture
-            && reviewPCMByteCount > 0
-            && reviewPCMError == nil
+            && reviewAudioByteCount > 0
+            && reviewCaptureError == nil
             && !recordingTooShortForSubmit
     }
 
     private var helperText: String {
-        if let reviewPCMError {
-            return reviewPCMError
+        if let reviewCaptureError {
+            return reviewCaptureError
         }
         if isSubmitting {
             return "Sending audio to OpenAI..."
         }
         switch speechService.state {
         case .recording:
-            return "Speak your transaction naturally. We will send raw audio to AI and parse JSON."
+            return "Speak your transaction naturally. We will send audio to AI and parse JSON."
         case .processing:
             return "Finishing recording..."
         case .failed(let message):
@@ -109,17 +109,6 @@ struct VoiceCaptureView: View {
                     reviewSection
                 }
 
-                #if DEBUG
-                if showDiagnosticsSection {
-                    DisclosureGroup("Realtime diagnostics", isExpanded: $showRealtimeDiagnostics) {
-                        Text(RealtimeDebugLog.shared.summary)
-                            .font(.caption.monospaced())
-                            .textSelection(.enabled)
-                    }
-                    .padding(.horizontal)
-                }
-                #endif
-
                 Spacer()
 
                 controlButtons
@@ -132,15 +121,15 @@ struct VoiceCaptureView: View {
             } message: {
                 Text(toastMessage ?? "")
             }
-            .sheet(isPresented: $showManualSheet) {
-                if let manualDraft {
-                    UpdateTransactionSheet(
-                        transaction: nil,
-                        draft: manualDraft
-                    )
-                }
+            .sheet(item: $manualEntrySheet) { payload in
+                UpdateTransactionSheet(
+                    transaction: nil,
+                    draft: payload.draft,
+                    voiceReviewHint: payload.reviewHint
+                )
             }
             .onDisappear {
+                guard manualEntrySheet == nil else { return }
                 previewPlayer.stop()
                 speechService.reset()
             }
@@ -169,7 +158,7 @@ struct VoiceCaptureView: View {
     private var reviewSection: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
-                Text(String(format: "Duration (PCM): %.2f s", derivedPCMduration))
+                Text(String(format: "Duration: %.2f s", reviewCaptureDurationSeconds))
                 Spacer()
                 Text(byteCountLabel)
                     .foregroundStyle(.secondary)
@@ -215,11 +204,11 @@ struct VoiceCaptureView: View {
     }
 
     private var byteCountLabel: String {
-        guard reviewPCMByteCount > 0 else { return "— bytes" }
+        guard reviewAudioByteCount > 0 else { return "— bytes" }
         let f = ByteCountFormatter()
         f.allowedUnits = .useAll
         f.countStyle = .memory
-        return f.string(fromByteCount: Int64(reviewPCMByteCount))
+        return f.string(fromByteCount: Int64(reviewAudioByteCount))
     }
 
     private var controlButtons: some View {
@@ -264,10 +253,11 @@ struct VoiceCaptureView: View {
             speechService.stopRecordingForReview()
             if let url = speechService.capturedRecordingURL {
                 previewPlayer.prepare(url: url)
-                Task { await refreshReviewPCMStats() }
+                Task { await refreshReviewCaptureStats() }
             } else {
-                reviewPCMByteCount = 0
-                reviewPCMError = nil
+                reviewAudioByteCount = 0
+                reviewCaptureDurationSeconds = 0
+                reviewCaptureError = nil
             }
         } else {
             Task {
@@ -275,12 +265,9 @@ struct VoiceCaptureView: View {
                 await speechService.startRecording()
                 liveActivityController.update(state: .recording, message: "Listening...")
                 await MainActor.run {
-                    reviewPCMByteCount = 0
-                    reviewPCMError = nil
-                    #if DEBUG
-                    showDiagnosticsSection = false
-                    showRealtimeDiagnostics = false
-                    #endif
+                    reviewAudioByteCount = 0
+                    reviewCaptureDurationSeconds = 0
+                    reviewCaptureError = nil
                 }
             }
         }
@@ -289,24 +276,23 @@ struct VoiceCaptureView: View {
     private func reRecord() {
         previewPlayer.stop()
         speechService.discardCapture()
-        reviewPCMByteCount = 0
-        reviewPCMError = nil
-        #if DEBUG
-        showDiagnosticsSection = false
-        showRealtimeDiagnostics = false
-        #endif
+        reviewAudioByteCount = 0
+        reviewCaptureDurationSeconds = 0
+        reviewCaptureError = nil
         liveActivityController.update(state: .recording, message: "Tap Start when ready")
     }
 
     @MainActor
-    private func refreshReviewPCMStats() async {
-        reviewPCMError = nil
+    private func refreshReviewCaptureStats() async {
+        reviewCaptureError = nil
         do {
-            let data = try speechService.pcmDataForRealtime()
-            reviewPCMByteCount = data.count
+            let data = try speechService.audioDataForChatAPI()
+            reviewAudioByteCount = data.count
+            reviewCaptureDurationSeconds = speechService.capturedAudioDurationSeconds()
         } catch {
-            reviewPCMByteCount = 0
-            reviewPCMError = "Could not read PCM for this recording: \(error.localizedDescription)"
+            reviewAudioByteCount = 0
+            reviewCaptureDurationSeconds = 0
+            reviewCaptureError = "Could not read audio for this recording: \(error.localizedDescription)"
         }
     }
 
@@ -317,11 +303,11 @@ struct VoiceCaptureView: View {
 
         let audioData: Data
         do {
-            audioData = try speechService.pcmDataForRealtime()
+            audioData = try speechService.audioDataForChatAPI()
         } catch {
             await MainActor.run {
                 toastMessage = error.localizedDescription
-                liveActivityController.update(state: .failed, message: "PCM read failed")
+                liveActivityController.update(state: .failed, message: "Audio read failed")
             }
             return
         }
@@ -349,17 +335,15 @@ struct VoiceCaptureView: View {
         } catch {
             await MainActor.run {
                 liveActivityController.update(state: .failed, message: "OpenAI error")
-                toastMessage = error.localizedDescription
-                #if DEBUG
-                showDiagnosticsSection = true
-                showRealtimeDiagnostics = true
-                #endif
-                manualDraft = VoiceTransactionDraft(
-                    notes: "",
-                    amount: nil,
-                    transactionType: .expense,
-                    account: accounts.first(where: { $0.isPrimary }),
-                    category: nil
+                manualEntrySheet = ManualEntrySheetPayload(
+                    draft: VoiceTransactionDraft(
+                        notes: "",
+                        amount: nil,
+                        transactionType: .expense,
+                        account: accounts.first(where: { $0.isPrimary }),
+                        category: nil
+                    ),
+                    reviewHint: error.localizedDescription
                 )
             }
         }
@@ -372,14 +356,17 @@ struct VoiceCaptureView: View {
             toastMessage = "Transaction saved from AI voice JSON."
             dismiss()
         case .needsConfirmation(let draft, _):
-            manualDraft = draft
-            showManualSheet = true
+            manualEntrySheet = ManualEntrySheetPayload(
+                draft: draft,
+                reviewHint: "Review the details below, then save."
+            )
             liveActivityController.update(state: .transcribing, message: "Review required")
         case .needsManualEntry(let draft, let failure):
-            manualDraft = draft
-            showManualSheet = true
+            manualEntrySheet = ManualEntrySheetPayload(
+                draft: draft,
+                reviewHint: failureMessage(for: failure)
+            )
             liveActivityController.update(state: .failed, message: "Needs manual review")
-            toastMessage = failureMessage(for: failure)
         }
     }
 

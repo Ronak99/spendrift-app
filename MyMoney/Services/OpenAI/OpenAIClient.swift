@@ -14,193 +14,68 @@ struct OpenAIClient {
         self.session = session
     }
 
-    func createResponse(
+    /// Chat Completions with audio input; returns assistant `message.content` (JSON text).
+    func chatCompletionJSONFromAudio(
         apiKey: String,
         model: String,
         systemPrompt: String,
+        userInstruction: String,
         audioData: Data,
-        audioFormat: String = "pcm16",
-        audioPath: RealtimeAudioSubmissionPath = .inputBuffer
+        audioFormat: String
     ) async throws -> String {
         guard !apiKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
             throw OpenAIServiceError.missingAPIKey
         }
 
-        guard let url = URL(string: "wss://api.openai.com/v1/realtime?model=\(model)") else {
+        guard let url = URL(string: "https://api.openai.com/v1/chat/completions") else {
             throw OpenAIServiceError.failedToBuildRequest
         }
 
-        RealtimeDebugLog.shared.reset()
+        let encodedAudio = audioData.base64EncodedString()
 
-        var request = URLRequest(url: url)
-        request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
-        request.setValue("realtime=v1", forHTTPHeaderField: "OpenAI-Beta")
-
-        let socket = session.webSocketTask(with: request)
-        socket.resume()
-        defer { socket.cancel(with: .normalClosure, reason: nil) }
-
-        try await waitForServerEventTypes(socket: socket, matchingAny: Set(["session.created"]), timeoutSeconds: 15)
-
-        try await sendEvent([
-            "type": "session.update",
-            "session": [
-                "instructions": systemPrompt,
-                "input_audio_format": audioFormat,
-                "output_audio_format": audioFormat
-            ]
-        ], socket: socket)
-
-        try await waitForServerEventTypes(socket: socket, matchingAny: Set(["session.updated"]), timeoutSeconds: 20)
-
-        switch audioPath {
-        case .inputBuffer:
-            let chunkByteSize = 12_000
-            var offset = 0
-            while offset < audioData.count {
-                let end = min(offset + chunkByteSize, audioData.count)
-                let chunk = audioData.subdata(in: offset..<end)
-                try await sendEvent([
-                    "type": "input_audio_buffer.append",
-                    "audio": chunk.base64EncodedString()
-                ], socket: socket)
-                offset = end
-            }
-            try await sendEvent(["type": "input_audio_buffer.commit"], socket: socket)
-        case .conversationItem:
-            try await sendEvent([
-                "type": "conversation.item.create",
-                "item": [
-                    "type": "message",
+        let body: [String: Any] = [
+            "model": model,
+            "modalities": ["text"],
+            "messages": [
+                ["role": "system", "content": systemPrompt],
+                [
                     "role": "user",
                     "content": [
+                        ["type": "text", "text": userInstruction],
                         [
                             "type": "input_audio",
-                            "audio": audioData.base64EncodedString()
+                            "input_audio": [
+                                "data": encodedAudio,
+                                "format": audioFormat
+                            ]
                         ]
                     ]
                 ]
-            ], socket: socket)
-            try await waitForServerEventTypes(
-                socket: socket,
-                matchingAny: Set(["conversation.item.added"]),
-                timeoutSeconds: 20
-            )
-        }
-
-        try await sendEvent([
-            "type": "response.create",
-            "response": [
-                "modalities": ["text"],
-                "instructions": "Return only strict JSON object and no markdown."
             ]
-        ], socket: socket)
+        ]
 
-        return try await collectJSONText(socket: socket)
-    }
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
 
-    private func waitForServerEventTypes(
-        socket: URLSessionWebSocketTask,
-        matchingAny types: Set<String>,
-        timeoutSeconds: TimeInterval
-    ) async throws {
-        let deadline = Date().addingTimeInterval(timeoutSeconds)
-        while Date() < deadline {
-            let json = try await receiveJSON(socket: socket)
-            guard let type = json["type"] as? String else { continue }
+        let (data, response) = try await session.data(for: request)
 
-            if types.contains(type) {
-                return
-            }
-        }
-        throw OpenAIServiceError.realtimeProtocol(
-            message: "Timed out waiting for server event: \(types.sorted().joined(separator: ", "))",
-            recentEventSummary: RealtimeDebugLog.shared.summary
-        )
-    }
-
-    private func receiveJSON(socket: URLSessionWebSocketTask) async throws -> [String: Any] {
-        let message = try await socket.receive()
-        let text: String
-        switch message {
-        case .string(let string):
-            text = string
-        case .data(let data):
-            text = String(data: data, encoding: .utf8) ?? ""
-        @unknown default:
-            return [:]
-        }
-        guard let data = text.data(using: .utf8),
-              let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {
-            return [:]
-        }
-        RealtimeDebugLog.shared.record(RealtimeDebugLog.summarizeServerJSON(json))
-        if let type = json["type"] as? String, type == "error" {
-            let message = (json["error"] as? [String: Any])?["message"] as? String ?? "Unknown realtime error"
-            throw OpenAIServiceError.realtimeProtocol(
-                message: message,
-                recentEventSummary: RealtimeDebugLog.shared.summary
-            )
-        }
-        return json
-    }
-
-    private func sendEvent(_ event: [String: Any], socket: URLSessionWebSocketTask) async throws {
-        let data = try JSONSerialization.data(withJSONObject: event, options: [])
-        guard let text = String(data: data, encoding: .utf8) else {
-            throw OpenAIServiceError.failedToBuildRequest
-        }
-        try await socket.send(.string(text))
-    }
-
-    private func collectJSONText(socket: URLSessionWebSocketTask) async throws -> String {
-        let deadline = Date().addingTimeInterval(45)
-        var collected = ""
-
-        while Date() < deadline {
-            let json = try await receiveJSON(socket: socket)
-            guard let type = json["type"] as? String else { continue }
-
-            if type == "response.output_text.delta",
-               let delta = json["delta"] as? String {
-                collected += delta
-            }
-
-            if type == "response.output_text.done",
-               let doneText = json["text"] as? String,
-               collected.isEmpty {
-                collected = doneText
-            }
-
-            if type == "response.done" {
-                if collected.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                    if let response = json["response"] as? [String: Any],
-                       let fallback = extractTextFromResponse(response),
-                       !fallback.isEmpty {
-                        return fallback
-                    }
-                } else {
-                    return collected
-                }
-            }
+        guard let http = response as? HTTPURLResponse else {
+            throw OpenAIServiceError.nonHTTPResponse
         }
 
-        if !collected.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-            return collected
+        guard (200...299).contains(http.statusCode) else {
+            let bodyString = String(data: data, encoding: .utf8) ?? ""
+            throw OpenAIServiceError.badStatusCode(http.statusCode, bodyString)
         }
-        throw OpenAIServiceError.missingJSONText
-    }
 
-    private func extractTextFromResponse(_ response: [String: Any]) -> String? {
-        guard let output = response["output"] as? [[String: Any]] else { return nil }
-        for item in output {
-            guard let content = item["content"] as? [[String: Any]] else { continue }
-            for contentItem in content {
-                if let text = contentItem["text"] as? String, !text.isEmpty {
-                    return text
-                }
-            }
+        let decoded = try JSONDecoder().decode(OpenAIChatCompletionResponse.self, from: data)
+        guard let text = decoded.choices.first?.message.content?.trimmingCharacters(in: .whitespacesAndNewlines),
+              !text.isEmpty else {
+            throw OpenAIServiceError.missingJSONText
         }
-        return nil
+        return text
     }
 }

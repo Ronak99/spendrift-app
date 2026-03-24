@@ -21,6 +21,18 @@ struct OpenAIVoiceTransaction: Codable {
     let category: String?
 }
 
+struct OpenAIChatCompletionResponse: Decodable {
+    struct Choice: Decodable {
+        struct Message: Decodable {
+            let content: String?
+        }
+
+        let message: Message
+    }
+
+    let choices: [Choice]
+}
+
 struct OpenAIResponseEnvelope: Decodable {
     struct OutputItem: Decodable {
         struct ContentItem: Decodable {
@@ -42,8 +54,6 @@ enum OpenAIServiceError: LocalizedError, Equatable {
     case badStatusCode(Int, String)
     case missingJSONText
     case invalidJSON(String)
-    /// `recentEventSummary` is a newline-separated log of recent server event types (DEBUG).
-    case realtimeProtocol(message: String, recentEventSummary: String)
 
     var errorDescription: String? {
         switch self {
@@ -56,15 +66,9 @@ enum OpenAIServiceError: LocalizedError, Equatable {
         case .badStatusCode(let code, let body):
             return "OpenAI request failed with status \(code): \(body)"
         case .missingJSONText:
-            var text = "OpenAI did not return JSON text."
-            #if DEBUG
-            text += "\n\nRecent events:\n\(RealtimeDebugLog.shared.summary)"
-            #endif
-            return text
+            return "OpenAI did not return JSON text in the chat completion."
         case .invalidJSON(let raw):
             return "OpenAI returned invalid JSON: \(raw)"
-        case .realtimeProtocol(let message, let recent):
-            return "OpenAI Realtime: \(message)\n\nRecent events:\n\(recent)"
         }
     }
 }
