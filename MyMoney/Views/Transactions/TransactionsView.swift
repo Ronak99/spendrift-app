@@ -13,6 +13,7 @@ struct TransactionsView: View {
     @Query(sort: \Transaction.date, order: .reverse) private var allTransactions: [Transaction]
     @State private var viewModel = TransactionViewModel()
     @State private var showCreateSheet = false
+    @State private var showVoiceCapture = false
     @State private var selectedTransaction: Transaction?
     
     private var transactions: [Transaction] {
@@ -122,10 +123,18 @@ struct TransactionsView: View {
             .navigationTitle("Transactions")
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    Button(action: {
-                        showCreateSheet = true
-                    }) {
-                        Image(systemName: "plus")
+                    HStack(spacing: 12) {
+                        Button(action: {
+                            showVoiceCapture = true
+                        }) {
+                            Image(systemName: "mic")
+                        }
+
+                        Button(action: {
+                            showCreateSheet = true
+                        }) {
+                            Image(systemName: "plus")
+                        }
                     }
                 }
             }
@@ -134,6 +143,9 @@ struct TransactionsView: View {
             }
             .sheet(item: $selectedTransaction) { transaction in
                 UpdateTransactionSheet(transaction: transaction)
+            }
+            .sheet(isPresented: $showVoiceCapture) {
+                VoiceCaptureView()
             }
         }
     }

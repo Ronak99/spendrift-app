@@ -25,9 +25,19 @@ struct AccountListItem: View {
             
             // Account details
             VStack(alignment: .leading, spacing: 4) {
-                Text(account.name)
-                    .font(.headline)
-                    .foregroundColor(.primary)
+                HStack(spacing: 8) {
+                    Text(account.name)
+                        .font(.headline)
+                        .foregroundColor(.primary)
+                    if account.isPrimary {
+                        Text("Primary")
+                            .font(.caption2)
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 2)
+                            .background(Color.accentColor.opacity(0.15))
+                            .clipShape(Capsule())
+                    }
+                }
                 
                 Text("Balance: \(account.currentBalance.formatCurrency)")
                     .font(.caption)

@@ -16,7 +16,7 @@ struct UpdateCategorySheet: View {
     var onCreated: ((TransactionCategory) -> Void)?
     
     @State private var name: String = ""
-    @State private var type: CategoryType = .expense
+    @State private var type: TransactionType = .expense
     @State private var icon: CategoryIcon = .unknown
     
     private var isValid: Bool {
@@ -33,7 +33,7 @@ struct UpdateCategorySheet: View {
                 Form {
                     Picker("Type", selection: $type) {
                         ForEach(
-                            CategoryType.allCases,
+                            TransactionType.allCases,
                             id: \.self
                         ) { categoryType in
                             Text(categoryType.rawValue.capitalized)

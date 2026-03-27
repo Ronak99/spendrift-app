@@ -15,14 +15,11 @@ struct UpdateAccountSheet: View {
     let account: Account?
     var onCreated: ((Account) -> Void)? = nil
     
+    @Query(sort: \Account.createdOn) private var allAccounts: [Account]
     @State private var name: String = ""
     @State private var balance: String = ""
-//    @State private var icon: AccountIcon = .unknown
-    @State var icon = AccountIcon.sbi {
-        didSet {
-            print("Setting to \(icon)")
-        }
-    }
+    @State private var icon = AccountIcon.sbi
+    @State private var isPrimary = false
     
     private var isValid: Bool {
         !name.isEmpty && !balance.isEmpty && Double(balance) != nil
@@ -39,6 +36,8 @@ struct UpdateAccountSheet: View {
                     TextField("0.00", text: $balance)
                         .keyboardType(.decimalPad)
                 }
+
+                Toggle("Set as Primary Account", isOn: $isPrimary)
                 
                 IconGridPicker(icons: Array(AccountIcon.allCases), selectedIcon: $icon)
             }
@@ -62,6 +61,9 @@ struct UpdateAccountSheet: View {
                     name = account.name
                     balance = String(account.balance)
                     icon = account.icon
+                    isPrimary = account.isPrimary
+                } else {
+                    isPrimary = allAccounts.isEmpty
                 }
             }
         }
@@ -72,15 +74,23 @@ struct UpdateAccountSheet: View {
         
         if let account = account {
             // Update existing
+            if isPrimary {
+                clearExistingPrimary(except: account)
+            }
             account.name = name
             account.balance = balanceValue
             account.icon = icon
+            account.isPrimary = isPrimary
         } else {
             // Create new
+            if isPrimary {
+                clearExistingPrimary(except: nil)
+            }
             let newAccount = Account(
                 name: name,
                 balance: balanceValue,
-                icon: icon
+                icon: icon,
+                isPrimary: isPrimary
             )
             modelContext.insert(newAccount)
             onCreated?(newAccount)
@@ -88,6 +98,15 @@ struct UpdateAccountSheet: View {
         
         try? modelContext.save()
         dismiss()
+    }
+
+    private func clearExistingPrimary(except account: Account?) {
+        for existing in allAccounts {
+            if let account, existing.id == account.id { continue }
+            if existing.isPrimary {
+                existing.isPrimary = false
+            }
+        }
     }
 }
 
