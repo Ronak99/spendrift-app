@@ -15,6 +15,13 @@ struct TransactionsView: View {
     @State private var showCreateSheet = false
     @State private var showVoiceCapture = false
     @State private var selectedTransaction: Transaction?
+    let voiceCaptureTrigger: UUID?
+    let useCompactVoiceCapture: Bool
+
+    init(voiceCaptureTrigger: UUID? = nil, useCompactVoiceCapture: Bool = false) {
+        self.voiceCaptureTrigger = voiceCaptureTrigger
+        self.useCompactVoiceCapture = useCompactVoiceCapture
+    }
     
     private var transactions: [Transaction] {
         allTransactions.filter { transaction in
@@ -145,7 +152,15 @@ struct TransactionsView: View {
                 UpdateTransactionSheet(transaction: transaction)
             }
             .sheet(isPresented: $showVoiceCapture) {
-                VoiceCaptureView()
+                if useCompactVoiceCapture && voiceCaptureTrigger != nil {
+                    VoiceCaptureView(mode: .compactIntent)
+                } else {
+                    VoiceCaptureView()
+                }
+            }
+            .onChange(of: voiceCaptureTrigger) { _, trigger in
+                guard trigger != nil else { return }
+                showVoiceCapture = true
             }
         }
     }

@@ -13,8 +13,9 @@ import ActivityKit
 
 enum VoiceLiveActivityState: String {
     case recording
-    case transcribing
-    case saving
+    case reviewing
+    case processing
+    case success
     case completed
     case failed
 }
@@ -62,6 +63,44 @@ final class VoiceLiveActivityController {
                 message: message
             )
             await activity.end(using: content, dismissalPolicy: .immediate)
+        }
+        self.activity = nil
+        #endif
+    }
+
+    func failAndEnd(message: String, dismissAfter seconds: TimeInterval = 3) {
+        #if canImport(ActivityKit)
+        guard let activity else { return }
+        Task {
+            let failureContent = VoiceLiveActivityAttributes.ContentState(
+                state: VoiceLiveActivityState.failed.rawValue,
+                message: message
+            )
+            await activity.update(using: failureContent)
+
+            if seconds > 0 {
+                try? await Task.sleep(nanoseconds: UInt64(seconds * 1_000_000_000))
+            }
+            await activity.end(using: failureContent, dismissalPolicy: .immediate)
+        }
+        self.activity = nil
+        #endif
+    }
+
+    func succeedAndEnd(message: String, dismissAfter seconds: TimeInterval = 3) {
+        #if canImport(ActivityKit)
+        guard let activity else { return }
+        Task {
+            let successContent = VoiceLiveActivityAttributes.ContentState(
+                state: VoiceLiveActivityState.success.rawValue,
+                message: message
+            )
+            await activity.update(using: successContent)
+
+            if seconds > 0 {
+                try? await Task.sleep(nanoseconds: UInt64(seconds * 1_000_000_000))
+            }
+            await activity.end(using: successContent, dismissalPolicy: .immediate)
         }
         self.activity = nil
         #endif

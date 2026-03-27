@@ -1,0 +1,41 @@
+//
+//  VoiceExpensePipelineService.swift
+//  MyMoney
+//
+//  Created by Cursor on 27/03/26.
+//
+
+import Foundation
+import SwiftData
+
+enum VoicePipelineError: Error {
+    case openAI(String)
+}
+
+struct VoiceExpensePipelineService {
+    var openAIService = OpenAIVoiceTransactionService()
+
+    func submitAudio(
+        audioData: Data,
+        accounts: [Account],
+        categories: [TransactionCategory],
+        modelContext: ModelContext
+    ) async -> Result<VoiceCreateResult, VoicePipelineError> {
+        do {
+            let payload = try await openAIService.parseTransaction(
+                audioData: audioData,
+                categories: categories
+            )
+
+            let result = VoiceTransactionCreator.createFromAIVoice(
+                payload: payload,
+                accounts: accounts,
+                categories: categories,
+                modelContext: modelContext
+            )
+            return .success(result)
+        } catch {
+            return .failure(.openAI(error.localizedDescription))
+        }
+    }
+}

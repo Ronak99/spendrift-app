@@ -55,7 +55,7 @@ enum VoiceTransactionCreator {
 
         let typeCategory: TransactionType = transactionType == .expense ? .expense : .income
         let category = categories.first(where: {
-            $0.type == typeCategory && $0.name.caseInsensitiveCompare(transaction.category! ?? "") == .orderedSame
+            $0.type == typeCategory && $0.name.caseInsensitiveCompare(transaction.category ?? "") == .orderedSame
         })
         let primary = resolvePrimaryAccount(from: accounts)
 
