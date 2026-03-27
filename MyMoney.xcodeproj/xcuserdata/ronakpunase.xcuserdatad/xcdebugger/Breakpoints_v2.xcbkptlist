@@ -197,22 +197,6 @@
       <BreakpointProxy
          BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
          <BreakpointContent
-            uuid = "B28B36A8-1A96-4E7F-8B12-04F6279F78F2"
-            shouldBeEnabled = "No"
-            ignoreCount = "0"
-            continueAfterRunningActions = "No"
-            filePath = "MyMoney/Services/Voice/VoiceTransactionCreator.swift"
-            startingColumnNumber = "9223372036854775807"
-            endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "82"
-            endingLineNumber = "82"
-            landmarkName = "createFromAIVoice(payload:accounts:categories:modelContext:)"
-            landmarkType = "7">
-         </BreakpointContent>
-      </BreakpointProxy>
-      <BreakpointProxy
-         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
-         <BreakpointContent
             uuid = "A458C38B-5ADF-4AD7-96EE-2CA3D5540D00"
             shouldBeEnabled = "No"
             ignoreCount = "0"
@@ -269,7 +253,9 @@
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
             startingLineNumber = "87"
-            endingLineNumber = "87">
+            endingLineNumber = "87"
+            landmarkName = "loadBasePrompt()"
+            landmarkType = "7">
             <Locations>
                <Location
                   uuid = "8AC7D183-DE30-4E7E-B71E-E75F1FB147B6 - a97fc50b8dc431a6"
@@ -312,6 +298,20 @@
                   endingColumnNumber = "9223372036854775807"
                   startingLineNumber = "87"
                   endingLineNumber = "87">
+               </Location>
+               <Location
+                  uuid = "8AC7D183-DE30-4E7E-B71E-E75F1FB147B6 - 8e483bf9f878598e"
+                  shouldBeEnabled = "Yes"
+                  ignoreCount = "0"
+                  continueAfterRunningActions = "No"
+                  symbolName = "MyMoney.OpenAIVoiceTransactionService.loadBasePrompt() throws -&gt; Swift.String"
+                  moduleName = "MyMoney.debug.dylib"
+                  usesParentBreakpointCondition = "Yes"
+                  urlString = "file:///Volumes/ssd/Development/iOS/MyMoney/MyMoney/Services/OpenAI/OpenAIVoiceTransactionService.swift"
+                  startingColumnNumber = "9223372036854775807"
+                  endingColumnNumber = "9223372036854775807"
+                  startingLineNumber = "89"
+                  endingLineNumber = "89">
                </Location>
             </Locations>
          </BreakpointContent>
@@ -367,38 +367,6 @@
       <BreakpointProxy
          BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
          <BreakpointContent
-            uuid = "D9637D59-A5C3-450B-B5F1-2675A95F634F"
-            shouldBeEnabled = "No"
-            ignoreCount = "0"
-            continueAfterRunningActions = "No"
-            filePath = "MyMoney/Views/Voice/VoiceCaptureView.swift"
-            startingColumnNumber = "9223372036854775807"
-            endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "147"
-            endingLineNumber = "147"
-            landmarkName = "circleIconName"
-            landmarkType = "24">
-         </BreakpointContent>
-      </BreakpointProxy>
-      <BreakpointProxy
-         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
-         <BreakpointContent
-            uuid = "269101BD-E38E-433A-8A61-8301EB4457CB"
-            shouldBeEnabled = "No"
-            ignoreCount = "0"
-            continueAfterRunningActions = "No"
-            filePath = "MyMoney/Views/Voice/VoiceCaptureView.swift"
-            startingColumnNumber = "9223372036854775807"
-            endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "144"
-            endingLineNumber = "144"
-            landmarkName = "VoiceCaptureView"
-            landmarkType = "14">
-         </BreakpointContent>
-      </BreakpointProxy>
-      <BreakpointProxy
-         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
-         <BreakpointContent
             uuid = "97A4B9A9-67F9-4044-BB46-B37A99EA4259"
             shouldBeEnabled = "Yes"
             ignoreCount = "0"
@@ -407,7 +375,9 @@
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
             startingLineNumber = "91"
-            endingLineNumber = "91">
+            endingLineNumber = "91"
+            landmarkName = "OpenAIVoiceTransactionService"
+            landmarkType = "14">
             <Locations>
                <Location
                   uuid = "97A4B9A9-67F9-4044-BB46-B37A99EA4259 - a97fc50b8dc42e22"
@@ -451,6 +421,20 @@
                   startingLineNumber = "91"
                   endingLineNumber = "91">
                </Location>
+               <Location
+                  uuid = "97A4B9A9-67F9-4044-BB46-B37A99EA4259 - 9bf017c4a5322dd1"
+                  shouldBeEnabled = "Yes"
+                  ignoreCount = "0"
+                  continueAfterRunningActions = "No"
+                  symbolName = "MyMoney.OpenAIVoiceTransactionService.makeTodayISODateString() -&gt; Swift.String"
+                  moduleName = "MyMoney.debug.dylib"
+                  usesParentBreakpointCondition = "Yes"
+                  urlString = "file:///Volumes/ssd/Development/iOS/MyMoney/MyMoney/Services/OpenAI/OpenAIVoiceTransactionService.swift"
+                  startingColumnNumber = "9223372036854775807"
+                  endingColumnNumber = "9223372036854775807"
+                  startingLineNumber = "92"
+                  endingLineNumber = "92">
+               </Location>
             </Locations>
          </BreakpointContent>
       </BreakpointProxy>
@@ -465,7 +449,9 @@
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
             startingLineNumber = "93"
-            endingLineNumber = "93">
+            endingLineNumber = "93"
+            landmarkName = "makeTodayISODateString()"
+            landmarkType = "7">
             <Locations>
                <Location
                   uuid = "DB583791-612A-4E36-813C-A872471FA251 - a97fc50b8dc42eec"
@@ -509,6 +495,20 @@
                   startingLineNumber = "93"
                   endingLineNumber = "93">
                </Location>
+               <Location
+                  uuid = "DB583791-612A-4E36-813C-A872471FA251 - 9bf017c4a5322dfe"
+                  shouldBeEnabled = "Yes"
+                  ignoreCount = "0"
+                  continueAfterRunningActions = "No"
+                  symbolName = "MyMoney.OpenAIVoiceTransactionService.makeTodayISODateString() -&gt; Swift.String"
+                  moduleName = "MyMoney.debug.dylib"
+                  usesParentBreakpointCondition = "Yes"
+                  urlString = "file:///Volumes/ssd/Development/iOS/MyMoney/MyMoney/Services/OpenAI/OpenAIVoiceTransactionService.swift"
+                  startingColumnNumber = "9223372036854775807"
+                  endingColumnNumber = "9223372036854775807"
+                  startingLineNumber = "93"
+                  endingLineNumber = "93">
+               </Location>
             </Locations>
          </BreakpointContent>
       </BreakpointProxy>
@@ -523,7 +523,9 @@
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
             startingLineNumber = "86"
-            endingLineNumber = "86">
+            endingLineNumber = "86"
+            landmarkName = "loadBasePrompt()"
+            landmarkType = "7">
             <Locations>
                <Location
                   uuid = "49068C8C-5BF7-40BD-8341-1B2375E84CA4 - a97fc50b8dc43185"
@@ -567,6 +569,20 @@
                   startingLineNumber = "86"
                   endingLineNumber = "86">
                </Location>
+               <Location
+                  uuid = "49068C8C-5BF7-40BD-8341-1B2375E84CA4 - 8e483bf9f878466b"
+                  shouldBeEnabled = "Yes"
+                  ignoreCount = "0"
+                  continueAfterRunningActions = "No"
+                  symbolName = "MyMoney.OpenAIVoiceTransactionService.loadBasePrompt() throws -&gt; Swift.String"
+                  moduleName = "MyMoney.debug.dylib"
+                  usesParentBreakpointCondition = "Yes"
+                  urlString = "file:///Volumes/ssd/Development/iOS/MyMoney/MyMoney/Services/OpenAI/OpenAIVoiceTransactionService.swift"
+                  startingColumnNumber = "9223372036854775807"
+                  endingColumnNumber = "9223372036854775807"
+                  startingLineNumber = "86"
+                  endingLineNumber = "86">
+               </Location>
             </Locations>
          </BreakpointContent>
       </BreakpointProxy>
@@ -584,70 +600,12 @@
             endingLineNumber = "331"
             landmarkName = "submitCapturedAudio()"
             landmarkType = "7">
-            <Locations>
-               <Location
-                  uuid = "2C052E3D-C6C1-42AE-BC10-68D71689278A - d5000f45546aca69"
-                  shouldBeEnabled = "Yes"
-                  ignoreCount = "0"
-                  continueAfterRunningActions = "No"
-                  symbolName = "(5) suspend resume partial function for MyMoney.VoiceCaptureView.submitCapturedAudio() async -&gt; ()"
-                  moduleName = "MyMoney.debug.dylib"
-                  usesParentBreakpointCondition = "Yes"
-                  urlString = "file:///Volumes/ssd/Development/iOS/MyMoney/MyMoney/Views/Voice/VoiceCaptureView.swift"
-                  startingColumnNumber = "9223372036854775807"
-                  endingColumnNumber = "9223372036854775807"
-                  startingLineNumber = "332"
-                  endingLineNumber = "332">
-               </Location>
-               <Location
-                  uuid = "2C052E3D-C6C1-42AE-BC10-68D71689278A - 24f4b96c420613fc"
-                  shouldBeEnabled = "Yes"
-                  ignoreCount = "0"
-                  continueAfterRunningActions = "No"
-                  symbolName = "(6) await resume partial function for MyMoney.VoiceCaptureView.submitCapturedAudio() async -&gt; ()"
-                  moduleName = "MyMoney.debug.dylib"
-                  usesParentBreakpointCondition = "Yes"
-                  urlString = "file:///Volumes/ssd/Development/iOS/MyMoney/MyMoney/Views/Voice/VoiceCaptureView.swift"
-                  startingColumnNumber = "9223372036854775807"
-                  endingColumnNumber = "9223372036854775807"
-                  startingLineNumber = "332"
-                  endingLineNumber = "332">
-               </Location>
-               <Location
-                  uuid = "2C052E3D-C6C1-42AE-BC10-68D71689278A - 2efe8fb829b35b66"
-                  shouldBeEnabled = "Yes"
-                  ignoreCount = "0"
-                  continueAfterRunningActions = "No"
-                  symbolName = "(15) suspend resume partial function for MyMoney.VoiceCaptureView.submitCapturedAudio() async -&gt; ()"
-                  moduleName = "MyMoney.debug.dylib"
-                  usesParentBreakpointCondition = "Yes"
-                  urlString = "file:///Volumes/ssd/Development/iOS/MyMoney/MyMoney/Views/Voice/VoiceCaptureView.swift"
-                  startingColumnNumber = "9223372036854775807"
-                  endingColumnNumber = "9223372036854775807"
-                  startingLineNumber = "332"
-                  endingLineNumber = "332">
-               </Location>
-               <Location
-                  uuid = "2C052E3D-C6C1-42AE-BC10-68D71689278A - f0de827b3551df02"
-                  shouldBeEnabled = "Yes"
-                  ignoreCount = "0"
-                  continueAfterRunningActions = "No"
-                  symbolName = "closure #3 @Swift.MainActor @Sendable () -&gt; () in MyMoney.VoiceCaptureView.submitCapturedAudio() async -&gt; ()"
-                  moduleName = "MyMoney.debug.dylib"
-                  usesParentBreakpointCondition = "Yes"
-                  urlString = "file:///Volumes/ssd/Development/iOS/MyMoney/MyMoney/Views/Voice/VoiceCaptureView.swift"
-                  startingColumnNumber = "9223372036854775807"
-                  endingColumnNumber = "9223372036854775807"
-                  startingLineNumber = "332"
-                  endingLineNumber = "332">
-               </Location>
-            </Locations>
          </BreakpointContent>
       </BreakpointProxy>
       <BreakpointProxy
          BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
          <BreakpointContent
-            uuid = "768E76B9-B5CB-477A-87F0-015124B60822"
+            uuid = "745DC6F5-91EA-4448-B5D8-A2327132DE39"
             shouldBeEnabled = "Yes"
             ignoreCount = "0"
             continueAfterRunningActions = "No"
@@ -663,92 +621,32 @@
       <BreakpointProxy
          BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
          <BreakpointContent
-            uuid = "9A6C8BB6-7D3F-47B7-95CF-C2A5B7454429"
+            uuid = "BE7DCCB0-BBFB-4F54-B85F-28ED5C421B33"
             shouldBeEnabled = "Yes"
             ignoreCount = "0"
             continueAfterRunningActions = "No"
-            filePath = "MyMoney/Services/OpenAI/OpenAIVoiceTransactionService.swift"
+            filePath = "MyMoney/Services/Voice/VoiceTransactionCreator.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "38"
-            endingLineNumber = "38"
-            landmarkName = "parseTransaction(audioData:categories:)"
+            startingLineNumber = "126"
+            endingLineNumber = "126"
+            landmarkName = "createFromAIVoice(payload:accounts:categories:modelContext:)"
             landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>
       <BreakpointProxy
          BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
          <BreakpointContent
-            uuid = "12FAF262-CE71-4AE5-8DBE-C5415D701C38"
+            uuid = "66B57106-9B2E-44D4-90D6-AACF1D3CD62B"
             shouldBeEnabled = "Yes"
             ignoreCount = "0"
             continueAfterRunningActions = "No"
-            filePath = "MyMoney/Views/Voice/VoiceCaptureView.swift"
+            filePath = "MyMoney/Services/Voice/VoiceTransactionCreator.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "353"
-            endingLineNumber = "353"
-            landmarkName = "handleCreateResult(_:)"
-            landmarkType = "7">
-            <Locations>
-               <Location
-                  uuid = "12FAF262-CE71-4AE5-8DBE-C5415D701C38 - 2c527182f3ce8a8e"
-                  shouldBeEnabled = "Yes"
-                  ignoreCount = "0"
-                  continueAfterRunningActions = "No"
-                  symbolName = "MyMoney.VoiceCaptureView.handleCreateResult(MyMoney.VoiceCreateResult) -&gt; ()"
-                  moduleName = "MyMoney.debug.dylib"
-                  usesParentBreakpointCondition = "Yes"
-                  urlString = "file:///Volumes/ssd/Development/iOS/MyMoney/MyMoney/Views/Voice/VoiceCaptureView.swift"
-                  startingColumnNumber = "9223372036854775807"
-                  endingColumnNumber = "9223372036854775807"
-                  startingLineNumber = "354"
-                  endingLineNumber = "354">
-               </Location>
-               <Location
-                  uuid = "12FAF262-CE71-4AE5-8DBE-C5415D701C38 - 2c527182f3ce8a8e"
-                  shouldBeEnabled = "Yes"
-                  ignoreCount = "0"
-                  continueAfterRunningActions = "No"
-                  symbolName = "MyMoney.VoiceCaptureView.handleCreateResult(MyMoney.VoiceCreateResult) -&gt; ()"
-                  moduleName = "MyMoney.debug.dylib"
-                  usesParentBreakpointCondition = "Yes"
-                  urlString = "file:///Volumes/ssd/Development/iOS/MyMoney/MyMoney/Views/Voice/VoiceCaptureView.swift"
-                  startingColumnNumber = "9223372036854775807"
-                  endingColumnNumber = "9223372036854775807"
-                  startingLineNumber = "354"
-                  endingLineNumber = "354">
-               </Location>
-               <Location
-                  uuid = "12FAF262-CE71-4AE5-8DBE-C5415D701C38 - 2c527182f3ce8a8e"
-                  shouldBeEnabled = "Yes"
-                  ignoreCount = "0"
-                  continueAfterRunningActions = "No"
-                  symbolName = "MyMoney.VoiceCaptureView.handleCreateResult(MyMoney.VoiceCreateResult) -&gt; ()"
-                  moduleName = "MyMoney.debug.dylib"
-                  usesParentBreakpointCondition = "Yes"
-                  urlString = "file:///Volumes/ssd/Development/iOS/MyMoney/MyMoney/Views/Voice/VoiceCaptureView.swift"
-                  startingColumnNumber = "9223372036854775807"
-                  endingColumnNumber = "9223372036854775807"
-                  startingLineNumber = "354"
-                  endingLineNumber = "354">
-               </Location>
-            </Locations>
-         </BreakpointContent>
-      </BreakpointProxy>
-      <BreakpointProxy
-         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
-         <BreakpointContent
-            uuid = "EF9985E1-E141-4112-B268-549C01B8EA61"
-            shouldBeEnabled = "Yes"
-            ignoreCount = "0"
-            continueAfterRunningActions = "No"
-            filePath = "MyMoney/Views/Voice/VoiceCaptureView.swift"
-            startingColumnNumber = "9223372036854775807"
-            endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "357"
-            endingLineNumber = "357"
-            landmarkName = "handleCreateResult(_:)"
+            startingLineNumber = "62"
+            endingLineNumber = "62"
+            landmarkName = "buildDraftFromAIPayload(payload:accounts:categories:)"
             landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>

@@ -34,7 +34,7 @@ enum CategoryMatcher {
             return CategoryMatchResult(category: nil, confidence: 0.2, reason: "Transaction type not detected")
         }
 
-        let targetType: CategoryType = type == .expense ? .expense : .income
+        let targetType: TransactionType = type == .expense ? .expense : .income
         let filtered = categories.filter { $0.type == targetType }
         guard !filtered.isEmpty else {
             return CategoryMatchResult(category: nil, confidence: 0, reason: "No categories for detected type")

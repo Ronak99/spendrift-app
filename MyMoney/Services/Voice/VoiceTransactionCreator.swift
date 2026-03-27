@@ -11,6 +11,7 @@ import SwiftData
 struct VoiceTransactionDraft {
     let notes: String
     let amount: Double?
+    let date: Date
     let transactionType: TransactionType
     let account: Account?
     let category: TransactionCategory?
@@ -50,14 +51,11 @@ enum VoiceTransactionCreator {
         guard let transactionType = TransactionType(rawValue: transaction.transactionType) else {
             return (nil, .unknownType)
         }
-        let dateFormatter = ISO8601DateFormatter()
-        guard dateFormatter.date(from: transaction.date) != nil else {
-            return (nil, .invalidDate)
-        }
+        let parsedDate = parseTransactionDate(transaction.date) ?? Date()
 
-        let typeCategory: CategoryType = transactionType == .expense ? .expense : .income
+        let typeCategory: TransactionType = transactionType == .expense ? .expense : .income
         let category = categories.first(where: {
-            $0.type == typeCategory && $0.name.caseInsensitiveCompare(transaction.category ?? "") == .orderedSame
+            $0.type == typeCategory && $0.name.caseInsensitiveCompare(transaction.category! ?? "") == .orderedSame
         })
         let primary = resolvePrimaryAccount(from: accounts)
 
@@ -65,6 +63,7 @@ enum VoiceTransactionCreator {
             VoiceTransactionDraft(
                 notes: transaction.notes,
                 amount: transaction.amount,
+                date: parsedDate,
                 transactionType: transactionType,
                 account: primary,
                 category: category
@@ -84,6 +83,7 @@ enum VoiceTransactionCreator {
             let fallbackDraft = VoiceTransactionDraft(
                 notes: payload.transaction?.notes ?? "",
                 amount: payload.transaction?.amount,
+                date: Date(),
                 transactionType: TransactionType(rawValue: payload.transaction?.transactionType ?? "") ?? .expense,
                 account: resolvePrimaryAccount(from: accounts),
                 category: nil
@@ -93,7 +93,7 @@ enum VoiceTransactionCreator {
 
         guard let draft = buildResult.draft else {
             return .needsManualEntry(
-                VoiceTransactionDraft(notes: "", amount: nil, transactionType: .expense, account: nil, category: nil),
+                VoiceTransactionDraft(notes: "", amount: nil, date: Date(), transactionType: .expense, account: nil, category: nil),
                 failure: .invalidJSON
             )
         }
@@ -104,7 +104,7 @@ enum VoiceTransactionCreator {
         guard draft.account != nil else {
             return .needsManualEntry(draft, failure: .noPrimaryAccount)
         }
-        let requiredType: CategoryType = draft.transactionType == .expense ? .expense : .income
+        let requiredType: TransactionType = draft.transactionType == .expense ? .expense : .income
         let typeCategories = categories.filter { $0.type == requiredType }
         guard !typeCategories.isEmpty else {
             return .needsManualEntry(draft, failure: .noCategoriesForType)
@@ -116,7 +116,7 @@ enum VoiceTransactionCreator {
         let transaction = Transaction(
             notes: draft.notes,
             amount: amount,
-            date: Date(),
+            date: draft.date,
             transactionType: draft.transactionType,
             category: draft.category,
             account: draft.account
@@ -131,5 +131,29 @@ enum VoiceTransactionCreator {
             return explicitPrimary
         }
         return nil
+    }
+
+    private static func parseTransactionDate(_ value: String) -> Date? {
+        let isoFormatter = ISO8601DateFormatter()
+        isoFormatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        if let date = isoFormatter.date(from: value) {
+            return date
+        }
+
+        isoFormatter.formatOptions = [.withInternetDateTime]
+        if let date = isoFormatter.date(from: value) {
+            return date
+        }
+
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.timeZone = TimeZone.current
+        formatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss"
+        if let date = formatter.date(from: value) {
+            return date
+        }
+
+        formatter.dateFormat = "yyyy-MM-dd"
+        return formatter.date(from: value)
     }
 }

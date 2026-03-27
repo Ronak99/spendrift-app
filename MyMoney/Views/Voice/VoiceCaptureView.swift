@@ -339,9 +339,10 @@ struct VoiceCaptureView: View {
                     draft: VoiceTransactionDraft(
                         notes: "",
                         amount: nil,
+                        date: Date(),
                         transactionType: .expense,
                         account: accounts.first(where: { $0.isPrimary }),
-                        category: nil
+                        category: nil,
                     ),
                     reviewHint: error.localizedDescription
                 )

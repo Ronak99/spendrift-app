@@ -42,9 +42,16 @@ struct OpenAIVoiceTransactionService {
     }
 
     private func buildPrompt(categories: [TransactionCategory]) throws -> String {
-        let basePrompt = try loadBasePrompt()
+        let todayISO = makeTodayISODateString()
+        let basePrompt = try loadBasePrompt().replacingOccurrences(of: "{{TODAY_ISO}}", with: todayISO)
         let income = categories.filter { $0.type == .income }.map(\.name).sorted()
         let expense = categories.filter { $0.type == .expense }.map(\.name).sorted()
+
+        let runtimeDateBlock = """
+        ## CURRENT DATE CONTEXT
+        - Today is \(todayISO). If the user does not mention a date explicitly, use this exact value.
+        
+        """
 
         let dynamicCategoryBlock = """
 
@@ -65,7 +72,7 @@ struct OpenAIVoiceTransactionService {
         - If no match exists in dynamic categories, use null.
         """
 
-        return basePrompt + dynamicCategoryBlock
+        return basePrompt + "\n\n" + runtimeDateBlock + dynamicCategoryBlock
     }
 
     private func loadBasePrompt() throws -> String {
@@ -80,5 +87,13 @@ struct OpenAIVoiceTransactionService {
         }
 
         throw OpenAIServiceError.failedToBuildRequest
+    }
+
+    private func makeTodayISODateString() -> String {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.timeZone = TimeZone.current
+        formatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss"
+        return formatter.string(from: Date())
     }
 }

@@ -32,7 +32,7 @@ If you could not confidently parse the transaction, respond with:
 - Always return raw JSON. Never wrap it in markdown or add any surrounding text.
 - `amount` must always be a positive number regardless of whether it's income or expense. The `transactionType` field handles the sign.
 - `transactionType` must be exactly `"income"` or `"expense"` (lowercase).
-- For `date`, if the user says "today", "just now", or gives no date, use today's date. If they say "yesterday", subtract one day. Use ISO 8601 format.
+- For `date`, if the user says "today", "just now", or gives no date, use `{{TODAY_ISO}}`. If they say "yesterday", subtract one day. Use ISO 8601 format.
 - For `category`, pick the single best match from the allowed list below. If nothing fits, use `null`.
 - If the amount is missing or completely unintelligible, return the error JSON.
 
@@ -76,7 +76,7 @@ User says: "I spent 450 rupees on groceries today"
   "transaction": {
     "notes": "Groceries",
     "amount": 450,
-    "date": "2025-03-24T00:00:00",
+    "date": "{{TODAY_ISO}}",
     "transactionType": "expense",
     "category": "Food"
   }
@@ -88,7 +88,7 @@ User says: "Got my salary credited, 85000"
   "transaction": {
     "notes": "Salary credited",
     "amount": 85000,
-    "date": "2025-03-24T00:00:00",
+    "date": "{{TODAY_ISO}}",
     "transactionType": "income",
     "category": "Salary"
   }
