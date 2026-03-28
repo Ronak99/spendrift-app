@@ -9,15 +9,23 @@ import SwiftUI
 import SwiftData
 
 struct ContentView: View {
+    private static let voiceExpenseIntentLaunchAtKey = "voiceExpenseIntentLaunchAt"
+
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.scenePhase) private var scenePhase
     @Query(sort: \TransactionCategory.name) private var categories: [TransactionCategory]
     @AppStorage("themeColor") private var themeColorName: String = "Blue"
     @State private var selectedTab = 0
     @State private var showCreateTransaction = false
+    @State private var voiceCaptureTrigger: UUID?
+    @State private var useCompactVoiceCapture = false
     
     var body: some View {
         TabView(selection: $selectedTab) {
-            TransactionsView()
+            TransactionsView(
+                voiceCaptureTrigger: voiceCaptureTrigger,
+                useCompactVoiceCapture: useCompactVoiceCapture
+            )
                 .tabItem {
                     Image(systemName: "list.bullet")
                     Text("Transactions")
@@ -48,6 +56,11 @@ struct ContentView: View {
         .onAppear {
             QuickActionsManager.setupQuickActions()
             seedDefaultCategoriesIfNeeded()
+            handleVoiceIntentLaunchIfNeeded()
+        }
+        .onChange(of: scenePhase) { _, newPhase in
+            guard newPhase == .active else { return }
+            handleVoiceIntentLaunchIfNeeded()
         }
         .onOpenURL { url in
             handleQuickAction(url: url)
@@ -64,9 +77,27 @@ struct ContentView: View {
         case "createTransaction":
             showCreateTransaction = true
             selectedTab = 0
+            useCompactVoiceCapture = false
+        case "voiceExpense":
+            selectedTab = 0
+            useCompactVoiceCapture = true
+            voiceCaptureTrigger = UUID()
         default:
+            useCompactVoiceCapture = false
             break
         }
+    }
+
+    private func handleVoiceIntentLaunchIfNeeded() {
+        let defaults = UserDefaults.standard
+        guard defaults.object(forKey: Self.voiceExpenseIntentLaunchAtKey) != nil else {
+            return
+        }
+
+        defaults.removeObject(forKey: Self.voiceExpenseIntentLaunchAtKey)
+        selectedTab = 0
+        useCompactVoiceCapture = true
+        voiceCaptureTrigger = UUID()
     }
 
     private func seedDefaultCategoriesIfNeeded() {

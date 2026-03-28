@@ -27,6 +27,7 @@
 		65BB664B2E3F644F0058CDE8 /* MyMoney.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MyMoney.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		65BB66582E3F64510058CDE8 /* MyMoneyTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MyMoneyTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		65BB66622E3F64510058CDE8 /* MyMoneyUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MyMoneyUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		A10000012E3F70000058CDE8 /* MyMoneyVoiceWidget.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = MyMoneyVoiceWidget.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -43,6 +44,11 @@
 		65BB66652E3F64510058CDE8 /* MyMoneyUITests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			path = MyMoneyUITests;
+			sourceTree = "<group>";
+		};
+		A10000022E3F70000058CDE8 /* MyMoneyVoiceWidget */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = MyMoneyVoiceWidget;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -69,6 +75,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		A10000032E3F70000058CDE8 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -78,6 +91,7 @@
 				65BB664D2E3F644F0058CDE8 /* MyMoney */,
 				65BB665B2E3F64510058CDE8 /* MyMoneyTests */,
 				65BB66652E3F64510058CDE8 /* MyMoneyUITests */,
+				A10000022E3F70000058CDE8 /* MyMoneyVoiceWidget */,
 				65BB664C2E3F644F0058CDE8 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -88,6 +102,7 @@
 				65BB664B2E3F644F0058CDE8 /* MyMoney.app */,
 				65BB66582E3F64510058CDE8 /* MyMoneyTests.xctest */,
 				65BB66622E3F64510058CDE8 /* MyMoneyUITests.xctest */,
+				A10000012E3F70000058CDE8 /* MyMoneyVoiceWidget.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -163,6 +178,28 @@
 			productReference = 65BB66622E3F64510058CDE8 /* MyMoneyUITests.xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";
 		};
+		A10000062E3F70000058CDE8 /* MyMoneyVoiceWidget */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = A10000072E3F70000058CDE8 /* Build configuration list for PBXNativeTarget "MyMoneyVoiceWidget" */;
+			buildPhases = (
+				A10000052E3F70000058CDE8 /* Sources */,
+				A10000032E3F70000058CDE8 /* Frameworks */,
+				A10000042E3F70000058CDE8 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				A10000022E3F70000058CDE8 /* MyMoneyVoiceWidget */,
+			);
+			name = MyMoneyVoiceWidget;
+			packageProductDependencies = (
+			);
+			productName = MyMoneyVoiceWidget;
+			productReference = A10000012E3F70000058CDE8 /* MyMoneyVoiceWidget.appex */;
+			productType = "com.apple.product-type.widgetkit-extension";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -184,6 +221,9 @@
 						CreatedOnToolsVersion = 16.4;
 						TestTargetID = 65BB664A2E3F644F0058CDE8;
 					};
+					A10000062E3F70000058CDE8 = {
+						CreatedOnToolsVersion = 16.4;
+					};
 				};
 			};
 			buildConfigurationList = 65BB66462E3F644F0058CDE8 /* Build configuration list for PBXProject "MyMoney" */;
@@ -203,6 +243,7 @@
 				65BB664A2E3F644F0058CDE8 /* MyMoney */,
 				65BB66572E3F64510058CDE8 /* MyMoneyTests */,
 				65BB66612E3F64510058CDE8 /* MyMoneyUITests */,
+				A10000062E3F70000058CDE8 /* MyMoneyVoiceWidget */,
 			);
 		};
 /* End PBXProject section */
@@ -229,6 +270,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		A10000042E3F70000058CDE8 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
@@ -247,6 +295,13 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		65BB665E2E3F64510058CDE8 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A10000052E3F70000058CDE8 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -403,7 +458,9 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "MyMoney uses microphone to record voice transactions.";
+				INFOPLIST_KEY_NSSupportsLiveActivities = YES;
 				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "MyMoney uses speech recognition to convert voice to transactions.";
+				INFOPLIST_KEY_UIBackgroundModes_0 = audio;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -438,7 +495,9 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "MyMoney uses microphone to record voice transactions.";
+				INFOPLIST_KEY_NSSupportsLiveActivities = YES;
 				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "MyMoney uses speech recognition to convert voice to transactions.";
+				INFOPLIST_KEY_UIBackgroundModes_0 = audio;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -533,6 +592,44 @@
 			};
 			name = Release;
 		};
+		A10000082E3F70000058CDE8 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = YAHK4G4F5A;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSSupportsLiveActivities = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.5;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.ronakpunase.MyMoney.MyMoneyVoiceWidget;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Debug;
+		};
+		A10000092E3F70000058CDE8 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = YAHK4G4F5A;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSSupportsLiveActivities = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.5;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.ronakpunase.MyMoney.MyMoneyVoiceWidget;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -568,6 +665,15 @@
 			buildConfigurations = (
 				65BB66732E3F64510058CDE8 /* Debug */,
 				65BB66742E3F64510058CDE8 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		A10000072E3F70000058CDE8 /* Build configuration list for PBXNativeTarget "MyMoneyVoiceWidget" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A10000082E3F70000058CDE8 /* Debug */,
+				A10000092E3F70000058CDE8 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

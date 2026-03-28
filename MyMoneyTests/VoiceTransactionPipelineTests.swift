@@ -11,6 +11,17 @@ import Testing
 @testable import MyMoney
 
 struct VoiceTransactionPipelineTests {
+    private func makeInMemoryContext() throws -> ModelContext {
+        let config = ModelConfiguration(isStoredInMemoryOnly: true)
+        let container = try ModelContainer(
+            for: Transaction.self,
+            Account.self,
+            TransactionCategory.self,
+            configurations: config
+        )
+        return ModelContext(container)
+    }
+
     @Test
     func decodeOpenAISuccessPayload() throws {
         let raw = """
@@ -62,14 +73,7 @@ struct VoiceTransactionPipelineTests {
 
     @Test
     func creatorRequiresPrimaryAccount() throws {
-        let config = ModelConfiguration(isStoredInMemoryOnly: true)
-        let container = try ModelContainer(
-            for: Transaction.self,
-            Account.self,
-            TransactionCategory.self,
-            configurations: config
-        )
-        let context = ModelContext(container)
+        let context = try makeInMemoryContext()
 
         let account = Account(name: "SBI", balance: 1000, icon: .sbi, isPrimary: false)
         let category = TransactionCategory(name: "Transportation", type: .expense)
@@ -99,6 +103,81 @@ struct VoiceTransactionPipelineTests {
             #expect(failure == .noPrimaryAccount)
         default:
             Issue.record("Expected noPrimaryAccount failure.")
+        }
+    }
+
+    @Test
+    func creatorParsesISODateWithoutTimezone() throws {
+        let context = try makeInMemoryContext()
+        let account = Account(name: "SBI", balance: 1000, icon: .sbi, isPrimary: true)
+        let category = TransactionCategory(name: "Food", type: .expense)
+        context.insert(account)
+        context.insert(category)
+
+        let payload = OpenAIVoiceTransactionPayload(
+            status: "success",
+            transaction: OpenAIVoiceTransaction(
+                notes: "Lunch",
+                amount: 450,
+                date: "2025-03-24T00:00:00",
+                transactionType: "expense",
+                category: "Food"
+            ),
+            reason: nil
+        )
+
+        let result = VoiceTransactionCreator.createFromAIVoice(
+            payload: payload,
+            accounts: [account],
+            categories: [category],
+            modelContext: context
+        )
+
+        switch result {
+        case .created(let transaction):
+            let calendar = Calendar.current
+            let components = calendar.dateComponents([.year, .month, .day], from: transaction.date)
+            #expect(components.year == 2025)
+            #expect(components.month == 3)
+            #expect(components.day == 24)
+        default:
+            Issue.record("Expected created transaction for valid date format.")
+        }
+    }
+
+    @Test
+    func creatorFallsBackToNowForInvalidDateString() throws {
+        let context = try makeInMemoryContext()
+        let account = Account(name: "SBI", balance: 1000, icon: .sbi, isPrimary: true)
+        let category = TransactionCategory(name: "Food", type: .expense)
+        context.insert(account)
+        context.insert(category)
+
+        let now = Date()
+        let payload = OpenAIVoiceTransactionPayload(
+            status: "success",
+            transaction: OpenAIVoiceTransaction(
+                notes: "Lunch",
+                amount: 450,
+                date: "not-a-date",
+                transactionType: "expense",
+                category: "Food"
+            ),
+            reason: nil
+        )
+
+        let result = VoiceTransactionCreator.createFromAIVoice(
+            payload: payload,
+            accounts: [account],
+            categories: [category],
+            modelContext: context
+        )
+
+        switch result {
+        case .created(let transaction):
+            #expect(abs(transaction.date.timeIntervalSince(now)) < 5)
+        default:
+            Issue.record("Expected created transaction with fallback date.")
         }
     }
 }

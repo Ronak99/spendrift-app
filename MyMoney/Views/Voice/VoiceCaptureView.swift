@@ -17,13 +17,18 @@ private struct ManualEntrySheetPayload: Identifiable {
 }
 
 struct VoiceCaptureView: View {
+    enum Mode {
+        case standard
+        case compactIntent
+    }
+
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \Account.createdOn) private var accounts: [Account]
     @Query(sort: \TransactionCategory.name) private var categories: [TransactionCategory]
 
     @State private var speechService = SpeechTranscriptionService()
-    @State private var openAIService = OpenAIVoiceTransactionService()
+    @State private var pipelineService = VoiceExpensePipelineService()
     @State private var liveActivityController = VoiceLiveActivityController()
     @State private var previewPlayer = VoicePreviewPlayer()
 
@@ -34,6 +39,11 @@ struct VoiceCaptureView: View {
     @State private var reviewCaptureDurationSeconds: Double = 0
     @State private var reviewCaptureError: String?
     @State private var isSubmitting = false
+    private let mode: Mode
+
+    init(mode: Mode = .standard) {
+        self.mode = mode
+    }
 
     private var isRecording: Bool {
         speechService.state == .recording
@@ -105,7 +115,7 @@ struct VoiceCaptureView: View {
                     .multilineTextAlignment(.center)
                     .padding(.horizontal)
 
-                if hasReviewCapture, !isRecording {
+                if hasReviewCapture, !isRecording, mode == .standard {
                     reviewSection
                 }
 
@@ -132,6 +142,11 @@ struct VoiceCaptureView: View {
                 guard manualEntrySheet == nil else { return }
                 previewPlayer.stop()
                 speechService.reset()
+            }
+            .onAppear {
+                if mode == .compactIntent && speechService.state == .idle && !hasReviewCapture {
+                    handlePrimaryRecordAction()
+                }
             }
         }
     }
@@ -215,6 +230,8 @@ struct VoiceCaptureView: View {
         HStack(spacing: 16) {
             Button("Close") { dismiss() }
                 .buttonStyle(.bordered)
+                .opacity(mode == .compactIntent ? 0 : 1)
+                .allowsHitTesting(mode != .compactIntent)
             if !hasReviewCapture || isRecording {
                 Button(primaryActionTitle) {
                     handlePrimaryRecordAction()
@@ -249,11 +266,16 @@ struct VoiceCaptureView: View {
 
     private func handlePrimaryRecordAction() {
         if speechService.state == .recording {
-            liveActivityController.update(state: .transcribing, message: "Review recording...")
+            liveActivityController.update(state: .reviewing, message: "Finishing recording...")
             speechService.stopRecordingForReview()
             if let url = speechService.capturedRecordingURL {
                 previewPlayer.prepare(url: url)
-                Task { await refreshReviewCaptureStats() }
+                Task {
+                    await refreshReviewCaptureStats()
+                    if mode == .compactIntent && canSubmit {
+                        await submitCapturedAudio()
+                    }
+                }
             } else {
                 reviewAudioByteCount = 0
                 reviewCaptureDurationSeconds = 0
@@ -313,28 +335,24 @@ struct VoiceCaptureView: View {
         }
 
         await MainActor.run {
-            liveActivityController.update(state: .saving, message: "Analyzing voice JSON...")
+            liveActivityController.update(state: .processing, message: "Analyzing voice...")
         }
 
-        do {
-            let payload = try await openAIService.parseTransaction(
-                audioData: audioData,
-                categories: categories
-            )
+        let submitResult = await pipelineService.submitAudio(
+            audioData: audioData,
+            accounts: accounts,
+            categories: categories,
+            modelContext: modelContext
+        )
 
-            let result = VoiceTransactionCreator.createFromAIVoice(
-                payload: payload,
-                accounts: accounts,
-                categories: categories,
-                modelContext: modelContext
-            )
-
+        switch submitResult {
+        case .success(let result):
             await MainActor.run {
                 handleCreateResult(result)
             }
-        } catch {
+        case .failure(let error):
             await MainActor.run {
-                liveActivityController.update(state: .failed, message: "OpenAI error")
+                liveActivityController.failAndEnd(message: "OpenAI error")
                 manualEntrySheet = ManualEntrySheetPayload(
                     draft: VoiceTransactionDraft(
                         notes: "",
@@ -344,16 +362,25 @@ struct VoiceCaptureView: View {
                         account: accounts.first(where: { $0.isPrimary }),
                         category: nil,
                     ),
-                    reviewHint: error.localizedDescription
+                    reviewHint: pipelineErrorMessage(error)
                 )
             }
         }
     }
 
+    private func pipelineErrorMessage(_ error: VoicePipelineError) -> String {
+        switch error {
+        case .openAI(let message):
+            return message
+        }
+    }
+
     private func handleCreateResult(_ result: VoiceCreateResult) {
         switch result {
-        case .created:
-            liveActivityController.end(message: "Saved")
+        case .created(let transaction):
+            let categoryName = transaction.category?.name ?? "Expense"
+            let amountLabel = transaction.amount.formatCurrency
+            liveActivityController.succeedAndEnd(message: "\(amountLabel) · \(categoryName)")
             toastMessage = "Transaction saved from AI voice JSON."
             dismiss()
         case .needsConfirmation(let draft, _):
@@ -361,13 +388,13 @@ struct VoiceCaptureView: View {
                 draft: draft,
                 reviewHint: "Review the details below, then save."
             )
-            liveActivityController.update(state: .transcribing, message: "Review required")
+            liveActivityController.update(state: .reviewing, message: "Review required")
         case .needsManualEntry(let draft, let failure):
             manualEntrySheet = ManualEntrySheetPayload(
                 draft: draft,
                 reviewHint: failureMessage(for: failure)
             )
-            liveActivityController.update(state: .failed, message: "Needs manual review")
+            liveActivityController.failAndEnd(message: "Needs manual review")
         }
     }
 
