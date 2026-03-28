@@ -5,8 +5,9 @@
 //  Created by Ronak Punase on 25/02/26.
 //
 
-import SwiftUI
+import Combine
 import SwiftData
+import SwiftUI
 
 struct ContentView: View {
     private static let voiceExpenseIntentLaunchAtKey = "voiceExpenseIntentLaunchAt"
@@ -60,6 +61,9 @@ struct ContentView: View {
         }
         .onChange(of: scenePhase) { _, newPhase in
             guard newPhase == .active else { return }
+            handleVoiceIntentLaunchIfNeeded()
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .voiceExpenseIntentTriggered)) { _ in
             handleVoiceIntentLaunchIfNeeded()
         }
         .onOpenURL { url in

@@ -18,6 +18,7 @@ struct VoiceExpenseIntent: AppIntent {
     @MainActor
     func perform() async throws -> some IntentResult {
         UserDefaults.standard.set(Date().timeIntervalSince1970, forKey: Self.launchTriggerKey)
+        NotificationCenter.default.post(name: .voiceExpenseIntentTriggered, object: nil)
         return .result()
     }
 }
