@@ -11,7 +11,6 @@ import SwiftUI
 
 struct ContentView: View {
     private static let voiceExpenseIntentLaunchAtKey = "voiceExpenseIntentLaunchAt"
-
     @Environment(\.modelContext) private var modelContext
     @Environment(\.scenePhase) private var scenePhase
     @Query(sort: \TransactionCategory.name) private var categories: [TransactionCategory]
@@ -83,6 +82,7 @@ struct ContentView: View {
             selectedTab = 0
             useCompactVoiceCapture = false
         case "voiceExpense":
+            showCreateTransaction = false
             selectedTab = 0
             useCompactVoiceCapture = true
             voiceCaptureTrigger = UUID()
@@ -99,6 +99,7 @@ struct ContentView: View {
         }
 
         defaults.removeObject(forKey: Self.voiceExpenseIntentLaunchAtKey)
+        showCreateTransaction = false
         selectedTab = 0
         useCompactVoiceCapture = true
         voiceCaptureTrigger = UUID()

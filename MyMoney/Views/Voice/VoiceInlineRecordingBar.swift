@@ -28,9 +28,11 @@ struct VoiceInlineRecordingBar: View {
             }
         }
         .frame(maxWidth: .infinity)
-        .background(.ultraThinMaterial, in: UnevenRoundedRectangle(topLeadingRadius: 16, topTrailingRadius: 16))
+        .background(.ultraThinMaterial, in: RoundedRectangle(cornerSize: .init(width: 24, height: 24)))
         .shadow(color: .black.opacity(0.12), radius: 12, y: -4)
-        .padding(.horizontal, 0)
+        .padding(.horizontal, 16)
+        .padding(.bottom, 4)
+        .animation(.bouncy)
     }
 
     private var recordingContent: some View {
@@ -58,21 +60,14 @@ struct VoiceInlineRecordingBar: View {
                         categories: categories
                     )
                 } label: {
-                    Text("Stop")
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(.white)
-                        .padding(.horizontal, 16)
-                        .padding(.vertical, 8)
-                        .background(Color.red, in: Capsule())
+                    Image(systemName: "stop.fill")
+                        .font(.title2)
+                        .symbolRenderingMode(.hierarchical)
+                        .foregroundStyle(.red)
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel("Stop and save")
             }
-
-            Text("Speak your transaction — we’ll save it automatically when you tap Stop.")
-                .font(.footnote)
-                .foregroundStyle(.secondary)
-                .fixedSize(horizontal: false, vertical: true)
         }
         .padding(.horizontal, 16)
         .padding(.top, 14)
@@ -127,10 +122,10 @@ private struct VoiceInlineMiniWaveform: View {
     var body: some View {
         TimelineView(.animation(minimumInterval: 0.06, paused: !isActive)) { timeline in
             let t = timeline.date.timeIntervalSinceReferenceDate
-            HStack(alignment: .center, spacing: 2) {
+            HStack(alignment: .center, spacing: 7) {
                 ForEach(0..<barCount, id: \.self) { index in
                     Capsule()
-                        .fill(Color.accentColor.opacity(0.85))
+                        .fill(.red.opacity(0.8))
                         .frame(width: 2.5, height: barHeight(index: index, t: t))
                 }
             }
@@ -145,3 +140,79 @@ private struct VoiceInlineMiniWaveform: View {
     }
 }
 
+// MARK: - Previews
+
+#if DEBUG
+private enum VoiceInlineRecordingBarPreviewData {
+    static let accounts: [Account] = [
+        Account(name: "HDFC Primary", balance: 42_500, icon: .hdfc, isPrimary: true),
+        Account(name: "Cash", balance: 1_200, icon: .unknown, isPrimary: false)
+    ]
+
+    static let categories: [TransactionCategory] = [
+        TransactionCategory(name: "Food", type: .expense),
+        TransactionCategory(name: "Transportation", type: .expense),
+        TransactionCategory(name: "Salary", type: .income)
+    ]
+
+    /// Tweak this string to iterate on error copy in the canvas.
+    static let sampleErrorMessage = "Transaction could not be created."
+}
+
+/// Hosts the bar over a neutral background; change `state` to switch canvas variants.
+private struct VoiceInlineRecordingBarPreviewHost: View {
+    var state: VoiceInlineDisplayState
+    @State private var controller = VoiceInlineCaptureController()
+
+    var body: some View {
+        ZStack(alignment: .bottom) {
+            Color(.systemGroupedBackground)
+                .ignoresSafeArea()
+            VoiceInlineRecordingBar(
+                controller: controller,
+                accounts: VoiceInlineRecordingBarPreviewData.accounts,
+                categories: VoiceInlineRecordingBarPreviewData.categories
+            )
+        }
+        .modelContainer(for: [Transaction.self, Account.self, TransactionCategory.self], inMemory: true)
+        .onAppear {
+            controller.applyPreviewDisplayState(state)
+        }
+    }
+}
+
+#Preview("Recording") {
+    VoiceInlineRecordingBarPreviewHost(state: .recording)
+}
+
+#Preview("Processing") {
+    VoiceInlineRecordingBarPreviewHost(state: .processing)
+}
+
+#Preview("Error") {
+    VoiceInlineRecordingBarPreviewHost(state: .error(VoiceInlineRecordingBarPreviewData.sampleErrorMessage))
+}
+
+#Preview("Gallery — all states") {
+    ScrollView(.horizontal, showsIndicators: false) {
+        HStack(alignment: .bottom, spacing: 16) {
+            previewCell(title: "Recording", state: .recording)
+            previewCell(title: "Processing", state: .processing)
+            previewCell(title: "Error", state: .error(VoiceInlineRecordingBarPreviewData.sampleErrorMessage))
+        }
+        .padding()
+    }
+    .background(Color(.systemGroupedBackground))
+}
+
+@MainActor
+private func previewCell(title: String, state: VoiceInlineDisplayState) -> some View {
+    VStack(spacing: 8) {
+        Text(title)
+            .font(.caption.weight(.semibold))
+            .foregroundStyle(.secondary)
+        VoiceInlineRecordingBarPreviewHost(state: state)
+            .frame(width: 390)
+    }
+}
+#endif

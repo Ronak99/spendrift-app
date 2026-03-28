@@ -220,4 +220,11 @@ final class VoiceInlineCaptureController {
             return "Could not parse transaction date from AI JSON."
         }
     }
+
+    #if DEBUG
+    /// For SwiftUI Previews: drive the bar UI without starting the microphone.
+    func applyPreviewDisplayState(_ state: VoiceInlineDisplayState) {
+        displayState = state
+    }
+    #endif
 }

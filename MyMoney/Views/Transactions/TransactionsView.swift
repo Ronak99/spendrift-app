@@ -150,7 +150,7 @@ struct TransactionsView: View {
                 }
             }
             .overlay(alignment: .bottom) {
-                if voiceInline.isBarVisible {
+                if true {
                     VoiceInlineRecordingBar(
                         controller: voiceInline,
                         accounts: accounts,
@@ -175,6 +175,7 @@ struct TransactionsView: View {
             }
             .onChange(of: voiceCaptureTrigger) { _, trigger in
                 guard trigger != nil else { return }
+                showCreateSheet = false
                 voiceInline.beginCapture()
             }
         }
