@@ -11,9 +11,11 @@ import SwiftData
 struct TransactionsView: View {
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \Transaction.date, order: .reverse) private var allTransactions: [Transaction]
+    @Query(sort: \Account.createdOn) private var accounts: [Account]
+    @Query(sort: \TransactionCategory.name) private var categories: [TransactionCategory]
     @State private var viewModel = TransactionViewModel()
     @State private var showCreateSheet = false
-    @State private var showVoiceCapture = false
+    @State private var voiceInline = VoiceInlineCaptureController()
     @State private var selectedTransaction: Transaction?
     let voiceCaptureTrigger: UUID?
     let useCompactVoiceCapture: Bool
@@ -46,6 +48,7 @@ struct TransactionsView: View {
     }
     
     var body: some View {
+        @Bindable var voice = voiceInline
         NavigationStack {
             VStack(spacing: 0) {
                 // Header with date selector
@@ -132,10 +135,11 @@ struct TransactionsView: View {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     HStack(spacing: 12) {
                         Button(action: {
-                            showVoiceCapture = true
+                            voiceInline.beginCapture()
                         }) {
                             Image(systemName: "mic")
                         }
+                        .disabled(voiceInline.blocksNewCapture)
 
                         Button(action: {
                             showCreateSheet = true
@@ -145,22 +149,33 @@ struct TransactionsView: View {
                     }
                 }
             }
+            .overlay(alignment: .bottom) {
+                if voiceInline.isBarVisible {
+                    VoiceInlineRecordingBar(
+                        controller: voiceInline,
+                        accounts: accounts,
+                        categories: categories
+                    )
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
+                }
+            }
+            .animation(.spring(response: 0.38, dampingFraction: 0.86), value: voiceInline.displayState)
             .sheet(isPresented: $showCreateSheet) {
                 UpdateTransactionSheet(transaction: nil)
             }
             .sheet(item: $selectedTransaction) { transaction in
                 UpdateTransactionSheet(transaction: transaction)
             }
-            .sheet(isPresented: $showVoiceCapture) {
-                if useCompactVoiceCapture && voiceCaptureTrigger != nil {
-                    VoiceCaptureView(mode: .compactIntent)
-                } else {
-                    VoiceCaptureView()
-                }
+            .sheet(item: $voice.manualSheetPayload) { payload in
+                UpdateTransactionSheet(
+                    transaction: nil,
+                    draft: payload.draft,
+                    voiceReviewHint: payload.hint
+                )
             }
             .onChange(of: voiceCaptureTrigger) { _, trigger in
                 guard trigger != nil else { return }
-                showVoiceCapture = true
+                voiceInline.beginCapture()
             }
         }
     }
