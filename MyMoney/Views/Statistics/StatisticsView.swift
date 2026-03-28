@@ -49,7 +49,10 @@ struct StatisticsView: View {
     private func formatCurrency(_ amount: Decimal) -> String {
         let formatter = NumberFormatter()
         formatter.numberStyle = .currency
-        formatter.currencyCode = "USD"
-        return formatter.string(from: amount as NSNumber) ?? "$0.00"
+        formatter.currencyCode = "INR"
+        formatter.locale = Locale(identifier: "en_IN")
+        formatter.minimumFractionDigits = 0
+        formatter.maximumFractionDigits = 0
+        return formatter.string(from: amount as NSNumber) ?? "₹0"
     }
 }

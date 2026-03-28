@@ -140,7 +140,7 @@ struct UpdateTransactionSheet: View {
                 HStack {
                     Text("Amount")
                     Spacer()
-                    TextField("0.00", text: $amount)
+                    TextField("0", text: $amount)
                         .keyboardType(.decimalPad)
                         .multilineTextAlignment(.trailing)
                 }
@@ -195,7 +195,7 @@ struct UpdateTransactionSheet: View {
             .onAppear {
                 if let transaction = transaction {
                     notes = transaction.notes
-                    amount = String(transaction.amount)
+                    amount = transaction.amount.wholeAmountDisplayString
                     date = transaction.date
                     transactionType = transaction.transactionType
                     selectedAccount = transaction.account
@@ -209,7 +209,7 @@ struct UpdateTransactionSheet: View {
                     if let draft {
                         notes = draft.notes
                         if let amount = draft.amount {
-                            self.amount = String(amount)
+                            self.amount = amount.wholeAmountDisplayString
                         }
                     }
                 }

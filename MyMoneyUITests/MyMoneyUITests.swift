@@ -53,7 +53,7 @@ class MyMoneyUITestBase: XCTestCase {
         nameField.tap()
         nameField.typeText(name)
 
-        let balanceField = app.textFields["0.00"]
+        let balanceField = app.textFields["0"]
         balanceField.tap()
         balanceField.typeText(balance)
 
@@ -128,7 +128,7 @@ class MyMoneyUITestBase: XCTestCase {
         categoryButton.tap()
 
         // Enter amount
-        let amountField = app.textFields["0.00"]
+        let amountField = app.textFields["0"]
         amountField.tap()
         amountField.typeText(amount)
 
@@ -176,7 +176,7 @@ final class AccountIntegrationTests: MyMoneyUITestBase {
         navigateToAccounts()
         app.navigationBars.buttons["plus"].tap()
 
-        let balanceField = app.textFields["0.00"]
+        let balanceField = app.textFields["0"]
         balanceField.tap()
         balanceField.typeText("1000")
 

@@ -33,7 +33,7 @@ struct UpdateAccountSheet: View {
                 }
                 
                 Section("Initial Balance") {
-                    TextField("0.00", text: $balance)
+                    TextField("0", text: $balance)
                         .keyboardType(.decimalPad)
                 }
 
@@ -59,7 +59,7 @@ struct UpdateAccountSheet: View {
             .onAppear {
                 if let account = account {
                     name = account.name
-                    balance = String(account.balance)
+                    balance = account.balance.wholeAmountDisplayString
                     icon = account.icon
                     isPrimary = account.isPrimary
                 } else {
