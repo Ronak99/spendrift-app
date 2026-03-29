@@ -25,7 +25,7 @@ private enum QuickAmountIntentError: Error, CustomLocalizedStringResourceConvert
 struct QuickAmountExpenseIntent: AppIntent {
     static let title: LocalizedStringResource = "Log Expense Amount"
     static let description = IntentDescription(
-        "Create an expense transaction on your primary account without a category. Add Amount from Ask for Input or a variable in Shortcuts."
+        "Create an expense on your primary account. Optionally choose an expense category from your data, or leave category unset for uncategorized. Add Amount from Ask for Input or a variable in Shortcuts."
     )
     static let openAppWhenRun: Bool = false
 
@@ -35,19 +35,25 @@ struct QuickAmountExpenseIntent: AppIntent {
     @Parameter(title: "Notes", description: "Optional note for the transaction.", default: "")
     var notes: String
 
+    @Parameter(
+        title: "Category",
+        description: "Optional expense category from the app. Leave unset to log as uncategorized."
+    )
+    var category: ExpenseCategoryEntity?
+
     static var parameterSummary: some ParameterSummary {
         Summary("Log expense of \(\.$amount)") {
             \.$notes
+            \.$category
         }
     }
 
     @MainActor
     func perform() async throws -> some IntentResult & ProvidesDialog {
-        let inMemory = ProcessInfo.processInfo.arguments.contains("-UITesting")
-        let schema = Schema([Transaction.self, Account.self, TransactionCategory.self])
-        let config = ModelConfiguration(isStoredInMemoryOnly: inMemory)
-        let container = try ModelContainer(for: schema, configurations: [config])
+        let container = try IntentSwiftData.makeModelContainer()
         let context = ModelContext(container)
+
+        let resolvedCategory = try Self.resolveCategorySelection(category, context: context)
 
         let accounts = try context.fetch(FetchDescriptor<Account>())
         let transaction: Transaction
@@ -55,6 +61,7 @@ struct QuickAmountExpenseIntent: AppIntent {
             transaction = try ShortcutQuickAmountTransaction.create(
                 amount: amount,
                 notes: notes,
+                category: resolvedCategory,
                 modelContext: context,
                 accounts: accounts
             )
@@ -66,7 +73,20 @@ struct QuickAmountExpenseIntent: AppIntent {
             throw error
         }
 
-        let message = "Logged expense of \(transaction.amount.formatCurrency)"
+        let categorySuffix = transaction.category.map { " in \($0.name)" } ?? ""
+        let message = "Logged expense of \(transaction.amount.formatCurrency)\(categorySuffix)"
         return .result(dialog: IntentDialog(stringLiteral: message))
+    }
+
+    /// Stale shortcut IDs or deleted categories resolve to `nil` so the transaction still saves.
+    private static func resolveCategorySelection(
+        _ entity: ExpenseCategoryEntity?,
+        context: ModelContext
+    ) throws -> TransactionCategory? {
+        guard let entity, let uuid = UUID(uuidString: entity.id) else { return nil }
+        let descriptor = FetchDescriptor<TransactionCategory>(
+            predicate: #Predicate<TransactionCategory> { $0.type.rawValue == "expense" && $0.id == uuid }
+        )
+        return try context.fetch(descriptor).first
     }
 }

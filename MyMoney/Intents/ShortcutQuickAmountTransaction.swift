@@ -14,11 +14,12 @@ enum ShortcutQuickAmountTransaction {
         case noPrimaryAccount
     }
 
-    /// Inserts an expense on the primary account with no category (uncategorized).
+    /// Inserts an expense on the primary account. Pass `category: nil` for uncategorized.
     @discardableResult
     static func create(
         amount: Double,
         notes: String,
+        category: TransactionCategory?,
         modelContext: ModelContext,
         accounts: [Account]
     ) throws -> Transaction {
@@ -31,7 +32,7 @@ enum ShortcutQuickAmountTransaction {
             amount: amount,
             date: Date(),
             transactionType: .expense,
-            category: nil,
+            category: category,
             account: primary
         )
         modelContext.insert(transaction)

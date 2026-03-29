@@ -33,6 +33,7 @@ struct ShortcutQuickAmountTransactionTests {
         let tx = try ShortcutQuickAmountTransaction.create(
             amount: 42.5,
             notes: "Coffee",
+            category: nil,
             modelContext: context,
             accounts: [other, primary]
         )
@@ -49,6 +50,26 @@ struct ShortcutQuickAmountTransactionTests {
     }
 
     @Test
+    func createAssignsExpenseCategoryWhenProvided() throws {
+        let context = try makeInMemoryContext()
+        let primary = Account(name: "Primary", balance: 0, icon: .unknown, isPrimary: true)
+        context.insert(primary)
+        let food = TransactionCategory(name: "Food", type: .expense, icon: .food)
+        context.insert(food)
+
+        let tx = try ShortcutQuickAmountTransaction.create(
+            amount: 25,
+            notes: "Lunch",
+            category: food,
+            modelContext: context,
+            accounts: [primary]
+        )
+
+        #expect(tx.category?.id == food.id)
+        #expect(tx.transactionType == .expense)
+    }
+
+    @Test
     func createRejectsNonPositiveAmount() throws {
         let context = try makeInMemoryContext()
         let primary = Account(name: "Primary", balance: 0, icon: .unknown, isPrimary: true)
@@ -58,6 +79,7 @@ struct ShortcutQuickAmountTransactionTests {
             try ShortcutQuickAmountTransaction.create(
                 amount: 0,
                 notes: "",
+                category: nil,
                 modelContext: context,
                 accounts: [primary]
             )
@@ -67,6 +89,7 @@ struct ShortcutQuickAmountTransactionTests {
             try ShortcutQuickAmountTransaction.create(
                 amount: -10,
                 notes: "",
+                category: nil,
                 modelContext: context,
                 accounts: [primary]
             )
@@ -83,6 +106,7 @@ struct ShortcutQuickAmountTransactionTests {
             try ShortcutQuickAmountTransaction.create(
                 amount: 99,
                 notes: "",
+                category: nil,
                 modelContext: context,
                 accounts: [nonPrimary]
             )
