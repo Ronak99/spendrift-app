@@ -18,6 +18,16 @@ struct ExpenseAppShortcuts: AppShortcutsProvider {
             ],
             shortTitle: "Record Voice Expense",
             systemImageName: "mic.fill"
+        ),
+        AppShortcut(
+            intent: QuickAmountExpenseIntent(),
+            phrases: [
+                "Log expense amount in \(.applicationName)",
+                "Quick expense in \(.applicationName)",
+                "Add expense amount to \(.applicationName)"
+            ],
+            shortTitle: "Log Expense Amount",
+            systemImageName: "textformat.123"
         )
     ]
 }
