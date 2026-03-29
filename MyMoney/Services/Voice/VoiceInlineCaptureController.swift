@@ -99,6 +99,69 @@ final class VoiceInlineCaptureController {
         }
     }
 
+    /// Process audio copied from Shortcuts (`VoiceExpenseIntent` + `IntentFile`). Deletes `fileURL` when finished.
+    func processImportedAudio(
+        fileURL: URL,
+        modelContext: ModelContext,
+        accounts: [Account],
+        categories: [TransactionCategory]
+    ) {
+        guard displayState == .hidden else { return }
+        manualSheetPayload = nil
+
+        liveActivityController.start()
+        liveActivityController.update(state: .processing, message: "Saving…")
+        displayState = .processing
+
+        Task {
+            let audioData: Data
+            do {
+                audioData = try VoiceShortcutAudioNormalizer.dataForOpenAIVoicePipeline(from: fileURL)
+            } catch {
+                await MainActor.run {
+                    Self.removeImportedFileIfPresent(fileURL)
+                    speechService.reset()
+                    liveActivityController.failAndEnd(message: "Invalid audio")
+                    displayState = .error(error.localizedDescription)
+                }
+                return
+            }
+
+            guard audioData.count > 440 else {
+                await MainActor.run {
+                    Self.removeImportedFileIfPresent(fileURL)
+                    speechService.reset()
+                    liveActivityController.failAndEnd(message: "Too short")
+                    displayState = .error("Recording is too short to process.")
+                }
+                return
+            }
+
+            let submitResult = await pipelineService.submitAudio(
+                audioData: audioData,
+                accounts: accounts,
+                categories: categories,
+                modelContext: modelContext
+            )
+
+            await MainActor.run {
+                Self.removeImportedFileIfPresent(fileURL)
+                speechService.reset()
+                switch submitResult {
+                case .success(let result):
+                    handleCreateResult(result, accounts: accounts)
+                case .failure(let pipelineError):
+                    liveActivityController.failAndEnd(message: "Couldn’t save")
+                    displayState = .error(pipelineErrorMessage(pipelineError))
+                }
+            }
+        }
+    }
+
+    private static func removeImportedFileIfPresent(_ url: URL) {
+        try? FileManager.default.removeItem(at: url)
+    }
+
     func openManualFromError(accounts: [Account], hint: String) {
         manualSheetPayload = VoiceInlineManualSheetPayload(
             draft: VoiceTransactionDraft(

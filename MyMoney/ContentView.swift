@@ -10,7 +10,6 @@ import SwiftData
 import SwiftUI
 
 struct ContentView: View {
-    private static let voiceExpenseIntentLaunchAtKey = "voiceExpenseIntentLaunchAt"
     @Environment(\.modelContext) private var modelContext
     @Environment(\.scenePhase) private var scenePhase
     @Query(sort: \TransactionCategory.name) private var categories: [TransactionCategory]
@@ -18,13 +17,15 @@ struct ContentView: View {
     @State private var selectedTab = 0
     @State private var showCreateTransaction = false
     @State private var voiceCaptureTrigger: UUID?
+    @State private var shortcutImportedAudio: ShortcutImportedAudioPayload?
     @State private var useCompactVoiceCapture = false
     
     var body: some View {
         TabView(selection: $selectedTab) {
             TransactionsView(
                 voiceCaptureTrigger: voiceCaptureTrigger,
-                useCompactVoiceCapture: useCompactVoiceCapture
+                useCompactVoiceCapture: useCompactVoiceCapture,
+                shortcutImportedAudio: shortcutImportedAudio
             )
                 .tabItem {
                     Image(systemName: "list.bullet")
@@ -94,11 +95,23 @@ struct ContentView: View {
 
     private func handleVoiceIntentLaunchIfNeeded() {
         let defaults = UserDefaults.standard
-        guard defaults.object(forKey: Self.voiceExpenseIntentLaunchAtKey) != nil else {
+
+        if let path = defaults.string(forKey: VoiceExpenseIntent.pendingImportPathKey), !path.isEmpty {
+            defaults.removeObject(forKey: VoiceExpenseIntent.pendingImportPathKey)
+            let url = URL(fileURLWithPath: path)
+            guard FileManager.default.fileExists(atPath: path) else { return }
+            showCreateTransaction = false
+            selectedTab = 0
+            useCompactVoiceCapture = true
+            shortcutImportedAudio = ShortcutImportedAudioPayload(id: UUID(), fileURL: url)
             return
         }
 
-        defaults.removeObject(forKey: Self.voiceExpenseIntentLaunchAtKey)
+        guard defaults.object(forKey: VoiceExpenseIntent.launchTriggerKey) != nil else {
+            return
+        }
+
+        defaults.removeObject(forKey: VoiceExpenseIntent.launchTriggerKey)
         showCreateTransaction = false
         selectedTab = 0
         useCompactVoiceCapture = true

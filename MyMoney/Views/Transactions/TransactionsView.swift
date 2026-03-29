@@ -19,10 +19,16 @@ struct TransactionsView: View {
     @State private var selectedTransaction: Transaction?
     let voiceCaptureTrigger: UUID?
     let useCompactVoiceCapture: Bool
+    let shortcutImportedAudio: ShortcutImportedAudioPayload?
 
-    init(voiceCaptureTrigger: UUID? = nil, useCompactVoiceCapture: Bool = false) {
+    init(
+        voiceCaptureTrigger: UUID? = nil,
+        useCompactVoiceCapture: Bool = false,
+        shortcutImportedAudio: ShortcutImportedAudioPayload? = nil
+    ) {
         self.voiceCaptureTrigger = voiceCaptureTrigger
         self.useCompactVoiceCapture = useCompactVoiceCapture
+        self.shortcutImportedAudio = shortcutImportedAudio
     }
     
     private var transactions: [Transaction] {
@@ -177,6 +183,16 @@ struct TransactionsView: View {
                 guard trigger != nil else { return }
                 showCreateSheet = false
                 voiceInline.beginCapture()
+            }
+            .task(id: shortcutImportedAudio?.id) {
+                guard let payload = shortcutImportedAudio else { return }
+                showCreateSheet = false
+                voiceInline.processImportedAudio(
+                    fileURL: payload.fileURL,
+                    modelContext: modelContext,
+                    accounts: accounts,
+                    categories: categories
+                )
             }
         }
     }
