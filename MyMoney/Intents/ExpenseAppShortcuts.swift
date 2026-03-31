@@ -13,20 +13,20 @@ struct ExpenseAppShortcuts: AppShortcutsProvider {
             intent: VoiceExpenseIntent(),
             phrases: [
                 "Record an expense in \(.applicationName)",
-                "Log expense with \(.applicationName)",
-                "Add expense to \(.applicationName)"
+                "Voice Record expense with \(.applicationName)",
+                "Audio expense to \(.applicationName)"
             ],
-            shortTitle: "Record Voice Expense",
+            shortTitle: "Log Expense by Speaking",
             systemImageName: "mic.fill"
         ),
         AppShortcut(
             intent: QuickAmountExpenseIntent(),
             phrases: [
-                "Log expense amount in \(.applicationName)",
-                "Quick expense in \(.applicationName)",
+                "Type expense amount in \(.applicationName)",
+                "Write expense amount in \(.applicationName)",
                 "Add expense amount to \(.applicationName)"
             ],
-            shortTitle: "Log Expense Amount",
+            shortTitle: "Log Expense by Typing",
             systemImageName: "textformat.123"
         )
     ]
