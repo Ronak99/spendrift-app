@@ -18,7 +18,7 @@ struct UpdateAccountSheet: View {
     @Query(sort: \Account.createdOn) private var allAccounts: [Account]
     @State private var name: String = ""
     @State private var balance: String = ""
-    @State private var icon = AccountIcon.sbi
+    @State private var icon = AccountIcon.bankAccountOne
     @State private var isPrimary = false
     @State private var showPrimaryInfo = false
     

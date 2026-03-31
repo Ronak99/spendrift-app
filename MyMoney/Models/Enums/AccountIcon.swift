@@ -8,11 +8,20 @@
 import Foundation
 
 enum AccountIcon: String, Codable, CaseIterable {
-    case sbi
-    case fi
-    case icici
-    case hdfc
+    // Banks
+    case bankAccountOne
+    case bankAccountTwo
+    case bankAccountThree
+    case bankAccountFour
+
+    // Cards
     case mastercard
     case visa
+
+    // Other account types
+    case cash
+    case wallet
+    case savings
+
     case unknown
 }

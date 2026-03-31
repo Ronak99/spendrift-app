@@ -51,10 +51,24 @@ struct IconGridPicker<T: RawRepresentable & CaseIterable & Hashable>: View where
         let rawValue = icon.rawValue.lowercased()
         // Map icon names to SF Symbols
         switch rawValue {
-        case "sbi", "fi", "icici", "hdfc":
+        case "sbi":
             return "building.2"
-        case "mastercard", "visa":
+        case "fi":
+            return "bolt.circle"
+        case "icici":
+            return "indianrupeesign.circle"
+        case "hdfc":
+            return "building.columns"
+        case "mastercard":
             return "creditcard"
+        case "visa":
+            return "creditcard.fill"
+        case "cash":
+            return "banknote"
+        case "wallet":
+            return "wallet.pass"
+        case "savings":
+            return "lock.circle"
         case "unknown":
             return "questionmark.circle"
         case "dividend":
@@ -108,7 +122,7 @@ struct IconGridPicker<T: RawRepresentable & CaseIterable & Hashable>: View where
 }
 
 #Preview {
-    @Previewable @State var selectedIcon = AccountIcon.sbi
+    @Previewable @State var selectedIcon = AccountIcon.bankAccountOne
     
     return IconGridPicker(
         icons: Array(AccountIcon.allCases),

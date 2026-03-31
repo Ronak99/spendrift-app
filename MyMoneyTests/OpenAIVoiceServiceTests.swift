@@ -38,7 +38,7 @@ struct OpenAIVoiceServiceTests {
             ),
             reason: nil
         )
-        let primary = Account(name: "SBI", balance: 1000, icon: .sbi, isPrimary: true)
+        let primary = Account(name: "SBI", balance: 1000, icon: .bankAccountOne, isPrimary: true)
         let categories = [TransactionCategory(name: "Salary", type: .income)]
         let result = VoiceTransactionCreator.buildDraftFromAIPayload(
             payload: payload,

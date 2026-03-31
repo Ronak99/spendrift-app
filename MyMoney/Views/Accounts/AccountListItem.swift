@@ -51,10 +51,24 @@ struct AccountListItem: View {
     
     private var accountIconName: String {
         switch account.icon {
-        case .sbi, .fi, .icici, .hdfc:
+        case .bankAccountOne:
             return "building.2"
-        case .mastercard, .visa:
+        case .bankAccountTwo:
+            return "bolt.circle"
+        case .bankAccountThree:
+            return "indianrupeesign.circle"
+        case .bankAccountFour:
+            return "building.columns"
+        case .mastercard:
             return "creditcard"
+        case .visa:
+            return "creditcard.fill"
+        case .cash:
+            return "banknote"
+        case .wallet:
+            return "wallet.pass"
+        case .savings:
+            return "lock.circle"
         case .unknown:
             return "questionmark.circle"
         }
@@ -66,7 +80,7 @@ struct AccountListItem: View {
         AccountListItem(account: Account(
             name: "SBI Savings",
             balance: 50000,
-            icon: .sbi
+            icon: .bankAccountOne
         ))
     }
 }

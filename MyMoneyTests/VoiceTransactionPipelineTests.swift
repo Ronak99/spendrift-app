@@ -56,7 +56,7 @@ struct VoiceTransactionPipelineTests {
             ),
             reason: nil
         )
-        let primary = Account(name: "SBI", balance: 1000, icon: .sbi, isPrimary: true)
+        let primary = Account(name: "SBI", balance: 1000, icon: .bankAccountOne, isPrimary: true)
         let categories = [
             TransactionCategory(name: "Transportation", type: .expense),
             TransactionCategory(name: "Shopping", type: .expense)
@@ -75,7 +75,7 @@ struct VoiceTransactionPipelineTests {
     func creatorRequiresPrimaryAccount() throws {
         let context = try makeInMemoryContext()
 
-        let account = Account(name: "SBI", balance: 1000, icon: .sbi, isPrimary: false)
+        let account = Account(name: "SBI", balance: 1000, icon: .bankAccountOne, isPrimary: false)
         let category = TransactionCategory(name: "Transportation", type: .expense)
         context.insert(account)
         context.insert(category)
@@ -109,7 +109,7 @@ struct VoiceTransactionPipelineTests {
     @Test
     func creatorParsesISODateWithoutTimezone() throws {
         let context = try makeInMemoryContext()
-        let account = Account(name: "SBI", balance: 1000, icon: .sbi, isPrimary: true)
+        let account = Account(name: "SBI", balance: 1000, icon: .bankAccountOne, isPrimary: true)
         let category = TransactionCategory(name: "Food", type: .expense)
         context.insert(account)
         context.insert(category)
@@ -148,7 +148,7 @@ struct VoiceTransactionPipelineTests {
     @Test
     func creatorFallsBackToNowForInvalidDateString() throws {
         let context = try makeInMemoryContext()
-        let account = Account(name: "SBI", balance: 1000, icon: .sbi, isPrimary: true)
+        let account = Account(name: "SBI", balance: 1000, icon: .bankAccountOne, isPrimary: true)
         let category = TransactionCategory(name: "Food", type: .expense)
         context.insert(account)
         context.insert(category)

@@ -145,7 +145,7 @@ private struct VoiceInlineMiniWaveform: View {
 #if DEBUG
 private enum VoiceInlineRecordingBarPreviewData {
     static let accounts: [Account] = [
-        Account(name: "HDFC Primary", balance: 42_500, icon: .hdfc, isPrimary: true),
+        Account(name: "HDFC Primary", balance: 42_500, icon: .bankAccountFour, isPrimary: true),
         Account(name: "Cash", balance: 1_200, icon: .unknown, isPrimary: false)
     ]
 
