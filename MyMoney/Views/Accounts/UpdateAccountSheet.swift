@@ -20,6 +20,7 @@ struct UpdateAccountSheet: View {
     @State private var balance: String = ""
     @State private var icon = AccountIcon.sbi
     @State private var isPrimary = false
+    @State private var showPrimaryInfo = false
     
     private var isValid: Bool {
         !name.isEmpty && !balance.isEmpty && Double(balance) != nil
@@ -37,7 +38,26 @@ struct UpdateAccountSheet: View {
                         .keyboardType(.decimalPad)
                 }
 
-                Toggle("Set as Primary Account", isOn: $isPrimary)
+                Toggle(isOn: $isPrimary) {
+                    HStack(spacing: 6) {
+                        Text("Set as Primary Account")
+                        Button {
+                            showPrimaryInfo.toggle()
+                        } label: {
+                            Image(systemName: "info.circle")
+                                .foregroundStyle(.secondary)
+                        }
+                        .buttonStyle(.plain)
+                        .popover(isPresented: $showPrimaryInfo, arrowEdge: .bottom) {
+                            Text("Transactions are created under primary account in case of Voice or Shortcuts.")
+                                .font(.footnote)
+                                .padding(12)
+                                .frame(maxWidth: 300)
+                                .presentationCompactAdaptation(.popover)
+                        }
+                        .accessibilityLabel("About Primary Account")
+                    }
+                }
                 
                 IconGridPicker(icons: Array(AccountIcon.allCases), selectedIcon: $icon)
             }
