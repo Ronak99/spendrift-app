@@ -32,7 +32,6 @@ enum VoiceShortcutAudioNormalizerError: LocalizedError, Equatable {
 }
 
 enum VoiceShortcutAudioNormalizer {
-    private static let minDurationSeconds: Double = 0.1
     private static let targetSampleRate: Double = 44_100
     private static let targetChannels: UInt32 = 1
     private static let bitsPerSample: UInt16 = 16
@@ -45,7 +44,7 @@ enum VoiceShortcutAudioNormalizer {
 
         let asset = AVURLAsset(url: fileURL)
         let durationSeconds = CMTimeGetSeconds(asset.duration)
-        if durationSeconds.isFinite, durationSeconds > 0, durationSeconds < Self.minDurationSeconds {
+        if durationSeconds.isFinite, durationSeconds > 0, durationSeconds < VoiceAudioPolicy.minClipDurationSeconds {
             throw VoiceShortcutAudioNormalizerError.durationTooShort
         }
 
@@ -55,17 +54,25 @@ enum VoiceShortcutAudioNormalizer {
         }
 
         let pcm = try extractLinearPCMMonoInt16(from: asset, track: track)
+        let clippedPCM = clipPCMToMaxDuration(pcm)
 
-        guard !pcm.isEmpty else {
+        guard !clippedPCM.isEmpty else {
             throw VoiceShortcutAudioNormalizerError.emptyAudio
         }
 
         return wrapPCMInWAV(
-            pcm: pcm,
+            pcm: clippedPCM,
             sampleRate: UInt32(Self.targetSampleRate),
             channels: UInt16(Self.targetChannels),
             bitsPerSample: Self.bitsPerSample
         )
+    }
+
+    static func clipPCMToMaxDuration(_ pcm: Data) -> Data {
+        let bytesPerSecond = Int(Self.targetSampleRate) * Int(Self.targetChannels) * Int(Self.bitsPerSample) / 8
+        let maxBytes = Int(VoiceAudioPolicy.maxClipDurationSeconds * Double(bytesPerSecond))
+        guard maxBytes > 0, pcm.count > maxBytes else { return pcm }
+        return Data(pcm.prefix(maxBytes))
     }
 
     private static func extractLinearPCMMonoInt16(from asset: AVAsset, track: AVAssetTrack) throws -> Data {

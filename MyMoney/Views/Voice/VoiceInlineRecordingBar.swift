@@ -36,42 +36,80 @@ struct VoiceInlineRecordingBar: View {
     }
 
     private var recordingContent: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            HStack(alignment: .center, spacing: 12) {
-                Button {
-                    controller.cancelCapture()
-                } label: {
-                    Image(systemName: "xmark.circle.fill")
-                        .font(.title2)
-                        .symbolRenderingMode(.hierarchical)
-                        .foregroundStyle(.secondary)
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel("Cancel recording")
+        TimelineView(.animation(minimumInterval: 0.05, paused: controller.displayState != .recording)) { timeline in
+            let elapsed: Double = controller.recordingStartedAt.map {
+                timeline.date.timeIntervalSince($0)
+            } ?? 0
+            let maxDuration = VoiceAudioPolicy.maxClipDurationSeconds
+            let progress = min(elapsed / maxDuration, 1.0)
+            let secondsLeft = max(0, Int(ceil(maxDuration - elapsed)))
 
-                VoiceInlineMiniWaveform(isActive: true)
-                    .frame(height: 36)
-                    .frame(maxWidth: .infinity)
+            VStack(alignment: .leading, spacing: 10) {
+                HStack(alignment: .center, spacing: 12) {
+                    Button {
+                        controller.cancelCapture()
+                    } label: {
+                        Image(systemName: "xmark.circle.fill")
+                            .font(.title2)
+                            .symbolRenderingMode(.hierarchical)
+                            .foregroundStyle(.secondary)
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("Cancel recording")
 
-                Button {
-                    controller.stopAndSubmit(
-                        modelContext: modelContext,
-                        accounts: accounts,
-                        categories: categories
-                    )
-                } label: {
-                    Image(systemName: "stop.fill")
-                        .font(.title2)
-                        .symbolRenderingMode(.hierarchical)
-                        .foregroundStyle(.red)
+                    VoiceInlineMiniWaveform(isActive: true)
+                        .frame(height: 36)
+                        .frame(maxWidth: .infinity)
+
+                    ZStack {
+                        Circle()
+                            .trim(from: 0, to: max(0, 1 - progress))
+                            .stroke(Color.red.opacity(0.35), style: StrokeStyle(lineWidth: 3, lineCap: .round))
+                            .rotationEffect(.degrees(-90))
+                            .frame(width: 40, height: 40)
+
+                        Button {
+                            controller.stopAndSubmit(
+                                modelContext: modelContext,
+                                accounts: accounts,
+                                categories: categories
+                            )
+                        } label: {
+                            Image(systemName: "stop.fill")
+                                .font(.title2)
+                                .symbolRenderingMode(.hierarchical)
+                                .foregroundStyle(.red)
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel("Stop and save")
+                    }
                 }
-                .buttonStyle(.plain)
-                .accessibilityLabel("Stop and save")
+
+                // Text(controller.recordingStartedAt == nil
+                //      ? "Max \(VoiceAudioPolicy.maxClipDurationDisplayText)s per recording"
+                //      : (secondsLeft > 0 ? "\(secondsLeft)s left" : "Submitting…"))
+                //     .font(.caption)
+                //     .foregroundStyle(.secondary)
+                //     .contentTransition(.numericText(countsDown: true))
+                //     .animation(.linear(duration: 0.2), value: secondsLeft)
             }
+            .padding(.horizontal, 16)
+            .padding(.top, 14)
+            .padding(.bottom, 12)
         }
-        .padding(.horizontal, 16)
-        .padding(.top, 14)
-        .padding(.bottom, 12)
+        .task(id: controller.recordingStartedAt) {
+            guard let startedAt = controller.recordingStartedAt else { return }
+            let remaining = VoiceAudioPolicy.maxClipDurationSeconds - Date().timeIntervalSince(startedAt)
+            if remaining > 0 {
+                try? await Task.sleep(for: .seconds(remaining))
+            }
+            guard !Task.isCancelled, controller.displayState == .recording else { return }
+            controller.stopAndSubmit(
+                modelContext: modelContext,
+                accounts: accounts,
+                categories: categories
+            )
+        }
     }
 
     private var processingContent: some View {

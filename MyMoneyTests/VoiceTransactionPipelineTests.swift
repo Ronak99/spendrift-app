@@ -180,4 +180,14 @@ struct VoiceTransactionPipelineTests {
             Issue.record("Expected created transaction with fallback date.")
         }
     }
+
+    @Test
+    func normalizerClipsPCMToConfiguredMaxDuration() {
+        let bytesPerSecond = 44_100 * 1 * 16 / 8
+        let overLimitPCM = Data(repeating: 1, count: (bytesPerSecond * 31) + 250)
+
+        let clipped = VoiceShortcutAudioNormalizer.clipPCMToMaxDuration(overLimitPCM)
+
+        #expect(clipped.count == bytesPerSecond * 30)
+    }
 }

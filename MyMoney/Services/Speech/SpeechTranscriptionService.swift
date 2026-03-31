@@ -85,7 +85,7 @@ final class SpeechTranscriptionService {
             ]
             let recorder = try AVAudioRecorder(url: url, settings: settings)
             recorder.prepareToRecord()
-            recorder.record()
+            recorder.record(forDuration: VoiceAudioPolicy.maxClipDurationSeconds)
 
             recordingURL = url
             audioRecorder = recorder

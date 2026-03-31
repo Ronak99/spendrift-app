@@ -27,6 +27,8 @@ struct VoiceInlineManualSheetPayload: Identifiable {
 final class VoiceInlineCaptureController {
     private(set) var displayState: VoiceInlineDisplayState = .hidden
     var manualSheetPayload: VoiceInlineManualSheetPayload?
+    /// Set when the microphone begins capturing; drives the progress ring in the recording bar.
+    private(set) var recordingStartedAt: Date?
 
     private var speechService = SpeechTranscriptionService()
     private var pipelineService = VoiceExpensePipelineService()
@@ -57,6 +59,7 @@ final class VoiceInlineCaptureController {
 
     func cancelCapture() {
         guard displayState == .recording else { return }
+        recordingStartedAt = nil
         speechService.reset()
         liveActivityController.end(message: "Cancelled")
         displayState = .hidden
@@ -74,6 +77,7 @@ final class VoiceInlineCaptureController {
         categories: [TransactionCategory]
     ) {
         guard displayState == .recording else { return }
+        recordingStartedAt = nil
         liveActivityController.update(state: .reviewing, message: "Finishing…")
         speechService.stopRecordingForReview()
 
@@ -191,6 +195,7 @@ final class VoiceInlineCaptureController {
             speechService.reset()
             displayState = .error(message)
         } else {
+            recordingStartedAt = Date()
             liveActivityController.update(state: .recording, message: "Listening…")
         }
     }
@@ -288,6 +293,7 @@ final class VoiceInlineCaptureController {
     /// For SwiftUI Previews: drive the bar UI without starting the microphone.
     func applyPreviewDisplayState(_ state: VoiceInlineDisplayState) {
         displayState = state
+        recordingStartedAt = (state == .recording) ? Date() : nil
     }
     #endif
 }
