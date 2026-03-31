@@ -34,10 +34,7 @@ struct ExpenseCategoryQuery: EnumerableEntityQuery {
     func allEntities() async throws -> [ExpenseCategoryEntity] {
         let container = try IntentSwiftData.makeModelContainer()
         let context = ModelContext(container)
-        let descriptor = FetchDescriptor<TransactionCategory>(
-            predicate: #Predicate<TransactionCategory> { $0.type.rawValue == "expense" },
-            sortBy: [SortDescriptor(\.name)]
-        )
+        let descriptor = FetchDescriptor<TransactionCategory>(sortBy: [SortDescriptor(\.name)])
         let models = try context.fetch(descriptor)
         return models.map { ExpenseCategoryEntity(model: $0) }
     }
@@ -47,10 +44,7 @@ struct ExpenseCategoryQuery: EnumerableEntityQuery {
         guard !uuidSet.isEmpty else { return [] }
         let container = try IntentSwiftData.makeModelContainer()
         let context = ModelContext(container)
-        let descriptor = FetchDescriptor<TransactionCategory>(
-            predicate: #Predicate<TransactionCategory> { $0.type.rawValue == "expense" },
-            sortBy: [SortDescriptor(\.name)]
-        )
+        let descriptor = FetchDescriptor<TransactionCategory>(sortBy: [SortDescriptor(\.name)])
         let models = try context.fetch(descriptor)
         return models
             .filter { uuidSet.contains($0.id) }

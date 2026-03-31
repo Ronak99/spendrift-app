@@ -85,7 +85,7 @@ struct QuickAmountExpenseIntent: AppIntent {
     ) throws -> TransactionCategory? {
         guard let entity, let uuid = UUID(uuidString: entity.id) else { return nil }
         let descriptor = FetchDescriptor<TransactionCategory>(
-            predicate: #Predicate<TransactionCategory> { $0.type.rawValue == "expense" && $0.id == uuid }
+            predicate: #Predicate<TransactionCategory> {$0.id == uuid }
         )
         return try context.fetch(descriptor).first
     }
