@@ -16,7 +16,7 @@ extension Date {
     var endOfMonth: Date {
         var components = DateComponents()
         components.month = 1
-        components.day = -1
+        components.day = 0
         return Calendar.current.date(byAdding: components, to: startOfMonth) ?? self
     }
     
