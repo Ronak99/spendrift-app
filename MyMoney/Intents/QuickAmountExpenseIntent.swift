@@ -49,16 +49,15 @@ struct QuickAmountExpenseIntent: AppIntent {
     }
 
     @MainActor
-    func perform() async throws -> some IntentResult & ProvidesDialog {
+    func perform() async throws -> some IntentResult {
         let container = try IntentSwiftData.makeModelContainer()
         let context = ModelContext(container)
 
         let resolvedCategory = try Self.resolveCategorySelection(category, context: context)
 
         let accounts = try context.fetch(FetchDescriptor<Account>())
-        let transaction: Transaction
         do {
-            transaction = try ShortcutQuickAmountTransaction.create(
+            try ShortcutQuickAmountTransaction.create(
                 amount: amount,
                 notes: notes,
                 category: resolvedCategory,
@@ -73,9 +72,7 @@ struct QuickAmountExpenseIntent: AppIntent {
             throw error
         }
 
-        let categorySuffix = transaction.category.map { " in \($0.name)" } ?? ""
-        let message = "Logged expense of \(transaction.amount.formatCurrency)\(categorySuffix)"
-        return .result(dialog: IntentDialog(stringLiteral: message))
+        return .result()
     }
 
     /// Stale shortcut IDs or deleted categories resolve to `nil` so the transaction still saves.
