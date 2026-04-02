@@ -51,13 +51,13 @@ struct IconGridPicker<T: RawRepresentable & CaseIterable & Hashable>: View where
         let rawValue = icon.rawValue.lowercased()
         // Map icon names to SF Symbols
         switch rawValue {
-        case "sbi":
+        case "bankAccountOne":
             return "building.2"
-        case "fi":
+        case "bankAccountTwo":
             return "bolt.circle"
-        case "icici":
+        case "bankAccountThree":
             return "indianrupeesign.circle"
-        case "hdfc":
+        case "bankAccountFour":
             return "building.columns"
         case "mastercard":
             return "creditcard"
