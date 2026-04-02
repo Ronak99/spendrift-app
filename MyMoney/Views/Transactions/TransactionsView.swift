@@ -116,7 +116,7 @@ struct TransactionsView: View {
                     )
                 } else {
                     List {
-                        ForEach(groupedTransactions.keys.sorted(by: >), id: \.self) { dateKey in
+                        ForEach(groupedTransactions.keys.sorted(by: <), id: \.self) { dateKey in
                             Section {
                                 ForEach(groupedTransactions[dateKey] ?? [], id: \.id) { transaction in
                                     TransactionListItem(transaction: transaction)

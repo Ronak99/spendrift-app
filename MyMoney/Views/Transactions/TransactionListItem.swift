@@ -39,9 +39,15 @@ struct TransactionListItem: View {
             Spacer()
             
             // Amount
-            Text(transaction.formattedAmount)
-                .font(.headline)
-                .foregroundColor(transaction.transactionType == .expense ? .red : .green)
+            VStack(alignment: .trailing, spacing: 4) {
+                Text(transaction.formattedAmount)
+                    .font(.headline)
+                    .foregroundColor(transaction.transactionType == .expense ? .red : .green)
+
+                Text(transaction.date, style: .time)
+                    .font(.caption2)
+                    .foregroundColor(.secondary)
+            }
         }
         .padding(.vertical, 4)
     }
