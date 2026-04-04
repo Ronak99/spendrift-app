@@ -457,6 +457,7 @@
 				DEVELOPMENT_TEAM = YAHK4G4F5A;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_LSApplicationQueriesSchemes_0 = shortcuts;
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "MyMoney uses microphone to record voice transactions.";
 				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "MyMoney uses speech recognition to convert voice to transactions.";
 				INFOPLIST_KEY_NSSupportsLiveActivities = YES;
@@ -494,6 +495,7 @@
 				DEVELOPMENT_TEAM = YAHK4G4F5A;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_LSApplicationQueriesSchemes_0 = shortcuts;
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "MyMoney uses microphone to record voice transactions.";
 				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "MyMoney uses speech recognition to convert voice to transactions.";
 				INFOPLIST_KEY_NSSupportsLiveActivities = YES;

@@ -48,12 +48,56 @@ struct EmptyStateView: View {
     }
 }
 
+// MARK: - NeatPass-style Floating CTA for empty state
+
+struct EmptyStateFloatingCTA: View {
+    let onAdd: () -> Void
+    let onVoice: () -> Void
+    var voiceDisabled: Bool = false
+
+    var body: some View {
+        HStack(spacing: 12) {
+            Button(action: onAdd) {
+                Label("Add Transaction", systemImage: "plus")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, 18)
+                    .padding(.vertical, 12)
+                    .background(Capsule().fill(Color.accentColor))
+            }
+
+            Button(action: onVoice) {
+                Image(systemName: "mic.fill")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(Color.accentColor)
+                    .padding(12)
+                    .background(
+                        Circle()
+                            .strokeBorder(Color.accentColor.opacity(0.5), lineWidth: 1.5)
+                            .background(Circle().fill(Color.accentColor.opacity(0.1)))
+                    )
+            }
+            .disabled(voiceDisabled)
+        }
+        .padding(.horizontal, 24)
+        .padding(.vertical, 14)
+        .background(
+            Capsule()
+                .fill(.ultraThinMaterial)
+                .shadow(color: .black.opacity(0.15), radius: 12, y: 4)
+        )
+        .padding(.horizontal, 32)
+    }
+}
+
 #Preview {
     EmptyStateView(
         icon: "tray",
         title: "No Transactions",
-        description: "Get started by adding your first transaction",
-        actionTitle: "Add Transaction",
-        action: {}
+        description: "Get started by adding your first transaction"
     )
+    .overlay(alignment: .bottom) {
+        EmptyStateFloatingCTA(onAdd: {}, onVoice: {})
+            .padding(.bottom, 24)
+    }
 }

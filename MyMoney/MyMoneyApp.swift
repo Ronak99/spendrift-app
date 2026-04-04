@@ -28,10 +28,30 @@ struct MyMoneyApp: App {
     
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            RootContainerView(isUITesting: isUITesting)
         }
         .modelContainer(for: [Transaction.self, Account.self, TransactionCategory.self],
                          inMemory: isUITesting)
+    }
+}
+
+private struct RootContainerView: View {
+    /// Stores the onboarding version the user has completed.
+    /// 0 = never shown. Bump `OnboardingCarouselView.currentVersion` in code to re-show on major updates.
+    @AppStorage("mymoneyOnboardingVersion") private var onboardingVersion = 0
+    let isUITesting: Bool
+
+    private var showOnboarding: Bool {
+        true
+//        onboardingVersion < OnboardingCarouselView.currentVersion && !isUITesting
+    }
+
+    var body: some View {
+        ContentView()
+            .sheet(isPresented: .constant(showOnboarding)) {
+                OnboardingCarouselView(onboardingVersion: $onboardingVersion)
+                    .interactiveDismissDisabled(true)
+            }
     }
 }
 
