@@ -176,6 +176,7 @@ private struct WelcomePage: View {
                 Spacer(minLength: 120)
             }
         }
+        .scrollDisabled(true)
     }
 }
 
@@ -220,53 +221,56 @@ private struct ShortcutsPage: View {
     ]
 
     var body: some View {
-        VStack(spacing: 28) {
-            Spacer(minLength: 12)
-            VStack(spacing: 8) {
-                Text("Siri & Shortcuts")
-                    .font(.title2.bold())
-                    .foregroundStyle(OnboardingTheme.textPrimary)
+        ScrollView(showsIndicators: false) {
+            VStack(spacing: 28) {
+                Spacer(minLength: 12)
+                VStack(spacing: 8) {
+                    Text("Siri & Shortcuts")
+                        .font(.title2.bold())
+                        .foregroundStyle(OnboardingTheme.textPrimary)
+                        .multilineTextAlignment(.center)
+
+                    (
+                        Text("Tap ").foregroundStyle(OnboardingTheme.textSecondary)
+                            + Text("Voice Record Expense").fontWeight(.semibold).foregroundStyle(OnboardingTheme.textPrimary)
+                            + Text(" or ").foregroundStyle(OnboardingTheme.textSecondary)
+                            + Text("Log Expense Amount").fontWeight(.semibold).foregroundStyle(OnboardingTheme.textPrimary)
+                            + Text(" to open a shareable link—add the shortcut, then use Siri or the Shortcuts app anytime.")
+                            .foregroundStyle(OnboardingTheme.textSecondary)
+                    )
+                    .font(.subheadline)
                     .multilineTextAlignment(.center)
+                    .padding(.horizontal, 8)
+                }
+                .padding(.horizontal, 24)
 
-                (
-                    Text("Tap ").foregroundStyle(OnboardingTheme.textSecondary)
-                        + Text("Voice Record Expense").fontWeight(.semibold).foregroundStyle(OnboardingTheme.textPrimary)
-                        + Text(" or ").foregroundStyle(OnboardingTheme.textSecondary)
-                        + Text("Log Expense Amount").fontWeight(.semibold).foregroundStyle(OnboardingTheme.textPrimary)
-                        + Text(" to open a shareable link—add the shortcut, then use Siri or the Shortcuts app anytime.")
-                        .foregroundStyle(OnboardingTheme.textSecondary)
-                )
-                .font(.subheadline)
-                .multilineTextAlignment(.center)
-                .padding(.horizontal, 8)
-            }
-            .padding(.horizontal, 24)
+                OnboardingCard(themeTint: OnboardingPageAccent.shortcuts) {
+                    VStack(alignment: .leading, spacing: 10) {
+                        Text("Add shortcuts")
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(OnboardingTheme.textSecondary)
+                            .textCase(.uppercase)
+                            .tracking(0.6)
 
-            OnboardingCard(themeTint: OnboardingPageAccent.shortcuts) {
-                VStack(alignment: .leading, spacing: 10) {
-                    Text("Add shortcuts")
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(OnboardingTheme.textSecondary)
-                        .textCase(.uppercase)
-                        .tracking(0.6)
-
-                    VStack(spacing: 20) {
-                        ForEach(bullets) { b in
-                            OnboardingFeatureRow(
-                                icon: b.icon,
-                                color: b.color,
-                                title: b.title,
-                                description: b.description,
-                                shortcutURL: b.shortcutURL
-                            )
+                        VStack(spacing: 20) {
+                            ForEach(bullets) { b in
+                                OnboardingFeatureRow(
+                                    icon: b.icon,
+                                    color: b.color,
+                                    title: b.title,
+                                    description: b.description,
+                                    shortcutURL: b.shortcutURL
+                                )
+                            }
                         }
                     }
                 }
-            }
-            .padding(.horizontal, 20)
+                .padding(.horizontal, 20)
 
-            Spacer(minLength: 120)
+                Spacer(minLength: 120)
+            }
         }
+            .scrollDisabled(true)
     }
 }
 
@@ -321,6 +325,7 @@ private struct GetStartedPage: View {
                 Spacer(minLength: 120)
             }
         }
+        .scrollDisabled(true)
     }
 }
 
