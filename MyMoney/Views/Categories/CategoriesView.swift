@@ -21,9 +21,7 @@ struct CategoriesView: View {
         allCategories.filter { $0.type == .expense }
     }
     
-    @State private var viewModel = CategoryViewModel()
     @State private var showCreateSheet = false
-    @State private var selectedCategory: TransactionCategory?
     @State private var searchText = ""
     
     private var filteredIncomeCategories: [TransactionCategory] {
@@ -56,11 +54,11 @@ struct CategoriesView: View {
                         if !filteredIncomeCategories.isEmpty {
                             Section("Income") {
                                 ForEach(filteredIncomeCategories) { category in
-                                    CategoryListItem(category: category)
-                                        .contentShape(Rectangle())
-                                        .onTapGesture {
-                                            selectedCategory = category
-                                        }
+                                    NavigationLink {
+                                        CategoryTransactionsView(category: category)
+                                    } label: {
+                                        CategoryListItem(category: category)
+                                    }
                                 }
                                 .onDelete { indexSet in
                                     deleteCategories(at: indexSet, from: filteredIncomeCategories)
@@ -71,11 +69,11 @@ struct CategoriesView: View {
                         if !filteredExpenseCategories.isEmpty {
                             Section("Expense") {
                                 ForEach(filteredExpenseCategories) { category in
-                                    CategoryListItem(category: category)
-                                        .contentShape(Rectangle())
-                                        .onTapGesture {
-                                            selectedCategory = category
-                                        }
+                                    NavigationLink {
+                                        CategoryTransactionsView(category: category)
+                                    } label: {
+                                        CategoryListItem(category: category)
+                                    }
                                 }
                                 .onDelete { indexSet in
                                     deleteCategories(at: indexSet, from: filteredExpenseCategories)
@@ -103,9 +101,6 @@ struct CategoriesView: View {
             .onAppear(perform: seedDefaultCategoriesIfNeeded)
             .sheet(isPresented: $showCreateSheet) {
                 UpdateCategorySheet(category: nil)
-            }
-            .sheet(item: $selectedCategory) { category in
-                UpdateCategorySheet(category: category)
             }
         }
     }
