@@ -14,10 +14,10 @@ extension Date {
     }
     
     var endOfMonth: Date {
-        var components = DateComponents()
-        components.month = 1
-        components.day = 0
-        return Calendar.current.date(byAdding: components, to: startOfMonth) ?? self
+        guard let monthInterval = Calendar.current.dateInterval(of: .month, for: self) else {
+            return self
+        }
+        return monthInterval.end.addingTimeInterval(-1)
     }
     
     var nextMonth: Date {

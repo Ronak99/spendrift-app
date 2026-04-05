@@ -24,7 +24,7 @@ enum ShortcutQuickAmountTransaction {
         accounts: [Account]
     ) throws -> Transaction {
         guard amount > 0 else { throw Failure.invalidAmount }
-        guard let primary = VoiceTransactionCreator.resolvePrimaryAccount(from: accounts) else {
+        guard let primary = accounts.first(where: { $0.isPrimary }) else {
             throw Failure.noPrimaryAccount
         }
         let transaction = Transaction(

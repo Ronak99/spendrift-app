@@ -9,11 +9,29 @@ import Foundation
 import SwiftData
 
 enum IntentSwiftData {
-    /// Same store configuration as `MyMoneyApp` / `QuickAmountExpenseIntent` so intents read the user’s data.
+    static let appGroupID = "group.com.ronakpunase.MyMoney"
+
+    /// Shared SwiftData container used by the main app, App Intents, and the widget extension.
+    /// Uses the App Group container so all processes share the same on-disk store.
     static func makeModelContainer() throws -> ModelContainer {
         let inMemory = ProcessInfo.processInfo.arguments.contains("-UITesting")
         let schema = Schema([Transaction.self, Account.self, TransactionCategory.self])
-        let config = ModelConfiguration(isStoredInMemoryOnly: inMemory)
+
+        if inMemory {
+            let config = ModelConfiguration(isStoredInMemoryOnly: true)
+            return try ModelContainer(for: schema, configurations: [config])
+        }
+
+        if let groupURL = FileManager.default.containerURL(
+            forSecurityApplicationGroupIdentifier: appGroupID
+        ) {
+            let storeURL = groupURL.appendingPathComponent("MyMoney.sqlite")
+            let config = ModelConfiguration(url: storeURL)
+            return try ModelContainer(for: schema, configurations: [config])
+        }
+
+        // Fallback: App Group entitlement not yet configured — uses default container.
+        let config = ModelConfiguration(isStoredInMemoryOnly: false)
         return try ModelContainer(for: schema, configurations: [config])
     }
 }

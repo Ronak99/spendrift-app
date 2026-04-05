@@ -7,6 +7,7 @@
 
 import AppIntents
 import SwiftData
+import WidgetKit
 
 private enum QuickAmountIntentError: Error, CustomLocalizedStringResourceConvertible {
     case invalidAmount
@@ -72,6 +73,7 @@ struct QuickAmountExpenseIntent: AppIntent {
             throw error
         }
 
+        WidgetCenter.shared.reloadAllTimelines()
         return .result()
     }
 
