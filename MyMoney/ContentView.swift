@@ -45,13 +45,20 @@ struct ContentView: View {
                     Text("Categories")
                 }
                 .tag(2)
+
+            StatisticsView()
+                .tabItem {
+                    Image(systemName: "chart.pie")
+                    Text("Analytics")
+                }
+                .tag(3)
             
             SettingsView()
                 .tabItem {
                     Image(systemName: "gearshape")
                     Text("Settings")
                 }
-                .tag(3)
+                .tag(4)
         }
         .tint(Color.themeColors[themeColorName] ?? .blue)
         .onAppear {
