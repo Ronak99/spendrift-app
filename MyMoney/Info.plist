@@ -4,5 +4,16 @@
 <dict>
 	<key>OpenAIApiKey</key>
 	<string>$(OPENAI_API_KEY)</string>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>com.ronakpunase.MyMoney</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>mymoney</string>
+			</array>
+		</dict>
+	</array>
 </dict>
 </plist>

@@ -15,23 +15,32 @@ import AppIntents
 struct MyMoneyApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
 
+    private let sharedContainer: ModelContainer
+
     init() {
         // Ensure Shortcuts picks up newly added/changed intent parameters.
         Task {
             try? await ExpenseAppShortcuts.updateAppShortcutParameters()
         }
+
+        let isUITesting = ProcessInfo.processInfo.arguments.contains("-UITesting")
+        if let container = try? IntentSwiftData.makeModelContainer() {
+            sharedContainer = container
+        } else {
+            // Last-resort fallback — should never be reached in production.
+            let schema = Schema([Transaction.self, Account.self, TransactionCategory.self])
+            sharedContainer = try! ModelContainer(
+                for: schema,
+                configurations: [ModelConfiguration(isStoredInMemoryOnly: isUITesting)]
+            )
+        }
     }
-    
-    private var isUITesting: Bool {
-        ProcessInfo.processInfo.arguments.contains("-UITesting")
-    }
-    
+
     var body: some Scene {
         WindowGroup {
-            RootContainerView(isUITesting: isUITesting)
+            RootContainerView()
         }
-        .modelContainer(for: [Transaction.self, Account.self, TransactionCategory.self],
-                         inMemory: isUITesting)
+        .modelContainer(sharedContainer)
     }
 }
 
@@ -39,7 +48,10 @@ private struct RootContainerView: View {
     /// Stores the onboarding version the user has completed.
     /// 0 = never shown. Bump `OnboardingCarouselView.currentVersion` in code to re-show on major updates.
     @AppStorage("mymoneyOnboardingVersion") private var onboardingVersion = 0
-    let isUITesting: Bool
+
+    private var isUITesting: Bool {
+        ProcessInfo.processInfo.arguments.contains("-UITesting")
+    }
 
     private var showOnboarding: Bool {
        onboardingVersion < OnboardingCarouselView.currentVersion && !isUITesting
@@ -53,4 +65,3 @@ private struct RootContainerView: View {
             }
     }
 }
-

@@ -12,5 +12,8 @@ import WidgetKit
 struct MyMoneyVoiceWidgetBundle: WidgetBundle {
     var body: some Widget {
         VoiceLiveActivityWidget()
+        QuickExpenseSmallWidget()
+        CaptureHubMediumWidget()
+        RecentTransactionsLargeWidget()
     }
 }
