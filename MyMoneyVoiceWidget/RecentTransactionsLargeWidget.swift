@@ -161,7 +161,7 @@ struct LargeWidgetView: View {
             }
 
             Link(destination: URL(string: "mymoney://createTransaction")!) {
-                actionPill(icon: "keyboard", label: "Type", color: .purple)
+                actionPill(icon: "plus", label: "Type", color: .purple)
             }
         }
         .padding(.horizontal, 12)

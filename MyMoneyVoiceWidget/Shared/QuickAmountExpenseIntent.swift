@@ -12,6 +12,7 @@ import WidgetKit
 private enum QuickAmountIntentError: Error, CustomLocalizedStringResourceConvertible {
     case invalidAmount
     case noPrimaryAccount
+    case unavailableCategory
 
     var localizedStringResource: LocalizedStringResource {
         switch self {
@@ -19,10 +20,13 @@ private enum QuickAmountIntentError: Error, CustomLocalizedStringResourceConvert
             return "Enter an amount greater than zero."
         case .noPrimaryAccount:
             return "No primary account found. Set a primary account in the app first."
+        case .unavailableCategory:
+            return "Selected category is no longer available."
         }
     }
 }
 
+// Fast path used by widget quick-add actions where amount may be prefilled.
 struct QuickAmountExpenseIntent: AppIntent {
     static let title: LocalizedStringResource = "Log Expense Amount"
     static let description = IntentDescription(
@@ -51,12 +55,21 @@ struct QuickAmountExpenseIntent: AppIntent {
 
     @MainActor
     func perform() async throws -> some IntentResult {
+        try Self.performWrite(amount: amount, notes: notes, category: category)
+        return .result()
+    }
+
+    @MainActor
+    fileprivate static func performWrite(
+        amount: Double,
+        notes: String,
+        category: ExpenseCategoryEntity?
+    ) throws {
         let container = try IntentSwiftData.makeModelContainer()
         let context = ModelContext(container)
-
-        let resolvedCategory = try Self.resolveCategorySelection(category, context: context)
-
+        let resolvedCategory = try resolveCategorySelection(category, context: context)
         let accounts = try context.fetch(FetchDescriptor<Account>())
+
         do {
             try ShortcutQuickAmountTransaction.create(
                 amount: amount,
@@ -69,21 +82,19 @@ struct QuickAmountExpenseIntent: AppIntent {
             throw QuickAmountIntentError.invalidAmount
         } catch ShortcutQuickAmountTransaction.Failure.noPrimaryAccount {
             throw QuickAmountIntentError.noPrimaryAccount
-        } catch {
-            throw error
         }
 
         WidgetCenter.shared.reloadAllTimelines()
-        return .result()
     }
 
-    private static func resolveCategorySelection(
+    /// Stale shortcut IDs or deleted categories resolve to `nil` so the transaction still saves.
+    fileprivate static func resolveCategorySelection(
         _ entity: ExpenseCategoryEntity?,
         context: ModelContext
     ) throws -> TransactionCategory? {
         guard let entity, let uuid = UUID(uuidString: entity.id) else { return nil }
         let descriptor = FetchDescriptor<TransactionCategory>(
-            predicate: #Predicate<TransactionCategory> {$0.id == uuid }
+            predicate: #Predicate<TransactionCategory> { $0.id == uuid }
         )
         return try context.fetch(descriptor).first
     }

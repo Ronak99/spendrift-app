@@ -77,7 +77,7 @@ struct MediumWidgetView: View {
     var body: some View {
         HStack(spacing: 0) {
             balancePanel
-            Divider().padding(.vertical, 14)
+            Divider().padding(.vertical, 14).padding(.horizontal)
             actionPanel
         }
         .containerBackground(Color(.systemBackground), for: .widget)
@@ -149,7 +149,7 @@ struct MediumWidgetView: View {
             }
 
             Link(destination: URL(string: "mymoney://createTransaction")!) {
-                actionRow(icon: "keyboard", label: "Type", color: .purple)
+                actionRow(icon: "plus", label: "Type", color: .purple)
             }
         }
         .frame(width: 124)

@@ -16,6 +16,7 @@ struct SmallWidgetEntry: TimelineEntry {
     let config: QuickExpenseWidgetConfig
     let primaryBalance: Double?
     let accountName: String?
+    let monthlyExpense: Double?
 }
 
 // MARK: - Timeline provider
@@ -29,17 +30,20 @@ struct SmallWidgetProvider: AppIntentTimelineProvider {
             date: .now,
             config: QuickExpenseWidgetConfig(),
             primaryBalance: 24_500,
-            accountName: "Primary"
+            accountName: "Primary",
+            monthlyExpense: 999,
         )
     }
 
     func snapshot(for config: QuickExpenseWidgetConfig, in context: Context) async -> SmallWidgetEntry {
         let account = try? WidgetDataStore.fetchPrimaryAccount()
+        let monthlyExpenses = (try? WidgetDataStore.fetchMonthExpenses()) ?? 0;
         return SmallWidgetEntry(
             date: .now,
             config: config,
             primaryBalance: account?.balance,
-            accountName: account?.name
+            accountName: account?.name,
+            monthlyExpense: monthlyExpenses,
         )
     }
 
@@ -48,11 +52,13 @@ struct SmallWidgetProvider: AppIntentTimelineProvider {
         in context: Context
     ) async -> Timeline<SmallWidgetEntry> {
         let account = try? WidgetDataStore.fetchPrimaryAccount()
+        let monthlyExpenses = (try? WidgetDataStore.fetchMonthExpenses()) ?? 0;
         let entry = SmallWidgetEntry(
             date: .now,
             config: config,
             primaryBalance: account?.balance,
-            accountName: account?.name
+            accountName: account?.name,
+            monthlyExpense: monthlyExpenses,
         )
         let nextRefresh = Calendar.current.date(byAdding: .minute, value: 30, to: .now) ?? .now
         return Timeline(entries: [entry], policy: .after(nextRefresh))
@@ -64,52 +70,78 @@ struct SmallWidgetProvider: AppIntentTimelineProvider {
 struct SmallWidgetView: View {
     let entry: SmallWidgetEntry
 
-    private var quickAddIntent: QuickAmountExpenseIntent {
-        var intent = QuickAmountExpenseIntent()
-        intent.amount = entry.config.amount
-        intent.category = entry.config.category
-        intent.notes = ""
-        return intent
+    private var voiceExpenseURL: URL {
+        URL(string: "mymoney://voiceExpense")!
+    }
+    
+    private var typeExpenseUrl: URL {
+        URL(string: "mymoney://createTransaction")!
     }
 
     var body: some View {
-        Button(intent: quickAddIntent) {
-            ZStack {
-                Color.accentColor
-                    .ignoresSafeArea()
-
-                VStack(spacing: 6) {
-                    Image(systemName: "indianrupeesign.circle.fill")
-                        .font(.system(size: 30, weight: .semibold))
-                        .foregroundStyle(.white.opacity(0.9))
-
-                    Text(entry.config.amount.formatCurrency)
-                        .font(.system(size: 24, weight: .bold))
-                        .foregroundStyle(.white)
-                        .minimumScaleFactor(0.6)
-                        .lineLimit(1)
-
-                    Text(entry.config.label)
-                        .font(.caption2)
-                        .fontWeight(.medium)
-                        .foregroundStyle(.white.opacity(0.8))
-                        .lineLimit(1)
-
-                    if let balance = entry.primaryBalance {
-                        Divider()
-                            .overlay(.white.opacity(0.35))
-                            .padding(.horizontal, 16)
-
-                        Text(balance.formatCurrency)
+        ZStack {
+            VStack(spacing: 8) {
+                HStack {
+                    if let name = entry.accountName {
+                        Text(name)
                             .font(.caption2)
-                            .foregroundStyle(.white.opacity(0.7))
+                            .fontWeight(.semibold)
+                            .foregroundStyle(.white.opacity(0.75))
                             .lineLimit(1)
+                            .minimumScaleFactor(0.8)
+                    }
+                    if let balance = entry.primaryBalance {
+                        Text(balance.formatCurrency)
+                            .font(.caption)
+                            .fontWeight(.semibold)
+                            .foregroundStyle(.white.opacity(0.9))
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.65)
                     }
                 }
-                .padding(12)
+                
+                HStack {
+                    Text("Expenses")
+                        .font(.caption2)
+                        .fontWeight(.semibold)
+                        .foregroundStyle(.white.opacity(0.75))
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.8)
+                    if let monthlyExpense = entry.monthlyExpense {
+                        Text(monthlyExpense.formatCurrency)
+                            .font(.caption)
+                            .fontWeight(.semibold)
+                            .foregroundStyle(.white.opacity(0.9))
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.65)
+                    }
+                }
+                
+                Spacer()
+
+                HStack(spacing: 8) {
+                    Link(destination: typeExpenseUrl) {
+                        smallActionTile(systemImage: "plus", title: "Type")
+                    }
+
+                    Link(destination: voiceExpenseURL) {
+                        smallActionTile(systemImage: "mic.fill", title: "Speak")
+                    }
+                }
             }
+            .padding(10)
         }
-        .buttonStyle(.plain)
+    }
+
+    private func smallActionTile(systemImage: String, title: String) -> some View {
+        VStack(spacing: 6) {
+            Image(systemName: systemImage)
+                .font(.system(size: 20, weight: .medium))
+        }
+        .foregroundStyle(.white)
+        .frame(maxWidth: .infinity, maxHeight: 30)
+        .padding(.vertical, 10)
+        .background(.white.opacity(0.2), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
     }
 }
 
@@ -127,8 +159,8 @@ struct QuickExpenseSmallWidget: Widget {
             SmallWidgetView(entry: entry)
                 .containerBackground(Color.accentColor, for: .widget)
         }
-        .configurationDisplayName("Quick Add Expense")
-        .description("Log an expense with a single tap — no app required.")
+        .configurationDisplayName("Quick Expense")
+        .description("Type an amount with the system keyboard or jump into voice capture.")
         .supportedFamilies([.systemSmall])
     }
 }
@@ -142,6 +174,7 @@ struct QuickExpenseSmallWidget: Widget {
         date: .now,
         config: QuickExpenseWidgetConfig(),
         primaryBalance: 24_500,
-        accountName: "Primary"
+        accountName: "Primary",
+        monthlyExpense: 12_00,
     )
 }

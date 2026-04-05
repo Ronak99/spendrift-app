@@ -17,6 +17,6 @@ struct QuickExpenseWidgetConfig: WidgetConfigurationIntent {
     @Parameter(title: "Category", description: "Expense category to assign to the tap.")
     var category: ExpenseCategoryEntity?
 
-    @Parameter(title: "Button Label", description: "Label displayed on the widget.", default: "Quick Add")
+    @Parameter(title: "Button Label", description: "Label displayed on the widget.", default: "Quick")
     var label: String
 }
