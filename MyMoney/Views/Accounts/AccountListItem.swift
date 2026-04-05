@@ -18,7 +18,7 @@ struct AccountListItem: View {
                     .fill(Color.accentColor.opacity(0.2))
                     .frame(width: 44, height: 44)
                 
-                Image(systemName: accountIconName)
+                Image(systemName: account.icon.systemImageName)
                     .font(.system(size: 20))
                     .foregroundColor(.accentColor)
             }
@@ -47,31 +47,6 @@ struct AccountListItem: View {
             Spacer()
         }
         .padding(.vertical, 4)
-    }
-    
-    private var accountIconName: String {
-        switch account.icon {
-        case .bankAccountOne:
-            return "building.2"
-        case .bankAccountTwo:
-            return "bolt.circle"
-        case .bankAccountThree:
-            return "indianrupeesign.circle"
-        case .bankAccountFour:
-            return "building.columns"
-        case .mastercard:
-            return "creditcard"
-        case .visa:
-            return "creditcard.fill"
-        case .cash:
-            return "banknote"
-        case .wallet:
-            return "wallet.pass"
-        case .savings:
-            return "lock.circle"
-        case .unknown:
-            return "questionmark.circle"
-        }
     }
 }
 
