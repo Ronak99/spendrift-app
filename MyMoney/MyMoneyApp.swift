@@ -42,8 +42,7 @@ private struct RootContainerView: View {
     let isUITesting: Bool
 
     private var showOnboarding: Bool {
-        true
-//        onboardingVersion < OnboardingCarouselView.currentVersion && !isUITesting
+       onboardingVersion < OnboardingCarouselView.currentVersion && !isUITesting
     }
 
     var body: some View {
