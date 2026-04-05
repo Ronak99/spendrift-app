@@ -30,9 +30,22 @@
 		A10000012E3F70000058CDE8 /* MyMoneyVoiceWidget.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = MyMoneyVoiceWidget.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		657A62E92F824F3900814448 /* Exceptions for "MyMoney" folder in "MyMoney" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 65BB664A2E3F644F0058CDE8 /* MyMoney */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		65BB664D2E3F644F0058CDE8 /* MyMoney */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				657A62E92F824F3900814448 /* Exceptions for "MyMoney" folder in "MyMoney" target */,
+			);
 			path = MyMoney;
 			sourceTree = "<group>";
 		};
@@ -448,6 +461,8 @@
 		};
 		65BB666D2E3F64510058CDE8 /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReferenceAnchor = 65BB664D2E3F644F0058CDE8 /* MyMoney */;
+			baseConfigurationReferenceRelativePath = Configuration/DevSecrets.xcconfig;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
@@ -458,6 +473,7 @@
 				DEVELOPMENT_TEAM = YAHK4G4F5A;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = MyMoney/Info.plist;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
 				INFOPLIST_KEY_LSApplicationQueriesSchemes_0 = shortcuts;
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "MyMoney uses microphone to record voice transactions.";
@@ -489,6 +505,8 @@
 		};
 		65BB666E2E3F64510058CDE8 /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReferenceAnchor = 65BB664D2E3F644F0058CDE8 /* MyMoney */;
+			baseConfigurationReferenceRelativePath = Configuration/ProdSecrets.xcconfig;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
@@ -499,6 +517,7 @@
 				DEVELOPMENT_TEAM = YAHK4G4F5A;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = MyMoney/Info.plist;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
 				INFOPLIST_KEY_LSApplicationQueriesSchemes_0 = shortcuts;
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "MyMoney uses microphone to record voice transactions.";
@@ -530,6 +549,8 @@
 		};
 		65BB66702E3F64510058CDE8 /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReferenceAnchor = 65BB664D2E3F644F0058CDE8 /* MyMoney */;
+			baseConfigurationReferenceRelativePath = Configuration/DevSecrets.xcconfig;
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
@@ -549,6 +570,8 @@
 		};
 		65BB66712E3F64510058CDE8 /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReferenceAnchor = 65BB664D2E3F644F0058CDE8 /* MyMoney */;
+			baseConfigurationReferenceRelativePath = Configuration/ProdSecrets.xcconfig;
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
