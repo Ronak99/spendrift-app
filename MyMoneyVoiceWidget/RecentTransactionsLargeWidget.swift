@@ -68,7 +68,7 @@ struct LargeWidgetProvider: AppIntentTimelineProvider {
     private func fetchEntry(config: QuickExpenseWidgetConfig) async -> LargeWidgetEntry {
         let account = try? WidgetDataStore.fetchPrimaryAccount()
         let expenses = (try? WidgetDataStore.fetchMonthExpenses()) ?? 0
-        let transactions = (try? WidgetDataStore.fetchRecentTransactions(limit: 5)) ?? []
+        let transactions = (try? WidgetDataStore.fetchRecentTransactions(limit: 4)) ?? []
         return LargeWidgetEntry(
             date: .now,
             config: config,
@@ -86,7 +86,7 @@ struct LargeWidgetView: View {
     let entry: LargeWidgetEntry
 
     private var quickAddIntent: QuickAmountExpenseIntent {
-        var intent = QuickAmountExpenseIntent()
+        let intent = QuickAmountExpenseIntent()
         intent.amount = entry.config.amount
         intent.category = entry.config.category
         intent.notes = ""
@@ -323,11 +323,6 @@ struct RecentTransactionsLargeWidget: Widget {
                 id: UUID(), categoryName: "Shopping", categoryIconName: "bag",
                 amount: 1_200, isExpense: true, accountName: "HDFC Savings",
                 date: .now.addingTimeInterval(-18_000)
-            ),
-            WidgetTransactionSnapshot(
-                id: UUID(), categoryName: "Bills", categoryIconName: "doc.text",
-                amount: 899, isExpense: true, accountName: "HDFC Savings",
-                date: .now.addingTimeInterval(-86_400)
             ),
         ]
     )
