@@ -25,3 +25,30 @@ enum AccountIcon: String, Codable, CaseIterable {
 
     case unknown
 }
+
+extension AccountIcon {
+    var systemImageName: String {
+        switch self {
+        case .bankAccountOne:
+            return "building.2"
+        case .bankAccountTwo:
+            return "bolt.circle"
+        case .bankAccountThree:
+            return "indianrupeesign.circle"
+        case .bankAccountFour:
+            return "building.columns"
+        case .mastercard:
+            return "creditcard"
+        case .visa:
+            return "creditcard.fill"
+        case .cash:
+            return "banknote"
+        case .wallet:
+            return "wallet.pass"
+        case .savings:
+            return "lock.circle"
+        case .unknown:
+            return "questionmark.circle"
+        }
+    }
+}

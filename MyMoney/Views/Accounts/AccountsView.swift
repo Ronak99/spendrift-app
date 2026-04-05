@@ -11,9 +11,7 @@ import SwiftData
 struct AccountsView: View {
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \Account.createdOn) private var accounts: [Account]
-    @State private var viewModel = AccountViewModel()
     @State private var showCreateSheet = false
-    @State private var selectedAccount: Account?
     
     var body: some View {
         NavigationStack {
@@ -29,11 +27,11 @@ struct AccountsView: View {
                 } else {
                     List {
                         ForEach(accounts) { account in
-                            AccountListItem(account: account)
-                                .contentShape(Rectangle())
-                                .onTapGesture {
-                                    selectedAccount = account
-                                }
+                            NavigationLink {
+                                AccountTransactionsView(account: account)
+                            } label: {
+                                AccountListItem(account: account)
+                            }
                         }
                         .onDelete { indexSet in
                             deleteAccounts(at: indexSet)
@@ -52,9 +50,6 @@ struct AccountsView: View {
             }
             .sheet(isPresented: $showCreateSheet) {
                 UpdateAccountSheet(account: nil)
-            }
-            .sheet(item: $selectedAccount) { account in
-                UpdateAccountSheet(account: account)
             }
         }
     }
