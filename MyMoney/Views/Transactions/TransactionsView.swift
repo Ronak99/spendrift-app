@@ -15,6 +15,7 @@ struct TransactionsView: View {
     @Query(sort: \TransactionCategory.name) private var categories: [TransactionCategory]
     @State private var viewModel = TransactionViewModel()
     @State private var showCreateSheet = false
+    @State private var showStatementImport = false
     @State private var voiceInline = VoiceInlineCaptureController()
     @State private var selectedTransaction: Transaction?
     let voiceCaptureTrigger: UUID?
@@ -141,6 +142,12 @@ struct TransactionsView: View {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     HStack(spacing: 12) {
                         Button(action: {
+                            showStatementImport = true
+                        }) {
+                            Image(systemName: "doc.text")
+                        }
+
+                        Button(action: {
                             voiceInline.beginCapture()
                         }) {
                             Image(systemName: "mic")
@@ -166,6 +173,9 @@ struct TransactionsView: View {
                 }
             }
             .animation(.spring(response: 0.38, dampingFraction: 0.86), value: voiceInline.displayState)
+            .sheet(isPresented: $showStatementImport) {
+                StatementImportView()
+            }
             .sheet(isPresented: $showCreateSheet) {
                 UpdateTransactionSheet(transaction: nil)
             }

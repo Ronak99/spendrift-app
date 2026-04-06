@@ -47,6 +47,19 @@ struct OpenAIResponseEnvelope: Decodable {
     let output_text: String?
 }
 
+// MARK: - Bank Statement PDF Parsing
+
+struct OpenAIStatementPayload: Codable {
+    let transactions: [OpenAIStatementTransaction]
+}
+
+struct OpenAIStatementTransaction: Codable {
+    let notes: String
+    let amount: Double
+    let date: String
+    let transactionType: String
+}
+
 enum OpenAIServiceError: LocalizedError, Equatable {
     case missingAPIKey
     case failedToBuildRequest
