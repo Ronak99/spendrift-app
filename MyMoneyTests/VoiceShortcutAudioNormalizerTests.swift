@@ -11,13 +11,13 @@ import XCTest
 
 final class VoiceShortcutAudioNormalizerTests: XCTestCase {
 
-    func testAcceptsWAVAtLeastOneTenthSecond() throws {
+    func testAcceptsWAVAtLeastMinDuration() throws {
         let url = FileManager.default.temporaryDirectory
             .appendingPathComponent("voice-norm-test-\(UUID().uuidString).wav")
         defer { try? FileManager.default.removeItem(at: url) }
 
         let sampleRate = 44_100
-        let seconds = 0.2
+        let seconds = VoiceAudioPolicy.minClipDurationSeconds + 0.1
         let sampleCount = Int(Double(sampleRate) * seconds)
         let pcm = Data(count: sampleCount * MemoryLayout<Int16>.size)
         let wav = Self.makeWAVData(pcm: pcm, sampleRate: UInt32(sampleRate), channels: 1, bitsPerSample: 16)
@@ -37,7 +37,7 @@ final class VoiceShortcutAudioNormalizerTests: XCTestCase {
         defer { try? FileManager.default.removeItem(at: url) }
 
         let sampleRate = 44_100
-        let seconds = 0.05
+        let seconds = max(0.05, VoiceAudioPolicy.minClipDurationSeconds - 0.5)
         let sampleCount = Int(Double(sampleRate) * seconds)
         let pcm = Data(count: sampleCount * MemoryLayout<Int16>.size)
         let wav = Self.makeWAVData(pcm: pcm, sampleRate: UInt32(sampleRate), channels: 1, bitsPerSample: 16)

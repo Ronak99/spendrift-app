@@ -84,10 +84,12 @@ final class VoiceInlineCaptureController {
         let duration = speechService.capturedAudioDurationSeconds()
         let byteCount = speechService.capturedFileByteCount
 
-        guard speechService.capturedRecordingURL != nil, byteCount > 0, duration >= 0.1 else {
+        guard speechService.capturedRecordingURL != nil, byteCount > 0, duration >= VoiceAudioPolicy.minClipDurationSeconds else {
             speechService.reset()
             liveActivityController.failAndEnd(message: "Too short")
-            displayState = .error("Speak a bit longer, then tap the mic again.")
+            displayState = .error(
+                "Record at least \(VoiceAudioPolicy.minClipDurationDisplayText) seconds, then try again."
+            )
             return
         }
 
@@ -136,7 +138,9 @@ final class VoiceInlineCaptureController {
                     Self.removeImportedFileIfPresent(fileURL)
                     speechService.reset()
                     liveActivityController.failAndEnd(message: "Too short")
-                    displayState = .error("Recording is too short to process.")
+                    displayState = .error(
+                        "Recording must be at least \(VoiceAudioPolicy.minClipDurationDisplayText) seconds."
+                    )
                 }
                 return
             }

@@ -30,41 +30,12 @@ If you could not confidently parse the transaction, respond with:
 
 - You have ONE attempt. Do not ask follow-up questions.
 - Always return raw JSON. Never wrap it in markdown or add any surrounding text.
+- **Silence and non-transactions:** If the audio is mostly silent, only background noise, or contains no intelligible speech that describes a real money transaction, you MUST return the **error** JSON. Do **not** guess. Do **not** invent an amount, category, notes, or transaction type. Returning the error response is correct when there is nothing substantive to parse.
 - `amount` must always be a positive number regardless of whether it's income or expense. The `transactionType` field handles the sign.
 - `transactionType` must be exactly `"income"` or `"expense"` (lowercase).
 - For `date`, if the user says "today", "just now", or gives no date, use `{{TODAY_ISO}}`. If they say "yesterday", subtract one day. Use ISO 8601 format.
 - For `category`, pick the single best match from the allowed list below. If nothing fits, use `null`.
 - If the amount is missing or completely unintelligible, return the error JSON.
-
----
-
-## ALLOWED CATEGORIES
-
-### Income
-- Dividend
-- Friends
-- Salary
-- Coupons
-- Refunds
-- Sale
-
-### Expense
-- Bills
-- Education
-- Entertainment
-- Food
-- Health
-- Home Hygiene
-- Investments
-- Shopping
-- Sport
-- Transportation
-- Baby
-- Beauty
-- Clothing
-- Electronics
-- Insurance
-- Tax
 
 ---
 
@@ -98,4 +69,10 @@ User says: "uhh something something money"
 → {
   "status": "error",
   "reason": "Could not extract a valid amount or transaction type from the audio."
+}
+
+Audio is silent or inaudible mumbling with no transaction details
+→ {
+  "status": "error",
+  "reason": "No clear speech describing a transaction in the audio."
 }
