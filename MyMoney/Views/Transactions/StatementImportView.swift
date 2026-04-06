@@ -26,6 +26,19 @@ struct StatementImportView: View {
     private let service = OpenAIBankStatementService()
     private static let maxPDFBytes = 20 * 1024 * 1024 // 20 MB
 
+    private var selectedAccountID: Binding<UUID?> {
+        Binding(
+            get: { selectedAccount?.id },
+            set: { newId in
+                if let newId {
+                    selectedAccount = accounts.first { $0.id == newId }
+                } else {
+                    selectedAccount = nil
+                }
+            }
+        )
+    }
+
     var body: some View {
         NavigationStack {
             Group {
@@ -59,7 +72,15 @@ struct StatementImportView: View {
             } message: {
                 Text(errorMessage ?? "")
             }
+            .onAppear {
+                guard selectedAccount == nil, let primary = accounts.first(where: { $0.isPrimary }) else { return }
+                selectedAccount = primary
+            }
         }
+    }
+
+    private func accountPickerLabel(_ account: Account) -> String {
+        account.isPrimary ? "\(account.name) (Primary)" : account.name
     }
 
     // MARK: - Step 1: Account + PDF picker
@@ -98,32 +119,27 @@ struct StatementImportView: View {
             }
 
             Section {
-                Text("Select the bank account these transactions belong to, then pick a PDF statement.")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-            }
-
-            Section("Account") {
-                if accounts.isEmpty {
-                    Text("No accounts yet. Create one first.")
+                VStack(alignment: .leading, spacing: 14) {
+                    Text("Choose which account this statement belongs to. Imported rows will be saved there after you pick a PDF.")
+                        .font(.subheadline)
                         .foregroundStyle(.secondary)
-                } else {
-                    ForEach(accounts) { account in
-                        Button {
-                            selectedAccount = account
-                        } label: {
-                            HStack {
-                                Text(account.name)
-                                    .foregroundStyle(.primary)
-                                Spacer()
-                                if selectedAccount?.id == account.id {
-                                    Image(systemName: "checkmark")
-                                        .foregroundColor(.accentColor)
-                                }
+                        .fixedSize(horizontal: false, vertical: true)
+
+                    if accounts.isEmpty {
+                        Text("No accounts yet. Add one from the Accounts tab, then return here.")
+                            .font(.subheadline)
+                            .foregroundStyle(.tertiary)
+                    } else {
+                        Picker("Account", selection: selectedAccountID) {
+                            Text("Select account").tag(nil as UUID?)
+                            ForEach(accounts) { account in
+                                Text(accountPickerLabel(account)).tag(Optional(account.id))
                             }
                         }
+                        .pickerStyle(.menu)
                     }
                 }
+                .padding(.vertical, 2)
             }
 
             Section {
