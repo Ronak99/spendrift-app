@@ -27,6 +27,19 @@ extension [Transaction] {
             transaction.date.formatDate
         }
     }
+
+    /// Calendar days in descending order (most recent first); within each day, transactions by date descending.
+    var groupedByDateRecentFirst: [(dayStart: Date, title: String, transactions: [Transaction])] {
+        let calendar = Calendar.current
+        let byDay = Dictionary(grouping: self) { calendar.startOfDay(for: $0.date) }
+        return byDay.keys
+            .sorted(by: >)
+            .map { dayStart in
+                let title = dayStart.formatDate
+                let transactions = (byDay[dayStart] ?? []).sorted { $0.date > $1.date }
+                return (dayStart, title, transactions)
+            }
+    }
     
     var totalExpenses: Double {
         filter { $0.transactionType == .expense }
