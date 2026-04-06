@@ -24,7 +24,7 @@ enum VoiceShortcutAudioNormalizerError: LocalizedError, Equatable {
         case .readerFailed(let message):
             return message
         case .durationTooShort:
-            return "Recording is too short."
+            return "Recording is too short. It must be at least \(VoiceAudioPolicy.minClipDurationDisplayText) seconds."
         case .emptyAudio:
             return "Audio file is empty."
         }

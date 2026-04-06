@@ -25,7 +25,11 @@ struct OpenAIVoiceTransactionService {
             apiKey: AppSecrets.openAIAPIKey,
             model: model,
             systemPrompt: prompt,
-            userInstruction: "Listen to this recording and respond with only the transaction JSON defined in your instructions.",
+            userInstruction: """
+            Listen to this recording. If there is no clear spoken description of a real money transaction \
+            (for example silence, only noise, or no usable details), respond with only the error JSON from your instructions. \
+            Otherwise respond with only the success transaction JSON. No other text.
+            """,
             audioData: audioData,
             audioFormat: "wav"
         )

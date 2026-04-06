@@ -21,6 +21,11 @@ struct VoiceExpensePipelineService {
         categories: [TransactionCategory],
         modelContext: ModelContext
     ) async -> Result<VoiceCreateResult, VoicePipelineError> {
+        let speechLikely = await VoiceRecordingSpeechPresence.likelyContainsSpeech(wavData: audioData)
+        if !speechLikely {
+            return .failure(.openAI("No speech detected in the recording."))
+        }
+
         do {
             let payload = try await openAIService.parseTransaction(
                 audioData: audioData,
