@@ -138,24 +138,30 @@ struct TransactionsView: View {
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     HStack(spacing: 12) {
-                        Button(action: {
-                            showStatementImport = true
-                        }) {
-                            Image(systemName: "doc.text")
-                        }
+                        Menu {
+                            Button {
+                                voiceInline.beginCapture()
+                            } label: {
+                                Label("Speak", systemImage: "mic")
+                            }
+                            .disabled(voiceInline.blocksNewCapture)
 
-                        Button(action: {
-                            voiceInline.beginCapture()
-                        }) {
-                            Image(systemName: "mic")
-                        }
-                        .disabled(voiceInline.blocksNewCapture)
+                            Button {
+                                showCreateSheet = true
+                            } label: {
+                                Label("Type", systemImage: "keyboard")
+                            }
 
-                        Button(action: {
-                            showCreateSheet = true
-                        }) {
+                            Button {
+                                showStatementImport = true
+                            } label: {
+                                Label("Upload document", systemImage: "doc.text")
+                            }
+                        } label: {
                             Image(systemName: "plus")
                         }
+                        .accessibilityLabel("Add transaction")
+                        .accessibilityIdentifier("transactionsAddMenu")
 
                         ProfileSettingsToolbarButton()
                     }

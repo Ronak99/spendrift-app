@@ -42,6 +42,19 @@ class MyMoneyUITestBase: XCTestCase {
         app.buttons["openSettingsToolbar"].firstMatch.tap()
     }
 
+    /// Opens **Type manually** from the Transactions toolbar add menu (not the empty-state shortcut).
+    func openTransactionsManualEntryForm() {
+        let menuButton = app.navigationBars["Transactions"]
+            .descendants(matching: .any)
+            .matching(identifier: "transactionsAddMenu")
+            .element(boundBy: 0)
+        XCTAssertTrue(menuButton.waitForExistence(timeout: 3))
+        menuButton.tap()
+        let typeManually = app.buttons["Type manually"]
+        XCTAssertTrue(typeManually.waitForExistence(timeout: 3))
+        typeManually.tap()
+    }
+
     // MARK: - Account Helpers
 
     @discardableResult
@@ -107,7 +120,7 @@ class MyMoneyUITestBase: XCTestCase {
         notes: String = ""
     ) -> Self {
         navigateToTransactions()
-        app.navigationBars.buttons["plus"].tap()
+        openTransactionsManualEntryForm()
 
         let sheet = app.navigationBars["New Transaction"]
         XCTAssertTrue(sheet.waitForExistence(timeout: 3))
@@ -466,7 +479,7 @@ final class TransactionIntegrationTests: MyMoneyUITestBase {
 
     func testCreateTransaction_saveDisabled_withoutAccount() {
         navigateToTransactions()
-        app.navigationBars.buttons["plus"].tap()
+        openTransactionsManualEntryForm()
         XCTAssertTrue(app.navigationBars["New Transaction"].waitForExistence(timeout: 3))
 
         let saveButton = app.navigationBars.buttons["Save"]
@@ -475,7 +488,7 @@ final class TransactionIntegrationTests: MyMoneyUITestBase {
 
     func testCreateTransaction_cancelDismissesSheet() {
         navigateToTransactions()
-        app.navigationBars.buttons["plus"].tap()
+        openTransactionsManualEntryForm()
         XCTAssertTrue(app.navigationBars["New Transaction"].waitForExistence(timeout: 3))
 
         app.buttons["xmark"].tap()
@@ -543,7 +556,7 @@ final class TransactionIntegrationTests: MyMoneyUITestBase {
         createAccount(name: "HDFC Current", balance: "5000")
 
         navigateToTransactions()
-        app.navigationBars.buttons["plus"].tap()
+        openTransactionsManualEntryForm()
         XCTAssertTrue(app.navigationBars["New Transaction"].waitForExistence(timeout: 3))
 
         app.buttons["Account"].tap()
@@ -555,7 +568,7 @@ final class TransactionIntegrationTests: MyMoneyUITestBase {
 
     func testCategoryPicker_showsFilteredCategories_forExpense() {
         navigateToTransactions()
-        app.navigationBars.buttons["plus"].tap()
+        openTransactionsManualEntryForm()
         XCTAssertTrue(app.navigationBars["New Transaction"].waitForExistence(timeout: 3))
 
         // Default is Expense
@@ -568,7 +581,7 @@ final class TransactionIntegrationTests: MyMoneyUITestBase {
 
     func testCategoryPicker_showsFilteredCategories_forIncome() {
         navigateToTransactions()
-        app.navigationBars.buttons["plus"].tap()
+        openTransactionsManualEntryForm()
         XCTAssertTrue(app.navigationBars["New Transaction"].waitForExistence(timeout: 3))
 
         app.buttons["Income"].tap()
@@ -582,7 +595,7 @@ final class TransactionIntegrationTests: MyMoneyUITestBase {
 
     func testCategoryPicker_searchFiltersCategories() {
         navigateToTransactions()
-        app.navigationBars.buttons["plus"].tap()
+        openTransactionsManualEntryForm()
         XCTAssertTrue(app.navigationBars["New Transaction"].waitForExistence(timeout: 3))
 
         app.buttons["Category"].tap()
@@ -599,7 +612,7 @@ final class TransactionIntegrationTests: MyMoneyUITestBase {
 
     func testCategoryPicker_searchNoResults() {
         navigateToTransactions()
-        app.navigationBars.buttons["plus"].tap()
+        openTransactionsManualEntryForm()
         XCTAssertTrue(app.navigationBars["New Transaction"].waitForExistence(timeout: 3))
 
         app.buttons["Category"].tap()
@@ -614,7 +627,7 @@ final class TransactionIntegrationTests: MyMoneyUITestBase {
 
     func testCategoryPicker_createNewCategoryFromPicker() {
         navigateToTransactions()
-        app.navigationBars.buttons["plus"].tap()
+        openTransactionsManualEntryForm()
         XCTAssertTrue(app.navigationBars["New Transaction"].waitForExistence(timeout: 3))
 
         app.buttons["Category"].tap()
