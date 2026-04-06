@@ -16,6 +16,7 @@ struct StatementImportView: View {
     @Query(sort: \Account.createdOn) private var accounts: [Account]
 
     @State private var selectedAccount: Account?
+    @State private var hasAcceptedAIDataSharing = false
     @State private var showFilePicker = false
     @State private var importedRows: [StatementImportRow] = []
     @State private var isLoading = false
@@ -66,6 +67,37 @@ struct StatementImportView: View {
     private var accountAndPickerForm: some View {
         Form {
             Section {
+                HStack(alignment: .top, spacing: 12) {
+                    Image(systemName: "hand.raised.fill")
+                        .font(.title2)
+                        .foregroundStyle(.orange)
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Privacy notice")
+                            .font(.subheadline.weight(.semibold))
+                        Text(
+                            "Bank statements can include sensitive details such as account information, balances, and who you paid or received money from. "
+                            + "The PDF you select is sent to a third-party AI service so it can read the document and suggest transactions. "
+                            + "Only use this import if you are comfortable with that data leaving your device and being processed by the AI provider."
+                        )
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                    }
+                }
+                .padding(.vertical, 4)
+            }
+
+            Section {
+                Toggle(isOn: $hasAcceptedAIDataSharing) {
+                    Text("I understand and want to continue")
+                        .font(.subheadline)
+                }
+                .accessibilityHint("Required before you can upload a statement PDF.")
+            } footer: {
+                Text("You must turn this on to choose a PDF.")
+                    .font(.caption)
+            }
+
+            Section {
                 Text("Select the bank account these transactions belong to, then pick a PDF statement.")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
@@ -103,7 +135,7 @@ struct StatementImportView: View {
                         Text("Choose PDF")
                     }
                 }
-                .disabled(selectedAccount == nil || isLoading)
+                .disabled(!hasAcceptedAIDataSharing || selectedAccount == nil || isLoading)
             }
 
             if isLoading {
