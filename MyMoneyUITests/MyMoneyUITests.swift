@@ -38,7 +38,8 @@ class MyMoneyUITestBase: XCTestCase {
     }
 
     func navigateToSettings() {
-        app.tabBars.buttons["Settings"].tap()
+        navigateToTransactions()
+        app.buttons["openSettingsToolbar"].firstMatch.tap()
     }
 
     // MARK: - Account Helpers

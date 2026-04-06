@@ -93,8 +93,11 @@ struct CategoriesView: View {
             .navigationTitle("Categories")
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    Button(action: { showCreateSheet = true }) {
-                        Image(systemName: "plus")
+                    HStack(spacing: 12) {
+                        Button(action: { showCreateSheet = true }) {
+                            Image(systemName: "plus")
+                        }
+                        ProfileSettingsToolbarButton()
                     }
                 }
             }

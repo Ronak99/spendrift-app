@@ -156,6 +156,8 @@ struct TransactionsView: View {
                         }) {
                             Image(systemName: "plus")
                         }
+
+                        ProfileSettingsToolbarButton()
                     }
                 }
             }

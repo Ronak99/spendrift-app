@@ -19,7 +19,8 @@ struct ContentView: View {
     @State private var voiceCaptureTrigger: UUID?
     @State private var shortcutImportedAudio: ShortcutImportedAudioPayload?
     @State private var useCompactVoiceCapture = false
-    
+    @State private var showSettingsSheet = false
+
     var body: some View {
         TabView(selection: $selectedTab) {
             TransactionsView(
@@ -38,7 +39,7 @@ struct ContentView: View {
                     Text("Accounts")
                 }
                 .tag(1)
-            
+
             CategoriesView()
                 .tabItem {
                     Image(systemName: "folder")
@@ -52,15 +53,11 @@ struct ContentView: View {
                     Text("Analytics")
                 }
                 .tag(3)
-            
-            SettingsView()
-                .tabItem {
-                    Image(systemName: "gearshape")
-                    Text("Settings")
-                }
-                .tag(4)
         }
         .tint(Color.themeColors[themeColorName] ?? .blue)
+        .environment(\.openSettings) {
+            showSettingsSheet = true
+        }
         .onAppear {
             QuickActionsManager.setupQuickActions()
             seedDefaultCategoriesIfNeeded()
@@ -78,6 +75,9 @@ struct ContentView: View {
         }
         .sheet(isPresented: $showCreateTransaction) {
             UpdateTransactionSheet(transaction: nil)
+        }
+        .sheet(isPresented: $showSettingsSheet) {
+            SettingsView()
         }
     }
     

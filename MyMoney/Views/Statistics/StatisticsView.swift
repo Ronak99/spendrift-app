@@ -178,6 +178,11 @@ struct StatisticsView: View {
             }
             .background(Color(.systemGroupedBackground))
             .navigationTitle("Analytics")
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    ProfileSettingsToolbarButton()
+                }
+            }
         }
     }
 
