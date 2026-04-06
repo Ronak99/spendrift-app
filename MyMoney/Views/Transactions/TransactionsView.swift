@@ -15,6 +15,7 @@ struct TransactionsView: View {
     @Query(sort: \TransactionCategory.name) private var categories: [TransactionCategory]
     @State private var viewModel = TransactionViewModel()
     @State private var showCreateSheet = false
+    @State private var showStatementImport = false
     @State private var voiceInline = VoiceInlineCaptureController()
     @State private var selectedTransaction: Transaction?
     let voiceCaptureTrigger: UUID?
@@ -37,9 +38,6 @@ struct TransactionsView: View {
         }
     }
     
-    private var groupedTransactions: [String: [Transaction]] {
-        transactions.groupedByDate
-    }
     
     private var totalExpenses: Double {
         transactions.totalExpenses
@@ -116,9 +114,9 @@ struct TransactionsView: View {
                     )
                 } else {
                     List {
-                        ForEach(groupedTransactions.keys.sorted(by: <), id: \.self) { dateKey in
+                        ForEach(transactions.groupedByDateRecentFirst, id: \.dayStart) { section in
                             Section {
-                                ForEach(groupedTransactions[dateKey] ?? [], id: \.id) { transaction in
+                                ForEach(section.transactions, id: \.id) { transaction in
                                     TransactionListItem(transaction: transaction)
                                         .contentShape(Rectangle())
                                         .onTapGesture {
@@ -126,10 +124,10 @@ struct TransactionsView: View {
                                         }
                                 }
                                 .onDelete { indexSet in
-                                    deleteTransactions(at: indexSet, for: dateKey)
+                                    deleteTransactions(at: indexSet, in: section.transactions)
                                 }
                             } header: {
-                                Text(dateKey)
+                                Text(section.title)
                             }
                         }
                     }
@@ -140,6 +138,12 @@ struct TransactionsView: View {
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     HStack(spacing: 12) {
+                        Button(action: {
+                            showStatementImport = true
+                        }) {
+                            Image(systemName: "doc.text")
+                        }
+
                         Button(action: {
                             voiceInline.beginCapture()
                         }) {
@@ -166,6 +170,9 @@ struct TransactionsView: View {
                 }
             }
             .animation(.spring(response: 0.38, dampingFraction: 0.86), value: voiceInline.displayState)
+            .sheet(isPresented: $showStatementImport) {
+                StatementImportView()
+            }
             .sheet(isPresented: $showCreateSheet) {
                 UpdateTransactionSheet(transaction: nil)
             }
@@ -197,11 +204,9 @@ struct TransactionsView: View {
         }
     }
     
-    private func deleteTransactions(at offsets: IndexSet, for dateKey: String) {
-        guard let transactionsForDate = groupedTransactions[dateKey] else { return }
+    private func deleteTransactions(at offsets: IndexSet, in transactionsForDay: [Transaction]) {
         for index in offsets {
-            let transaction = transactionsForDate[index]
-            modelContext.delete(transaction)
+            modelContext.delete(transactionsForDay[index])
         }
         try? modelContext.save()
     }
