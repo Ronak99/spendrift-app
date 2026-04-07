@@ -1,6 +1,6 @@
 //
 //  VoiceLiveActivityWidget.swift
-//  SpendriftVoiceWidget
+//  SpendriftWidget
 //
 //  Created by Cursor on 23/03/26.
 //

@@ -1,6 +1,6 @@
 //
 //  WidgetDataStore.swift
-//  SpendriftVoiceWidget
+//  SpendriftWidget
 //
 //  Created by Cursor on 05/04/26.
 //
