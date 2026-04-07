@@ -81,22 +81,22 @@ final class VoiceInlineCaptureController {
         liveActivityController.update(state: .reviewing, message: "Finishing…")
         speechService.stopRecordingForReview()
 
-        let duration = speechService.capturedAudioDurationSeconds()
-        let byteCount = speechService.capturedFileByteCount
+        Task { @MainActor in
+            let duration = await speechService.capturedAudioDurationSeconds()
+            let byteCount = speechService.capturedFileByteCount
 
-        guard speechService.capturedRecordingURL != nil, byteCount > 0, duration >= VoiceAudioPolicy.minClipDurationSeconds else {
-            speechService.reset()
-            liveActivityController.failAndEnd(message: "Too short")
-            displayState = .error(
-                "Record at least \(VoiceAudioPolicy.minClipDurationDisplayText) seconds, then try again."
-            )
-            return
-        }
+            guard speechService.capturedRecordingURL != nil, byteCount > 0, duration >= VoiceAudioPolicy.minClipDurationSeconds else {
+                speechService.reset()
+                liveActivityController.failAndEnd(message: "Too short")
+                displayState = .error(
+                    "Record at least \(VoiceAudioPolicy.minClipDurationDisplayText) seconds, then try again."
+                )
+                return
+            }
 
-        displayState = .processing
-        liveActivityController.update(state: .processing, message: "Saving…")
+            displayState = .processing
+            liveActivityController.update(state: .processing, message: "Saving…")
 
-        Task {
             await runPipeline(
                 modelContext: modelContext,
                 accounts: accounts,
@@ -122,7 +122,7 @@ final class VoiceInlineCaptureController {
         Task {
             let audioData: Data
             do {
-                audioData = try VoiceShortcutAudioNormalizer.dataForOpenAIVoicePipeline(from: fileURL)
+                audioData = try await VoiceShortcutAudioNormalizer.dataForOpenAIVoicePipeline(from: fileURL)
             } catch {
                 await MainActor.run {
                     Self.removeImportedFileIfPresent(fileURL)

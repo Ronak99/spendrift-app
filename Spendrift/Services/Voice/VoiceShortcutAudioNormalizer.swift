@@ -37,18 +37,19 @@ enum VoiceShortcutAudioNormalizer {
     private static let bitsPerSample: UInt16 = 16
 
     /// Produces linear PCM WAV bytes suitable for `OpenAIVoiceTransactionService` / Chat Completions `input_audio`.
-    static func dataForOpenAIVoicePipeline(from fileURL: URL) throws -> Data {
+    static func dataForOpenAIVoicePipeline(from fileURL: URL) async throws -> Data {
         guard FileManager.default.fileExists(atPath: fileURL.path) else {
             throw VoiceShortcutAudioNormalizerError.fileNotFound
         }
 
         let asset = AVURLAsset(url: fileURL)
-        let durationSeconds = CMTimeGetSeconds(asset.duration)
+        let duration = try await asset.load(.duration)
+        let durationSeconds = CMTimeGetSeconds(duration)
         if durationSeconds.isFinite, durationSeconds > 0, durationSeconds < VoiceAudioPolicy.minClipDurationSeconds {
             throw VoiceShortcutAudioNormalizerError.durationTooShort
         }
 
-        let tracks = asset.tracks(withMediaType: .audio)
+        let tracks = try await asset.loadTracks(withMediaType: .audio)
         guard let track = tracks.first else {
             throw VoiceShortcutAudioNormalizerError.noAudioTrack
         }

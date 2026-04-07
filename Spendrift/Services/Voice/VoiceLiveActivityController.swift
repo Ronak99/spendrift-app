@@ -29,12 +29,13 @@ final class VoiceLiveActivityController {
         #if canImport(ActivityKit)
         guard ActivityAuthorizationInfo().areActivitiesEnabled else { return }
         let attributes = VoiceLiveActivityAttributes(title: "Voice Entry")
-        let content = VoiceLiveActivityAttributes.ContentState(
+        let state = VoiceLiveActivityAttributes.ContentState(
             state: VoiceLiveActivityState.recording.rawValue,
             message: "Listening..."
         )
+        let content = ActivityContent(state: state, staleDate: nil)
         do {
-            activity = try Activity.request(attributes: attributes, contentState: content)
+            activity = try Activity.request(attributes: attributes, content: content, pushType: nil)
         } catch {
             activity = nil
         }
@@ -45,11 +46,11 @@ final class VoiceLiveActivityController {
         #if canImport(ActivityKit)
         guard let activity else { return }
         Task {
-            let content = VoiceLiveActivityAttributes.ContentState(
+            let state = VoiceLiveActivityAttributes.ContentState(
                 state: state.rawValue,
                 message: message
             )
-            await activity.update(using: content)
+            await activity.update(ActivityContent(state: state, staleDate: nil))
         }
         #endif
     }
@@ -58,11 +59,11 @@ final class VoiceLiveActivityController {
         #if canImport(ActivityKit)
         guard let activity else { return }
         Task {
-            let content = VoiceLiveActivityAttributes.ContentState(
+            let state = VoiceLiveActivityAttributes.ContentState(
                 state: VoiceLiveActivityState.completed.rawValue,
                 message: message
             )
-            await activity.end(using: content, dismissalPolicy: .immediate)
+            await activity.end(ActivityContent(state: state, staleDate: nil), dismissalPolicy: .immediate)
         }
         self.activity = nil
         #endif
@@ -72,16 +73,16 @@ final class VoiceLiveActivityController {
         #if canImport(ActivityKit)
         guard let activity else { return }
         Task {
-            let failureContent = VoiceLiveActivityAttributes.ContentState(
+            let failureState = VoiceLiveActivityAttributes.ContentState(
                 state: VoiceLiveActivityState.failed.rawValue,
                 message: message
             )
-            await activity.update(using: failureContent)
+            await activity.update(ActivityContent(state: failureState, staleDate: nil))
 
             if seconds > 0 {
                 try? await Task.sleep(nanoseconds: UInt64(seconds * 1_000_000_000))
             }
-            await activity.end(using: failureContent, dismissalPolicy: .immediate)
+            await activity.end(ActivityContent(state: failureState, staleDate: nil), dismissalPolicy: .immediate)
         }
         self.activity = nil
         #endif
@@ -91,16 +92,16 @@ final class VoiceLiveActivityController {
         #if canImport(ActivityKit)
         guard let activity else { return }
         Task {
-            let successContent = VoiceLiveActivityAttributes.ContentState(
+            let successState = VoiceLiveActivityAttributes.ContentState(
                 state: VoiceLiveActivityState.success.rawValue,
                 message: message
             )
-            await activity.update(using: successContent)
+            await activity.update(ActivityContent(state: successState, staleDate: nil))
 
             if seconds > 0 {
                 try? await Task.sleep(nanoseconds: UInt64(seconds * 1_000_000_000))
             }
-            await activity.end(using: successContent, dismissalPolicy: .immediate)
+            await activity.end(ActivityContent(state: successState, staleDate: nil), dismissalPolicy: .immediate)
         }
         self.activity = nil
         #endif

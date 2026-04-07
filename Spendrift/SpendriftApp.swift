@@ -20,7 +20,7 @@ struct SpendriftApp: App {
     init() {
         // Ensure Shortcuts picks up newly added/changed intent parameters.
         Task {
-            try? await ExpenseAppShortcuts.updateAppShortcutParameters()
+            ExpenseAppShortcuts.updateAppShortcutParameters()
         }
 
         let isUITesting = ProcessInfo.processInfo.arguments.contains("-UITesting")
