@@ -7,41 +7,41 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		657A64B82F82972E00814448 /* MyMoneyVoiceWidget.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = A10000012E3F70000058CDE8 /* MyMoneyVoiceWidget.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		65FFD3D22F85103A00D901CF /* SpendriftVoiceWidget.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = A10000012E3F70000058CDE8 /* SpendriftVoiceWidget.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
-		657A64B92F82972E00814448 /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = 65BB66432E3F644F0058CDE8 /* Project object */;
-			proxyType = 1;
-			remoteGlobalIDString = A10000062E3F70000058CDE8;
-			remoteInfo = MyMoneyVoiceWidget;
-		};
 		65BB66592E3F64510058CDE8 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 65BB66432E3F644F0058CDE8 /* Project object */;
 			proxyType = 1;
 			remoteGlobalIDString = 65BB664A2E3F644F0058CDE8;
-			remoteInfo = MyMoney;
+			remoteInfo = Spendrift;
 		};
 		65BB66632E3F64510058CDE8 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 65BB66432E3F644F0058CDE8 /* Project object */;
 			proxyType = 1;
 			remoteGlobalIDString = 65BB664A2E3F644F0058CDE8;
-			remoteInfo = MyMoney;
+			remoteInfo = Spendrift;
+		};
+		65FFD3D32F85103A00D901CF /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 65BB66432E3F644F0058CDE8 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = A10000062E3F70000058CDE8;
+			remoteInfo = SpendriftVoiceWidget;
 		};
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
-		657A64BB2F82972E00814448 /* Embed Foundation Extensions */ = {
+		65FFD3D52F85103B00D901CF /* Embed Foundation Extensions */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 2147483647;
 			dstPath = "";
 			dstSubfolderSpec = 13;
 			files = (
-				657A64B82F82972E00814448 /* MyMoneyVoiceWidget.appex in Embed Foundation Extensions */,
+				65FFD3D22F85103A00D901CF /* SpendriftVoiceWidget.appex in Embed Foundation Extensions */,
 			);
 			name = "Embed Foundation Extensions";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -49,54 +49,54 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
-		65BB664B2E3F644F0058CDE8 /* MyMoney.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MyMoney.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		65BB66582E3F64510058CDE8 /* MyMoneyTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MyMoneyTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		65BB66622E3F64510058CDE8 /* MyMoneyUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MyMoneyUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		A10000012E3F70000058CDE8 /* MyMoneyVoiceWidget.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = MyMoneyVoiceWidget.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		65BB664B2E3F644F0058CDE8 /* Spendrift.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Spendrift.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		65BB66582E3F64510058CDE8 /* SpendriftTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SpendriftTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		65BB66622E3F64510058CDE8 /* SpendriftUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SpendriftUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		A10000012E3F70000058CDE8 /* SpendriftVoiceWidget.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = SpendriftVoiceWidget.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
-		657A62E92F824F3900814448 /* Exceptions for "MyMoney" folder in "MyMoney" target */ = {
+		657A62E92F824F3900814448 /* Exceptions for "Spendrift" folder in "Spendrift" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Info.plist,
 			);
-			target = 65BB664A2E3F644F0058CDE8 /* MyMoney */;
+			target = 65BB664A2E3F644F0058CDE8 /* Spendrift */;
 		};
-		B30000012E3F70000058CDE8 /* Exceptions for "MyMoneyVoiceWidget" folder in "MyMoneyVoiceWidget" target */ = {
+		B30000012E3F70000058CDE8 /* Exceptions for "SpendriftVoiceWidget" folder in "SpendriftVoiceWidget" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Info.plist,
 			);
-			target = A10000062E3F70000058CDE8 /* MyMoneyVoiceWidget */;
+			target = A10000062E3F70000058CDE8 /* SpendriftVoiceWidget */;
 		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
-		65BB664D2E3F644F0058CDE8 /* MyMoney */ = {
+		65BB664D2E3F644F0058CDE8 /* Spendrift */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
-				657A62E92F824F3900814448 /* Exceptions for "MyMoney" folder in "MyMoney" target */,
+				657A62E92F824F3900814448 /* Exceptions for "Spendrift" folder in "Spendrift" target */,
 			);
-			path = MyMoney;
+			path = Spendrift;
 			sourceTree = "<group>";
 		};
-		65BB665B2E3F64510058CDE8 /* MyMoneyTests */ = {
+		65BB665B2E3F64510058CDE8 /* SpendriftTests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			path = MyMoneyTests;
+			path = SpendriftTests;
 			sourceTree = "<group>";
 		};
-		65BB66652E3F64510058CDE8 /* MyMoneyUITests */ = {
+		65BB66652E3F64510058CDE8 /* SpendriftUITests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			path = MyMoneyUITests;
+			path = SpendriftUITests;
 			sourceTree = "<group>";
 		};
-		A10000022E3F70000058CDE8 /* MyMoneyVoiceWidget */ = {
+		A10000022E3F70000058CDE8 /* SpendriftVoiceWidget */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
-				B30000012E3F70000058CDE8 /* Exceptions for "MyMoneyVoiceWidget" folder in "MyMoneyVoiceWidget" target */,
+				B30000012E3F70000058CDE8 /* Exceptions for "SpendriftVoiceWidget" folder in "SpendriftVoiceWidget" target */,
 			);
-			path = MyMoneyVoiceWidget;
+			path = SpendriftVoiceWidget;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -143,10 +143,10 @@
 		65BB66422E3F644F0058CDE8 = {
 			isa = PBXGroup;
 			children = (
-				65BB664D2E3F644F0058CDE8 /* MyMoney */,
-				65BB665B2E3F64510058CDE8 /* MyMoneyTests */,
-				65BB66652E3F64510058CDE8 /* MyMoneyUITests */,
-				A10000022E3F70000058CDE8 /* MyMoneyVoiceWidget */,
+				65BB664D2E3F644F0058CDE8 /* Spendrift */,
+				65BB665B2E3F64510058CDE8 /* SpendriftTests */,
+				65BB66652E3F64510058CDE8 /* SpendriftUITests */,
+				A10000022E3F70000058CDE8 /* SpendriftVoiceWidget */,
 				657A64B72F82972E00814448 /* Frameworks */,
 				65BB664C2E3F644F0058CDE8 /* Products */,
 			);
@@ -155,10 +155,10 @@
 		65BB664C2E3F644F0058CDE8 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				65BB664B2E3F644F0058CDE8 /* MyMoney.app */,
-				65BB66582E3F64510058CDE8 /* MyMoneyTests.xctest */,
-				65BB66622E3F64510058CDE8 /* MyMoneyUITests.xctest */,
-				A10000012E3F70000058CDE8 /* MyMoneyVoiceWidget.appex */,
+				65BB664B2E3F644F0058CDE8 /* Spendrift.app */,
+				65BB66582E3F64510058CDE8 /* SpendriftTests.xctest */,
+				65BB66622E3F64510058CDE8 /* SpendriftUITests.xctest */,
+				A10000012E3F70000058CDE8 /* SpendriftVoiceWidget.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -166,33 +166,33 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		65BB664A2E3F644F0058CDE8 /* MyMoney */ = {
+		65BB664A2E3F644F0058CDE8 /* Spendrift */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 65BB666C2E3F64510058CDE8 /* Build configuration list for PBXNativeTarget "MyMoney" */;
+			buildConfigurationList = 65BB666C2E3F64510058CDE8 /* Build configuration list for PBXNativeTarget "Spendrift" */;
 			buildPhases = (
 				65BB66472E3F644F0058CDE8 /* Sources */,
 				65BB66482E3F644F0058CDE8 /* Frameworks */,
 				65BB66492E3F644F0058CDE8 /* Resources */,
-				657A64BB2F82972E00814448 /* Embed Foundation Extensions */,
+				65FFD3D52F85103B00D901CF /* Embed Foundation Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
-				657A64BA2F82972E00814448 /* PBXTargetDependency */,
+				65FFD3D42F85103A00D901CF /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
-				65BB664D2E3F644F0058CDE8 /* MyMoney */,
+				65BB664D2E3F644F0058CDE8 /* Spendrift */,
 			);
-			name = MyMoney;
+			name = Spendrift;
 			packageProductDependencies = (
 			);
-			productName = MyMoney;
-			productReference = 65BB664B2E3F644F0058CDE8 /* MyMoney.app */;
+			productName = Spendrift;
+			productReference = 65BB664B2E3F644F0058CDE8 /* Spendrift.app */;
 			productType = "com.apple.product-type.application";
 		};
-		65BB66572E3F64510058CDE8 /* MyMoneyTests */ = {
+		65BB66572E3F64510058CDE8 /* SpendriftTests */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 65BB666F2E3F64510058CDE8 /* Build configuration list for PBXNativeTarget "MyMoneyTests" */;
+			buildConfigurationList = 65BB666F2E3F64510058CDE8 /* Build configuration list for PBXNativeTarget "SpendriftTests" */;
 			buildPhases = (
 				65BB66542E3F64510058CDE8 /* Sources */,
 				65BB66552E3F64510058CDE8 /* Frameworks */,
@@ -204,18 +204,18 @@
 				65BB665A2E3F64510058CDE8 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
-				65BB665B2E3F64510058CDE8 /* MyMoneyTests */,
+				65BB665B2E3F64510058CDE8 /* SpendriftTests */,
 			);
-			name = MyMoneyTests;
+			name = SpendriftTests;
 			packageProductDependencies = (
 			);
-			productName = MyMoneyTests;
-			productReference = 65BB66582E3F64510058CDE8 /* MyMoneyTests.xctest */;
+			productName = SpendriftTests;
+			productReference = 65BB66582E3F64510058CDE8 /* SpendriftTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
-		65BB66612E3F64510058CDE8 /* MyMoneyUITests */ = {
+		65BB66612E3F64510058CDE8 /* SpendriftUITests */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 65BB66722E3F64510058CDE8 /* Build configuration list for PBXNativeTarget "MyMoneyUITests" */;
+			buildConfigurationList = 65BB66722E3F64510058CDE8 /* Build configuration list for PBXNativeTarget "SpendriftUITests" */;
 			buildPhases = (
 				65BB665E2E3F64510058CDE8 /* Sources */,
 				65BB665F2E3F64510058CDE8 /* Frameworks */,
@@ -227,18 +227,18 @@
 				65BB66642E3F64510058CDE8 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
-				65BB66652E3F64510058CDE8 /* MyMoneyUITests */,
+				65BB66652E3F64510058CDE8 /* SpendriftUITests */,
 			);
-			name = MyMoneyUITests;
+			name = SpendriftUITests;
 			packageProductDependencies = (
 			);
-			productName = MyMoneyUITests;
-			productReference = 65BB66622E3F64510058CDE8 /* MyMoneyUITests.xctest */;
+			productName = SpendriftUITests;
+			productReference = 65BB66622E3F64510058CDE8 /* SpendriftUITests.xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";
 		};
-		A10000062E3F70000058CDE8 /* MyMoneyVoiceWidget */ = {
+		A10000062E3F70000058CDE8 /* SpendriftVoiceWidget */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = A10000072E3F70000058CDE8 /* Build configuration list for PBXNativeTarget "MyMoneyVoiceWidget" */;
+			buildConfigurationList = A10000072E3F70000058CDE8 /* Build configuration list for PBXNativeTarget "SpendriftVoiceWidget" */;
 			buildPhases = (
 				A10000052E3F70000058CDE8 /* Sources */,
 				A10000032E3F70000058CDE8 /* Frameworks */,
@@ -249,13 +249,13 @@
 			dependencies = (
 			);
 			fileSystemSynchronizedGroups = (
-				A10000022E3F70000058CDE8 /* MyMoneyVoiceWidget */,
+				A10000022E3F70000058CDE8 /* SpendriftVoiceWidget */,
 			);
-			name = MyMoneyVoiceWidget;
+			name = SpendriftVoiceWidget;
 			packageProductDependencies = (
 			);
-			productName = MyMoneyVoiceWidget;
-			productReference = A10000012E3F70000058CDE8 /* MyMoneyVoiceWidget.appex */;
+			productName = SpendriftVoiceWidget;
+			productReference = A10000012E3F70000058CDE8 /* SpendriftVoiceWidget.appex */;
 			productType = "com.apple.product-type.app-extension";
 		};
 /* End PBXNativeTarget section */
@@ -284,7 +284,7 @@
 					};
 				};
 			};
-			buildConfigurationList = 65BB66462E3F644F0058CDE8 /* Build configuration list for PBXProject "MyMoney" */;
+			buildConfigurationList = 65BB66462E3F644F0058CDE8 /* Build configuration list for PBXProject "Spendrift" */;
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
 			knownRegions = (
@@ -298,10 +298,10 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				65BB664A2E3F644F0058CDE8 /* MyMoney */,
-				65BB66572E3F64510058CDE8 /* MyMoneyTests */,
-				65BB66612E3F64510058CDE8 /* MyMoneyUITests */,
-				A10000062E3F70000058CDE8 /* MyMoneyVoiceWidget */,
+				65BB664A2E3F644F0058CDE8 /* Spendrift */,
+				65BB66572E3F64510058CDE8 /* SpendriftTests */,
+				65BB66612E3F64510058CDE8 /* SpendriftUITests */,
+				A10000062E3F70000058CDE8 /* SpendriftVoiceWidget */,
 			);
 		};
 /* End PBXProject section */
@@ -369,20 +369,20 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
-		657A64BA2F82972E00814448 /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			target = A10000062E3F70000058CDE8 /* MyMoneyVoiceWidget */;
-			targetProxy = 657A64B92F82972E00814448 /* PBXContainerItemProxy */;
-		};
 		65BB665A2E3F64510058CDE8 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = 65BB664A2E3F644F0058CDE8 /* MyMoney */;
+			target = 65BB664A2E3F644F0058CDE8 /* Spendrift */;
 			targetProxy = 65BB66592E3F64510058CDE8 /* PBXContainerItemProxy */;
 		};
 		65BB66642E3F64510058CDE8 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = 65BB664A2E3F644F0058CDE8 /* MyMoney */;
+			target = 65BB664A2E3F644F0058CDE8 /* Spendrift */;
 			targetProxy = 65BB66632E3F64510058CDE8 /* PBXContainerItemProxy */;
+		};
+		65FFD3D42F85103A00D901CF /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = A10000062E3F70000058CDE8 /* SpendriftVoiceWidget */;
+			targetProxy = 65FFD3D32F85103A00D901CF /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -511,24 +511,24 @@
 		};
 		65BB666D2E3F64510058CDE8 /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReferenceAnchor = 65BB664D2E3F644F0058CDE8 /* MyMoney */;
+			baseConfigurationReferenceAnchor = 65BB664D2E3F644F0058CDE8 /* Spendrift */;
 			baseConfigurationReferenceRelativePath = Configuration/DevSecrets.xcconfig;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = NO;
-				CODE_SIGN_ENTITLEMENTS = MyMoney/MyMoney.entitlements;
+				CODE_SIGN_ENTITLEMENTS = Spendrift/Spendrift.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = YAHK4G4F5A;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = MyMoney/Info.plist;
+				INFOPLIST_FILE = Spendrift/Info.plist;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
 				INFOPLIST_KEY_LSApplicationQueriesSchemes_0 = shortcuts;
-				INFOPLIST_KEY_NSMicrophoneUsageDescription = "MyMoney uses microphone to record voice transactions.";
-				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "MyMoney uses speech recognition to convert voice to transactions.";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Spendrift uses microphone to record voice transactions.";
+				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "Spendrift uses speech recognition to convert voice to transactions.";
 				INFOPLIST_KEY_NSSupportsLiveActivities = YES;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
@@ -541,7 +541,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.ronakpunase.MyMoney;
+				PRODUCT_BUNDLE_IDENTIFIER = com.ronakpunase.Spendrift;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
@@ -556,24 +556,24 @@
 		};
 		65BB666E2E3F64510058CDE8 /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReferenceAnchor = 65BB664D2E3F644F0058CDE8 /* MyMoney */;
+			baseConfigurationReferenceAnchor = 65BB664D2E3F644F0058CDE8 /* Spendrift */;
 			baseConfigurationReferenceRelativePath = Configuration/ProdSecrets.xcconfig;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = NO;
-				CODE_SIGN_ENTITLEMENTS = MyMoney/MyMoney.entitlements;
+				CODE_SIGN_ENTITLEMENTS = Spendrift/Spendrift.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = YAHK4G4F5A;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = MyMoney/Info.plist;
+				INFOPLIST_FILE = Spendrift/Info.plist;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
 				INFOPLIST_KEY_LSApplicationQueriesSchemes_0 = shortcuts;
-				INFOPLIST_KEY_NSMicrophoneUsageDescription = "MyMoney uses microphone to record voice transactions.";
-				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "MyMoney uses speech recognition to convert voice to transactions.";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Spendrift uses microphone to record voice transactions.";
+				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "Spendrift uses speech recognition to convert voice to transactions.";
 				INFOPLIST_KEY_NSSupportsLiveActivities = YES;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
@@ -586,7 +586,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.ronakpunase.MyMoney;
+				PRODUCT_BUNDLE_IDENTIFIER = com.ronakpunase.Spendrift;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
@@ -601,7 +601,7 @@
 		};
 		65BB66702E3F64510058CDE8 /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReferenceAnchor = 65BB664D2E3F644F0058CDE8 /* MyMoney */;
+			baseConfigurationReferenceAnchor = 65BB664D2E3F644F0058CDE8 /* Spendrift */;
 			baseConfigurationReferenceRelativePath = Configuration/DevSecrets.xcconfig;
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
@@ -611,18 +611,18 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 18.5;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.ronakpunase.MyMoneyTests;
+				PRODUCT_BUNDLE_IDENTIFIER = com.ronakpunase.SpendriftTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/MyMoney.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/MyMoney";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Spendrift.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Spendrift";
 			};
 			name = Debug;
 		};
 		65BB66712E3F64510058CDE8 /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReferenceAnchor = 65BB664D2E3F644F0058CDE8 /* MyMoney */;
+			baseConfigurationReferenceAnchor = 65BB664D2E3F644F0058CDE8 /* Spendrift */;
 			baseConfigurationReferenceRelativePath = Configuration/ProdSecrets.xcconfig;
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
@@ -632,12 +632,12 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 18.5;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.ronakpunase.MyMoneyTests;
+				PRODUCT_BUNDLE_IDENTIFIER = com.ronakpunase.SpendriftTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/MyMoney.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/MyMoney";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Spendrift.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Spendrift";
 			};
 			name = Release;
 		};
@@ -649,12 +649,12 @@
 				DEVELOPMENT_TEAM = YAHK4G4F5A;
 				GENERATE_INFOPLIST_FILE = YES;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.ronakpunase.MyMoneyUITests;
+				PRODUCT_BUNDLE_IDENTIFIER = com.ronakpunase.SpendriftUITests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
-				TEST_TARGET_NAME = MyMoney;
+				TEST_TARGET_NAME = Spendrift;
 			};
 			name = Debug;
 		};
@@ -666,24 +666,24 @@
 				DEVELOPMENT_TEAM = YAHK4G4F5A;
 				GENERATE_INFOPLIST_FILE = YES;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.ronakpunase.MyMoneyUITests;
+				PRODUCT_BUNDLE_IDENTIFIER = com.ronakpunase.SpendriftUITests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
-				TEST_TARGET_NAME = MyMoney;
+				TEST_TARGET_NAME = Spendrift;
 			};
 			name = Release;
 		};
 		A10000082E3F70000058CDE8 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				CODE_SIGN_ENTITLEMENTS = MyMoneyVoiceWidget/MyMoneyVoiceWidget.entitlements;
+				CODE_SIGN_ENTITLEMENTS = SpendriftVoiceWidget/SpendriftVoiceWidget.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = YAHK4G4F5A;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = MyMoneyVoiceWidget/Info.plist;
+				INFOPLIST_FILE = SpendriftWiget/Info.plist;
 				INFOPLIST_KEY_NSSupportsLiveActivities = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 18.5;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -692,7 +692,7 @@
 					"@executable_path/../../Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.ronakpunase.MyMoney.MyMoneyVoiceWidget;
+				PRODUCT_BUNDLE_IDENTIFIER = com.ronakpunase.Spendrift.SpendriftWidget;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
@@ -708,12 +708,12 @@
 		A10000092E3F70000058CDE8 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				CODE_SIGN_ENTITLEMENTS = MyMoneyVoiceWidget/MyMoneyVoiceWidget.entitlements;
+				CODE_SIGN_ENTITLEMENTS = SpendriftVoiceWidget/SpendriftVoiceWidget.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = YAHK4G4F5A;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = MyMoneyVoiceWidget/Info.plist;
+				INFOPLIST_FILE = SpendriftVoiceWidget/Info.plist;
 				INFOPLIST_KEY_NSSupportsLiveActivities = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 18.5;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -722,7 +722,7 @@
 					"@executable_path/../../Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.ronakpunase.MyMoney.MyMoneyVoiceWidget;
+				PRODUCT_BUNDLE_IDENTIFIER = com.ronakpunase.Spendrift.SpendriftWidget;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
@@ -738,7 +738,7 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		65BB66462E3F644F0058CDE8 /* Build configuration list for PBXProject "MyMoney" */ = {
+		65BB66462E3F644F0058CDE8 /* Build configuration list for PBXProject "Spendrift" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				65BB666A2E3F64510058CDE8 /* Debug */,
@@ -747,7 +747,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		65BB666C2E3F64510058CDE8 /* Build configuration list for PBXNativeTarget "MyMoney" */ = {
+		65BB666C2E3F64510058CDE8 /* Build configuration list for PBXNativeTarget "Spendrift" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				65BB666D2E3F64510058CDE8 /* Debug */,
@@ -756,7 +756,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		65BB666F2E3F64510058CDE8 /* Build configuration list for PBXNativeTarget "MyMoneyTests" */ = {
+		65BB666F2E3F64510058CDE8 /* Build configuration list for PBXNativeTarget "SpendriftTests" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				65BB66702E3F64510058CDE8 /* Debug */,
@@ -765,7 +765,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		65BB66722E3F64510058CDE8 /* Build configuration list for PBXNativeTarget "MyMoneyUITests" */ = {
+		65BB66722E3F64510058CDE8 /* Build configuration list for PBXNativeTarget "SpendriftUITests" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				65BB66732E3F64510058CDE8 /* Debug */,
@@ -774,7 +774,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		A10000072E3F70000058CDE8 /* Build configuration list for PBXNativeTarget "MyMoneyVoiceWidget" */ = {
+		A10000072E3F70000058CDE8 /* Build configuration list for PBXNativeTarget "SpendriftVoiceWidget" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				A10000082E3F70000058CDE8 /* Debug */,

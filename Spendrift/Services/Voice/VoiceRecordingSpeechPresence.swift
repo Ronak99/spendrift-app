@@ -1,6 +1,6 @@
 //
 //  VoiceRecordingSpeechPresence.swift
-//  MyMoney
+//  Spendrift
 //
 //  Uses on-device speech recognition to detect whether the clip likely contains speech,
 //  so silent recordings are not sent to the audio model (which may hallucinate amounts).

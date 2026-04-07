@@ -1,6 +1,6 @@
 //
 //  ShortcutQuickAmountTransaction.swift
-//  MyMoney
+//  Spendrift
 //
 //  Created by Cursor on 30/03/26.
 //

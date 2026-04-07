@@ -1,6 +1,6 @@
 //
 //  OpenSettingsEnvironment.swift
-//  MyMoney
+//  Spendrift
 //
 
 import SwiftUI

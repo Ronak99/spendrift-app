@@ -1,6 +1,6 @@
 //
 //  StatementImportView.swift
-//  MyMoney
+//  Spendrift
 //
 //  Created by Cursor on 06/04/26.
 //

@@ -1,6 +1,6 @@
 //
 //  CategoryTransactionsView.swift
-//  MyMoney
+//  Spendrift
 //
 //  Created by Cursor on 05/04/26.
 //

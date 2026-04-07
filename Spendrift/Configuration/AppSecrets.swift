@@ -1,6 +1,6 @@
 //
 //  AppSecrets.swift
-//  MyMoney
+//  Spendrift
 //
 //  Created by Cursor on 23/03/26.
 //

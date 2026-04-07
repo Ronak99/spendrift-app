@@ -1,6 +1,6 @@
 //
 //  IntentSwiftData.swift
-//  MyMoney
+//  Spendrift
 //
 //  Created by Cursor on 30/03/26.
 //
@@ -9,7 +9,7 @@ import Foundation
 import SwiftData
 
 enum IntentSwiftData {
-    static let appGroupID = "group.com.ronakpunase.MyMoney"
+    static let appGroupID = "group.com.ronakpunase.Spendrift"
 
     /// Shared SwiftData container used by the main app, App Intents, and the widget extension.
     /// Uses the App Group container so all processes share the same on-disk store.
@@ -25,7 +25,7 @@ enum IntentSwiftData {
         if let groupURL = FileManager.default.containerURL(
             forSecurityApplicationGroupIdentifier: appGroupID
         ) {
-            let storeURL = groupURL.appendingPathComponent("MyMoney.sqlite")
+            let storeURL = groupURL.appendingPathComponent("Spendrift.sqlite")
             let config = ModelConfiguration(url: storeURL)
             return try ModelContainer(for: schema, configurations: [config])
         }

@@ -1,6 +1,6 @@
 //
 //  OnboardingCarouselView.swift
-//  MyMoney
+//  Spendrift
 //
 //  NeatPass-style carousel: deep dark background, glowing hero, FeatureRow list,
 //  pill pager, haptic on completion.
@@ -135,7 +135,7 @@ private struct WelcomePage: View {
         ("creditcard.fill", Color(hex: "#5E5CE6"), "Track Every Expense",
          "Log income and spending across multiple accounts with a tap."),
         ("mic.fill", Color(hex: "#A78BFA"), "Voice Capture",
-         "Speak an expense and MyMoney parses the amount, category and account."),
+         "Speak an expense and Spendrift parses the amount, category and account."),
         ("folder.fill", Color(hex: "#F59E0B"), "Smart Categories",
          "Organise transactions into custom categories for instant insights."),
         ("lock.shield.fill", Color(hex: "#34C759"), "Private by Default",
@@ -148,7 +148,7 @@ private struct WelcomePage: View {
                 Spacer(minLength: 12)
 
                 VStack(spacing: 8) {
-                    Text("Welcome to MyMoney")
+                    Text("Welcome to Spendrift")
                         .font(.title.bold())
                         .foregroundStyle(OnboardingTheme.textPrimary)
                         .multilineTextAlignment(.center)

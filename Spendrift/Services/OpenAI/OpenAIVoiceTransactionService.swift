@@ -1,6 +1,6 @@
 //
 //  OpenAIVoiceTransactionService.swift
-//  MyMoney
+//  Spendrift
 //
 //  Created by Cursor on 23/03/26.
 //
@@ -85,7 +85,7 @@ struct OpenAIVoiceTransactionService {
         }
 
         let localPath = URL(fileURLWithPath: FileManager.default.currentDirectoryPath)
-            .appendingPathComponent("MyMoney/basePrompt.md")
+            .appendingPathComponent("Spendrift/basePrompt.md")
         if FileManager.default.fileExists(atPath: localPath.path) {
             return try String(contentsOf: localPath, encoding: .utf8)
         }

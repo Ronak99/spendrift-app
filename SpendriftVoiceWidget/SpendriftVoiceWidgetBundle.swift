@@ -1,6 +1,6 @@
 //
-//  MyMoneyVoiceWidgetBundle.swift
-//  MyMoneyVoiceWidget
+//  SpendriftVoiceWidgetBundle.swift
+//  SpendriftVoiceWidget
 //
 //  Created by Cursor on 23/03/26.
 //
@@ -9,7 +9,7 @@ import SwiftUI
 import WidgetKit
 
 @main
-struct MyMoneyVoiceWidgetBundle: WidgetBundle {
+struct SpendriftVoiceWidgetBundle: WidgetBundle {
     var body: some Widget {
         VoiceLiveActivityWidget()
         QuickExpenseSmallWidget()

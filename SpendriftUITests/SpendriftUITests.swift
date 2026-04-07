@@ -1,6 +1,6 @@
 //
-//  MyMoneyUITests.swift
-//  MyMoneyUITests
+//  SpendriftUITests.swift
+//  SpendriftUITests
 //
 //  Created by Ronak Punase on 03/08/25.
 //
@@ -9,7 +9,7 @@ import XCTest
 
 // MARK: - Base Test Case
 
-class MyMoneyUITestBase: XCTestCase {
+class SpendriftUITestBase: XCTestCase {
     var app: XCUIApplication!
 
     override func setUpWithError() throws {
@@ -160,7 +160,7 @@ class MyMoneyUITestBase: XCTestCase {
 
 // MARK: - Account Integration Tests
 
-final class AccountIntegrationTests: MyMoneyUITestBase {
+final class AccountIntegrationTests: SpendriftUITestBase {
 
     // MARK: Empty State
 
@@ -272,7 +272,7 @@ final class AccountIntegrationTests: MyMoneyUITestBase {
 
 // MARK: - Category Integration Tests
 
-final class CategoryIntegrationTests: MyMoneyUITestBase {
+final class CategoryIntegrationTests: SpendriftUITestBase {
 
     // MARK: Default Seeding
 
@@ -431,7 +431,7 @@ final class CategoryIntegrationTests: MyMoneyUITestBase {
 
 // MARK: - Transaction Integration Tests
 
-final class TransactionIntegrationTests: MyMoneyUITestBase {
+final class TransactionIntegrationTests: SpendriftUITestBase {
 
     // MARK: Empty State
 
@@ -677,7 +677,7 @@ final class TransactionIntegrationTests: MyMoneyUITestBase {
 
 // MARK: - Cross-Feature Integration Tests
 
-final class CrossFeatureIntegrationTests: MyMoneyUITestBase {
+final class CrossFeatureIntegrationTests: SpendriftUITestBase {
 
     // MARK: Account Balance
 

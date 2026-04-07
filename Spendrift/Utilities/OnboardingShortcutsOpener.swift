@@ -1,6 +1,6 @@
 //
 //  OnboardingShortcutsOpener.swift
-//  MyMoney
+//  Spendrift
 //
 //  Opens the Shortcuts app from onboarding, falling back gracefully if unavailable.
 //  LSApplicationQueriesSchemes must include "shortcuts" in the target's Info settings.

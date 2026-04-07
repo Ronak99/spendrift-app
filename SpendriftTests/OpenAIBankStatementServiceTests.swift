@@ -1,13 +1,13 @@
 //
 //  OpenAIBankStatementServiceTests.swift
-//  MyMoneyTests
+//  SpendriftTests
 //
 //  Created by Cursor on 06/04/26.
 //
 
 import Foundation
 import Testing
-@testable import MyMoney
+@testable import Spendrift
 
 struct OpenAIBankStatementServiceTests {
 

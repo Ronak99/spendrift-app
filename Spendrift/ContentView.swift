@@ -1,6 +1,6 @@
 //
 //  ContentView.swift
-//  MyMoney
+//  Spendrift
 //
 //  Created by Ronak Punase on 25/02/26.
 //
@@ -82,7 +82,7 @@ struct ContentView: View {
     }
     
     private func handleQuickAction(url: URL) {
-        guard url.scheme == "mymoney" else { return }
+        guard url.scheme == "spendrift" else { return }
         
         switch url.host {
         case "createTransaction":

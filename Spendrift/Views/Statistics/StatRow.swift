@@ -1,6 +1,6 @@
 //
 //  StatRow.swift
-//  MyMoney
+//  Spendrift
 //
 //  Created by Ronak Punase on 03/08/25.
 //

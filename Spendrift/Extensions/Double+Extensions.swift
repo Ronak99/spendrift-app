@@ -1,6 +1,6 @@
 //
 //  Double+Extensions.swift
-//  MyMoney
+//  Spendrift
 //
 //  Created by Ronak Punase on 25/02/26.
 //

@@ -1,13 +1,13 @@
 //
 //  VoiceShortcutAudioNormalizerTests.swift
-//  MyMoneyTests
+//  SpendriftTests
 //
 //  Created by Cursor on 29/03/26.
 //
 
 import XCTest
 
-@testable import MyMoney
+@testable import Spendrift
 
 final class VoiceShortcutAudioNormalizerTests: XCTestCase {
 

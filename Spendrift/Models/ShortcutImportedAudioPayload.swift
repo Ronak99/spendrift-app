@@ -1,6 +1,6 @@
 //
 //  ShortcutImportedAudioPayload.swift
-//  MyMoney
+//  Spendrift
 //
 //  Created by Cursor on 29/03/26.
 //

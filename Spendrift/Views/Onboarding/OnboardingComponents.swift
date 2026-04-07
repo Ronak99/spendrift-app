@@ -1,6 +1,6 @@
 //
 //  OnboardingComponents.swift
-//  MyMoney
+//  Spendrift
 //
 //  Shared visual primitives for the NeatPass-style onboarding carousel.
 //
@@ -565,7 +565,7 @@ struct OnboardingCard<Content: View>: View {
                 icon: "mic.fill",
                 color: .purple,
                 title: "Voice Capture",
-                description: "Speak your expense and MyMoney parses it instantly."
+                description: "Speak your expense and Spendrift parses it instantly."
             )
             PillPageIndicator(total: 4, current: 1)
         }

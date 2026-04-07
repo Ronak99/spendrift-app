@@ -1,6 +1,6 @@
 //
 //  VoiceLiveActivityWidget.swift
-//  MyMoneyVoiceWidget
+//  SpendriftVoiceWidget
 //
 //  Created by Cursor on 23/03/26.
 //

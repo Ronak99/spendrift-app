@@ -1,6 +1,6 @@
 //
 //  SettingsView.swift
-//  MyMoney
+//  Spendrift
 //
 //  Created by Ronak Punase on 25/02/26.
 //
@@ -60,7 +60,7 @@ struct SettingsView: View {
                         item: AppShareContent.fullShareText,
                         subject: Text("An app I think you’d enjoy"),
                         message: Text(AppShareContent.shareMessage),
-                        preview: SharePreview("MyMoney", icon: Image(systemName: "chart.pie.fill"))
+                        preview: SharePreview("Spendrift", icon: Image(systemName: "chart.pie.fill"))
                     ) {
                         shareInviteBanner
                     }
@@ -106,7 +106,7 @@ struct SettingsView: View {
             .frame(width: 58, height: 58)
 
             VStack(alignment: .leading, spacing: 6) {
-                Text("Know someone who’d love MyMoney?")
+                Text("Know someone who’d love Spendrift?")
                     .font(.headline)
                     .foregroundStyle(.primary)
                 Text("Invite your friends and help them feel on top of their money.")

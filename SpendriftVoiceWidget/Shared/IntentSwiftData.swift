@@ -1,6 +1,6 @@
 //
 //  IntentSwiftData.swift
-//  MyMoney
+//  Spendrift
 //
 //  Created by Cursor on 30/03/26.
 //
@@ -9,7 +9,7 @@ import Foundation
 import SwiftData
 
 enum IntentSwiftData {
-    static let appGroupID = "group.com.ronakpunase.MyMoney"
+    static let appGroupID = "group.com.ronakpunase.Spendrift"
 
     static func makeModelContainer() throws -> ModelContainer {
         let inMemory = ProcessInfo.processInfo.arguments.contains("-UITesting")
@@ -23,7 +23,7 @@ enum IntentSwiftData {
         if let groupURL = FileManager.default.containerURL(
             forSecurityApplicationGroupIdentifier: appGroupID
         ) {
-            let storeURL = groupURL.appendingPathComponent("MyMoney.sqlite")
+            let storeURL = groupURL.appendingPathComponent("Spendrift.sqlite")
             let config = ModelConfiguration(url: storeURL)
             return try ModelContainer(for: schema, configurations: [config])
         }

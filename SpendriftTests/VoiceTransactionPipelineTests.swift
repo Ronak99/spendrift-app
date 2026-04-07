@@ -1,6 +1,6 @@
 //
 //  VoiceTransactionPipelineTests.swift
-//  MyMoneyTests
+//  SpendriftTests
 //
 //  Created by Cursor on 23/03/26.
 //
@@ -8,7 +8,7 @@
 import Foundation
 import SwiftData
 import Testing
-@testable import MyMoney
+@testable import Spendrift
 
 struct VoiceTransactionPipelineTests {
     private func makeInMemoryContext() throws -> ModelContext {

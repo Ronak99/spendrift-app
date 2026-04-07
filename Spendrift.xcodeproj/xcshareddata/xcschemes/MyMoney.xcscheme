@@ -16,9 +16,9 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "65BB664A2E3F644F0058CDE8"
-               BuildableName = "MyMoney.app"
-               BlueprintName = "MyMoney"
-               ReferencedContainer = "container:MyMoney.xcodeproj">
+               BuildableName = "Spendrift.app"
+               BlueprintName = "Spendrift"
+               ReferencedContainer = "container:Spendrift.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
       </BuildActionEntries>
@@ -36,9 +36,9 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "65BB66572E3F64510058CDE8"
-               BuildableName = "MyMoneyTests.xctest"
-               BlueprintName = "MyMoneyTests"
-               ReferencedContainer = "container:MyMoney.xcodeproj">
+               BuildableName = "SpendriftTests.xctest"
+               BlueprintName = "SpendriftTests"
+               ReferencedContainer = "container:Spendrift.xcodeproj">
             </BuildableReference>
          </TestableReference>
          <TestableReference
@@ -47,9 +47,9 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "65BB66612E3F64510058CDE8"
-               BuildableName = "MyMoneyUITests.xctest"
-               BlueprintName = "MyMoneyUITests"
-               ReferencedContainer = "container:MyMoney.xcodeproj">
+               BuildableName = "SpendriftUITests.xctest"
+               BlueprintName = "SpendriftUITests"
+               ReferencedContainer = "container:Spendrift.xcodeproj">
             </BuildableReference>
          </TestableReference>
       </Testables>
@@ -69,9 +69,9 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "65BB664A2E3F644F0058CDE8"
-            BuildableName = "MyMoney.app"
-            BlueprintName = "MyMoney"
-            ReferencedContainer = "container:MyMoney.xcodeproj">
+            BuildableName = "Spendrift.app"
+            BlueprintName = "Spendrift"
+            ReferencedContainer = "container:Spendrift.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
       <CommandLineArguments>
@@ -92,9 +92,9 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "65BB664A2E3F644F0058CDE8"
-            BuildableName = "MyMoney.app"
-            BlueprintName = "MyMoney"
-            ReferencedContainer = "container:MyMoney.xcodeproj">
+            BuildableName = "Spendrift.app"
+            BlueprintName = "Spendrift"
+            ReferencedContainer = "container:Spendrift.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
    </ProfileAction>

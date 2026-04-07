@@ -1,6 +1,6 @@
 //
 //  CaptureHubMediumWidget.swift
-//  MyMoneyVoiceWidget
+//  SpendriftVoiceWidget
 //
 //  Created by Cursor on 05/04/26.
 //

@@ -1,6 +1,6 @@
 //
 //  VoiceInlineCaptureController.swift
-//  MyMoney
+//  Spendrift
 //
 //  Created by Cursor on 28/03/26.
 //

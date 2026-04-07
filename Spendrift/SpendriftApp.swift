@@ -1,6 +1,6 @@
 //
-//  MyMoneyApp.swift
-//  MyMoney
+//  SpendriftApp.swift
+//  Spendrift
 //
 //  Created by Ronak Punase on 25/02/26.
 //
@@ -12,7 +12,7 @@ import AppIntents
 // Add a run argument : -com.apple.CoreData.SQLDebug 1 to visualize the SQLite data
 
 @main
-struct MyMoneyApp: App {
+struct SpendriftApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
 
     private let sharedContainer: ModelContainer
@@ -47,7 +47,7 @@ struct MyMoneyApp: App {
 private struct RootContainerView: View {
     /// Stores the onboarding version the user has completed.
     /// 0 = never shown. Bump `OnboardingCarouselView.currentVersion` in code to re-show on major updates.
-    @AppStorage("mymoneyOnboardingVersion") private var onboardingVersion = 0
+    @AppStorage("spendriftOnboardingVersion") private var onboardingVersion = 0
 
     private var isUITesting: Bool {
         ProcessInfo.processInfo.arguments.contains("-UITesting")

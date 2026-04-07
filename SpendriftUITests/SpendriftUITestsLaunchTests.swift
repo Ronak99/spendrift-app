@@ -1,13 +1,13 @@
 //
-//  MyMoneyUITestsLaunchTests.swift
-//  MyMoneyUITests
+//  SpendriftUITestsLaunchTests.swift
+//  SpendriftUITests
 //
 //  Created by Ronak Punase on 03/08/25.
 //
 
 import XCTest
 
-final class MyMoneyUITestsLaunchTests: XCTestCase {
+final class SpendriftUITestsLaunchTests: XCTestCase {
 
     override class var runsForEachTargetApplicationUIConfiguration: Bool {
         true
