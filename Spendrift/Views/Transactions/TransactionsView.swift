@@ -137,7 +137,7 @@ struct TransactionsView: View {
             .navigationTitle("Transactions")
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    HStack(spacing: 12) {
+                    HStack(spacing: 8) {
                         Menu {
                             Button {
                                 voiceInline.beginCapture()
@@ -165,6 +165,7 @@ struct TransactionsView: View {
 
                         ProfileSettingsToolbarButton()
                     }
+                    .padding(.horizontal, 8)
                 }
             }
             .overlay(alignment: .bottom) {
