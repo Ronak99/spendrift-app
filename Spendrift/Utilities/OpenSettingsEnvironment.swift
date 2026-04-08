@@ -22,8 +22,8 @@ struct ProfileSettingsToolbarButton: View {
 
     var body: some View {
         Button(action: openSettings) {
-            Image(systemName: "person.crop.circle.fill")
-                .font(.system(size: 22))
+            Image(systemName: "gear")
+                .font(.system(size: 18))
                 .symbolRenderingMode(.hierarchical)
         }
         .accessibilityLabel("Profile and settings")

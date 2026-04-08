@@ -11,7 +11,7 @@ import XCTest
 
 final class VoiceShortcutAudioNormalizerTests: XCTestCase {
 
-    func testAcceptsWAVAtLeastMinDuration() throws {
+    func testAcceptsWAVAtLeastMinDuration() async throws {
         let url = FileManager.default.temporaryDirectory
             .appendingPathComponent("voice-norm-test-\(UUID().uuidString).wav")
         defer { try? FileManager.default.removeItem(at: url) }
@@ -23,7 +23,7 @@ final class VoiceShortcutAudioNormalizerTests: XCTestCase {
         let wav = Self.makeWAVData(pcm: pcm, sampleRate: UInt32(sampleRate), channels: 1, bitsPerSample: 16)
         try wav.write(to: url)
 
-        let out = try VoiceShortcutAudioNormalizer.dataForOpenAIVoicePipeline(from: url)
+        let out = try await VoiceShortcutAudioNormalizer.dataForOpenAIVoicePipeline(from: url)
 
         XCTAssertGreaterThanOrEqual(out.count, 12)
         XCTAssertEqual(String(data: out.prefix(4), encoding: .ascii), "RIFF")
@@ -31,7 +31,7 @@ final class VoiceShortcutAudioNormalizerTests: XCTestCase {
         XCTAssertGreaterThan(out.count, 1_000)
     }
 
-    func testRejectsTooShortWhenDurationKnown() throws {
+    func testRejectsTooShortWhenDurationKnown() async throws {
         let url = FileManager.default.temporaryDirectory
             .appendingPathComponent("voice-norm-short-\(UUID().uuidString).wav")
         defer { try? FileManager.default.removeItem(at: url) }
@@ -43,8 +43,13 @@ final class VoiceShortcutAudioNormalizerTests: XCTestCase {
         let wav = Self.makeWAVData(pcm: pcm, sampleRate: UInt32(sampleRate), channels: 1, bitsPerSample: 16)
         try wav.write(to: url)
 
-        XCTAssertThrowsError(try VoiceShortcutAudioNormalizer.dataForOpenAIVoicePipeline(from: url)) { error in
-            XCTAssertEqual(error as? VoiceShortcutAudioNormalizerError, .durationTooShort)
+        do {
+            _ = try await VoiceShortcutAudioNormalizer.dataForOpenAIVoicePipeline(from: url)
+            XCTFail("Expected durationTooShort")
+        } catch let error as VoiceShortcutAudioNormalizerError {
+            XCTAssertEqual(error, .durationTooShort)
+        } catch {
+            XCTFail("Unexpected error: \(error)")
         }
     }
 
@@ -82,10 +87,10 @@ final class VoiceShortcutAudioNormalizerTests: XCTestCase {
 
 private extension Data {
     mutating func appendUInt16LE(_ value: UInt16) {
-        withUnsafeBytes(of: value.littleEndian) { append(contentsOf: $0) }
+        Swift.withUnsafeBytes(of: value.littleEndian) { append(contentsOf: $0) }
     }
 
     mutating func appendUInt32LE(_ value: UInt32) {
-        withUnsafeBytes(of: value.littleEndian) { append(contentsOf: $0) }
+        Swift.withUnsafeBytes(of: value.littleEndian) { append(contentsOf: $0) }
     }
 }

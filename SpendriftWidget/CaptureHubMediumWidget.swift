@@ -67,7 +67,7 @@ struct MediumWidgetView: View {
     let entry: MediumWidgetEntry
 
     private var quickAddIntent: QuickAmountExpenseIntent {
-        var intent = QuickAmountExpenseIntent()
+        let intent = QuickAmountExpenseIntent()
         intent.amount = entry.config.amount
         intent.category = entry.config.category
         intent.notes = ""
