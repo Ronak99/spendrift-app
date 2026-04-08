@@ -3,7 +3,7 @@
 //  Spendrift
 //
 //  Created by Ronak Punase on 25/02/26.
-//
+//  To Trigger Workflow
 
 import Combine
 import SwiftData
@@ -61,6 +61,7 @@ struct ContentView: View {
         .onAppear {
             QuickActionsManager.setupQuickActions()
             seedDefaultCategoriesIfNeeded()
+            ScreenshotDemoData.seedIfNeeded(modelContext: modelContext)
             handleVoiceIntentLaunchIfNeeded()
         }
         .onChange(of: scenePhase) { _, newPhase in

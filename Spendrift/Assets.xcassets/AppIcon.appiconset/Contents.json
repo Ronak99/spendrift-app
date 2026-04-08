@@ -13,7 +13,7 @@
           "value" : "dark"
         }
       ],
-      "filename" : "wallet_icon 1.png",
+      "filename" : "wallet_icon_dark.png",
       "idiom" : "universal",
       "platform" : "ios",
       "size" : "1024x1024"
@@ -25,7 +25,7 @@
           "value" : "tinted"
         }
       ],
-      "filename" : "wallet_icon_1024.png",
+      "filename" : "wallet_icon_tinted.png",
       "idiom" : "universal",
       "platform" : "ios",
       "size" : "1024x1024"

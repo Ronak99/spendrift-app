@@ -32,7 +32,7 @@ struct VoiceInlineRecordingBar: View {
         .shadow(color: .black.opacity(0.12), radius: 12, y: -4)
         .padding(.horizontal, 16)
         .padding(.bottom, 4)
-        .animation(.bouncy)
+        .animation(.bouncy, value: controller.displayState)
     }
 
     private var recordingContent: some View {
@@ -42,7 +42,6 @@ struct VoiceInlineRecordingBar: View {
             } ?? 0
             let maxDuration = VoiceAudioPolicy.maxClipDurationSeconds
             let progress = min(elapsed / maxDuration, 1.0)
-            let secondsLeft = max(0, Int(ceil(maxDuration - elapsed)))
 
             VStack(alignment: .leading, spacing: 10) {
                 HStack(alignment: .center, spacing: 12) {

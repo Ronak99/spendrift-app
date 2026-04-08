@@ -43,12 +43,13 @@ struct AccountsView: View {
             .navigationTitle("Accounts")
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    HStack(spacing: 12) {
+                    HStack(spacing: 8) {
                         Button(action: { showCreateSheet = true }) {
                             Image(systemName: "plus")
                         }
                         ProfileSettingsToolbarButton()
                     }
+                    .padding(.horizontal, 8)
                 }
             }
             .sheet(isPresented: $showCreateSheet) {

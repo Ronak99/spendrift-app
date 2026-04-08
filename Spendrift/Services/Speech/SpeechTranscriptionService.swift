@@ -38,22 +38,23 @@ final class SpeechTranscriptionService {
     }
 
     /// Duration of the captured file in seconds (for gating and review UI).
-    func capturedAudioDurationSeconds() -> Double {
+    func capturedAudioDurationSeconds() async -> Double {
         guard let url = capturedRecordingURL else { return 0 }
         let asset = AVURLAsset(url: url)
-        let seconds = CMTimeGetSeconds(asset.duration)
-        guard seconds.isFinite, !seconds.isNaN else { return 0 }
-        return seconds
+        do {
+            let duration = try await asset.load(.duration)
+            let seconds = CMTimeGetSeconds(duration)
+            guard seconds.isFinite, !seconds.isNaN else { return 0 }
+            return seconds
+        } catch {
+            return 0
+        }
     }
 
     func requestPermissions() async -> Bool {
         state = .requestingPermissions
 
-        let micAuthorized = await withCheckedContinuation { continuation in
-            AVAudioSession.sharedInstance().requestRecordPermission { granted in
-                continuation.resume(returning: granted)
-            }
-        }
+        let micAuthorized = await AVAudioApplication.requestRecordPermission()
 
         if micAuthorized {
             state = .idle
