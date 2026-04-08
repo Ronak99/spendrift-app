@@ -61,6 +61,7 @@ struct ContentView: View {
         .onAppear {
             QuickActionsManager.setupQuickActions()
             seedDefaultCategoriesIfNeeded()
+            ScreenshotDemoData.seedIfNeeded(modelContext: modelContext)
             handleVoiceIntentLaunchIfNeeded()
         }
         .onChange(of: scenePhase) { _, newPhase in
