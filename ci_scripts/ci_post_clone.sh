@@ -1,7 +1,8 @@
 #!/bin/sh
 set -e
 
-CONFIG_DIR="$CI_WORKSPACE/Spendrift/Configuration"
+REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+CONFIG_DIR="$REPO_ROOT/Spendrift/Configuration"
 mkdir -p "$CONFIG_DIR"
 
 cat > "$CONFIG_DIR/DevSecrets.xcconfig" <<EOF
