@@ -35,7 +35,9 @@ struct AccountTransactionsView: View {
             CapsuleDateSelector(
                 date: viewModel.selectedDate,
                 onPrevious: { viewModel.decrementMonth() },
-                onNext: { viewModel.incrementMonth() }
+                onNext: { viewModel.incrementMonth() },
+                onToday: { viewModel.goToCurrentMonth() },
+                onDateSelected: { viewModel.goToMonth($0) }
             )
             .padding(.horizontal)
             .padding(.top, 8)

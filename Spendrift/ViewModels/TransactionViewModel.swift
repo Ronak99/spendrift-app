@@ -24,8 +24,16 @@ class TransactionViewModel {
     func incrementMonth() {
         selectedDate = selectedDate.nextMonth
     }
-    
+
     func decrementMonth() {
         selectedDate = selectedDate.previousMonth
+    }
+
+    func goToCurrentMonth() {
+        selectedDate = Date()
+    }
+
+    func goToMonth(_ date: Date) {
+        selectedDate = date
     }
 }
