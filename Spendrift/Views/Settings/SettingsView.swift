@@ -61,6 +61,8 @@ struct SettingsView: View {
     @Environment(\.dismiss) private var dismiss
     @AppStorage("themeColor") private var themeColorName: String = "Blue"
 
+    @State private var showFeatureRequest = false
+
     private let shortcuts: [AppShortcutItem] = [
         AppShortcutItem(
             id: "voice",
@@ -136,6 +138,20 @@ struct SettingsView: View {
                 }
 
                 Section {
+                    Button {
+                        showFeatureRequest = true
+                    } label: {
+                        featureRequestBanner
+                    }
+                    .buttonStyle(.plain)
+                } header: {
+                    Text("Feedback")
+                } footer: {
+                    Text("Got an idea? We'd love to hear it.")
+                        .font(.footnote)
+                }
+
+                Section {
                     ShareLink(
                         item: AppShareContent.fullShareText,
                         subject: Text("An app I think you’d enjoy"),
@@ -154,6 +170,9 @@ struct SettingsView: View {
 
             }
             .navigationTitle("Settings")
+            .sheet(isPresented: $showFeatureRequest) {
+                FeatureRequestView()
+            }
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Done") {
@@ -162,6 +181,50 @@ struct SettingsView: View {
                 }
             }
         }
+    }
+
+    private var featureRequestBanner: some View {
+        HStack(alignment: .center, spacing: 16) {
+            ZStack {
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .fill(
+                        LinearGradient(
+                            colors: [
+                                shareAccent.opacity(0.35),
+                                shareAccent.opacity(0.12)
+                            ],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+                Image(systemName: "lightbulb.fill")
+                    .font(.system(size: 26))
+                    .foregroundStyle(shareAccent)
+                    .symbolRenderingMode(.hierarchical)
+            }
+            .frame(width: 58, height: 58)
+
+            VStack(alignment: .leading, spacing: 6) {
+                Text("Request a Feature")
+                    .font(.headline)
+                    .foregroundStyle(.primary)
+                Text("Have an idea that would make Spendrift better? Share it with us.")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
+            Image(systemName: "chevron.right")
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(.tertiary)
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 6)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .fill(Color(.secondarySystemGroupedBackground))
+        )
     }
 
     private var shareInviteBanner: some View {
