@@ -35,7 +35,7 @@ struct ExpenseCategoryQuery: EnumerableEntityQuery {
         let container = try IntentSwiftData.makeModelContainer()
         let context = ModelContext(container)
         let descriptor = FetchDescriptor<TransactionCategory>(sortBy: [SortDescriptor(\.name)])
-        let models = try context.fetch(descriptor)
+        let models = try context.fetch(descriptor).sortedByLastUsage()
         return models.map { ExpenseCategoryEntity(model: $0) }
     }
 

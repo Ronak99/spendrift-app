@@ -27,6 +27,7 @@ enum ShortcutQuickAmountTransaction {
         guard let primary = accounts.first(where: { $0.isPrimary }) else {
             throw Failure.noPrimaryAccount
         }
+        category?.lastUsedAt = Date()
         let transaction = Transaction(
             notes: notes,
             amount: amount,
