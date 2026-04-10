@@ -42,13 +42,31 @@ struct TransactionsView: View {
     private var totalExpenses: Double {
         transactions.totalExpenses
     }
-    
+
     private var totalIncome: Double {
         transactions.totalIncome
     }
-    
+
     private var savings: Double {
         transactions.savings
+    }
+
+    /// Round summary figures when there are many transactions — decimal precision
+    /// adds noise rather than clarity at that scale.
+    private var usesRoundedSummary: Bool {
+        transactions.count > 10
+    }
+
+    private var formattedExpenses: String {
+        usesRoundedSummary ? totalExpenses.formatCurrencyRounded : totalExpenses.formatCurrency
+    }
+
+    private var formattedIncome: String {
+        usesRoundedSummary ? totalIncome.formatCurrencyRounded : totalIncome.formatCurrency
+    }
+
+    private var formattedSavings: String {
+        usesRoundedSummary ? savings.formatCurrencyRounded : savings.formatCurrency
     }
     
     var body: some View {
@@ -73,7 +91,7 @@ struct TransactionsView: View {
                             Text("Expenses")
                                 .font(.caption)
                                 .foregroundColor(.secondary)
-                            Text(totalExpenses.formatCurrency)
+                            Text(formattedExpenses)
                                 .font(.headline)
                                 .foregroundColor(.red)
                         }
@@ -84,7 +102,7 @@ struct TransactionsView: View {
                             Text("Income")
                                 .font(.caption)
                                 .foregroundColor(.secondary)
-                            Text(totalIncome.formatCurrency)
+                            Text(formattedIncome)
                                 .font(.headline)
                                 .foregroundColor(.green)
                         }
@@ -95,7 +113,7 @@ struct TransactionsView: View {
                             Text("Savings")
                                 .font(.caption)
                                 .foregroundColor(.secondary)
-                            Text(savings.formatCurrency)
+                            Text(formattedSavings)
                                 .font(.headline)
                                 .foregroundColor(savings >= 0 ? .green : .red)
                         }
