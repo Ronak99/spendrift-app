@@ -71,11 +71,11 @@ struct SmallWidgetView: View {
     let entry: SmallWidgetEntry
 
     private var voiceExpenseURL: URL {
-        URL(string: "mymoney://voiceExpense")!
+        URL(string: "spendrift://voiceExpense")!
     }
     
     private var typeExpenseUrl: URL {
-        URL(string: "mymoney://createTransaction")!
+        URL(string: "spendrift://createTransaction")!
     }
 
     var body: some View {

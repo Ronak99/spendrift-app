@@ -156,11 +156,11 @@ struct LargeWidgetView: View {
             }
             .buttonStyle(.plain)
 
-            Link(destination: URL(string: "mymoney://voiceExpense")!) {
+            Link(destination: URL(string: "spendrift://voiceExpense")!) {
                 actionPill(icon: "mic.fill", label: "Voice", color: .orange)
             }
 
-            Link(destination: URL(string: "mymoney://createTransaction")!) {
+            Link(destination: URL(string: "spendrift://createTransaction")!) {
                 actionPill(icon: "plus", label: "Type", color: .purple)
             }
         }
@@ -262,7 +262,7 @@ struct LargeWidgetView: View {
                 .font(.caption2)
                 .foregroundStyle(.tertiary)
             Spacer()
-            Link(destination: URL(string: "mymoney://")!) {
+            Link(destination: URL(string: "spendrift://")!) {
                 Text("View all →")
                     .font(.caption2)
                     .foregroundStyle(Color.accentColor)

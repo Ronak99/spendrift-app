@@ -10,7 +10,7 @@ import UIKit
 class QuickActionsManager {
     static func setupQuickActions() {
         let createTransaction = UIApplicationShortcutItem(
-            type: "com.mymoney.createTransaction",
+            type: "com.ronakpunase.Spendrift.createTransaction",
             localizedTitle: "Create Transaction",
             localizedSubtitle: "Record a new transaction",
             icon: UIApplicationShortcutIcon(systemImageName: "plus.circle"),

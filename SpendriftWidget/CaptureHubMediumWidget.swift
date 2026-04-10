@@ -144,11 +144,11 @@ struct MediumWidgetView: View {
             }
             .buttonStyle(.plain)
 
-            Link(destination: URL(string: "mymoney://voiceExpense")!) {
+            Link(destination: URL(string: "spendrift://voiceExpense")!) {
                 actionRow(icon: "mic.fill", label: "Voice", color: .orange)
             }
 
-            Link(destination: URL(string: "mymoney://createTransaction")!) {
+            Link(destination: URL(string: "spendrift://createTransaction")!) {
                 actionRow(icon: "plus", label: "Type", color: .purple)
             }
         }
