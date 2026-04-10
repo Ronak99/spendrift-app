@@ -9,7 +9,7 @@ import Foundation
 
 enum VoiceAudioPolicy {
     /// Minimum recording length before sending audio to the model (in-app and Shortcuts).
-    static let minClipDurationSeconds: Double = 3
+    static let minClipDurationSeconds: Double = 2
     /// Global cap for all voice submissions (in-app + imported intent audio).
     static let maxClipDurationSeconds: Double = 30
 
