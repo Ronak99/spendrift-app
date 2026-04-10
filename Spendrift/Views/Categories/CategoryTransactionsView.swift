@@ -31,27 +31,17 @@ struct CategoryTransactionsView: View {
     }
 
     var body: some View {
-        @Bindable var viewModel = viewModel
         VStack(spacing: 0) {
-            VStack(spacing: 10) {
-                Picker("Time range", selection: $viewModel.periodGranularity) {
-                    ForEach(TransactionPeriod.allCases) { p in
-                        Text(p.label).tag(p)
-                    }
-                }
-                .pickerStyle(.segmented)
-
-                CapsuleDateSelector(
-                    period: viewModel.periodGranularity,
-                    title: viewModel.capsuleTitle,
-                    date: viewModel.selectedDate,
-                    isCurrentPeriod: viewModel.isCurrentPeriod,
-                    onPrevious: { viewModel.decrementPeriod() },
-                    onNext: { viewModel.incrementPeriod() },
-                    onToday: { viewModel.goToCurrentPeriod() },
-                    onJumpToDate: { viewModel.goToDate($0) }
-                )
-            }
+            CapsuleDateSelector(
+                period: viewModel.periodGranularity,
+                title: viewModel.capsuleTitle,
+                date: viewModel.selectedDate,
+                isCurrentPeriod: viewModel.isCurrentPeriod,
+                onPrevious: { viewModel.decrementPeriod() },
+                onNext: { viewModel.incrementPeriod() },
+                onToday: { viewModel.goToCurrentPeriod() },
+                onJumpToDate: { viewModel.goToDate($0) }
+            )
             .padding(.horizontal)
             .padding(.top, 8)
             .padding(.bottom, 12)
