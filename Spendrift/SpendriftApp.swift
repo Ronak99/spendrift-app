@@ -44,24 +44,83 @@ struct SpendriftApp: App {
     }
 }
 
+// MARK: - Root sheet priority queue
+
+/// All sheets that RootContainerView can display, ordered by priority (highest first).
+private enum RootSheet: Identifiable {
+    case mandatoryUpdate(version: String?, storeURL: URL?)
+    case onboarding
+    case optionalUpdate(version: String?, storeURL: URL?)
+
+    var id: String {
+        switch self {
+        case .mandatoryUpdate: "mandatoryUpdate"
+        case .onboarding:      "onboarding"
+        case .optionalUpdate:  "optionalUpdate"
+        }
+    }
+}
+
+// MARK: - Root container
+
 private struct RootContainerView: View {
     /// Stores the onboarding version the user has completed.
     /// 0 = never shown. Bump `OnboardingCarouselView.currentVersion` in code to re-show on major updates.
     @AppStorage("spendriftOnboardingVersion") private var onboardingVersion = 0
 
+    @State private var checker = AppUpdateChecker()
+    @State private var activeSheet: RootSheet?
+
     private var isUITesting: Bool {
         ProcessInfo.processInfo.arguments.contains("-UITesting")
     }
 
-    private var showOnboarding: Bool {
-       onboardingVersion < OnboardingCarouselView.currentVersion && !isUITesting
+    private var needsOnboarding: Bool {
+        onboardingVersion < OnboardingCarouselView.currentVersion && !isUITesting
     }
 
     var body: some View {
         ContentView()
-            .sheet(isPresented: .constant(showOnboarding)) {
-                OnboardingCarouselView(onboardingVersion: $onboardingVersion)
-                    .interactiveDismissDisabled(true)
+            .task {
+                await checker.check()
+                resolveActiveSheet()
             }
+            .sheet(item: $activeSheet) { sheet in
+                switch sheet {
+                case .mandatoryUpdate(let version, let url):
+                    AppUpdateSheet(kind: .mandatory, latestVersion: version, storeURL: url)
+                        .interactiveDismissDisabled(true)
+
+                case .onboarding:
+                    OnboardingCarouselView(onboardingVersion: $onboardingVersion)
+                        .interactiveDismissDisabled(true)
+                        .onDisappear { resolveActiveSheet() }
+
+                case .optionalUpdate(let version, let url):
+                    AppUpdateSheet(kind: .optional, latestVersion: version, storeURL: url)
+                }
+            }
+    }
+
+    /// Determines which sheet to surface based on priority:
+    /// mandatory update > onboarding > optional update.
+    private func resolveActiveSheet() {
+        if case .mandatoryUpdate = activeSheet { return }
+
+        if checker.updateKind == .mandatory {
+            activeSheet = .mandatoryUpdate(
+                version: checker.latestVersion,
+                storeURL: checker.storeURL
+            )
+        } else if needsOnboarding {
+            activeSheet = .onboarding
+        } else if checker.updateKind == .optional {
+            activeSheet = .optionalUpdate(
+                version: checker.latestVersion,
+                storeURL: checker.storeURL
+            )
+        } else {
+            activeSheet = nil
+        }
     }
 }
