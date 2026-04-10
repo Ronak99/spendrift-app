@@ -146,9 +146,6 @@ struct SettingsView: View {
                     .buttonStyle(.plain)
                 } header: {
                     Text("Feedback")
-                } footer: {
-                    Text("Got an idea? We'd love to hear it.")
-                        .font(.footnote)
                 }
 
                 Section {
