@@ -30,10 +30,9 @@ class TransactionViewModel {
     var isLoading: Bool = false
 
     init() {
-        if let raw = UserDefaults.standard.string(forKey: transactionPeriodGranularityKey),
-           let stored = TransactionPeriod(rawValue: raw) {
-            periodGranularity = stored
-        }
+        let raw = UserDefaults.standard.string(forKey: transactionPeriodGranularityKey)
+        periodGranularity = TransactionPeriod(rawValue: raw ?? "") ?? .month
+
         let ts = UserDefaults.standard.double(forKey: transactionPeriodSelectedDateKey)
         if ts > 0 {
             selectedDate = Date(timeIntervalSince1970: ts)
