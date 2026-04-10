@@ -7,9 +7,72 @@
 
 import SwiftUI
 
+// MARK: - Shortcut card model
+
+private struct AppShortcutItem: Identifiable {
+    let id: String
+    let title: String
+    let url: URL?
+}
+
+// MARK: - Shortcut card view
+
+private struct ShortcutCard: View {
+    let item: AppShortcutItem
+
+    private let cardColor = Color(hex: "#7551e0")
+
+    var body: some View {
+        Button {
+            guard let url = item.url else { return }
+            UIApplication.shared.open(url)
+        } label: {
+            ZStack(alignment: .topLeading) {
+                RoundedRectangle(cornerRadius: 20, style: .continuous)
+                    .fill(cardColor)
+
+                VStack(alignment: .leading, spacing: 0) {
+                    Image("OnboardingHeroMark")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 36, height: 36)
+                        .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+
+                    Spacer()
+
+                    Text(item.title)
+                        .font(.system(size: 15, weight: .bold))
+                        .foregroundStyle(.white)
+                        .multilineTextAlignment(.leading)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .lineLimit(3)
+                }
+                .padding(14)
+            }
+            .frame(height: 130)
+        }
+        .buttonStyle(.plain)
+    }
+}
+
+// MARK: - Settings view
+
 struct SettingsView: View {
     @Environment(\.dismiss) private var dismiss
     @AppStorage("themeColor") private var themeColorName: String = "Blue"
+
+    private let shortcuts: [AppShortcutItem] = [
+        AppShortcutItem(
+            id: "voice",
+            title: "Record an expense in Spendrift",
+            url: OnboardingShortcutShareLinks.voiceRecordExpense
+        ),
+        AppShortcutItem(
+            id: "amount",
+            title: "Type expense amount in Spendrift",
+            url: OnboardingShortcutShareLinks.logExpenseAmount
+        ),
+    ]
     
     private let themeColors: [(name: String, color: Color)] = [
         ("Cyan", Color(hex: "#22D3EE")),
@@ -53,6 +116,23 @@ struct SettingsView: View {
                     .padding(.vertical, 8)
                 } header: {
                     Text("Theme")
+                }
+
+                Section {
+                    LazyVGrid(
+                        columns: [GridItem(.flexible()), GridItem(.flexible())],
+                        spacing: 12
+                    ) {
+                        ForEach(shortcuts) { shortcut in
+                            ShortcutCard(item: shortcut)
+                        }
+                    }
+                    .padding(.vertical, 4)
+                } header: {
+                    Text("Siri & Shortcuts")
+                } footer: {
+                    Text("Tap a card to add the shortcut to your device, then trigger it with Siri or the Shortcuts app.")
+                        .font(.footnote)
                 }
 
                 Section {
