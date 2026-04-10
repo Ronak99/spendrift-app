@@ -34,7 +34,7 @@ struct TransactionsView: View {
     
     private var transactions: [Transaction] {
         allTransactions.filter { transaction in
-            transaction.date >= viewModel.startOfMonth && transaction.date <= viewModel.endOfMonth
+            transaction.date >= viewModel.periodStart && transaction.date <= viewModel.periodEnd
         }
     }
     
@@ -75,17 +75,30 @@ struct TransactionsView: View {
 
     var body: some View {
         @Bindable var voice = voiceInline
+        @Bindable var viewModel = viewModel
         NavigationStack {
             VStack(spacing: 0) {
                 // Header with date selector
                 VStack(spacing: 16) {
-                    CapsuleDateSelector(
-                        date: viewModel.selectedDate,
-                        onPrevious: { viewModel.decrementMonth() },
-                        onNext: { viewModel.incrementMonth() },
-                        onToday: { viewModel.goToCurrentMonth() },
-                        onDateSelected: { viewModel.goToMonth($0) }
-                    )
+                    VStack(spacing: 10) {
+                        Picker("Time range", selection: $viewModel.periodGranularity) {
+                            ForEach(TransactionPeriod.allCases) { p in
+                                Text(p.label).tag(p)
+                            }
+                        }
+                        .pickerStyle(.segmented)
+
+                        CapsuleDateSelector(
+                            period: viewModel.periodGranularity,
+                            title: viewModel.capsuleTitle,
+                            date: viewModel.selectedDate,
+                            isCurrentPeriod: viewModel.isCurrentPeriod,
+                            onPrevious: { viewModel.decrementPeriod() },
+                            onNext: { viewModel.incrementPeriod() },
+                            onToday: { viewModel.goToCurrentPeriod() },
+                            onJumpToDate: { viewModel.goToDate($0) }
+                        )
+                    }
                     .padding(.horizontal)
                     .padding(.top, 8)
                     
@@ -132,7 +145,7 @@ struct TransactionsView: View {
                     EmptyStateView(
                         icon: "tray",
                         title: "No Transactions",
-                        description: "Get started by adding your first transaction for \(viewModel.selectedDate.monthYear)",
+                        description: "Get started by adding your first transaction for \(viewModel.periodDescription)",
                         actionTitle: "Add Transaction",
                         action: { showCreateSheet = true }
                     )

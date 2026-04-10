@@ -21,18 +21,18 @@ struct StatisticsView: View {
         _allTransactions = Query(sort: \Transaction.date, order: .reverse)
     }
 
-    private var monthTransactions: [Transaction] {
+    private var periodTransactions: [Transaction] {
         allTransactions.filter { transaction in
-            transaction.date >= viewModel.startOfMonth && transaction.date <= viewModel.endOfMonth
+            transaction.date >= viewModel.periodStart && transaction.date <= viewModel.periodEnd
         }
     }
 
     private var expenseTransactions: [Transaction] {
-        monthTransactions.filter { $0.transactionType == .expense }
+        periodTransactions.filter { $0.transactionType == .expense }
     }
 
     private var incomeTransactions: [Transaction] {
-        monthTransactions.filter { $0.transactionType == .income }
+        periodTransactions.filter { $0.transactionType == .income }
     }
 
     private var totalSpent: Double {
@@ -48,10 +48,14 @@ struct StatisticsView: View {
     }
 
     private var averageDailySpend: Double {
-        guard let dayCount = Calendar.current.range(of: .day, in: .month, for: viewModel.selectedDate)?.count,
-              dayCount > 0 else {
+        let calendar = Calendar.current
+        let start = calendar.startOfDay(for: viewModel.periodStart)
+        let end = calendar.startOfDay(for: viewModel.periodEnd)
+        guard let dayComponent = calendar.dateComponents([.day], from: start, to: end).day else {
             return 0
         }
+        let dayCount = dayComponent + 1
+        guard dayCount > 0 else { return 0 }
         return totalSpent / Double(dayCount)
     }
 
@@ -90,27 +94,28 @@ struct StatisticsView: View {
 
     private var dailySpending: [DailySpendingData] {
         let calendar = Calendar.current
-        guard let interval = calendar.dateInterval(of: .month, for: viewModel.selectedDate),
-              let dayRange = calendar.range(of: .day, in: .month, for: viewModel.selectedDate) else {
-            return []
-        }
+        var start = calendar.startOfDay(for: viewModel.periodStart)
+        let endDay = calendar.startOfDay(for: viewModel.periodEnd)
 
         let grouped = Dictionary(grouping: expenseTransactions) { transaction in
             calendar.startOfDay(for: transaction.date)
         }
-
         let totalsByDay = grouped.mapValues { transactions in
             transactions.reduce(0) { $0 + $1.amount }
         }
 
-        return dayRange.compactMap { day in
-            guard let date = calendar.date(byAdding: .day, value: day - 1, to: interval.start) else {
-                return nil
-            }
+        var days: [Date] = []
+        var d = start
+        while d <= endDay {
+            days.append(d)
+            guard let next = calendar.date(byAdding: .day, value: 1, to: d) else { break }
+            d = next
+        }
 
-            return DailySpendingData(
+        return days.map { date in
+            DailySpendingData(
                 date: date,
-                amount: totalsByDay[calendar.startOfDay(for: date)] ?? 0
+                amount: totalsByDay[date] ?? 0
             )
         }
     }
@@ -138,20 +143,33 @@ struct StatisticsView: View {
     }
 
     var body: some View {
+        @Bindable var viewModel = viewModel
         NavigationStack {
             ScrollView {
                 VStack(spacing: 20) {
-                    CapsuleDateSelector(
-                        date: viewModel.selectedDate,
-                        onPrevious: { viewModel.decrementMonth() },
-                        onNext: { viewModel.incrementMonth() },
-                        onToday: { viewModel.goToCurrentMonth() },
-                        onDateSelected: { viewModel.goToMonth($0) }
-                    )
+                    VStack(spacing: 10) {
+                        Picker("Time range", selection: $viewModel.periodGranularity) {
+                            ForEach(TransactionPeriod.allCases) { p in
+                                Text(p.label).tag(p)
+                            }
+                        }
+                        .pickerStyle(.segmented)
+
+                        CapsuleDateSelector(
+                            period: viewModel.periodGranularity,
+                            title: viewModel.capsuleTitle,
+                            date: viewModel.selectedDate,
+                            isCurrentPeriod: viewModel.isCurrentPeriod,
+                            onPrevious: { viewModel.decrementPeriod() },
+                            onNext: { viewModel.incrementPeriod() },
+                            onToday: { viewModel.goToCurrentPeriod() },
+                            onJumpToDate: { viewModel.goToDate($0) }
+                        )
+                    }
                     .padding(.horizontal)
                     .padding(.top, 8)
 
-                    if monthTransactions.isEmpty {
+                    if periodTransactions.isEmpty {
                         emptyMonthState
                     } else {
                         summaryGrid
@@ -159,10 +177,10 @@ struct StatisticsView: View {
                         if expenseTransactions.isEmpty {
                             analyticsCard(
                                 title: "No Spending Yet",
-                                subtitle: "This month has transactions, but none of them are expenses."
+                                subtitle: "This period has transactions, but none of them are expenses."
                             ) {
                                 ContentUnavailableView(
-                                    "No expense data for \(viewModel.selectedDate.monthYear)",
+                                    "No expense data for \(viewModel.periodDescription)",
                                     systemImage: "chart.pie",
                                     description: Text("Add an expense transaction to unlock category and trend charts.")
                                 )
@@ -216,7 +234,7 @@ struct StatisticsView: View {
     private var spendingBreakdownCard: some View {
         analyticsCard(
             title: "Spending Breakdown",
-            subtitle: "Category share for \(viewModel.selectedDate.monthYear)"
+            subtitle: "Category share for \(viewModel.periodDescription)"
         ) {
             ZStack {
                 Chart(categoryBreakdown) { category in
@@ -276,7 +294,7 @@ struct StatisticsView: View {
     private var dailyTrendCard: some View {
         analyticsCard(
             title: "Daily Spending Trend",
-            subtitle: "See how your expenses changed through the month"
+            subtitle: "See how your expenses changed over \(viewModel.periodDescription)"
         ) {
             Chart(dailySpending) { day in
                 AreaMark(
@@ -342,10 +360,10 @@ struct StatisticsView: View {
                 .font(.system(size: 42))
                 .foregroundStyle(.secondary)
 
-            Text("No transactions in \(viewModel.selectedDate.monthYear)")
+            Text("No transactions in \(viewModel.periodDescription)")
                 .font(.headline)
 
-            Text("Add some transactions for this month to unlock your analytics dashboard.")
+            Text("Add some transactions for this period to unlock your analytics dashboard.")
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)

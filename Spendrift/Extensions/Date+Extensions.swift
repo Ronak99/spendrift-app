@@ -31,6 +31,26 @@ extension Date {
         components.month = -1
         return Calendar.current.date(byAdding: components, to: self) ?? self
     }
+
+    var startOfYear: Date {
+        let components = Calendar.current.dateComponents([.year], from: self)
+        return Calendar.current.date(from: components) ?? self
+    }
+
+    var endOfYear: Date {
+        guard let interval = Calendar.current.dateInterval(of: .year, for: self) else {
+            return self
+        }
+        return interval.end.addingTimeInterval(-1)
+    }
+
+    var nextYear: Date {
+        Calendar.current.date(byAdding: .year, value: 1, to: self) ?? self
+    }
+
+    var previousYear: Date {
+        Calendar.current.date(byAdding: .year, value: -1, to: self) ?? self
+    }
     
     var monthYear: String {
         let formatter = DateFormatter()

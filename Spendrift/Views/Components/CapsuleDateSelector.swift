@@ -8,14 +8,17 @@
 import SwiftUI
 
 struct CapsuleDateSelector: View {
+    let period: TransactionPeriod
+    let title: String
     let date: Date
+    let isCurrentPeriod: Bool
     let onPrevious: () -> Void
     let onNext: () -> Void
     var onToday: (() -> Void)? = nil
-    var onDateSelected: ((Date) -> Void)? = nil
+    var onJumpToDate: ((Date) -> Void)? = nil
 
     @AppStorage("hasSeenCapsuleGestureHint") private var hasSeenHint = false
-    @State private var showMonthPicker = false
+    @State private var showJumpSheet = false
     @State private var isPressing = false
     @State private var showGestureHint = false
 
@@ -30,9 +33,12 @@ struct CapsuleDateSelector: View {
 
                 Spacer()
 
-                Text(date.monthYear)
+                Text(title)
                     .font(.headline)
                     .fontWeight(.semibold)
+                    .multilineTextAlignment(.center)
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.75)
                     .scaleEffect(isPressing ? 0.94 : 1)
                     .animation(.spring(response: 0.25, dampingFraction: 0.6), value: isPressing)
                     .onTapGesture(count: 2) {
@@ -44,7 +50,7 @@ struct CapsuleDateSelector: View {
                         if pressing { UIImpactFeedbackGenerator(style: .medium).impactOccurred() }
                     }, perform: {
                         isPressing = false
-                        showMonthPicker = true
+                        showJumpSheet = true
                     })
 
                 Spacer()
@@ -63,7 +69,7 @@ struct CapsuleDateSelector: View {
             )
 
             if showGestureHint {
-                GestureHintTooltip()
+                GestureHintTooltip(period: period)
                     .transition(
                         .asymmetric(
                             insertion: .push(from: .top).combined(with: .opacity),
@@ -76,9 +82,9 @@ struct CapsuleDateSelector: View {
             }
         }
         .animation(.spring(response: 0.4, dampingFraction: 0.78), value: showGestureHint)
-        .onChange(of: date) { _, newDate in
+        .onChange(of: date) { _, _ in
             guard !hasSeenHint else { return }
-            guard !Calendar.current.isDate(newDate, equalTo: Date(), toGranularity: .month) else { return }
+            guard !isCurrentPeriod else { return }
             hasSeenHint = true
             withAnimation(.spring(response: 0.4, dampingFraction: 0.78)) { showGestureHint = true }
             Task {
@@ -86,11 +92,84 @@ struct CapsuleDateSelector: View {
                 withAnimation(.easeOut(duration: 0.25)) { showGestureHint = false }
             }
         }
-        .sheet(isPresented: $showMonthPicker) {
+        .sheet(isPresented: $showJumpSheet) {
+            jumpSheetContent
+        }
+    }
+
+    @ViewBuilder
+    private var jumpSheetContent: some View {
+        switch period {
+        case .week:
+            WeekJumpSheet(
+                initialDate: date,
+                onSelect: { picked in
+                    onJumpToDate?(picked)
+                }
+            )
+        case .month:
             MonthYearPickerSheet(date: date) { picked in
-                onDateSelected?(picked)
+                onJumpToDate?(picked)
+            }
+        case .year:
+            YearPickerSheet(initialDate: date) { picked in
+                onJumpToDate?(picked)
             }
         }
+    }
+}
+
+// MARK: - Week jump
+
+private struct WeekJumpSheet: View {
+    let initialDate: Date
+    let onSelect: (Date) -> Void
+
+    @Environment(\.dismiss) private var dismiss
+    @State private var picked: Date
+
+    init(initialDate: Date, onSelect: @escaping (Date) -> Void) {
+        self.initialDate = initialDate
+        self.onSelect = onSelect
+        _picked = State(initialValue: initialDate)
+    }
+
+    var body: some View {
+        NavigationStack {
+            VStack(spacing: 16) {
+                Text("Choose a week")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                DatePicker(
+                    "",
+                    selection: $picked,
+                    displayedComponents: [.date]
+                )
+                .datePickerStyle(.graphical)
+                .labelsHidden()
+                Spacer()
+            }
+            .padding(.horizontal, 20)
+            .padding(.top, 8)
+            .navigationTitle("Jump to week")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button("Cancel") { dismiss() }
+                }
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("Go") {
+                        onSelect(picked)
+                        dismiss()
+                    }
+                    .fontWeight(.semibold)
+                }
+            }
+        }
+        .presentationDetents([.large])
+        .presentationDragIndicator(.visible)
+        .presentationCornerRadius(24)
     }
 }
 
@@ -120,7 +199,6 @@ private struct MonthYearPickerSheet: View {
     var body: some View {
         NavigationStack {
             VStack(spacing: 28) {
-                // Year navigation
                 HStack {
                     Button {
                         displayYear -= 1
@@ -151,7 +229,6 @@ private struct MonthYearPickerSheet: View {
                 .padding(.horizontal, 32)
                 .padding(.top, 8)
 
-                // Month grid
                 LazyVGrid(
                     columns: Array(repeating: GridItem(.flexible(), spacing: 12), count: 3),
                     spacing: 12
@@ -176,7 +253,7 @@ private struct MonthYearPickerSheet: View {
 
                 Spacer()
             }
-            .navigationTitle("Jump to Month")
+            .navigationTitle("Jump to month")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
@@ -220,13 +297,96 @@ private struct MonthYearPickerSheet: View {
     }
 }
 
+// MARK: - Year picker
+
+private struct YearPickerSheet: View {
+    let initialDate: Date
+    let onSelect: (Date) -> Void
+
+    @Environment(\.dismiss) private var dismiss
+
+    private let calendar = Calendar.current
+    private var currentYear: Int { calendar.component(.year, from: Date()) }
+    private var selectedYear: Int { calendar.component(.year, from: initialDate) }
+
+    private var years: [Int] {
+        let low = min(2015, selectedYear)
+        let high = max(currentYear + 1, selectedYear)
+        guard low <= high else { return [selectedYear] }
+        return Array(low...high)
+    }
+
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: 88), spacing: 12)], spacing: 12) {
+                    ForEach(years.reversed(), id: \.self) { year in
+                        Button {
+                            selectYear(year)
+                        } label: {
+                            Text(String(year))
+                                .font(.callout.weight(.medium))
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 14)
+                                .background(tileBackground(year: year))
+                                .foregroundColor(tileForeground(year: year))
+                                .clipShape(RoundedRectangle(cornerRadius: 12))
+                        }
+                        .disabled(year > currentYear)
+                        .opacity(year > currentYear ? 0.35 : 1)
+                    }
+                }
+                .padding(.horizontal, 24)
+                .padding(.top, 16)
+            }
+            .navigationTitle("Jump to year")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("Done") { dismiss() }
+                        .fontWeight(.semibold)
+                }
+            }
+        }
+        .presentationDetents([.medium, .large])
+        .presentationDragIndicator(.visible)
+        .presentationCornerRadius(24)
+    }
+
+    private func selectYear(_ year: Int) {
+        var comps = DateComponents()
+        comps.year = year
+        comps.month = 1
+        comps.day = 1
+        if let date = calendar.date(from: comps) {
+            onSelect(date)
+            dismiss()
+        }
+    }
+
+    private func tileBackground(year: Int) -> Color {
+        if year == selectedYear {
+            return .blue
+        } else if year == currentYear {
+            return Color(.systemGray4)
+        }
+        return Color(.systemGray6)
+    }
+
+    private func tileForeground(year: Int) -> Color {
+        year == selectedYear ? .white : .primary
+    }
+}
+
 // MARK: - Gesture Hint Tooltip
 
 private struct GestureHintTooltip: View {
+    let period: TransactionPeriod
+
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
-            Label("Double tap to return to today", systemImage: "hand.tap")
-            Label("Long press to jump to any month", systemImage: "calendar")
+            Label(doubleTapLabel, systemImage: "hand.tap")
+            Label(longPressLabel, systemImage: "calendar")
         }
         .font(.caption.weight(.medium))
         .foregroundStyle(.secondary)
@@ -235,15 +395,34 @@ private struct GestureHintTooltip: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(Color(.systemGray6), in: RoundedRectangle(cornerRadius: 12))
     }
+
+    private var doubleTapLabel: String {
+        switch period {
+        case .week: return "Double tap to jump to this week"
+        case .month: return "Double tap to return to today’s month"
+        case .year: return "Double tap to jump to this year"
+        }
+    }
+
+    private var longPressLabel: String {
+        switch period {
+        case .week: return "Long press to pick a week"
+        case .month: return "Long press to jump to any month"
+        case .year: return "Long press to pick a year"
+        }
+    }
 }
 
 #Preview {
     CapsuleDateSelector(
+        period: .month,
+        title: "April 2026",
         date: Date(),
+        isCurrentPeriod: true,
         onPrevious: {},
         onNext: {},
         onToday: {},
-        onDateSelected: { _ in }
+        onJumpToDate: { _ in }
     )
     .padding()
 }
