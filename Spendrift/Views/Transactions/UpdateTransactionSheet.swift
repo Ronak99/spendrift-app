@@ -30,8 +30,12 @@ struct UpdateTransactionSheet: View {
     @State private var showCategoryPicker = false
     @State private var showCreateCategorySheet = false
     
+    private var categoriesSortedByLastUsed: [TransactionCategory] {
+        categories.sortedByLastUsage()
+    }
+
     private var filteredCategories: [TransactionCategory] {
-        categories.filter { $0.type.rawValue == transactionType.rawValue }
+        categoriesSortedByLastUsed.filter { $0.type.rawValue == transactionType.rawValue }
     }
     
     private var isValid: Bool {
@@ -203,7 +207,7 @@ struct UpdateTransactionSheet: View {
                 } else {
                     selectedAccount = draft?.account ?? accounts.first
                     transactionType = draft?.transactionType ?? .expense
-                    selectedCategory = draft?.category ?? categories.first(where: {
+                    selectedCategory = draft?.category ?? categoriesSortedByLastUsed.first(where: {
                         $0.type == (transactionType == .expense ? .expense : .income)
                     })
                     if let draft {
@@ -240,7 +244,9 @@ struct UpdateTransactionSheet: View {
             )
             modelContext.insert(newTransaction)
         }
-        
+
+        selectedCategory?.lastUsedAt = Date()
+
         try? modelContext.save()
         dismiss()
     }

@@ -113,6 +113,7 @@ enum VoiceTransactionCreator {
             return .needsManualEntry(draft, failure: .categoryMissing)
         }
 
+        draft.category?.lastUsedAt = Date()
         let transaction = Transaction(
             notes: draft.notes,
             amount: amount,

@@ -14,7 +14,7 @@ struct FeatureRequestView: View {
     @State private var requestText: String = ""
     @State private var selectedPhotoItem: PhotosPickerItem? = nil
     @State private var selectedImageData: Data? = nil
-    @State private var showMailComposer = false
+    @State private var showMailComposer  = false
     @State private var showMailUnavailableAlert = false
     @State private var showSentConfirmation = false
 

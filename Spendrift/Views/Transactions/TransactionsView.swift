@@ -68,7 +68,11 @@ struct TransactionsView: View {
     private var formattedSavings: String {
         usesRoundedSummary ? savings.formatCurrencyRounded : savings.formatCurrency
     }
-    
+
+    private var categoriesSortedByLastUsed: [TransactionCategory] {
+        categories.sortedByLastUsage()
+    }
+
     var body: some View {
         @Bindable var voice = voiceInline
         NavigationStack {
@@ -193,7 +197,7 @@ struct TransactionsView: View {
                     VoiceInlineRecordingBar(
                         controller: voiceInline,
                         accounts: accounts,
-                        categories: categories
+                        categories: categoriesSortedByLastUsed
                     )
                     .transition(.move(edge: .bottom).combined(with: .opacity))
                 }

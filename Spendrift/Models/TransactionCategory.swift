@@ -15,7 +15,9 @@ final class TransactionCategory {
     var type: TransactionType
     var createdOn: Date
     var icon: CategoryIcon
-    
+    /// Updated whenever a transaction is saved with this category (manual or shortcut).
+    var lastUsedAt: Date?
+
     @Relationship(deleteRule: .cascade, inverse: \Transaction.category)
     var transactions: [Transaction]?
     
@@ -173,5 +175,19 @@ extension TransactionCategory {
                 icon: .miscellaneous
             )
         ]
+    }
+}
+
+extension Array where Element == TransactionCategory {
+    /// Most recently used first; never-used at the end, preserving alphabetical order from `@Query(sort: \.name)`.
+    func sortedByLastUsage() -> [TransactionCategory] {
+        sorted { a, b in
+            switch (a.lastUsedAt, b.lastUsedAt) {
+            case let (aDate?, bDate?): return aDate > bDate
+            case (.some, .none): return true
+            case (.none, .some): return false
+            case (.none, .none): return false
+            }
+        }
     }
 }
