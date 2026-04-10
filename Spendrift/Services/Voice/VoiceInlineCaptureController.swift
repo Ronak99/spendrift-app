@@ -247,6 +247,7 @@ final class VoiceInlineCaptureController {
             let amountLabel = transaction.amount.formatCurrency
             liveActivityController.succeedAndEnd(message: "\(amountLabel) · \(categoryName)")
             UIImpactFeedbackGenerator(style: .light).impactOccurred()
+            AppStoreReviewRequest.requestIfFirstTime(forKey: AppStoreReviewRequest.Keys.firstVoiceTransaction)
             displayState = .hidden
         case .needsConfirmation(let draft, _):
             liveActivityController.failAndEnd(message: "Review in app")

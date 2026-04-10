@@ -8,15 +8,12 @@
 import SwiftUI
 import SwiftData
 import PDFKit
-import StoreKit
 import UniformTypeIdentifiers
 
 struct StatementImportView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
     @Query(sort: \Account.createdOn) private var accounts: [Account]
-
-    @AppStorage("didRequestAppStoreReviewAfterFirstStatementImport") private var didRequestReviewAfterFirstStatementImport = false
 
     @State private var selectedAccount: Account?
     @State private var hasAcceptedAIDataSharing = false
@@ -274,24 +271,11 @@ struct StatementImportView: View {
         }
         do {
             try modelContext.save()
-            if !didRequestReviewAfterFirstStatementImport {
-                didRequestReviewAfterFirstStatementImport = true
-                requestAppStoreReviewIfPossible()
-            }
+            AppStoreReviewRequest.requestIfFirstTime(forKey: AppStoreReviewRequest.Keys.firstStatementImport)
             dismiss()
         } catch {
             errorMessage = "Could not save transactions. \(error.localizedDescription)"
         }
-    }
-
-    /// Prompts for an App Store review once, after the first successful statement import. The system may still throttle when the dialog appears.
-    private func requestAppStoreReviewIfPossible() {
-        guard let scene = UIApplication.shared.connectedScenes
-            .compactMap({ $0 as? UIWindowScene })
-            .first(where: { $0.activationState == .foregroundActive })
-            ?? UIApplication.shared.connectedScenes.compactMap({ $0 as? UIWindowScene }).first
-        else { return }
-        SKStoreReviewController.requestReview(in: scene)
     }
 }
 
