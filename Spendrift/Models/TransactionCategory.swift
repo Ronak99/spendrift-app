@@ -165,6 +165,12 @@ extension TransactionCategory {
                 type: .expense,
                 createdOn: Date(),
                 icon: .tax
+            ),
+            TransactionCategory(
+                name: "Miscellaneous",
+                type: .expense,
+                createdOn: Date(),
+                icon: .miscellaneous
             )
         ]
     }
