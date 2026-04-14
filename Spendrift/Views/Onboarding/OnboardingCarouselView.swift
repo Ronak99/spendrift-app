@@ -69,8 +69,12 @@ struct OnboardingCarouselView: View {
                 }
                 .tabViewStyle(.page(indexDisplayMode: .never))
             }
-
+        }
+        // Bottom chrome was overlaid in the ZStack, so on short devices the pill pager sat on top of
+        // the shortcuts card. Insetting reserves real layout space so content stays above the dots.
+        .safeAreaInset(edge: .bottom, spacing: 0) {
             bottomChrome
+                .background(OnboardingTheme.background.ignoresSafeArea(edges: .bottom))
         }
         .preferredColorScheme(.dark)
     }
