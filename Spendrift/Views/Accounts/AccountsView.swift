@@ -11,8 +11,38 @@ import SwiftData
 struct AccountsView: View {
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \Account.createdOn) private var accounts: [Account]
+    @Query(sort: \Transaction.date, order: .reverse) private var allTransactions: [Transaction]
     @State private var showCreateSheet = false
-    
+
+    private var totalBalanceAllAccounts: Double {
+        accounts.reduce(0) { $0 + $1.currentBalance }
+    }
+
+    private var expenseSoFar: Double {
+        allTransactions.totalExpenses
+    }
+
+    private var incomeSoFar: Double {
+        allTransactions.totalIncome
+    }
+
+    /// Match Transactions: round summary figures when there are many transactions.
+    private var usesRoundedSummary: Bool {
+        allTransactions.count > 10
+    }
+
+    private var formattedExpenseSoFar: String {
+        usesRoundedSummary ? expenseSoFar.formatCurrencyRounded : expenseSoFar.formatCurrency
+    }
+
+    private var formattedIncomeSoFar: String {
+        usesRoundedSummary ? incomeSoFar.formatCurrencyRounded : incomeSoFar.formatCurrency
+    }
+
+    private var formattedTotalBalance: String {
+        totalBalanceAllAccounts.formatCurrency
+    }
+
     var body: some View {
         NavigationStack {
             Group {
@@ -26,15 +56,55 @@ struct AccountsView: View {
                     )
                 } else {
                     List {
-                        ForEach(accounts) { account in
-                            NavigationLink {
-                                AccountTransactionsView(account: account)
-                            } label: {
-                                AccountListItem(account: account)
+                        Section {
+                            VStack(alignment: .leading, spacing: 16) {
+                                HStack(alignment: .firstTextBaseline) {
+                                    Text("All accounts")
+                                        .font(.headline)
+                                    Spacer()
+                                    Text(formattedTotalBalance)
+                                        .font(.title3.weight(.semibold))
+                                        .foregroundStyle(.primary)
+                                }
+
+                                HStack(spacing: 20) {
+                                    VStack(alignment: .leading, spacing: 4) {
+                                        Text("Expense so far")
+                                            .font(.caption)
+                                            .foregroundStyle(.secondary)
+                                        Text(formattedExpenseSoFar)
+                                            .font(.headline)
+                                            .foregroundStyle(.red)
+                                    }
+
+                                    Spacer()
+
+                                    VStack(alignment: .trailing, spacing: 4) {
+                                        Text("Income so far")
+                                            .font(.caption)
+                                            .foregroundStyle(.secondary)
+                                        Text(formattedIncomeSoFar)
+                                            .font(.headline)
+                                            .foregroundStyle(.green)
+                                    }
+                                }
                             }
+                            .padding(.vertical, 4)
                         }
-                        .onDelete { indexSet in
-                            deleteAccounts(at: indexSet)
+
+                        Section {
+                            ForEach(accounts) { account in
+                                NavigationLink {
+                                    AccountTransactionsView(account: account)
+                                } label: {
+                                    AccountListItem(account: account)
+                                }
+                            }
+                            .onDelete { indexSet in
+                                deleteAccounts(at: indexSet)
+                            }
+                        } header: {
+                            Text("Your accounts")
                         }
                     }
                     .listStyle(.insetGrouped)
@@ -68,5 +138,5 @@ struct AccountsView: View {
 
 #Preview {
     AccountsView()
-        .modelContainer(for: [Account.self], inMemory: true)
+        .modelContainer(for: [Transaction.self, Account.self, TransactionCategory.self], inMemory: true)
 }
