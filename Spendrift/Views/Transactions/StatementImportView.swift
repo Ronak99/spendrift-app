@@ -282,7 +282,9 @@ struct StatementImportView: View {
                     showPasswordSheet = true
                     return
                 }
-                startParsing(data: data, filename: url.lastPathComponent)
+                let prepared = try preparedPDFData(from: doc)
+                try validatePDFBasics(data: prepared)
+                startParsing(data: prepared, filename: url.lastPathComponent)
             } catch {
                 errorMessage = error.localizedDescription
             }
@@ -307,8 +309,16 @@ struct StatementImportView: View {
             return
         }
         guard doc.isEncrypted else {
-            showPasswordSheet = false
-            startParsing(data: data, filename: filename)
+            do {
+                let prepared = try preparedPDFData(from: doc)
+                try validatePDFBasics(data: prepared)
+                showPasswordSheet = false
+                pendingPDFData = nil
+                pendingFilename = nil
+                startParsing(data: prepared, filename: filename)
+            } catch {
+                passwordFieldError = error.localizedDescription
+            }
             return
         }
         guard doc.unlock(withPassword: passwordAttempt) else {
@@ -317,7 +327,7 @@ struct StatementImportView: View {
         }
 
         do {
-            let decrypted = try decryptedPDFData(from: doc)
+            let decrypted = try preparedPDFData(from: doc)
             try validatePDFBasics(data: decrypted)
             passwordAttempt = ""
             showPasswordSheet = false
@@ -329,11 +339,25 @@ struct StatementImportView: View {
         }
     }
 
-    /// Writes the unlocked document to a temporary file and reads it back so we send decrypted bytes to the API.
-    private func decryptedPDFData(from document: PDFDocument) throws -> Data {
+    /// Produces PDF bytes suitable for upload.
+    ///
+    /// Password-protected PDFs: unlocking with `PDFDocument` only decrypts in memory; calling `write(to:)`
+    /// on the same document can still emit encryption metadata or hybrid structures that remote PDF parsers
+    /// (including OpenAI's) reject as corrupted. Copying each page into a new `PDFDocument` strips the
+    /// security dictionary and yields a normal, unencrypted file.
+    private func preparedPDFData(from document: PDFDocument) throws -> Data {
+        let export = PDFDocument()
+        for index in 0..<document.pageCount {
+            guard let page = document.page(at: index) else { continue }
+            export.insert(page, at: export.pageCount)
+        }
+        guard export.pageCount > 0 else {
+            throw StatementImportError.couldNotExportUnlockedPDF
+        }
+
         let tempURL = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString + ".pdf")
         defer { try? FileManager.default.removeItem(at: tempURL) }
-        guard document.write(to: tempURL) else {
+        guard export.write(to: tempURL) else {
             throw StatementImportError.couldNotExportUnlockedPDF
         }
         return try Data(contentsOf: tempURL)
