@@ -22,6 +22,11 @@ struct StatementImportView: View {
     @State private var isLoading = false
     @State private var errorMessage: String?
     @State private var didFinishParsing = false
+    @State private var showPasswordSheet = false
+    @State private var pendingPDFData: Data?
+    @State private var pendingFilename: String?
+    @State private var passwordAttempt = ""
+    @State private var passwordFieldError: String?
 
     private let service = OpenAIBankStatementService()
     private static let maxPDFBytes = 20 * 1024 * 1024 // 20 MB
@@ -71,6 +76,16 @@ struct StatementImportView: View {
                 Button("OK") { errorMessage = nil }
             } message: {
                 Text(errorMessage ?? "")
+            }
+            .sheet(isPresented: $showPasswordSheet, onDismiss: {
+                passwordAttempt = ""
+                passwordFieldError = nil
+                if !isLoading {
+                    pendingPDFData = nil
+                    pendingFilename = nil
+                }
+            }) {
+                pdfPasswordSheet
             }
             .onAppear {
                 guard selectedAccount == nil, let primary = accounts.first(where: { $0.isPrimary }) else { return }
@@ -166,6 +181,50 @@ struct StatementImportView: View {
         }
     }
 
+    // MARK: - Password sheet (encrypted PDFs)
+
+    private var pdfPasswordSheet: some View {
+        NavigationStack {
+            Form {
+                Section {
+                    Text("This PDF is password-protected. Enter the document password so it can be unlocked on your device before anything is sent for parsing.")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+
+                Section {
+                    SecureField("PDF password", text: $passwordAttempt)
+                        .textContentType(.password)
+                        .textInputAutocapitalization(.never)
+                        .autocorrectionDisabled()
+                } footer: {
+                    if let passwordFieldError {
+                        Text(passwordFieldError)
+                            .font(.caption)
+                            .foregroundStyle(.red)
+                    }
+                }
+            }
+            .navigationTitle("Unlock PDF")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") {
+                        showPasswordSheet = false
+                    }
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Continue") {
+                        tryUnlockPendingPDF()
+                    }
+                    .disabled(passwordAttempt.isEmpty || isLoading)
+                }
+            }
+        }
+        .presentationDetents([.medium])
+    }
+
     // MARK: - Step 2: Preview
 
     private var previewList: some View {
@@ -212,7 +271,17 @@ struct StatementImportView: View {
 
             do {
                 let data = try Data(contentsOf: url)
-                try validatePDF(data: data)
+                try validatePDFBasics(data: data)
+                guard let doc = PDFDocument(data: data) else {
+                    throw StatementImportError.unreadablePDF
+                }
+                if doc.isEncrypted && !doc.unlock(withPassword: "") {
+                    pendingPDFData = data
+                    pendingFilename = url.lastPathComponent
+                    passwordFieldError = nil
+                    showPasswordSheet = true
+                    return
+                }
                 startParsing(data: data, filename: url.lastPathComponent)
             } catch {
                 errorMessage = error.localizedDescription
@@ -220,16 +289,54 @@ struct StatementImportView: View {
         }
     }
 
-    private func validatePDF(data: Data) throws {
+    private func validatePDFBasics(data: Data) throws {
         guard data.count <= Self.maxPDFBytes else {
             throw StatementImportError.fileTooLarge
         }
+    }
+
+    private func tryUnlockPendingPDF() {
+        guard let data = pendingPDFData, let filename = pendingFilename else {
+            showPasswordSheet = false
+            return
+        }
+        passwordFieldError = nil
+
         guard let doc = PDFDocument(data: data) else {
-            throw StatementImportError.unreadablePDF
+            passwordFieldError = StatementImportError.unreadablePDF.localizedDescription
+            return
         }
-        if doc.isEncrypted && !doc.unlock(withPassword: "") {
-            throw StatementImportError.passwordProtected
+        guard doc.isEncrypted else {
+            showPasswordSheet = false
+            startParsing(data: data, filename: filename)
+            return
         }
+        guard doc.unlock(withPassword: passwordAttempt) else {
+            passwordFieldError = StatementImportError.incorrectPDFPassword.localizedDescription
+            return
+        }
+
+        do {
+            let decrypted = try decryptedPDFData(from: doc)
+            try validatePDFBasics(data: decrypted)
+            passwordAttempt = ""
+            showPasswordSheet = false
+            pendingPDFData = nil
+            pendingFilename = nil
+            startParsing(data: decrypted, filename: filename)
+        } catch {
+            passwordFieldError = error.localizedDescription
+        }
+    }
+
+    /// Writes the unlocked document to a temporary file and reads it back so we send decrypted bytes to the API.
+    private func decryptedPDFData(from document: PDFDocument) throws -> Data {
+        let tempURL = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString + ".pdf")
+        defer { try? FileManager.default.removeItem(at: tempURL) }
+        guard document.write(to: tempURL) else {
+            throw StatementImportError.couldNotExportUnlockedPDF
+        }
+        return try Data(contentsOf: tempURL)
     }
 
     private func startParsing(data: Data, filename: String) {
@@ -319,7 +426,8 @@ private struct ImportRowView: View {
 enum StatementImportError: LocalizedError {
     case fileTooLarge
     case unreadablePDF
-    case passwordProtected
+    case incorrectPDFPassword
+    case couldNotExportUnlockedPDF
 
     var errorDescription: String? {
         switch self {
@@ -327,8 +435,10 @@ enum StatementImportError: LocalizedError {
             return "This PDF exceeds the 20 MB size limit."
         case .unreadablePDF:
             return "The selected file could not be read as a PDF."
-        case .passwordProtected:
-            return "Password-protected PDFs are not supported yet."
+        case .incorrectPDFPassword:
+            return "That password did not unlock this PDF. Check caps lock and try again."
+        case .couldNotExportUnlockedPDF:
+            return "The PDF unlocked, but it could not be prepared for upload. Try saving a copy without a password in Files and import that file."
         }
     }
 }
