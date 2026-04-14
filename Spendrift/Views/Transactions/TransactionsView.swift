@@ -13,7 +13,7 @@ struct TransactionsView: View {
     @Query(sort: \Transaction.date, order: .reverse) private var allTransactions: [Transaction]
     @Query(sort: \Account.createdOn) private var accounts: [Account]
     @Query(sort: \TransactionCategory.name) private var categories: [TransactionCategory]
-    @State private var viewModel = TransactionViewModel()
+    var periodViewModel: TransactionViewModel
     @State private var showCreateSheet = false
     @State private var showStatementImport = false
     @State private var voiceInline = VoiceInlineCaptureController()
@@ -23,10 +23,12 @@ struct TransactionsView: View {
     let shortcutImportedAudio: ShortcutImportedAudioPayload?
 
     init(
+        periodViewModel: TransactionViewModel,
         voiceCaptureTrigger: UUID? = nil,
         useCompactVoiceCapture: Bool = false,
         shortcutImportedAudio: ShortcutImportedAudioPayload? = nil
     ) {
+        self.periodViewModel = periodViewModel
         self.voiceCaptureTrigger = voiceCaptureTrigger
         self.useCompactVoiceCapture = useCompactVoiceCapture
         self.shortcutImportedAudio = shortcutImportedAudio
@@ -34,7 +36,7 @@ struct TransactionsView: View {
     
     private var transactions: [Transaction] {
         allTransactions.filter { transaction in
-            transaction.date >= viewModel.periodStart && transaction.date <= viewModel.periodEnd
+            transaction.date >= periodViewModel.periodStart && transaction.date <= periodViewModel.periodEnd
         }
     }
     
@@ -75,20 +77,20 @@ struct TransactionsView: View {
 
     var body: some View {
         @Bindable var voice = voiceInline
-        @Bindable var viewModel = viewModel
+        @Bindable var periodViewModel = periodViewModel
         NavigationStack {
             VStack(spacing: 0) {
                 // Header with date selector
                 VStack(spacing: 16) {
                     CapsuleDateSelector(
-                        period: viewModel.periodGranularity,
-                        title: viewModel.capsuleTitle,
-                        date: viewModel.selectedDate,
-                        isCurrentPeriod: viewModel.isCurrentPeriod,
-                        onPrevious: { viewModel.decrementPeriod() },
-                        onNext: { viewModel.incrementPeriod() },
-                        onToday: { viewModel.goToCurrentPeriod() },
-                        onJumpToDate: { viewModel.goToDate($0) }
+                        period: periodViewModel.periodGranularity,
+                        title: periodViewModel.capsuleTitle,
+                        date: periodViewModel.selectedDate,
+                        isCurrentPeriod: periodViewModel.isCurrentPeriod,
+                        onPrevious: { periodViewModel.decrementPeriod() },
+                        onNext: { periodViewModel.incrementPeriod() },
+                        onToday: { periodViewModel.goToCurrentPeriod() },
+                        onJumpToDate: { periodViewModel.goToDate($0) }
                     )
                     .padding(.horizontal)
                     .padding(.top, 8)
@@ -136,7 +138,7 @@ struct TransactionsView: View {
                     EmptyStateView(
                         icon: "tray",
                         title: "No Transactions",
-                        description: "Get started by adding your first transaction for \(viewModel.periodDescription)",
+                        description: "Get started by adding your first transaction for \(periodViewModel.periodDescription)",
                         actionTitle: "Add Transaction",
                         action: { showCreateSheet = true }
                     )
@@ -165,7 +167,7 @@ struct TransactionsView: View {
             .navigationTitle("Transactions")
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
-                    TransactionPeriodToolbarMenu(period: $viewModel.periodGranularity)
+                    TransactionPeriodToolbarMenu(period: $periodViewModel.periodGranularity)
                 }
                 ToolbarItem(placement: .navigationBarTrailing) {
                     HStack(spacing: 8) {
@@ -253,6 +255,6 @@ struct TransactionsView: View {
 }
 
 #Preview {
-    TransactionsView()
+    TransactionsView(periodViewModel: TransactionViewModel())
         .modelContainer(for: [Transaction.self, Account.self, TransactionCategory.self], inMemory: true)
 }

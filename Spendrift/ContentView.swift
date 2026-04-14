@@ -20,10 +20,12 @@ struct ContentView: View {
     @State private var shortcutImportedAudio: ShortcutImportedAudioPayload?
     @State private var useCompactVoiceCapture = false
     @State private var showSettingsSheet = false
+    @State private var transactionPeriodViewModel = TransactionViewModel()
 
     var body: some View {
         TabView(selection: $selectedTab) {
             TransactionsView(
+                periodViewModel: transactionPeriodViewModel,
                 voiceCaptureTrigger: voiceCaptureTrigger,
                 useCompactVoiceCapture: useCompactVoiceCapture,
                 shortcutImportedAudio: shortcutImportedAudio
@@ -47,7 +49,7 @@ struct ContentView: View {
                 }
                 .tag(2)
 
-            StatisticsView()
+            StatisticsView(periodViewModel: transactionPeriodViewModel)
                 .tabItem {
                     Image(systemName: "chart.pie")
                     Text("Analytics")

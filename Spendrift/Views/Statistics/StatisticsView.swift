@@ -11,19 +11,20 @@ import SwiftUI
 
 struct StatisticsView: View {
     @Query(sort: \Transaction.date, order: .reverse) private var allTransactions: [Transaction]
-    @State private var viewModel = TransactionViewModel()
+    var periodViewModel: TransactionViewModel
 
     private let categoryPalette: [Color] = [
         .blue, .purple, .pink, .orange, .teal, .green, .indigo, .cyan, .mint, .yellow, .brown
     ]
 
-    init() {
+    init(periodViewModel: TransactionViewModel) {
+        self.periodViewModel = periodViewModel
         _allTransactions = Query(sort: \Transaction.date, order: .reverse)
     }
 
     private var periodTransactions: [Transaction] {
         allTransactions.filter { transaction in
-            transaction.date >= viewModel.periodStart && transaction.date <= viewModel.periodEnd
+            transaction.date >= periodViewModel.periodStart && transaction.date <= periodViewModel.periodEnd
         }
     }
 
@@ -49,8 +50,8 @@ struct StatisticsView: View {
 
     private var averageDailySpend: Double {
         let calendar = Calendar.current
-        let start = calendar.startOfDay(for: viewModel.periodStart)
-        let end = calendar.startOfDay(for: viewModel.periodEnd)
+        let start = calendar.startOfDay(for: periodViewModel.periodStart)
+        let end = calendar.startOfDay(for: periodViewModel.periodEnd)
         guard let dayComponent = calendar.dateComponents([.day], from: start, to: end).day else {
             return 0
         }
@@ -94,8 +95,8 @@ struct StatisticsView: View {
 
     private var dailySpending: [DailySpendingData] {
         let calendar = Calendar.current
-        var start = calendar.startOfDay(for: viewModel.periodStart)
-        let endDay = calendar.startOfDay(for: viewModel.periodEnd)
+        var start = calendar.startOfDay(for: periodViewModel.periodStart)
+        let endDay = calendar.startOfDay(for: periodViewModel.periodEnd)
 
         let grouped = Dictionary(grouping: expenseTransactions) { transaction in
             calendar.startOfDay(for: transaction.date)
@@ -143,19 +144,19 @@ struct StatisticsView: View {
     }
 
     var body: some View {
-        @Bindable var viewModel = viewModel
+        @Bindable var periodViewModel = periodViewModel
         NavigationStack {
             ScrollView {
                 VStack(spacing: 20) {
                     CapsuleDateSelector(
-                        period: viewModel.periodGranularity,
-                        title: viewModel.capsuleTitle,
-                        date: viewModel.selectedDate,
-                        isCurrentPeriod: viewModel.isCurrentPeriod,
-                        onPrevious: { viewModel.decrementPeriod() },
-                        onNext: { viewModel.incrementPeriod() },
-                        onToday: { viewModel.goToCurrentPeriod() },
-                        onJumpToDate: { viewModel.goToDate($0) }
+                        period: periodViewModel.periodGranularity,
+                        title: periodViewModel.capsuleTitle,
+                        date: periodViewModel.selectedDate,
+                        isCurrentPeriod: periodViewModel.isCurrentPeriod,
+                        onPrevious: { periodViewModel.decrementPeriod() },
+                        onNext: { periodViewModel.incrementPeriod() },
+                        onToday: { periodViewModel.goToCurrentPeriod() },
+                        onJumpToDate: { periodViewModel.goToDate($0) }
                     )
                     .padding(.horizontal)
                     .padding(.top, 8)
@@ -171,7 +172,7 @@ struct StatisticsView: View {
                                 subtitle: "This period has transactions, but none of them are expenses."
                             ) {
                                 ContentUnavailableView(
-                                    "No expense data for \(viewModel.periodDescription)",
+                                    "No expense data for \(periodViewModel.periodDescription)",
                                     systemImage: "chart.pie",
                                     description: Text("Add an expense transaction to unlock category and trend charts.")
                                 )
@@ -191,7 +192,7 @@ struct StatisticsView: View {
             .navigationTitle("Analytics")
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
-                    TransactionPeriodToolbarMenu(period: $viewModel.periodGranularity)
+                    TransactionPeriodToolbarMenu(period: $periodViewModel.periodGranularity)
                 }
             }
         }
@@ -230,7 +231,7 @@ struct StatisticsView: View {
     private var spendingBreakdownCard: some View {
         analyticsCard(
             title: "Spending Breakdown",
-            subtitle: "Category share for \(viewModel.periodDescription)"
+            subtitle: "Category share for \(periodViewModel.periodDescription)"
         ) {
             ZStack {
                 Chart(categoryBreakdown) { category in
@@ -290,7 +291,7 @@ struct StatisticsView: View {
     private var dailyTrendCard: some View {
         analyticsCard(
             title: "Daily Spending Trend",
-            subtitle: "See how your expenses changed over \(viewModel.periodDescription)"
+            subtitle: "See how your expenses changed over \(periodViewModel.periodDescription)"
         ) {
             Chart(dailySpending) { day in
                 AreaMark(
@@ -356,7 +357,7 @@ struct StatisticsView: View {
                 .font(.system(size: 42))
                 .foregroundStyle(.secondary)
 
-            Text("No transactions in \(viewModel.periodDescription)")
+            Text("No transactions in \(periodViewModel.periodDescription)")
                 .font(.headline)
 
             Text("Add some transactions for this period to unlock your analytics dashboard.")
@@ -456,6 +457,6 @@ private struct WeekdaySpendingData: Identifiable {
 }
 
 #Preview {
-    StatisticsView()
+    StatisticsView(periodViewModel: TransactionViewModel())
         .modelContainer(for: [Transaction.self, Account.self, TransactionCategory.self], inMemory: true)
 }
