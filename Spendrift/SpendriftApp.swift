@@ -85,6 +85,11 @@ private struct RootContainerView: View {
                 await checker.check()
                 resolveActiveSheet()
             }
+            // Completing onboarding updates `onboardingVersion` only; `activeSheet` must be cleared here
+            // or the sheet never dismisses (onDisappear never runs while `.onboarding` stays set).
+            .onChange(of: onboardingVersion) { _, _ in
+                resolveActiveSheet()
+            }
             .sheet(item: $activeSheet) { sheet in
                 switch sheet {
                 case .mandatoryUpdate(let version, let url):
