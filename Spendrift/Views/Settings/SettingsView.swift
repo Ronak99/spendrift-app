@@ -66,12 +66,12 @@ struct SettingsView: View {
     private let shortcuts: [AppShortcutItem] = [
         AppShortcutItem(
             id: "voice",
-            title: "Record an expense in Spendrift",
+            title: "Speak Expense",
             url: OnboardingShortcutShareLinks.voiceRecordExpense
         ),
         AppShortcutItem(
             id: "amount",
-            title: "Type expense amount in Spendrift",
+            title: "Log Expense",
             url: OnboardingShortcutShareLinks.logExpenseAmount
         ),
     ]
