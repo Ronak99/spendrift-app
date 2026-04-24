@@ -11,12 +11,12 @@ import Foundation
 enum OnboardingShortcutShareLinks {
     /// Voice Record Expense (matches `VoiceExpenseIntent` / App Shortcut).
     static var voiceRecordExpense: URL? {
-        url(from: "https://www.icloud.com/shortcuts/ed13fb224d7347ea8ae14b7d496061a7")
+        url(from: "https://www.icloud.com/shortcuts/b13dbcf92a33445e930b0288c9a9afa0")
     }
 
     /// Log Expense Amount (matches `QuickAmountExpenseIntent` / App Shortcut).
     static var logExpenseAmount: URL? {
-        url(from: "https://www.icloud.com/shortcuts/7320b918c9244603af12f85533fb9e19")
+        url(from: "https://www.icloud.com/shortcuts/36509d49256d412abe4dd54bf7fdf146")
     }
 
     private static func url(from string: String) -> URL? {
