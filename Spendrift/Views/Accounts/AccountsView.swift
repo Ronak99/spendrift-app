@@ -103,6 +103,7 @@ struct AccountsView: View {
                 }
             }
             .listStyle(.insetGrouped)
+            .navigationTitle("Accounts")
             .overlay {
                 if visibleAccounts.isEmpty {
                     EmptyStateView(
@@ -115,7 +116,6 @@ struct AccountsView: View {
                     .background(Color(.systemGroupedBackground))
                 }
             }
-            .navigationTitle("Accounts")
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     HStack(spacing: 8) {
@@ -146,6 +146,15 @@ struct AccountsView: View {
 
         // Hide rows from ForEach immediately so the section item-count stays consistent.
         pendingDeletedAccountIDs.formUnion(deletedAccountIDs)
+
+        // If the primary was removed but other accounts remain, make the first list
+        // account (same `createdOn` order as the query) the new primary.
+        let remainingAfter = visibleAccounts.filter { !deletedAccountIDs.contains($0.id) }
+        if accountsToDelete.contains(where: { $0.isPrimary }), let newPrimary = remainingAfter.first {
+            for a in remainingAfter {
+                a.isPrimary = a.id == newPrimary.id
+            }
+        }
 
         // Mark objects for deletion in the context.  We intentionally do NOT call
         // save() here: committing to the store detaches the backing data of the
