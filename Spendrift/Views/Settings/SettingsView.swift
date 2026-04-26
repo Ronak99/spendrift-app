@@ -71,7 +71,7 @@ struct SettingsView: View {
         ),
         AppShortcutItem(
             id: "amount",
-            title: "Log Expense",
+            title: "Type Expense",
             url: OnboardingShortcutShareLinks.logExpenseAmount
         ),
     ]
