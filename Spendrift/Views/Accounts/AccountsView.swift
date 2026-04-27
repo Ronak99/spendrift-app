@@ -126,8 +126,24 @@ struct AccountsView: View {
     }
     
     private func deleteAccounts(at offsets: IndexSet) {
-        for index in offsets {
-            modelContext.delete(accounts[index])
+        let deleteIndices = Set(offsets)
+        let toDelete: [Account] = offsets.sorted().map { accounts[$0] }
+        
+        if let primaryIndex = accounts.firstIndex(where: { $0.isPrimary }),
+           deleteIndices.contains(primaryIndex) {
+            let remainingIndices = (0..<accounts.count).filter { !deleteIndices.contains($0) }
+            let newPrimaryIndex = remainingIndices.filter { $0 > primaryIndex }.min()
+                ?? remainingIndices.filter { $0 < primaryIndex }.max()
+            if let newIdx = newPrimaryIndex {
+                let newId = accounts[newIdx].id
+                for a in accounts {
+                    a.isPrimary = (a.id == newId)
+                }
+            }
+        }
+        
+        for account in toDelete {
+            modelContext.delete(account)
         }
         
         Task { @MainActor in
