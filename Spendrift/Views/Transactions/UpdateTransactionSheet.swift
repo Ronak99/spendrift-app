@@ -39,21 +39,20 @@ struct UpdateTransactionSheet: View {
     }
     
     private var isValid: Bool {
-        !amount.isEmpty && selectedAccount != nil && selectedCategory != nil && Double(amount) != nil && Double(
-            amount
-        )! > 0
+        guard let amountValue = Double(amount), amountValue > 0 else { return false }
+        guard selectedAccount != nil else { return false }
+        guard let category = selectedCategory, category.type == transactionType else { return false }
+        return true
     }
     
-    private var categoryText : String {
+    private var categoryText: String {
         if filteredCategories.isEmpty {
             return "Create Category"
-        } else {
-            if selectedCategory?.name != nil {
-                return selectedCategory!.name
-            } else {
-                return "Select Category"
-            }
         }
+        if let category = selectedCategory, category.type == transactionType {
+            return category.name
+        }
+        return "Select Category"
     }
     
     private var accountText : String {
@@ -188,11 +187,12 @@ struct UpdateTransactionSheet: View {
             .sheet(isPresented: $showCategoryPicker) {
                 CategoryPickerSheet(
                     selectedCategory: $selectedCategory,
-                    categories: filteredCategories
+                    categories: filteredCategories,
+                    defaultTypeForNewCategory: transactionType
                 )
             }
             .sheet(isPresented: $showCreateCategorySheet) {
-                UpdateCategorySheet(category: nil) { newCategory in
+                UpdateCategorySheet(category: nil, defaultTypeWhenCreating: transactionType) { newCategory in
                     selectedCategory = newCategory
                 }
             }
@@ -204,12 +204,16 @@ struct UpdateTransactionSheet: View {
                     transactionType = transaction.transactionType
                     selectedAccount = transaction.account
                     selectedCategory = transaction.category
+                    if selectedCategory?.type != transactionType {
+                        selectedCategory = nil
+                    }
                 } else {
                     selectedAccount = draft?.account ?? accounts.first
                     transactionType = draft?.transactionType ?? .expense
-                    selectedCategory = draft?.category ?? categoriesSortedByLastUsed.first(where: {
-                        $0.type == (transactionType == .expense ? .expense : .income)
-                    })
+                    selectedCategory = draft?.category ?? categoriesSortedByLastUsed.first { $0.type == transactionType }
+                    if selectedCategory?.type != transactionType {
+                        selectedCategory = categoriesSortedByLastUsed.first { $0.type == transactionType }
+                    }
                     if let draft {
                         notes = draft.notes
                         if let amount = draft.amount {
@@ -218,12 +222,18 @@ struct UpdateTransactionSheet: View {
                     }
                 }
             }
+            .onChange(of: transactionType) { _, _ in
+                if selectedCategory?.type != transactionType {
+                    selectedCategory = nil
+                }
+            }
         }
     }
     
     private func saveTransaction() {
         guard let amountValue = Double(amount) else { return }
-        
+        guard selectedCategory == nil || selectedCategory?.type == transactionType else { return }
+
         if let transaction = transaction {
             // Update existing
             transaction.notes = notes
@@ -303,6 +313,7 @@ struct CategoryPickerSheet: View {
     @Environment(\.dismiss) private var dismiss
     @Binding var selectedCategory: TransactionCategory?
     let categories: [TransactionCategory]
+    let defaultTypeForNewCategory: TransactionType
     
     @State private var showCreateCategorySheet = false
     @State private var searchText = ""
@@ -349,7 +360,7 @@ struct CategoryPickerSheet: View {
                 }
             }
             .sheet(isPresented: $showCreateCategorySheet) {
-                UpdateCategorySheet(category: nil) { newCategory in
+                UpdateCategorySheet(category: nil, defaultTypeWhenCreating: defaultTypeForNewCategory) { newCategory in
                     selectedCategory = newCategory
 //                    dismiss()
                 }

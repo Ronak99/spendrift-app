@@ -13,7 +13,19 @@ struct UpdateCategorySheet: View {
     @Environment(\.dismiss) private var dismiss
     
     let category: TransactionCategory?
+    /// When creating a category, pre-select this transaction type (for example from the transaction form).
+    let defaultTypeWhenCreating: TransactionType?
     var onCreated: ((TransactionCategory) -> Void)?
+
+    init(
+        category: TransactionCategory?,
+        defaultTypeWhenCreating: TransactionType? = nil,
+        onCreated: ((TransactionCategory) -> Void)? = nil
+    ) {
+        self.category = category
+        self.defaultTypeWhenCreating = defaultTypeWhenCreating
+        self.onCreated = onCreated
+    }
     
     @State private var name: String = ""
     @State private var type: TransactionType = .expense
@@ -66,6 +78,8 @@ struct UpdateCategorySheet: View {
                     name = category.name
                     type = category.type
                     icon = category.icon
+                } else if let preset = defaultTypeWhenCreating, preset != .none {
+                    type = preset
                 }
             }
         }
