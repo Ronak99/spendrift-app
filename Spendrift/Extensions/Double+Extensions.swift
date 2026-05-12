@@ -8,28 +8,34 @@
 import Foundation
 
 extension Double {
-    /// Currency with up to 2 decimal places; trailing zeros are stripped so whole
-    /// rupee amounts remain clean (e.g. ₹500, ₹99.50, ₹1,234.75).
-    var formatCurrency: String {
+    /// Uses the user's locale and region currency (Settings → General → Language & Region).
+    private static func currencyFormatter(maximumFractionDigits: Int) -> NumberFormatter {
         let formatter = NumberFormatter()
         formatter.numberStyle = .currency
-        formatter.currencyCode = "INR"
-        formatter.locale = Locale(identifier: "en_IN")
+        let locale = Locale.autoupdatingCurrent
+        formatter.locale = locale
+        formatter.currencyCode = locale.currency?.identifier ?? "USD"
         formatter.minimumFractionDigits = 0
-        formatter.maximumFractionDigits = 2
-        return formatter.string(from: NSNumber(value: self)) ?? "₹0"
+        formatter.maximumFractionDigits = maximumFractionDigits
+        return formatter
+    }
+
+    /// Currency with up to 2 decimal places; trailing zeros are stripped so whole
+    /// unit amounts stay clean (e.g. $500, $99.50, €1.234,75 per locale rules).
+    var formatCurrency: String {
+        let formatter = Self.currencyFormatter(maximumFractionDigits: 2)
+        return formatter.string(from: NSNumber(value: self))
+            ?? formatter.string(from: NSNumber(value: 0))
+            ?? "0"
     }
 
     /// Rounded currency with no fractional digits — for high-volume summaries
-    /// where decimal noise reduces readability (e.g. ₹12,450).
+    /// where decimal noise reduces readability.
     var formatCurrencyRounded: String {
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .currency
-        formatter.currencyCode = "INR"
-        formatter.locale = Locale(identifier: "en_IN")
-        formatter.minimumFractionDigits = 0
-        formatter.maximumFractionDigits = 0
-        return formatter.string(from: NSNumber(value: self)) ?? "₹0"
+        let formatter = Self.currencyFormatter(maximumFractionDigits: 0)
+        return formatter.string(from: NSNumber(value: self))
+            ?? formatter.string(from: NSNumber(value: 0))
+            ?? "0"
     }
 
     /// Whole-number string for amount/balance text fields (no decimals in the UI).
