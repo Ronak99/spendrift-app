@@ -7,8 +7,8 @@ import Foundation
 
 /// How transactions and analytics are scoped in time. Persisted app-wide via `TransactionViewModel`.
 enum TransactionPeriod: String, CaseIterable, Identifiable {
-    case month
     case week
+    case month
     case year
 
     var id: String { rawValue }
