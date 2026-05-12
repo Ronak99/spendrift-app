@@ -55,6 +55,7 @@ struct AccountsView: View {
                             actionTitle: "Add Account",
                             action: { showCreateSheet = true }
                         )
+                        .padding(.top, 150)
                         .listRowBackground(Color.clear)
                         .listRowSeparator(.hidden)
                     } else {
