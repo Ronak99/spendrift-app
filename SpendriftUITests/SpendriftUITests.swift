@@ -444,6 +444,9 @@ final class TransactionIntegrationTests: SpendriftUITestBase {
     func testTransactionsEmptyState_addButtonOpensCreateSheet() {
         navigateToTransactions()
         app.buttons["Add Transaction"].tap()
+        let typeEntry = app.buttons["Type"].firstMatch
+        XCTAssertTrue(typeEntry.waitForExistence(timeout: 3))
+        typeEntry.tap()
         XCTAssertTrue(app.navigationBars["New Transaction"].waitForExistence(timeout: 3))
     }
 

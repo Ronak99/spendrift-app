@@ -140,7 +140,13 @@ struct TransactionsView: View {
                         title: "No Transactions",
                         description: "Get started by adding your first transaction for \(periodViewModel.periodDescription)",
                         actionTitle: "Add Transaction",
-                        action: { showCreateSheet = true }
+                        action: nil,
+                        addTransactionMenu: EmptyStateAddTransactionMenu(
+                            onSpeak: { voiceInline.beginCapture() },
+                            onType: { showCreateSheet = true },
+                            onUploadDocument: { showStatementImport = true },
+                            voiceDisabled: voiceInline.blocksNewCapture
+                        )
                     )
                 } else {
                     List {
