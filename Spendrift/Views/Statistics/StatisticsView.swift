@@ -191,8 +191,10 @@ struct StatisticsView: View {
             .background(Color(.systemGroupedBackground))
             .navigationTitle("Analytics")
             .toolbar {
-                ToolbarItem(placement: .navigationBarLeading) {
-                    TransactionPeriodToolbarMenu(period: $periodViewModel.periodGranularity)
+                if !periodTransactions.isEmpty {
+                    ToolbarItem(placement: .navigationBarLeading) {
+                        TransactionPeriodToolbarMenu(period: $periodViewModel.periodGranularity)
+                    }
                 }
             }
         }

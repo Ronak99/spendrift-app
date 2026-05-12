@@ -166,8 +166,10 @@ struct TransactionsView: View {
             }
             .navigationTitle("Transactions")
             .toolbar {
-                ToolbarItem(placement: .navigationBarLeading) {
-                    TransactionPeriodToolbarMenu(period: $periodViewModel.periodGranularity)
+                if !transactions.isEmpty {
+                    ToolbarItem(placement: .navigationBarLeading) {
+                        TransactionPeriodToolbarMenu(period: $periodViewModel.periodGranularity)
+                    }
                 }
                 ToolbarItem(placement: .navigationBarTrailing) {
                     HStack(spacing: 8) {
