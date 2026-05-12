@@ -34,6 +34,10 @@ struct UpdateTransactionSheet: View {
         categories.sortedByLastUsage()
     }
 
+    private var accountsSortedByLastUsed: [Account] {
+        accounts.sortedByLastUsage()
+    }
+
     private var filteredCategories: [TransactionCategory] {
         categoriesSortedByLastUsed.filter { $0.type.rawValue == transactionType.rawValue }
     }
@@ -177,7 +181,7 @@ struct UpdateTransactionSheet: View {
             .sheet(isPresented: $showAccountPicker) {
                 AccountPickerSheet(
                     selectedAccount: $selectedAccount,
-                    accounts: accounts
+                    accounts: accountsSortedByLastUsed
                 )
             }
             .sheet(isPresented: $showCreateAccountSheet) {
@@ -205,7 +209,7 @@ struct UpdateTransactionSheet: View {
                     selectedAccount = transaction.account
                     selectedCategory = transaction.category
                 } else {
-                    selectedAccount = draft?.account ?? accounts.first
+                    selectedAccount = draft?.account ?? accountsSortedByLastUsed.first ?? accounts.first
                     transactionType = draft?.transactionType ?? .expense
                     selectedCategory = draft?.category ?? categoriesSortedByLastUsed.first(where: {
                         $0.type == (transactionType == .expense ? .expense : .income)
@@ -245,6 +249,7 @@ struct UpdateTransactionSheet: View {
             modelContext.insert(newTransaction)
         }
 
+        selectedAccount?.lastUsedAt = Date()
         selectedCategory?.lastUsedAt = Date()
 
         try? modelContext.save()
