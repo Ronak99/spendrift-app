@@ -9,6 +9,7 @@ import Foundation
 enum TransactionPeriod: String, CaseIterable, Identifiable {
     case week
     case month
+    // new filters
     case threeMonths
     case sixMonths
     case year
