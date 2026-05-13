@@ -388,6 +388,7 @@ struct StatementImportView: View {
 
     private func saveAll() {
         guard let account = selectedAccount else { return }
+        account.lastUsedAt = Date()
 
         for row in importedRows {
             let transaction = Transaction(
