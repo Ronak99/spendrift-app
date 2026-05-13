@@ -95,7 +95,7 @@ struct StatisticsView: View {
 
     private var dailySpending: [DailySpendingData] {
         let calendar = Calendar.current
-        var start = calendar.startOfDay(for: periodViewModel.periodStart)
+        let start = calendar.startOfDay(for: periodViewModel.periodStart)
         let endDay = calendar.startOfDay(for: periodViewModel.periodEnd)
 
         let grouped = Dictionary(grouping: expenseTransactions) { transaction in
