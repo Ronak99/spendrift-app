@@ -28,6 +28,7 @@ enum ShortcutQuickAmountTransaction {
             throw Failure.noPrimaryAccount
         }
         category?.lastUsedAt = Date()
+        primary.lastUsedAt = Date()
         let transaction = Transaction(
             notes: notes,
             amount: amount,

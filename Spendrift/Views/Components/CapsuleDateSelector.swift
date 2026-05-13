@@ -107,7 +107,7 @@ struct CapsuleDateSelector: View {
                     onJumpToDate?(picked)
                 }
             )
-        case .month, .threeMonths, .sixMonths:
+        case .month:
             MonthYearPickerSheet(date: date) { picked in
                 onJumpToDate?(picked)
             }
@@ -400,7 +400,6 @@ private struct GestureHintTooltip: View {
         switch period {
         case .week: return "Double tap to jump to this week"
         case .month: return "Double tap to return to today’s month"
-        case .threeMonths, .sixMonths: return "Double tap to return to the current range"
         case .year: return "Double tap to jump to this year"
         }
     }
@@ -409,7 +408,6 @@ private struct GestureHintTooltip: View {
         switch period {
         case .week: return "Long press to pick a week"
         case .month: return "Long press to jump to any month"
-        case .threeMonths, .sixMonths: return "Long press to choose the ending month"
         case .year: return "Long press to pick a year"
         }
     }

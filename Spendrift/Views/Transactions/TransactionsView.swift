@@ -140,7 +140,13 @@ struct TransactionsView: View {
                         title: "No Transactions",
                         description: "Get started by adding your first transaction for \(periodViewModel.periodDescription)",
                         actionTitle: "Add Transaction",
-                        action: { showCreateSheet = true }
+                        action: nil,
+                        addTransactionMenu: EmptyStateAddTransactionMenu(
+                            onSpeak: { voiceInline.beginCapture() },
+                            onType: { showCreateSheet = true },
+                            onUploadDocument: { showStatementImport = true },
+                            voiceDisabled: voiceInline.blocksNewCapture
+                        )
                     )
                 } else {
                     List {
@@ -166,39 +172,43 @@ struct TransactionsView: View {
             }
             .navigationTitle("Transactions")
             .toolbar {
-                ToolbarItem(placement: .navigationBarLeading) {
-                    TransactionPeriodToolbarMenu(period: $periodViewModel.periodGranularity)
+                if !transactions.isEmpty {
+                    ToolbarItem(placement: .navigationBarLeading) {
+                        TransactionPeriodToolbarMenu(period: $periodViewModel.periodGranularity)
+                    }
                 }
                 ToolbarItem(placement: .navigationBarTrailing) {
                     HStack(spacing: 8) {
-                        Menu {
-                            Button {
-                                voiceInline.beginCapture()
-                            } label: {
-                                Label("Speak", systemImage: "mic")
-                            }
-                            .disabled(voiceInline.blocksNewCapture)
+                        if !transactions.isEmpty {
+                            Menu {
+                                Button {
+                                    voiceInline.beginCapture()
+                                } label: {
+                                    Label("Speak", systemImage: "mic")
+                                }
+                                .disabled(voiceInline.blocksNewCapture)
 
-                            Button {
-                                showCreateSheet = true
-                            } label: {
-                                Label("Type", systemImage: "keyboard")
-                            }
+                                Button {
+                                    showCreateSheet = true
+                                } label: {
+                                    Label("Type", systemImage: "keyboard")
+                                }
 
-                            Button {
-                                showStatementImport = true
+                                Button {
+                                    showStatementImport = true
+                                } label: {
+                                    Label("Upload document", systemImage: "doc.text")
+                                }
                             } label: {
-                                Label("Upload document", systemImage: "doc.text")
+                                Image(systemName: "plus")
                             }
-                        } label: {
-                            Image(systemName: "plus")
+                            .accessibilityLabel("Add transaction")
+                            .accessibilityIdentifier("transactionsAddMenu")
                         }
-                        .accessibilityLabel("Add transaction")
-                        .accessibilityIdentifier("transactionsAddMenu")
 
                         ProfileSettingsToolbarButton()
                     }
-                    .padding(.horizontal, 8)
+                    .padding(.horizontal, transactions.isEmpty ? 0 : 8)
                 }
             }
             .overlay(alignment: .bottom) {

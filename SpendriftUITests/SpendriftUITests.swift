@@ -42,17 +42,41 @@ class SpendriftUITestBase: XCTestCase {
         app.buttons["openSettingsToolbar"].firstMatch.tap()
     }
 
-    /// Opens **Type manually** from the Transactions toolbar add menu (not the empty-state shortcut).
+    /// Opens manual entry from the Transactions add menu (toolbar when the list has rows, empty-state menu otherwise).
     func openTransactionsManualEntryForm() {
-        let menuButton = app.navigationBars["Transactions"]
-            .descendants(matching: .any)
+        let menuButton = app.descendants(matching: .any)
             .matching(identifier: "transactionsAddMenu")
             .element(boundBy: 0)
         XCTAssertTrue(menuButton.waitForExistence(timeout: 3))
         menuButton.tap()
-        let typeManually = app.buttons["Type manually"]
-        XCTAssertTrue(typeManually.waitForExistence(timeout: 3))
-        typeManually.tap()
+        let typeButton = app.buttons["Type"].firstMatch
+        if typeButton.waitForExistence(timeout: 2) {
+            typeButton.tap()
+        } else {
+            let typeManually = app.buttons["Type manually"]
+            XCTAssertTrue(typeManually.waitForExistence(timeout: 3))
+            typeManually.tap()
+        }
+    }
+
+    /// Opens New Account from the Accounts tab (toolbar **+** when accounts exist, otherwise empty-state **Add Account**).
+    func openNewAccountSheet() {
+        if app.buttons["Add Account"].waitForExistence(timeout: 2) {
+            app.buttons["Add Account"].tap()
+        } else {
+            XCTAssertTrue(app.navigationBars.buttons["plus"].waitForExistence(timeout: 3))
+            app.navigationBars.buttons["plus"].tap()
+        }
+    }
+
+    /// Opens New Category from the Categories tab (toolbar **+** when categories exist, otherwise empty-state **Add Category**).
+    func openNewCategorySheet() {
+        if app.buttons["Add Category"].waitForExistence(timeout: 2) {
+            app.buttons["Add Category"].tap()
+        } else {
+            XCTAssertTrue(app.navigationBars.buttons["plus"].waitForExistence(timeout: 3))
+            app.navigationBars.buttons["plus"].tap()
+        }
     }
 
     // MARK: - Account Helpers
@@ -60,7 +84,7 @@ class SpendriftUITestBase: XCTestCase {
     @discardableResult
     func createAccount(name: String, balance: String, iconIndex: Int? = nil) -> Self {
         navigateToAccounts()
-        app.navigationBars.buttons["plus"].tap()
+        openNewAccountSheet()
 
         let nameField = app.textFields["Enter account name"]
         XCTAssertTrue(nameField.waitForExistence(timeout: 3))
@@ -87,7 +111,7 @@ class SpendriftUITestBase: XCTestCase {
     @discardableResult
     func createCategory(name: String, type: String = "Expense", iconIndex: Int? = nil) -> Self {
         navigateToCategories()
-        app.navigationBars.buttons["plus"].tap()
+        openNewCategorySheet()
 
         if type == "Income" {
             app.buttons["Income"].tap()
@@ -188,7 +212,7 @@ final class AccountIntegrationTests: SpendriftUITestBase {
 
     func testCreateAccount_saveDisabled_whenNameEmpty() {
         navigateToAccounts()
-        app.navigationBars.buttons["plus"].tap()
+        openNewAccountSheet()
 
         let balanceField = app.textFields["0"]
         balanceField.tap()
@@ -200,7 +224,7 @@ final class AccountIntegrationTests: SpendriftUITestBase {
 
     func testCreateAccount_saveDisabled_whenBalanceEmpty() {
         navigateToAccounts()
-        app.navigationBars.buttons["plus"].tap()
+        openNewAccountSheet()
 
         let nameField = app.textFields["Enter account name"]
         XCTAssertTrue(nameField.waitForExistence(timeout: 3))
@@ -213,7 +237,7 @@ final class AccountIntegrationTests: SpendriftUITestBase {
 
     func testCreateAccount_cancelDismissesSheet() {
         navigateToAccounts()
-        app.navigationBars.buttons["plus"].tap()
+        openNewAccountSheet()
         XCTAssertTrue(app.navigationBars["New Account"].waitForExistence(timeout: 3))
 
         app.navigationBars.buttons["Cancel"].tap()
@@ -315,7 +339,7 @@ final class CategoryIntegrationTests: SpendriftUITestBase {
 
     func testCreateCategory_saveDisabled_whenNameEmpty() {
         navigateToCategories()
-        app.navigationBars.buttons["plus"].tap()
+        openNewCategorySheet()
         XCTAssertTrue(app.navigationBars["New Category"].waitForExistence(timeout: 3))
 
         let saveButton = app.navigationBars.buttons["Save"]
@@ -324,7 +348,7 @@ final class CategoryIntegrationTests: SpendriftUITestBase {
 
     func testCreateCategory_cancelDismissesSheet() {
         navigateToCategories()
-        app.navigationBars.buttons["plus"].tap()
+        openNewCategorySheet()
         XCTAssertTrue(app.navigationBars["New Category"].waitForExistence(timeout: 3))
 
         app.navigationBars.buttons["Cancel"].tap()
@@ -444,6 +468,9 @@ final class TransactionIntegrationTests: SpendriftUITestBase {
     func testTransactionsEmptyState_addButtonOpensCreateSheet() {
         navigateToTransactions()
         app.buttons["Add Transaction"].tap()
+        let typeEntry = app.buttons["Type"].firstMatch
+        XCTAssertTrue(typeEntry.waitForExistence(timeout: 3))
+        typeEntry.tap()
         XCTAssertTrue(app.navigationBars["New Transaction"].waitForExistence(timeout: 3))
     }
 

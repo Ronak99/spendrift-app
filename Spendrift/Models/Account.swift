@@ -16,7 +16,9 @@ final class Account {
     var createdOn: Date
     var icon: AccountIcon
     var isPrimary: Bool
-    
+    /// Updated whenever a transaction is saved with this account (manual, shortcut, voice, or import).
+    var lastUsedAt: Date?
+
     @Relationship(deleteRule: .cascade, inverse: \Transaction.account)
     var transactions: [Transaction]?
     
@@ -46,5 +48,19 @@ final class Account {
         self.icon = icon
         self.isPrimary = isPrimary
         self.transactions = []
+    }
+}
+
+extension Array where Element == Account {
+    /// Most recently used first; never-used at the end, preserving order from `@Query(sort: \.name)`.
+    func sortedByLastUsage() -> [Account] {
+        sorted { a, b in
+            switch (a.lastUsedAt, b.lastUsedAt) {
+            case let (aDate?, bDate?): return aDate > bDate
+            case (.some, .none): return true
+            case (.none, .some): return false
+            case (.none, .none): return false
+            }
+        }
     }
 }
