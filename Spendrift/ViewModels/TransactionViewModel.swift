@@ -13,14 +13,14 @@ private let transactionPeriodSelectedDateKey = "transactionPeriodSelectedDate"
 
 @Observable
 class TransactionViewModel {
-    /// Anchor date for the visible week / month / year; persisted so tabs and drill-downs stay aligned.
+    /// Anchor date for the visible time range; persisted so tabs and drill-downs stay aligned.
     var selectedDate: Date = Date() {
         didSet {
             UserDefaults.standard.set(selectedDate.timeIntervalSince1970, forKey: transactionPeriodSelectedDateKey)
         }
     }
 
-    /// Week / month / year scope; persisted for the whole app.
+    /// Time-range scope; persisted for the whole app.
     var periodGranularity: TransactionPeriod = .month {
         didSet {
             UserDefaults.standard.set(periodGranularity.rawValue, forKey: transactionPeriodGranularityKey)
@@ -48,6 +48,11 @@ class TransactionViewModel {
             return cal.dateInterval(of: .weekOfYear, for: selectedDate)?.start ?? selectedDate.startOfMonth
         case .month:
             return selectedDate.startOfMonth
+        case .threeMonths, .sixMonths:
+            guard let count = periodGranularity.inclusiveRollingMonthCount else {
+                return selectedDate.startOfMonth
+            }
+            return rollingMultiMonthStart(monthCount: count)
         case .year:
             return selectedDate.startOfYear
         }
@@ -61,14 +66,14 @@ class TransactionViewModel {
                 return selectedDate
             }
             return interval.end.addingTimeInterval(-1)
-        case .month:
+        case .month, .threeMonths, .sixMonths:
             return selectedDate.endOfMonth
         case .year:
             return selectedDate.endOfYear
         }
     }
 
-    /// Short title for the capsule (week range, month name, or year).
+    /// Short title for the capsule (week range, month, multi-month span, or year).
     var capsuleTitle: String {
         let cal = Calendar.current
         switch periodGranularity {
@@ -88,6 +93,10 @@ class TransactionViewModel {
             return "\(df.string(from: start)), \(y1) – \(df.string(from: end)), \(y2)"
         case .month:
             return selectedDate.monthYear
+        case .threeMonths:
+            return multiMonthCapsuleTitle(monthCount: 3)
+        case .sixMonths:
+            return multiMonthCapsuleTitle(monthCount: 6)
         case .year:
             return String(cal.component(.year, from: selectedDate))
         }
@@ -100,6 +109,8 @@ class TransactionViewModel {
             return capsuleTitle
         case .month:
             return selectedDate.monthYear
+        case .threeMonths, .sixMonths:
+            return capsuleTitle
         case .year:
             return String(Calendar.current.component(.year, from: selectedDate))
         }
@@ -114,6 +125,11 @@ class TransactionViewModel {
             return interval.contains(now)
         case .month:
             return cal.isDate(selectedDate, equalTo: now, toGranularity: .month)
+        case .threeMonths, .sixMonths:
+            guard let count = periodGranularity.inclusiveRollingMonthCount else { return false }
+            let start = rollingMultiMonthStart(monthCount: count)
+            let end = selectedDate.endOfMonth
+            return now >= start && now <= end
         case .year:
             return cal.isDate(selectedDate, equalTo: now, toGranularity: .year)
         }
@@ -128,6 +144,10 @@ class TransactionViewModel {
             selectedDate = cal.date(byAdding: .weekOfYear, value: 1, to: selectedDate) ?? selectedDate
         case .month:
             selectedDate = selectedDate.nextMonth
+        case .threeMonths:
+            selectedDate = cal.date(byAdding: .month, value: 3, to: selectedDate) ?? selectedDate
+        case .sixMonths:
+            selectedDate = cal.date(byAdding: .month, value: 6, to: selectedDate) ?? selectedDate
         case .year:
             selectedDate = selectedDate.nextYear
         }
@@ -140,6 +160,10 @@ class TransactionViewModel {
             selectedDate = cal.date(byAdding: .weekOfYear, value: -1, to: selectedDate) ?? selectedDate
         case .month:
             selectedDate = selectedDate.previousMonth
+        case .threeMonths:
+            selectedDate = cal.date(byAdding: .month, value: -3, to: selectedDate) ?? selectedDate
+        case .sixMonths:
+            selectedDate = cal.date(byAdding: .month, value: -6, to: selectedDate) ?? selectedDate
         case .year:
             selectedDate = selectedDate.previousYear
         }
@@ -151,5 +175,29 @@ class TransactionViewModel {
 
     func goToDate(_ date: Date) {
         selectedDate = date
+    }
+
+    // MARK: - Rolling multi-month windows
+
+    private func rollingMultiMonthStart(monthCount: Int) -> Date {
+        let cal = Calendar.current
+        let endMonthStart = selectedDate.startOfMonth
+        return cal.date(byAdding: .month, value: -(monthCount - 1), to: endMonthStart) ?? endMonthStart
+    }
+
+    private func multiMonthCapsuleTitle(monthCount: Int) -> String {
+        let cal = Calendar.current
+        let start = rollingMultiMonthStart(monthCount: monthCount)
+        let end = selectedDate.endOfMonth
+        let y1 = cal.component(.year, from: start)
+        let y2 = cal.component(.year, from: end)
+        let df = DateFormatter()
+        df.dateFormat = "MMM"
+        let m1 = df.string(from: start)
+        let m2 = df.string(from: end)
+        if y1 == y2 {
+            return "\(m1) – \(m2) \(y1)"
+        }
+        return "\(m1) \(y1) – \(m2) \(y2)"
     }
 }
