@@ -94,12 +94,14 @@ struct CategoriesView: View {
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     HStack(spacing: 8) {
-                        Button(action: { showCreateSheet = true }) {
-                            Image(systemName: "plus")
+                        if !allCategories.isEmpty {
+                            Button(action: { showCreateSheet = true }) {
+                                Image(systemName: "plus")
+                            }
                         }
                         ProfileSettingsToolbarButton()
                     }
-                    .padding(.horizontal, 8)
+                    .padding(.horizontal, allCategories.isEmpty ? 0 : 8)
                 }
             }
             .onAppear(perform: seedDefaultCategoriesIfNeeded)

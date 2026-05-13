@@ -7,40 +7,78 @@
 
 import SwiftUI
 
+/// Actions for the transactions empty-state **Add Transaction** control when it should match the toolbar add menu.
+struct EmptyStateAddTransactionMenu {
+    let onSpeak: () -> Void
+    let onType: () -> Void
+    let onUploadDocument: () -> Void
+    var voiceDisabled: Bool = false
+}
+
 struct EmptyStateView: View {
     let icon: String
     let title: String
     let description: String
     var actionTitle: String? = nil
     var action: (() -> Void)? = nil
-    
+    /// When non-nil, `action` is ignored and the primary control becomes a menu (Speak / Type / Upload document).
+    var addTransactionMenu: EmptyStateAddTransactionMenu? = nil
+
     var body: some View {
         VStack(spacing: 16) {
             Image(systemName: icon)
                 .font(.system(size: 64))
                 .foregroundColor(.secondary)
-            
+
             Text(title)
                 .font(.title2)
                 .fontWeight(.semibold)
-            
+
             Text(description)
                 .font(.body)
                 .foregroundColor(.secondary)
                 .multilineTextAlignment(.center)
                 .padding(.horizontal)
-            
-            if let actionTitle = actionTitle, let action = action {
-                Button(action: action) {
-                    Text(actionTitle)
-                        .font(.headline)
-                        .foregroundColor(.white)
-                        .padding(.horizontal, 24)
-                        .padding(.vertical, 12)
-                        .background(Color.accentColor)
-                        .cornerRadius(10)
+
+            if let actionTitle = actionTitle {
+                if let menu = addTransactionMenu {
+                    Menu {
+                        Button(action: menu.onSpeak) {
+                            Label("Speak", systemImage: "mic")
+                        }
+                        .disabled(menu.voiceDisabled)
+
+                        Button(action: menu.onType) {
+                            Label("Type", systemImage: "keyboard")
+                        }
+
+                        Button(action: menu.onUploadDocument) {
+                            Label("Upload document", systemImage: "doc.text")
+                        }
+                    } label: {
+                        Text(actionTitle)
+                            .font(.headline)
+                            .foregroundColor(.white)
+                            .padding(.horizontal, 24)
+                            .padding(.vertical, 12)
+                            .background(Color.accentColor)
+                            .cornerRadius(10)
+                    }
+                    .padding(.top, 8)
+                    .accessibilityLabel("Add transaction")
+                    .accessibilityIdentifier("transactionsAddMenu")
+                } else if let action = action {
+                    Button(action: action) {
+                        Text(actionTitle)
+                            .font(.headline)
+                            .foregroundColor(.white)
+                            .padding(.horizontal, 24)
+                            .padding(.vertical, 12)
+                            .background(Color.accentColor)
+                            .cornerRadius(10)
+                    }
+                    .padding(.top, 8)
                 }
-                .padding(.top, 8)
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -94,10 +132,16 @@ struct EmptyStateFloatingCTA: View {
     EmptyStateView(
         icon: "tray",
         title: "No Transactions",
-        description: "Get started by adding your first transaction"
+        description: "Get started by adding your first transaction",
+        action: nil,
+        addTransactionMenu: EmptyStateAddTransactionMenu(onSpeak: {}, onType: {}, onUploadDocument: {})
     )
-    .overlay(alignment: .bottom) {
-        EmptyStateFloatingCTA(onAdd: {}, onVoice: {})
-            .padding(.bottom, 24)
-    }
+    
+//    action: nil,
+//    addTransactionMenu: EmptyStateAddTransactionMenu(
+//        onSpeak: { voiceInline.beginCapture() },
+//        onType: { showCreateSheet = true },
+//        onUploadDocument: { showStatementImport = true },
+//        voiceDisabled: voiceInline.blocksNewCapture
+//    )
 }
