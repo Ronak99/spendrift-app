@@ -13,7 +13,14 @@
 			</array>
 		</dict>
 	</array>
-	<key>OpenAIApiKey</key>
-	<string>$(OPENAI_API_KEY)</string>
+	<key>SpendriftBackendBaseURL</key>
+	<string>$(SPENDRIFT_BACKEND_BASE_URL)</string>
+	<key>SpendriftBackendClientToken</key>
+	<string>$(SPENDRIFT_BACKEND_CLIENT_TOKEN)</string>
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<key>NSAllowsLocalNetworking</key>
+		<true/>
+	</dict>
 </dict>
 </plist>

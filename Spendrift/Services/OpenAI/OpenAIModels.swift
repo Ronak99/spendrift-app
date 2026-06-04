@@ -71,17 +71,17 @@ enum OpenAIServiceError: LocalizedError, Equatable {
     var errorDescription: String? {
         switch self {
         case .missingAPIKey:
-            return "OpenAI API key is empty. Add it in AppSecrets."
+            return "Spendrift backend is not configured. Set SpendriftBackendBaseURL and SpendriftBackendClientToken."
         case .failedToBuildRequest:
             return "Could not build OpenAI request payload."
         case .nonHTTPResponse:
-            return "Received a non-HTTP response from OpenAI."
+            return "Received a non-HTTP response from the AI service."
         case .badStatusCode(let code, let body):
-            return "OpenAI request failed with status \(code): \(body)"
+            return "AI service request failed (\(code)): \(body)"
         case .missingJSONText:
-            return "OpenAI did not return JSON text in the chat completion."
+            return "The AI service did not return a usable response."
         case .invalidJSON(let raw):
-            return "OpenAI returned invalid JSON: \(raw)"
+            return "The AI service returned invalid JSON: \(raw)"
         }
     }
 }

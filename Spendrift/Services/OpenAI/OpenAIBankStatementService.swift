@@ -16,34 +16,22 @@ struct StatementImportRow: Identifiable {
 }
 
 struct OpenAIBankStatementService {
-    private let client: OpenAIClient
-    private let model = "gpt-4o"
+    private let backend: SpendriftBackendClient?
 
-    init(client: OpenAIClient = OpenAIClient()) {
-        self.client = client
+    init(backend: SpendriftBackendClient? = nil) {
+        self.backend = backend ?? (try? SpendriftBackendClient())
     }
 
     func parseStatement(pdfData: Data, filename: String) async throws -> [StatementImportRow] {
-        let rawText = try await client.responsesJSONFromPDF(
-            apiKey: AppSecrets.openAIAPIKey,
-            model: model,
-            systemPrompt: systemPrompt,
-            userInstruction: "Extract every individual transaction from this bank statement PDF. Respond with ONLY the JSON object defined in your instructions.",
-            pdfData: pdfData,
-            filename: filename
-        )
-
-        let cleaned = stripMarkdownCodeFence(rawText)
-
-        guard let jsonData = cleaned.data(using: .utf8) else {
-            throw OpenAIServiceError.invalidJSON(rawText)
+        guard let backend else {
+            throw OpenAIServiceError.missingAPIKey
         }
 
         let payload: OpenAIStatementPayload
         do {
-            payload = try JSONDecoder().decode(OpenAIStatementPayload.self, from: jsonData)
-        } catch {
-            throw OpenAIServiceError.invalidJSON(rawText)
+            payload = try await backend.parseStatement(pdfData: pdfData, filename: filename)
+        } catch let error as SpendriftBackendError {
+            throw mapBackendError(error)
         }
 
         return payload.transactions.compactMap { mapToRow($0) }
@@ -61,14 +49,6 @@ struct OpenAIBankStatementService {
             date: date,
             transactionType: txType
         )
-    }
-
-    private func stripMarkdownCodeFence(_ text: String) -> String {
-        var s = text.trimmingCharacters(in: .whitespacesAndNewlines)
-        if s.hasPrefix("```json") { s = String(s.dropFirst(7)) }
-        else if s.hasPrefix("```") { s = String(s.dropFirst(3)) }
-        if s.hasSuffix("```") { s = String(s.dropLast(3)) }
-        return s.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
     static func parseDate(_ value: String) -> Date? {
@@ -89,29 +69,21 @@ struct OpenAIBankStatementService {
         return nil
     }
 
-    private var systemPrompt: String {
-        """
-        You are a bank statement parser. You receive a PDF of a bank statement and must extract every individual transaction line item.
-
-        Respond with ONLY a JSON object in the following schema — no commentary, no markdown fences:
-
-        {
-          "transactions": [
-            {
-              "notes": "<description/narration of the transaction>",
-              "amount": <positive number>,
-              "date": "<ISO 8601 date, e.g. 2026-03-15>",
-              "transactionType": "<expense | income | none>"
-            }
-          ]
+    private func mapBackendError(_ error: SpendriftBackendError) -> OpenAIServiceError {
+        switch error {
+        case .missingConfiguration:
+            return .missingAPIKey
+        case .invalidBaseURL, .failedToBuildRequest:
+            return .failedToBuildRequest
+        case .nonHTTPResponse:
+            return .nonHTTPResponse
+        case .apiError(_, let message, let details):
+            let body = [message, details].compactMap { $0 }.joined(separator: " — ")
+            return .badStatusCode(502, body)
+        case .invalidResponseBody:
+            return .missingJSONText
+        case .decodingFailed:
+            return .invalidJSON("Backend returned undecodable JSON.")
         }
-
-        Rules:
-        - Every amount must be a positive number. Use "transactionType" to indicate direction: "expense" for debits/withdrawals, "income" for credits/deposits, "none" if unclear.
-        - "notes" should be the transaction description/narration as written on the statement.
-        - Dates must be in ISO 8601 format (YYYY-MM-DD). Infer the year from context in the statement when not explicit.
-        - Skip summary rows, opening/closing balance lines, interest calculations, and header rows — only include actual transactions.
-        - If no transactions can be found, return {"transactions": []}.
-        """
     }
 }

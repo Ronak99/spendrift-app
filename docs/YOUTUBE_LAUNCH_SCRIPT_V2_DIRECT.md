@@ -1,94 +1,38 @@
-# Spendrift — Launch video script (direct to viewer)
+Introducing Spendrift. An expense tracking app that's just there for you, ready to jump into action whenever you need it.
 
-Companion to `YOUTUBE_LAUNCH_SCRIPT.md`: same walkthrough, but aimed at **you** on the other side of the screen — what to tap, what happens next, and concrete examples. Use while screen-recording; swap names and amounts to match the demo.
+As soon as you install the app, you are greeted with this beautiful onboarding flow which briefly explains what the app is all about.
 
----
+You can create a transaction in 3 ways, either type out the amount and the description, speak them into the app or upload your bank statement to get all the transactions listed at once.
 
-## Cold open
+Selecting the "type" option brings up the transaction form, now we don't have an account at the moment, so let's quick create one.
+Maybe this is my savings account, with 10000 as initial balance and I'll select the bank icon.
+There you go, the account is selected automatically. 
 
-Introducing **Spendrift**, an app that I made, using which I track money across **several accounts**. I am not someone who can micromanage my expenses, I wanted an app which allows me to track an expense as it happens and I should be able to speak to the app or create an expense on the go. Let me demonstrate what I am talking about.
+For category, I'll select electronics and let's say I bought earbuds worth 3000. I'll click "Save" and the transaction is created. This was quite simple and straightforward in itself, but I thought to myself, how can I take it a step further, and that brings me to the features that I am really proud of. Open up the Settings sheet and go over to the "Siri & Shortcuts" section.
 
----
+Spendrift exposes actions using which you can create your own custom shortcuts. Two shortcuts that make use of these actions are already included in the app, you can simply tap and add both of these shortcuts within your shortcuts app.
 
-## Accounts
+These shortcuts make your life really easy. If your iPhone has an action button, just search for it then select the type shortcut. Now, if I hold the action button long enough, it triggers this UI that asks for an amount, enlists all your categories and gives you the option to provide some notes.
 
-Everything starts under **Accounts**.
+I’ll try once again, just add some amount, and look, the last used category pops at the top of the stack so that you don’t have to scroll and find it in the list, the notes are optional, so I’ll just leave it as is, and that’s it. It’s that simple.
 
-Tap to **add an account** — for example **HDFC Salary** — and enter an opening balance that matches real life, say **₹45,000**.
+As for the speak shortcut, I prefer to trigger it on the double tap gesture. Go to settings > accessibility > touch > you can configure the shortcut to the assistive touch if you have that enabled or scroll all the way down to back tap > then on double tap, scroll all the way down to shortcut section and select speak expense to Spendrift shortcut.
 
-Add another for **Axis credit card** so card spending stays separate from the bank balance.
+That’s it. Now when I double tap at the back of my iPhone, it instantly brings up a recording UI where I can just speak an expense naturally.
+Let’s say I say, “I spent ₹5000 on skincare products.” The app opens up, sends that recording to an AI model, and automatically figures out the amount, category, and notes for the transaction before creating it on my behalf.
+It also stores exactly what you said inside the notes, so you always have context for that expense later on.
 
-Pick a **main** account: shortcuts and bank imports **default there**, so everyday logging stays one tap away.
+And if the AI is unsure about something, maybe the category or the amount, it simply opens the transaction sheet with the missing fields highlighted, so you can quickly fill them in yourself.
 
----
+I am really proud of these features in how easy they make my day to day life and I am sure they'll be extremely helpful to you as well. But that's not it, I have one more thing to demonstrate. On Spendrift, you can upload your bank statement to import multiple transactions at once. To do so, I'll tap create and upload statement.
 
-## Categories
+At the moment, the uploaded bank statements are sent to an AI model for reliable extraction of transaction records, this feature is not for you if the bank statement contains sensitive information which you are hesistent to share. The entire communication happens between the app and the AI models, without the involvement of a database, so none of your information is ever stored by Spendrift on the cloud. Next, I'll select an account and upload the PDF. Just wait for it to be processed for a couple of seconds, and there you go. All the transactions are neatly listed over here. If you want to remove a couple of transactions, you can easily do so on this preview page, once you are happy, just tap save button.
 
-Open **Categories** and create buckets that match real spending — **Dining**, **Groceries**, **Coffee**.
-They are categorized as income and expense and you can create custom categories that suit your needs.
+The bank statement was for November 2025, so I'll just go over to that month, and there you go, all the transactions are saved and marked uncategorized. You can simply select transactions and categorize them manually so as to ensure that your analytics page plots an accurate graph.
 
----
+And that's it. There are a few more features that I didn't even get to, just go to app store, download the app and I urge you to explore them on your own, trying using the shortcuts to daily drive your expense tracking. If you have questions, bug reports, just let me know in the discord, under this video or leave app reviews on the app store. Hopefully you enjoy Spendrift and it helps you in your expense tracking journey. Thank you for watching this video!!
 
-## Transactions
 
-The **Transactions** tab shows **the current month** at a glance: money out, money in, and a summary up top.
 
-Use the **arrows** to move to **last month**. **Double-tap** the month label to **snap back to today’s month**. **Press and hold** the month to **jump to a specific month** in the picker. Future months stay disabled — the timeline doesn’t drift past “now.”
 
----
 
-## Adding something by hand
-
-Tap **add**, then **Type**.
-
-Example expense: note **Burma Burma with Aditi**, amount **₹1,850**, account **HDFC Salary**, category **Dining** — then save.
-
-Example income: **Freelance — Acme**, **₹22,000**, marked as income, same salary account.
-
-**Tap a row** to edit. **Swipe** on a row to delete duplicates or mistakes.
-
----
-
-## Voice
-
-From the same **add** menu, choose **Speak**.
-
-Hold the mic and say something like: *“Three hundred rupees, Uber, transport.”* On stop, the app **builds a draft transaction**. If a word or amount is off, **adjust it before saving** — same end result as typing, usually faster on the move.
-
----
-
-## Bank statement
-
-With a bank **PDF** ready, tap **add → Upload document**.
-
-Read the short **privacy notice**, turn on **acknowledgement**, then **Choose PDF**. Pick **which account** the imported lines belong to.
-
-In the **preview**, **delete** any line that isn’t a real transaction, then **save**. New entries land in history; **don't forget to fill in the categories,** so that the charts stay accurate.
-
----
-
-## Shortcuts & widgets
-
-**Siri Shortcuts** can log an amount **without opening the full app**, or capture an expense by voice **from Shortcuts** when hands are full.
-
-Add the **Home Screen widget**: it surfaces the **main account** snapshot and **shortcuts** to **log** or **start a capture** without hunting for the icon.
-
----
-
-## Analytics
-
-**Analytics** shows **spent**, **earned**, **net** for the month, plus a **daily average** so spending pace is obvious.
-
-The **category breakdown** shows where money went; **trends** highlight busy days and whether spending clusters on weekdays or weekends. **Empty months** keep charts quiet until there’s data.
-
----
-
-## Settings
-
-**Settings** holds **accent themes**, **Shortcuts** links, **share**, and **feedback** — out of the way until needed.
-
----
-
-## Sign-off
-
-That’s the flow: **set up accounts**, log with **type**, **voice**, or **PDF import**, then use **analytics** to see the month clearly. If it fits how money works for you, **Spendrift** is on the App Store — thanks for watching.
