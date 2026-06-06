@@ -64,11 +64,6 @@ struct SettingsView: View {
 
     @State private var showFeatureRequest = false
 
-    private let backendConfigLogger = Logger(
-        subsystem: Bundle.main.bundleIdentifier ?? "Spendrift",
-        category: "BackendConfig"
-    )
-
     private let shortcuts: [AppShortcutItem] = [
         AppShortcutItem(
             id: "voice",
@@ -95,15 +90,6 @@ struct SettingsView: View {
 
     private var shareAccent: Color {
         Color.themeColors[themeColorName] ?? .blue
-    }
-
-    private var backendBaseURLDisplay: String {
-        AppSecrets.backendBaseURL?.absoluteString ?? "Not configured"
-    }
-
-    private var backendClientTokenDisplay: String {
-        let token = AppSecrets.backendClientToken.trimmingCharacters(in: .whitespacesAndNewlines)
-        return token.isEmpty ? "Not configured" : token
     }
 
     var body: some View {
@@ -179,32 +165,8 @@ struct SettingsView: View {
                     Text("Pass it along, great apps spread by happy users.")
                         .font(.footnote)
                 }
-
-                Section {
-                    LabeledContent("Base URL") {
-                        Text(backendBaseURLDisplay)
-                            .font(.caption.monospaced())
-                            .foregroundStyle(.secondary)
-                            .multilineTextAlignment(.trailing)
-                            .textSelection(.enabled)
-                    }
-                    LabeledContent("Client token") {
-                        Text(backendClientTokenDisplay)
-                            .font(.caption.monospaced())
-                            .foregroundStyle(.secondary)
-                            .multilineTextAlignment(.trailing)
-                            .textSelection(.enabled)
-                    }
-                } header: {
-                    Text("Backend")
-                } footer: {
-                    Text("Values baked into this build from xcconfig → Info.plist. Use to verify TestFlight configuration.")
-                        .font(.footnote)
-                }
-
             }
             .navigationTitle("Settings")
-            .onAppear(perform: logBackendConfiguration)
             .sheet(isPresented: $showFeatureRequest) {
                 FeatureRequestView()
             }
@@ -305,11 +267,6 @@ struct SettingsView: View {
             RoundedRectangle(cornerRadius: 16, style: .continuous)
                 .fill(Color(.secondarySystemGroupedBackground))
         )
-    }
-
-    private func logBackendConfiguration() {
-        backendConfigLogger.info("backendBaseURL=\(self.backendBaseURLDisplay, privacy: .public)")
-        backendConfigLogger.info("backendClientToken=\(self.backendClientTokenDisplay, privacy: .public)")
     }
 }
 
