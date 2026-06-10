@@ -9,16 +9,11 @@ import Foundation
 import SwiftUI
 
 private let transactionPeriodGranularityKey = "transactionPeriodGranularity"
-private let transactionPeriodSelectedDateKey = "transactionPeriodSelectedDate"
 
 @Observable
 class TransactionViewModel {
-    /// Anchor date for the visible time range; persisted so tabs and drill-downs stay aligned.
-    var selectedDate: Date = Date() {
-        didSet {
-            UserDefaults.standard.set(selectedDate.timeIntervalSince1970, forKey: transactionPeriodSelectedDateKey)
-        }
-    }
+    /// Anchor date for the visible time range; always starts at today on launch.
+    var selectedDate: Date = Date()
 
     /// Time-range scope; persisted for the whole app.
     var periodGranularity: TransactionPeriod = .month {
@@ -32,11 +27,6 @@ class TransactionViewModel {
     init() {
         let raw = UserDefaults.standard.string(forKey: transactionPeriodGranularityKey)
         periodGranularity = TransactionPeriod(rawValue: raw ?? "") ?? .month
-
-        let ts = UserDefaults.standard.double(forKey: transactionPeriodSelectedDateKey)
-        if ts > 0 {
-            selectedDate = Date(timeIntervalSince1970: ts)
-        }
     }
 
     // MARK: - Current period range
