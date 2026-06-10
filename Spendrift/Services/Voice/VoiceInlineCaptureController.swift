@@ -33,6 +33,7 @@ final class VoiceInlineCaptureController {
     private var speechService = SpeechTranscriptionService()
     private var pipelineService = VoiceExpensePipelineService()
     private var liveActivityController = VoiceLiveActivityController()
+    private var isStartingCapture = false
 
     /// Mic / new capture blocked while recording or sending to OpenAI.
     var blocksNewCapture: Bool {
@@ -49,11 +50,16 @@ final class VoiceInlineCaptureController {
     }
 
     func beginCapture() {
-        guard displayState == .hidden else { return }
-        displayState = .recording
+        if case .error = displayState {
+            dismissError()
+        }
+        guard displayState == .hidden, !isStartingCapture else { return }
+        isStartingCapture = true
+        recordingStartedAt = nil
         manualSheetPayload = nil
         Task {
             await startRecordingSession()
+            isStartingCapture = false
         }
     }
 
@@ -76,7 +82,7 @@ final class VoiceInlineCaptureController {
         accounts: [Account],
         categories: [TransactionCategory]
     ) {
-        guard displayState == .recording else { return }
+        guard displayState == .recording, recordingStartedAt != nil else { return }
         recordingStartedAt = nil
         liveActivityController.update(state: .reviewing, message: "Finishing…")
         speechService.stopRecordingForReview()
@@ -199,6 +205,7 @@ final class VoiceInlineCaptureController {
             speechService.reset()
             displayState = .error(message)
         } else {
+            displayState = .recording
             recordingStartedAt = Date()
             liveActivityController.update(state: .recording, message: "Listening…")
         }

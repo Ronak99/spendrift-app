@@ -80,6 +80,7 @@ struct VoiceInlineRecordingBar: View {
                                 .foregroundStyle(.red)
                         }
                         .buttonStyle(.plain)
+                        .disabled(elapsed < VoiceAudioPolicy.minClipDurationSeconds)
                         .accessibilityLabel("Stop and save")
                     }
                 }

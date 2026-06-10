@@ -18,6 +18,7 @@ struct TransactionsView: View {
     @State private var showStatementImport = false
     @State private var voiceInline = VoiceInlineCaptureController()
     @State private var selectedTransaction: Transaction?
+    @State private var lastHandledVoiceCaptureTrigger: UUID?
     let voiceCaptureTrigger: UUID?
     let useCompactVoiceCapture: Bool
     let shortcutImportedAudio: ShortcutImportedAudioPayload?
@@ -239,9 +240,10 @@ struct TransactionsView: View {
                 )
             }
             .onChange(of: voiceCaptureTrigger) { _, trigger in
-                guard trigger != nil else { return }
-                showCreateSheet = false
-                voiceInline.beginCapture()
+                handleVoiceCaptureTrigger(trigger)
+            }
+            .onAppear {
+                handleVoiceCaptureTrigger(voiceCaptureTrigger)
             }
             .task(id: shortcutImportedAudio?.id) {
                 guard let payload = shortcutImportedAudio else { return }
@@ -253,6 +255,20 @@ struct TransactionsView: View {
                     categories: categories
                 )
             }
+        }
+    }
+
+    private func handleVoiceCaptureTrigger(_ trigger: UUID?) {
+        guard let trigger, trigger != lastHandledVoiceCaptureTrigger else { return }
+        lastHandledVoiceCaptureTrigger = trigger
+        showCreateSheet = false
+        Task {
+            if useCompactVoiceCapture {
+                // Siri / Shortcuts can hand off before the mic is available.
+                try? await Task.sleep(for: .milliseconds(400))
+            }
+            guard !Task.isCancelled else { return }
+            voiceInline.beginCapture()
         }
     }
     

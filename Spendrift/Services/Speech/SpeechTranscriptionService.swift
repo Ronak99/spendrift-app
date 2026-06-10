@@ -86,7 +86,13 @@ final class SpeechTranscriptionService {
             ]
             let recorder = try AVAudioRecorder(url: url, settings: settings)
             recorder.prepareToRecord()
-            recorder.record(forDuration: VoiceAudioPolicy.maxClipDurationSeconds)
+            guard recorder.record(forDuration: VoiceAudioPolicy.maxClipDurationSeconds) else {
+                throw NSError(
+                    domain: "SpeechTranscriptionService",
+                    code: -4,
+                    userInfo: [NSLocalizedDescriptionKey: "Could not start microphone recording."]
+                )
+            }
 
             recordingURL = url
             audioRecorder = recorder

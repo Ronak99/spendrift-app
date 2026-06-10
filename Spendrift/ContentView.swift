@@ -71,6 +71,8 @@ struct ContentView: View {
             handleVoiceIntentLaunchIfNeeded()
         }
         .onReceive(NotificationCenter.default.publisher(for: .voiceExpenseIntentTriggered)) { _ in
+            // Wait until the app is active so Siri can release the audio session first.
+            guard scenePhase == .active else { return }
             handleVoiceIntentLaunchIfNeeded()
         }
         .onOpenURL { url in
