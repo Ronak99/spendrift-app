@@ -59,7 +59,11 @@ enum Analytics {
         // A missing or placeholder key means analytics isn't configured for this build.
         guard !apiKey.isEmpty, apiKey != placeholderAPIKey else { return }
 
-        let config = PostHogConfig(apiKey: apiKey, host: AppSecrets.posthogHost)
+        // Ingestion is proxied through the backend's /ingest route; without a
+        // backend URL there is nowhere to send analytics.
+        guard let host = AppSecrets.posthogHost else { return }
+
+        let config = PostHogConfig(apiKey: apiKey, host: host)
         config.personProfiles = .identifiedOnly
         config.captureApplicationLifecycleEvents = true
         config.captureScreenViews = false

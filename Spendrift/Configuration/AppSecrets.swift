@@ -26,9 +26,11 @@ enum AppSecrets {
             .trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
-    static var posthogHost: String {
-        let raw = (Bundle.main.infoDictionary?["SpendriftPostHogHost"] as? String ?? "")
-            .trimmingCharacters(in: .whitespacesAndNewlines)
-        return raw.isEmpty ? "https://us.i.posthog.com" : raw
+    /// Analytics ingestion is proxied through the backend's `/ingest` route, so
+    /// the PostHog host is derived from `backendBaseURL` rather than configured
+    /// separately. Returns nil when the backend URL is missing.
+    static var posthogHost: String? {
+        guard let base = backendBaseURL else { return nil }
+        return base.absoluteString.trimmingCharacters(in: CharacterSet(charactersIn: "/")) + "/ingest"
     }
 }
