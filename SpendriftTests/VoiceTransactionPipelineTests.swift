@@ -71,6 +71,7 @@ struct VoiceTransactionPipelineTests {
         #expect(draftResult.draft?.category == nil)
     }
 
+    @MainActor
     @Test
     func creatorRequiresPrimaryAccount() throws {
         let context = try makeInMemoryContext()
@@ -106,6 +107,7 @@ struct VoiceTransactionPipelineTests {
         }
     }
 
+    @MainActor
     @Test
     func creatorParsesISODateWithoutTimezone() throws {
         let context = try makeInMemoryContext()
@@ -145,6 +147,7 @@ struct VoiceTransactionPipelineTests {
         }
     }
 
+    @MainActor
     @Test
     func creatorFallsBackToNowForInvalidDateString() throws {
         let context = try makeInMemoryContext()

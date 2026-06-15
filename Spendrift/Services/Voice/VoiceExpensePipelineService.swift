@@ -15,6 +15,7 @@ enum VoicePipelineError: Error {
 struct VoiceExpensePipelineService {
     var openAIService = OpenAIVoiceTransactionService()
 
+    @MainActor
     func submitAudio(
         audioData: Data,
         accounts: [Account],

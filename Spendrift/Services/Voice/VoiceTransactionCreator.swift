@@ -72,6 +72,10 @@ enum VoiceTransactionCreator {
         )
     }
 
+    /// Must run on the main actor: `modelContext` is the SwiftUI environment's main-thread
+    /// context, and the `accounts`/`categories` model objects are bound to it. Mutating or
+    /// reading them off-thread corrupts the context's identity map and traps on `save()`.
+    @MainActor
     static func createFromAIVoice(
         payload: OpenAIVoiceTransactionPayload,
         accounts: [Account],
