@@ -157,14 +157,14 @@ struct SettingsView: View {
                     Text("Feedback")
                 }
 
-                Section {
-                    Toggle("Share anonymous analytics", isOn: analyticsSharingBinding)
-                } header: {
-                    Text("Privacy")
-                } footer: {
-                    Text("Helps improve Spendrift with anonymous usage stats. No account is required, and transaction details, amounts, and personal data are never sent.")
-                        .font(.footnote)
-                }
+//                Section {
+//                    Toggle("Share anonymous analytics", isOn: analyticsSharingBinding)
+//                } header: {
+//                    Text("Privacy")
+//                } footer: {
+//                    Text("Helps improve Spendrift with anonymous usage stats. No account is required, and transaction details, amounts, and personal data are never sent.")
+//                        .font(.footnote)
+//                }
 
                 Section {
                     ShareLink(
