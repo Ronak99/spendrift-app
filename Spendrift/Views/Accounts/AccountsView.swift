@@ -146,6 +146,7 @@ struct AccountsView: View {
         }
         
         for account in toDelete {
+            Analytics.capture(.accountDeleted, [Analytics.Key.name: account.name])
             modelContext.delete(account)
         }
         

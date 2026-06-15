@@ -235,6 +235,7 @@ final class VoiceInlineCaptureController {
                 handleCreateResult(result, accounts: accounts)
             case .failure(let pipelineError):
                 liveActivityController.failAndEnd(message: "Couldn’t save")
+                Analytics.capture(.voiceCaptureFailed, [Analytics.Key.reason: "pipeline_error"])
                 displayState = .error(pipelineErrorMessage(pipelineError))
             }
         }
@@ -258,11 +259,26 @@ final class VoiceInlineCaptureController {
             displayState = .hidden
         case .needsManualEntry(let draft, let failure):
             liveActivityController.failAndEnd(message: "Needs review")
+            Analytics.capture(.voiceCaptureFailed, [Analytics.Key.reason: Self.analyticsReason(for: failure)])
             manualSheetPayload = VoiceInlineManualSheetPayload(
                 draft: draft,
                 hint: failureMessage(for: failure)
             )
             displayState = .hidden
+        }
+    }
+
+    /// Low-cardinality, PII-free token for the failure reason (never the raw AI message).
+    private static func analyticsReason(for failure: VoiceCreateFailure) -> String {
+        switch failure {
+        case .aiError: "ai_error"
+        case .invalidJSON: "invalid_json"
+        case .noPrimaryAccount: "no_primary_account"
+        case .noCategoriesForType: "no_categories_for_type"
+        case .amountMissing: "amount_missing"
+        case .categoryMissing: "category_missing"
+        case .unknownType: "unknown_type"
+        case .invalidDate: "invalid_date"
         }
     }
 

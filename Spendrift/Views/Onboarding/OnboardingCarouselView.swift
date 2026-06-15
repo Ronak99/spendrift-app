@@ -118,6 +118,7 @@ struct OnboardingCarouselView: View {
 
     private func completeOnboarding() {
         UINotificationFeedbackGenerator().notificationOccurred(.success)
+        Analytics.capture(.onboardingCompleted, [Analytics.Key.version: OnboardingCarouselView.currentVersion])
         // Version 1 = onboarding complete; bump the constant to re-show on major updates.
         onboardingVersion = OnboardingCarouselView.currentVersion
     }

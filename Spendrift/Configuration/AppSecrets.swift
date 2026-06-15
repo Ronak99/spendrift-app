@@ -20,4 +20,15 @@ enum AppSecrets {
     static var backendClientToken: String {
         Bundle.main.infoDictionary?["SpendriftBackendClientToken"] as? String ?? ""
     }
+
+    static var posthogAPIKey: String {
+        (Bundle.main.infoDictionary?["SpendriftPostHogAPIKey"] as? String ?? "")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    static var posthogHost: String {
+        let raw = (Bundle.main.infoDictionary?["SpendriftPostHogHost"] as? String ?? "")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        return raw.isEmpty ? "https://us.i.posthog.com" : raw
+    }
 }

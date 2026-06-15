@@ -65,10 +65,15 @@ struct ContentView: View {
             seedDefaultCategoriesIfNeeded()
             ScreenshotDemoData.seedIfNeeded(modelContext: modelContext)
             handleVoiceIntentLaunchIfNeeded()
+            Analytics.capture(.appOpened, [Analytics.Key.daysSinceInstall: Analytics.daysSinceInstall])
         }
         .onChange(of: scenePhase) { _, newPhase in
             guard newPhase == .active else { return }
             handleVoiceIntentLaunchIfNeeded()
+            Analytics.capture(.appOpened, [Analytics.Key.daysSinceInstall: Analytics.daysSinceInstall])
+        }
+        .onChange(of: selectedTab) { _, newTab in
+            Analytics.capture(.screenViewed, [Analytics.Key.tab: Self.tabName(for: newTab)])
         }
         .onReceive(NotificationCenter.default.publisher(for: .voiceExpenseIntentTriggered)) { _ in
             handleVoiceIntentLaunchIfNeeded()
@@ -84,9 +89,21 @@ struct ContentView: View {
         }
     }
     
+    private static func tabName(for index: Int) -> String {
+        switch index {
+        case 0: "transactions"
+        case 1: "accounts"
+        case 2: "categories"
+        case 3: "analytics"
+        default: "unknown"
+        }
+    }
+
     private func handleQuickAction(url: URL) {
         guard url.scheme == "spendrift" else { return }
-        
+
+        Analytics.capture(.widgetTapped, [Analytics.Key.kind: url.host ?? "open"])
+
         switch url.host {
         case "createTransaction":
             showCreateTransaction = true
@@ -114,6 +131,7 @@ struct ContentView: View {
             selectedTab = 0
             useCompactVoiceCapture = true
             shortcutImportedAudio = ShortcutImportedAudioPayload(id: UUID(), fileURL: url)
+            Analytics.capture(.shortcutUsed, [Analytics.Key.kind: "voice_import"])
             return
         }
 
@@ -126,6 +144,7 @@ struct ContentView: View {
         selectedTab = 0
         useCompactVoiceCapture = true
         voiceCaptureTrigger = UUID()
+        Analytics.capture(.shortcutUsed, [Analytics.Key.kind: "voice"])
     }
 
     private func seedDefaultCategoriesIfNeeded() {

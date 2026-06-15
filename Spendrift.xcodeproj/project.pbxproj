@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		65FFD3D22F85103A00D901CF /* SpendriftWidget.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = A10000012E3F70000058CDE8 /* SpendriftWidget.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		FE00000C2E3F70000058CDE8 /* PostHog in Frameworks */ = {isa = PBXBuildFile; productRef = FE00000B2E3F70000058CDE8 /* PostHog */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -106,6 +107,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				FE00000C2E3F70000058CDE8 /* PostHog in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -185,6 +187,7 @@
 			);
 			name = Spendrift;
 			packageProductDependencies = (
+				FE00000B2E3F70000058CDE8 /* PostHog */,
 			);
 			productName = Spendrift;
 			productReference = 65BB664B2E3F644F0058CDE8 /* Spendrift.app */;
@@ -293,6 +296,9 @@
 			);
 			mainGroup = 65BB66422E3F644F0058CDE8;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				FE00000A2E3F70000058CDE8 /* XCRemoteSwiftPackageReference "posthog-ios" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 65BB664C2E3F644F0058CDE8 /* Products */;
 			projectDirPath = "";
@@ -786,6 +792,25 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		FE00000A2E3F70000058CDE8 /* XCRemoteSwiftPackageReference "posthog-ios" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/PostHog/posthog-ios";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 3.58.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		FE00000B2E3F70000058CDE8 /* PostHog */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = FE00000A2E3F70000058CDE8 /* XCRemoteSwiftPackageReference "posthog-ios" */;
+			productName = PostHog;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 65BB66432E3F644F0058CDE8 /* Project object */;
 }

@@ -377,6 +377,13 @@ struct StatementImportView: View {
                 }
             } catch {
                 await MainActor.run {
+                    let reason: String
+                    if case let SpendriftBackendError.apiError(code, _, _) = error {
+                        reason = code
+                    } else {
+                        reason = String(describing: type(of: error))
+                    }
+                    Analytics.capture(.pdfImportFailed, [Analytics.Key.reason: reason])
                     errorMessage = error.localizedDescription
                     isLoading = false
                 }
@@ -403,6 +410,7 @@ struct StatementImportView: View {
         }
         do {
             try modelContext.save()
+            Analytics.captureTransactionCreated(method: "pdf", type: "mixed", count: importedRows.count)
             AppStoreReviewRequest.requestIfFirstTime(forKey: AppStoreReviewRequest.Keys.firstStatementImport)
             dismiss()
         } catch {

@@ -18,6 +18,8 @@ struct SpendriftApp: App {
     private let sharedContainer: ModelContainer
 
     init() {
+        Analytics.bootstrap()
+
         // Ensure Shortcuts picks up newly added/changed intent parameters.
         Task {
             ExpenseAppShortcuts.updateAppShortcutParameters()

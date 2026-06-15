@@ -92,6 +92,14 @@ struct SettingsView: View {
         Color.themeColors[themeColorName] ?? .blue
     }
 
+    /// Toggle is framed as opt-in ("share"); maps to the inverse of `Analytics.isOptedOut`.
+    private var analyticsSharingBinding: Binding<Bool> {
+        Binding(
+            get: { !Analytics.isOptedOut },
+            set: { Analytics.isOptedOut = !$0 }
+        )
+    }
+
     var body: some View {
         NavigationStack {
             Form {
@@ -147,6 +155,15 @@ struct SettingsView: View {
                     .buttonStyle(.plain)
                 } header: {
                     Text("Feedback")
+                }
+
+                Section {
+                    Toggle("Share anonymous analytics", isOn: analyticsSharingBinding)
+                } header: {
+                    Text("Privacy")
+                } footer: {
+                    Text("Helps improve Spendrift with anonymous usage stats. No account is required, and transaction details, amounts, and personal data are never sent.")
+                        .font(.footnote)
                 }
 
                 Section {

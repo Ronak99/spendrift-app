@@ -298,6 +298,7 @@ struct UpdateTransactionSheet: View {
                 account: selectedAccount
             )
             modelContext.insert(newTransaction)
+            Analytics.captureTransactionCreated(method: "manual", type: transactionType.rawValue)
         }
 
         selectedAccount?.lastUsedAt = Date()

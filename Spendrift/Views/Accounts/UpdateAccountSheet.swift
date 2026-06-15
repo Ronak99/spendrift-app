@@ -113,6 +113,10 @@ struct UpdateAccountSheet: View {
                 isPrimary: isPrimary
             )
             modelContext.insert(newAccount)
+            Analytics.capture(.accountCreated, [
+                Analytics.Key.name: name,
+                Analytics.Key.initialBalance: balanceValue,
+            ])
             onCreated?(newAccount)
         }
         

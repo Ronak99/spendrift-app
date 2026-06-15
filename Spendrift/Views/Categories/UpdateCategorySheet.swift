@@ -98,6 +98,7 @@ struct UpdateCategorySheet: View {
                 icon: icon
             )
             modelContext.insert(newCategory)
+            Analytics.capture(.categoryCreated, [Analytics.Key.name: name])
             onCreated?(newCategory)
         }
         

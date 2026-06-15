@@ -130,5 +130,81 @@
             landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            uuid = "C20A4156-055F-4022-81C6-16EE1DC96562"
+            shouldBeEnabled = "Yes"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "Spendrift/Services/Backend/SpendriftBackendClient.swift"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "95"
+            endingLineNumber = "95"
+            landmarkName = "parseStatement(pdfData:filename:)"
+            landmarkType = "7">
+            <Locations>
+               <Location
+                  uuid = "C20A4156-055F-4022-81C6-16EE1DC96562 - d640ed5bda678ed1"
+                  shouldBeEnabled = "Yes"
+                  ignoreCount = "0"
+                  continueAfterRunningActions = "No"
+                  symbolName = "(1) suspend resume partial function for Spendrift.SpendriftBackendClient.parseStatement(pdfData: Foundation.Data, filename: Swift.String) async throws -&gt; Spendrift.OpenAIStatementPayload"
+                  moduleName = "Spendrift.debug.dylib"
+                  usesParentBreakpointCondition = "Yes"
+                  urlString = "file:///Volumes/ssd/Development/projects/spendrift/Spendrift/Spendrift/Services/Backend/SpendriftBackendClient.swift"
+                  startingColumnNumber = "9223372036854775807"
+                  endingColumnNumber = "9223372036854775807"
+                  startingLineNumber = "95"
+                  endingLineNumber = "95">
+               </Location>
+               <Location
+                  uuid = "C20A4156-055F-4022-81C6-16EE1DC96562 - 6f23b1029e45fe8"
+                  shouldBeEnabled = "Yes"
+                  ignoreCount = "0"
+                  continueAfterRunningActions = "No"
+                  symbolName = "(2) await resume partial function for Spendrift.SpendriftBackendClient.parseStatement(pdfData: Foundation.Data, filename: Swift.String) async throws -&gt; Spendrift.OpenAIStatementPayload"
+                  moduleName = "Spendrift.debug.dylib"
+                  usesParentBreakpointCondition = "Yes"
+                  urlString = "file:///Volumes/ssd/Development/projects/spendrift/Spendrift/Spendrift/Services/Backend/SpendriftBackendClient.swift"
+                  startingColumnNumber = "9223372036854775807"
+                  endingColumnNumber = "9223372036854775807"
+                  startingLineNumber = "95"
+                  endingLineNumber = "95">
+               </Location>
+               <Location
+                  uuid = "C20A4156-055F-4022-81C6-16EE1DC96562 - c6b542c6c6a190cc"
+                  shouldBeEnabled = "Yes"
+                  ignoreCount = "0"
+                  continueAfterRunningActions = "No"
+                  symbolName = "(4) suspend resume partial function for Spendrift.SpendriftBackendClient.parseStatement(pdfData: Foundation.Data, filename: Swift.String) async throws -&gt; Spendrift.OpenAIStatementPayload"
+                  moduleName = "Spendrift.debug.dylib"
+                  usesParentBreakpointCondition = "Yes"
+                  urlString = "file:///Volumes/ssd/Development/projects/spendrift/Spendrift/Spendrift/Services/Backend/SpendriftBackendClient.swift"
+                  startingColumnNumber = "9223372036854775807"
+                  endingColumnNumber = "9223372036854775807"
+                  startingLineNumber = "95"
+                  endingLineNumber = "95">
+               </Location>
+            </Locations>
+         </BreakpointContent>
+      </BreakpointProxy>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            uuid = "C0382291-CF8C-471F-A77A-FCD5C48412FC"
+            shouldBeEnabled = "Yes"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "Spendrift/Services/Backend/SpendriftBackendClient.swift"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "105"
+            endingLineNumber = "105"
+            landmarkName = "endpoint(path:)"
+            landmarkType = "7">
+         </BreakpointContent>
+      </BreakpointProxy>
    </Breakpoints>
 </Bucket>

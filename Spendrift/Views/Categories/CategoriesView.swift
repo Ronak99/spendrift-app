@@ -113,6 +113,7 @@ struct CategoriesView: View {
     
     private func deleteCategories(at offsets: IndexSet, from categories: [TransactionCategory]) {
         for index in offsets {
+            Analytics.capture(.categoryDeleted, [Analytics.Key.name: categories[index].name])
             modelContext.delete(categories[index])
         }
         try? modelContext.save()

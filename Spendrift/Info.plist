@@ -17,6 +17,10 @@
 	<string>$(SPENDRIFT_BACKEND_BASE_URL)</string>
 	<key>SpendriftBackendClientToken</key>
 	<string>$(SPENDRIFT_BACKEND_CLIENT_TOKEN)</string>
+	<key>SpendriftPostHogAPIKey</key>
+	<string>$(SPENDRIFT_POSTHOG_API_KEY)</string>
+	<key>SpendriftPostHogHost</key>
+	<string>$(SPENDRIFT_POSTHOG_HOST)</string>
 	<key>NSAppTransportSecurity</key>
 	<dict>
 		<key>NSAllowsLocalNetworking</key>

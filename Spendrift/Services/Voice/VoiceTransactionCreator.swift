@@ -125,6 +125,7 @@ enum VoiceTransactionCreator {
         )
         modelContext.insert(transaction)
         try? modelContext.save()
+        Analytics.captureTransactionCreated(method: "voice", type: draft.transactionType.rawValue)
         return .created(transaction)
     }
 
