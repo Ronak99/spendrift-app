@@ -39,10 +39,6 @@
 
 The iOS app must stop calling OpenAI directly. This is the highest-priority cross-cutting work — see `spendrift-backend/docs/BACKEND_ROADMAP.md` for the server-side plan.
 
-**App work once proxy is ready:**
-- Point `OpenAIVoiceTransactionService` and `OpenAIBankStatementService` at the proxy
-- Remove `OpenAIApiKey` from `Info.plist` / `AppSecrets`
-- Ship an App Store update
 
 ---
 
