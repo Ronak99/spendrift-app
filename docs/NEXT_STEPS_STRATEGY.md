@@ -35,14 +35,9 @@
 
 ## Recommended Priority Order
 
-### 1. Ship backend proxy update (blocked on backend)
-
-The iOS app must stop calling OpenAI directly. This is the highest-priority cross-cutting work — see `spendrift-backend/docs/BACKEND_ROADMAP.md` for the server-side plan.
 
 
----
-
-### 2. Instrument the app (~1 day of work)
+### 1. Instrument the app (~1 day of work)
 
 **Why:** You can't steer without signal. 10 downloads is noise; 100 instrumented downloads is a roadmap.
 
