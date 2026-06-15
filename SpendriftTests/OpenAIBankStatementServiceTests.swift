@@ -67,38 +67,4 @@ struct OpenAIBankStatementServiceTests {
     func returnsNilForGarbage() {
         #expect(OpenAIBankStatementService.parseDate("not-a-date") == nil)
     }
-
-    // MARK: - Response envelope
-
-    @Test
-    func decodeResponseEnvelopeWithOutputText() throws {
-        let json = """
-        {
-          "output_text": "{\\"transactions\\": []}",
-          "output": []
-        }
-        """
-        let data = try #require(json.data(using: .utf8))
-        let envelope = try JSONDecoder().decode(OpenAIResponseEnvelope.self, from: data)
-        #expect(envelope.output_text == "{\"transactions\": []}")
-    }
-
-    @Test
-    func decodeResponseEnvelopeFallbackToOutputArray() throws {
-        let json = """
-        {
-          "output": [
-            {
-              "content": [
-                { "type": "output_text", "text": "{\\"transactions\\": []}" }
-              ]
-            }
-          ]
-        }
-        """
-        let data = try #require(json.data(using: .utf8))
-        let envelope = try JSONDecoder().decode(OpenAIResponseEnvelope.self, from: data)
-        #expect(envelope.output_text == nil)
-        #expect(envelope.output?.first?.content?.first?.text == "{\"transactions\": []}")
-    }
 }

@@ -21,32 +21,6 @@ struct OpenAIVoiceTransaction: Codable {
     let category: String?
 }
 
-struct OpenAIChatCompletionResponse: Decodable {
-    struct Choice: Decodable {
-        struct Message: Decodable {
-            let content: String?
-        }
-
-        let message: Message
-    }
-
-    let choices: [Choice]
-}
-
-struct OpenAIResponseEnvelope: Decodable {
-    struct OutputItem: Decodable {
-        struct ContentItem: Decodable {
-            let type: String?
-            let text: String?
-        }
-
-        let content: [ContentItem]?
-    }
-
-    let output: [OutputItem]?
-    let output_text: String?
-}
-
 // MARK: - Bank Statement PDF Parsing
 
 struct OpenAIStatementPayload: Codable {
