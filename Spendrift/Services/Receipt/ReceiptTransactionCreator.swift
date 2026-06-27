@@ -32,9 +32,13 @@ enum ReceiptTransactionCreator {
 
         let requiredType: TransactionType = transactionType == .income ? .income : .expense
         let categoryName = payload.transaction?.category ?? ""
-        let category = categories.first(where: {
-            $0.type == requiredType && $0.name.caseInsensitiveCompare(categoryName) == .orderedSame
-        })
+        let notes = payload.transaction?.notes ?? ""
+        let category = CategoryResolver.resolve(
+            categoryName: categoryName.isEmpty ? nil : categoryName,
+            notes: notes,
+            type: requiredType,
+            categories: categories
+        )
 
         return VoiceTransactionDraft(
             notes: payload.transaction?.notes ?? "",

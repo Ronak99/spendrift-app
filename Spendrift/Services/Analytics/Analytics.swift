@@ -27,6 +27,7 @@ enum Analytics {
         case widgetTapped = "widget_tapped"
         case categoryCreated = "category_created"
         case categoryDeleted = "category_deleted"
+        case categoriesConfigured = "categories_configured"
         case accountCreated = "account_created"
         case accountDeleted = "account_deleted"
         case notificationPermissionRequested = "notification_permission_requested"
@@ -50,8 +51,11 @@ enum Analytics {
         static let version = "version"
         static let daysSinceInstall = "days_since_install"
         static let name = "name"
+        static let isDefault = "is_default"
         static let initialBalance = "initial_balance"
         static let granted = "granted"
+        static let removedCount = "removed_count"
+        static let keptCount = "kept_count"
     }
 
     private static let optOutDefaultsKey = "analyticsOptOut"

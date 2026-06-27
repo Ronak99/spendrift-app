@@ -44,6 +44,33 @@ struct VoiceTransactionPipelineTests {
     }
 
     @Test
+    func creatorResolvesLegacyCategoryAlias() throws {
+        let payload = VoiceTransactionPayload(
+            status: "success",
+            transaction: VoiceTransactionData(
+                notes: "Metro ride",
+                amount: 50,
+                date: "2026-03-23T10:00:00Z",
+                transactionType: "expense",
+                category: "Transportation"
+            ),
+            reason: nil
+        )
+        let categories = [
+            TransactionCategory(name: "Transport", type: .expense),
+            TransactionCategory(name: "Shopping", type: .expense)
+        ]
+        let draftResult = VoiceTransactionCreator.buildDraftFromAIPayload(
+            payload: payload,
+            accounts: [],
+            categories: categories
+        )
+
+        #expect(draftResult.failure == nil)
+        #expect(draftResult.draft?.category?.name == "Transport")
+    }
+
+    @Test
     func creatorRejectsCategoryOutsideDynamicList() throws {
         let payload = VoiceTransactionPayload(
             status: "success",

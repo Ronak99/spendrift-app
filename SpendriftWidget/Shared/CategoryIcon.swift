@@ -12,6 +12,8 @@ enum CategoryIcon: String, Codable, CaseIterable {
     case bills, education, entertainment, food, health, home
     case investments, shopping, sport, transportation, baby
     case beauty, clothing, tax, electronics, insurance
+    case groceries, rent
+    case miscellaneous
     case unknown
 }
 
@@ -40,6 +42,9 @@ extension CategoryIcon {
         case .tax: return "doc.text.magnifyingglass"
         case .electronics: return "iphone"
         case .insurance: return "shield"
+        case .groceries: return "basket"
+        case .rent: return "house.fill"
+        case .miscellaneous: return "questionmark.circle.fill"
         case .unknown: return "circle"
         }
     }

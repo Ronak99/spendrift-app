@@ -17,6 +17,7 @@ struct ContentView: View {
     @AppStorage(NotificationManager.Keys.dailyReminderEnabled) private var dailyReminderEnabled = true
     @AppStorage(NotificationManager.Keys.dailyReminderHour) private var dailyReminderHour = NotificationManager.defaultHour
     @AppStorage(NotificationManager.Keys.dailyReminderMinute) private var dailyReminderMinute = NotificationManager.defaultMinute
+    @AppStorage("spendriftOnboardingVersion") private var onboardingVersion = 0
     @State private var showReminderOptIn = false
     @State private var selectedTab = 0
     @State private var showCreateTransaction = false
@@ -220,7 +221,13 @@ struct ContentView: View {
         Analytics.capture(.shortcutUsed, [Analytics.Key.kind: "voice"])
     }
 
+    private var shouldSeedCategoriesOnLaunch: Bool {
+        ProcessInfo.processInfo.arguments.contains("-UITesting")
+            || onboardingVersion >= OnboardingCarouselView.currentVersion
+    }
+
     private func seedDefaultCategoriesIfNeeded() {
+        guard shouldSeedCategoriesOnLaunch else { return }
         DefaultCategorySeeder.seedIfNeeded(modelContext: modelContext)
     }
 }

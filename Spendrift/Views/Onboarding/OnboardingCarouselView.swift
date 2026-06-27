@@ -7,12 +7,16 @@
 //
 
 import SwiftUI
+import SwiftData
 
 struct OnboardingCarouselView: View {
+    @Environment(\.modelContext) private var modelContext
     @Binding var onboardingVersion: Int
     @State private var currentPage = 0
+    @State private var categoryChoice: CategoryCatalogService.OnboardingChoice = .keepSuggested
+    @State private var didSeedCategories = false
 
-    private let totalPages = 3
+    private let totalPages = 4
 
     private static let heroConfigurations: [OnboardingHeroPageConfiguration] = [
         OnboardingHeroPageConfiguration(
@@ -28,6 +32,11 @@ struct OnboardingCarouselView: View {
         OnboardingHeroPageConfiguration(
             mark: .sfSymbol("bolt.circle.fill"),
             glowColor: Color(hex: "#A78BFA"),
+            size: 45
+        ),
+        OnboardingHeroPageConfiguration(
+            mark: .sfSymbol("folder.fill"),
+            glowColor: Color(hex: "#F59E0B"),
             size: 45
         ),
         OnboardingHeroPageConfiguration(
@@ -64,14 +73,15 @@ struct OnboardingCarouselView: View {
                         .tag(0)
                     ShortcutsPage()
                         .tag(1)
-                    GetStartedPage()
+                    OnboardingCategoriesPage(choice: $categoryChoice)
                         .tag(2)
+                        .onAppear(perform: seedCategoriesForOnboardingIfNeeded)
+                    GetStartedPage()
+                        .tag(3)
                 }
                 .tabViewStyle(.page(indexDisplayMode: .never))
             }
         }
-        // Bottom chrome was overlaid in the ZStack, so on short devices the pill pager sat on top of
-        // the shortcuts card. Insetting reserves real layout space so content stays above the dots.
         .safeAreaInset(edge: .bottom, spacing: 0) {
             bottomChrome
                 .background(OnboardingTheme.background.ignoresSafeArea(edges: .bottom))
@@ -79,9 +89,6 @@ struct OnboardingCarouselView: View {
         .preferredColorScheme(.dark)
     }
 
-    // MARK: - Bottom chrome
-
-    /// Whether the primary CTA is the final step (affects copy and capsule color).
     private var isOnLastOnboardingPage: Bool {
         currentPage >= totalPages - 1
     }
@@ -92,6 +99,9 @@ struct OnboardingCarouselView: View {
 
             Button {
                 if currentPage < totalPages - 1 {
+                    if currentPage == 2 {
+                        CategoryCatalogService.applyOnboardingChoice(categoryChoice, modelContext: modelContext)
+                    }
                     withAnimation(.easeInOut(duration: 0.35)) { currentPage += 1 }
                 } else {
                     completeOnboarding()
@@ -108,25 +118,28 @@ struct OnboardingCarouselView: View {
                             .fill(isOnLastOnboardingPage ? OnboardingTheme.success : Color.white)
                     )
             }
-            // `withAnimation` doesn’t always propagate into `Button` label branches; binding
-            // animation to `currentPage` makes fill + text interpolate when the page changes.
             .animation(.easeInOut(duration: 0.35), value: currentPage)
             .padding(.horizontal, 24)
         }
         .padding(.bottom, 40)
     }
 
+    private func seedCategoriesForOnboardingIfNeeded() {
+        guard !didSeedCategories else { return }
+        DefaultCategorySeeder.seedIfNeeded(modelContext: modelContext)
+        didSeedCategories = true
+    }
+
     private func completeOnboarding() {
         UINotificationFeedbackGenerator().notificationOccurred(.success)
         Analytics.capture(.onboardingCompleted, [Analytics.Key.version: OnboardingCarouselView.currentVersion])
-        // Version 1 = onboarding complete; bump the constant to re-show on major updates.
         onboardingVersion = OnboardingCarouselView.currentVersion
     }
 
-    static let currentVersion = 1
+    /// Version 2 adds the categories setup step; bump to re-show onboarding on major updates.
+    static let currentVersion = 2
 }
 
-/// Accent for each onboarding step; keep in sync with `heroConfigurations` glow colors.
 private enum OnboardingPageAccent {
     static let welcome = OnboardingTheme.accent
     static let shortcuts = Color(hex: "#A78BFA")
@@ -279,7 +292,7 @@ private struct ShortcutsPage: View {
     }
 }
 
-// MARK: - Page 3: Get Started
+// MARK: - Page 4: Get Started
 
 private struct GetStartedPage: View {
     private let highlights: [(icon: String, color: Color, text: String)] = [
@@ -333,8 +346,6 @@ private struct GetStartedPage: View {
         .scrollDisabled(true)
     }
 }
-
-// MARK: - Preview
 
 #Preview {
     OnboardingCarouselView(onboardingVersion: .constant(0))

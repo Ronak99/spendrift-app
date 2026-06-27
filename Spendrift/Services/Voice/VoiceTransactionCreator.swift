@@ -54,9 +54,12 @@ enum VoiceTransactionCreator {
         let parsedDate = parseTransactionDate(transaction.date) ?? Date()
 
         let typeCategory: TransactionType = transactionType == .expense ? .expense : .income
-        let category = categories.first(where: {
-            $0.type == typeCategory && $0.name.caseInsensitiveCompare(transaction.category ?? "") == .orderedSame
-        })
+        let category = CategoryResolver.resolve(
+            categoryName: transaction.category,
+            notes: transaction.notes,
+            type: typeCategory,
+            categories: categories
+        )
         let primary = resolvePrimaryAccount(from: accounts)
 
         return (

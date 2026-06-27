@@ -49,7 +49,7 @@ User says: "I spent 450 rupees on groceries today"
     "amount": 450,
     "date": "{{TODAY_ISO}}",
     "transactionType": "expense",
-    "category": "Food"
+    "category": "Groceries"
   }
 }
 
