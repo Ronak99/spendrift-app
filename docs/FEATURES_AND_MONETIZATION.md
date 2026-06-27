@@ -112,6 +112,7 @@ This document reflects the **current codebase** (not git history): what the app 
 ### 12. Accounts
 
 71. **Primary account** — `isPrimary` flag; shortcuts and statement import assume a **primary** account for quick paths.
+71a. **Default account seed** — `DefaultAccountSeeder` waits for CloudKit's initial import (with a timeout fallback) before seeding a single primary "Savings" account (balance 100) only when no account exists anywhere, so it never collides with synced accounts. Guarded by `hasSeededDefaultAccount` in iCloud KVS.
 72. **Balance model** — `currentBalance` derived from opening balance plus income minus expenses on linked transactions.
 73. **Per-account transaction screen** — Filtered month view + same patterns as main transactions.
 
