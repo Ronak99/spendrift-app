@@ -310,14 +310,14 @@ final class CategoryIntegrationTests: SpendriftUITestBase {
     func testCategoriesTab_showsIncomeSectionWithDefaults() {
         navigateToCategories()
         XCTAssertTrue(app.staticTexts["Income"].waitForExistence(timeout: 5))
-        XCTAssertTrue(app.staticTexts["Dividend"].exists)
+        XCTAssertTrue(app.staticTexts["Other Income"].exists)
         XCTAssertTrue(app.staticTexts["Salary"].exists)
     }
 
     func testCategoriesTab_showsExpenseSectionWithDefaults() {
         navigateToCategories()
         XCTAssertTrue(app.staticTexts["Expense"].waitForExistence(timeout: 5))
-        XCTAssertTrue(app.staticTexts["Bills"].exists)
+        XCTAssertTrue(app.staticTexts["Bills & Utilities"].exists)
         XCTAssertTrue(app.staticTexts["Shopping"].exists)
     }
 
@@ -634,7 +634,7 @@ final class TransactionIntegrationTests: SpendriftUITestBase {
         searchField.typeText("Food")
 
         XCTAssertTrue(app.buttons["Food"].waitForExistence(timeout: 3))
-        XCTAssertFalse(app.buttons["Bills"].exists)
+        XCTAssertFalse(app.buttons["Shopping"].exists)
     }
 
     func testCategoryPicker_searchNoResults() {
