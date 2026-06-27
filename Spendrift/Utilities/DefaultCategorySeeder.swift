@@ -15,6 +15,9 @@ enum DefaultCategorySeeder {
     /// - Important: This uses iCloud KVS to prevent duplicate seeding after reinstall
     ///   while CloudKit is still downloading existing categories.
     static func seedIfNeeded(modelContext: ModelContext) {
+        DefaultCategoryMigration.backfillIsDefaultIfNeeded(modelContext: modelContext)
+        DefaultCategoryMigration.backfillSortOrderIfNeeded(modelContext: modelContext)
+
         let cloudDefaults = NSUbiquitousKeyValueStore.default
         if cloudDefaults.bool(forKey: hasSeededDefaultCategoriesKey) {
             return
