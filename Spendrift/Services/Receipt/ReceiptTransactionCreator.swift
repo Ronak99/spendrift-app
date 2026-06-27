@@ -20,7 +20,7 @@ enum ReceiptCreateResult {
 enum ReceiptTransactionCreator {
     /// Builds a draft from the AI payload, resolving primary account and matching a category.
     static func buildDraft(
-        payload: OpenAIReceiptPayload,
+        payload: ReceiptPayload,
         accounts: [Account],
         categories: [TransactionCategory]
     ) -> VoiceTransactionDraft {
@@ -28,7 +28,7 @@ enum ReceiptTransactionCreator {
             .flatMap { TransactionType(rawValue: $0) } ?? .expense
 
         let parsedDate = payload.transaction?.date
-            .flatMap { OpenAIBankStatementService.parseDate($0) } ?? Date()
+            .flatMap { BankStatementService.parseDate($0) } ?? Date()
 
         let requiredType: TransactionType = transactionType == .income ? .income : .expense
         let categoryName = payload.transaction?.category ?? ""
@@ -49,7 +49,7 @@ enum ReceiptTransactionCreator {
     /// Must run on the main actor: mutates the SwiftUI environment's main-thread model context.
     @MainActor
     static func createFromReceipt(
-        payload: OpenAIReceiptPayload,
+        payload: ReceiptPayload,
         accounts: [Account],
         categories: [TransactionCategory],
         modelContext: ModelContext

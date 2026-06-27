@@ -23,7 +23,7 @@ final class VoiceShortcutAudioNormalizerTests: XCTestCase {
         let wav = Self.makeWAVData(pcm: pcm, sampleRate: UInt32(sampleRate), channels: 1, bitsPerSample: 16)
         try wav.write(to: url)
 
-        let out = try await VoiceShortcutAudioNormalizer.dataForOpenAIVoicePipeline(from: url)
+        let out = try await VoiceShortcutAudioNormalizer.dataForVoicePipeline(from: url)
 
         XCTAssertGreaterThanOrEqual(out.count, 12)
         XCTAssertEqual(String(data: out.prefix(4), encoding: .ascii), "RIFF")
@@ -44,7 +44,7 @@ final class VoiceShortcutAudioNormalizerTests: XCTestCase {
         try wav.write(to: url)
 
         do {
-            _ = try await VoiceShortcutAudioNormalizer.dataForOpenAIVoicePipeline(from: url)
+            _ = try await VoiceShortcutAudioNormalizer.dataForVoicePipeline(from: url)
             XCTFail("Expected durationTooShort")
         } catch let error as VoiceShortcutAudioNormalizerError {
             XCTAssertEqual(error, .durationTooShort)

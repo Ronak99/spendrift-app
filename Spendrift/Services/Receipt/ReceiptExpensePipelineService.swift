@@ -7,11 +7,11 @@ import Foundation
 import SwiftData
 
 enum ReceiptPipelineError: Error {
-    case openAI(String)
+    case aiService(String)
 }
 
 struct ReceiptExpensePipelineService {
-    var receiptService = OpenAIReceiptTransactionService()
+    var receiptService = ReceiptTransactionService()
 
     @MainActor
     func submitImage(
@@ -38,7 +38,7 @@ struct ReceiptExpensePipelineService {
             )
             return .success(result)
         } catch {
-            return .failure(.openAI(error.localizedDescription))
+            return .failure(.aiService(error.localizedDescription))
         }
     }
 }

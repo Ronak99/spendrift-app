@@ -1,5 +1,5 @@
 //
-//  OpenAIBankStatementService.swift
+//  BankStatementService.swift
 //  Spendrift
 //
 //  Created by Cursor on 06/04/26.
@@ -15,7 +15,7 @@ struct StatementImportRow: Identifiable {
     let transactionType: TransactionType
 }
 
-struct OpenAIBankStatementService {
+struct BankStatementService {
     private let backend: SpendriftBackendClient?
 
     init(backend: SpendriftBackendClient? = nil) {
@@ -24,10 +24,10 @@ struct OpenAIBankStatementService {
 
     func parseStatement(pdfData: Data, filename: String) async throws -> [StatementImportRow] {
         guard let backend else {
-            throw OpenAIServiceError.missingAPIKey
+            throw AIServiceError.missingAPIKey
         }
 
-        let payload: OpenAIStatementPayload
+        let payload: StatementPayload
         do {
             payload = try await backend.parseStatement(pdfData: pdfData, filename: filename)
         } catch let error as SpendriftBackendError {
@@ -37,7 +37,7 @@ struct OpenAIBankStatementService {
         return payload.transactions.compactMap { mapToRow($0) }
     }
 
-    private func mapToRow(_ tx: OpenAIStatementTransaction) -> StatementImportRow? {
+    private func mapToRow(_ tx: StatementTransactionData) -> StatementImportRow? {
         guard tx.amount > 0 else { return nil }
 
         let txType = TransactionType(rawValue: tx.transactionType) ?? .none
@@ -69,7 +69,7 @@ struct OpenAIBankStatementService {
         return nil
     }
 
-    private func mapBackendError(_ error: SpendriftBackendError) -> OpenAIServiceError {
+    private func mapBackendError(_ error: SpendriftBackendError) -> AIServiceError {
         switch error {
         case .missingConfiguration:
             return .missingAPIKey

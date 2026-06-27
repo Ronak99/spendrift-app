@@ -36,7 +36,7 @@ enum VoiceCreateResult {
 
 enum VoiceTransactionCreator {
     static func buildDraftFromAIPayload(
-        payload: OpenAIVoiceTransactionPayload,
+        payload: VoiceTransactionPayload,
         accounts: [Account],
         categories: [TransactionCategory]
     ) -> (draft: VoiceTransactionDraft?, failure: VoiceCreateFailure?) {
@@ -77,7 +77,7 @@ enum VoiceTransactionCreator {
     /// reading them off-thread corrupts the context's identity map and traps on `save()`.
     @MainActor
     static func createFromAIVoice(
-        payload: OpenAIVoiceTransactionPayload,
+        payload: VoiceTransactionPayload,
         accounts: [Account],
         categories: [TransactionCategory],
         modelContext: ModelContext,

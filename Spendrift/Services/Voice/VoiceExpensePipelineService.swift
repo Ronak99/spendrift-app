@@ -11,11 +11,11 @@ import SwiftData
 enum VoicePipelineError: Error {
     /// On-device speech-presence gate rejected the clip (silence / no speech).
     case noSpeech
-    case openAI(String)
+    case aiService(String)
 }
 
 struct VoiceExpensePipelineService {
-    var openAIService = OpenAIVoiceTransactionService()
+    var voiceService = VoiceTransactionService()
 
     @MainActor
     func submitAudio(
@@ -31,7 +31,7 @@ struct VoiceExpensePipelineService {
         }
 
         do {
-            let payload = try await openAIService.parseTransaction(
+            let payload = try await voiceService.parseTransaction(
                 audioData: audioData,
                 categories: categories
             )
@@ -45,7 +45,7 @@ struct VoiceExpensePipelineService {
             )
             return .success(result)
         } catch {
-            return .failure(.openAI(error.localizedDescription))
+            return .failure(.aiService(error.localizedDescription))
         }
     }
 }

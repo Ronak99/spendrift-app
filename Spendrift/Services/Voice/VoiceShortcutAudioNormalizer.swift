@@ -36,8 +36,8 @@ enum VoiceShortcutAudioNormalizer {
     private static let targetChannels: UInt32 = 1
     private static let bitsPerSample: UInt16 = 16
 
-    /// Produces linear PCM WAV bytes suitable for `OpenAIVoiceTransactionService` / Chat Completions `input_audio`.
-    static func dataForOpenAIVoicePipeline(from fileURL: URL) async throws -> Data {
+    /// Produces linear PCM WAV bytes suitable for `VoiceTransactionService` and the backend AI proxy.
+    static func dataForVoicePipeline(from fileURL: URL) async throws -> Data {
         guard FileManager.default.fileExists(atPath: fileURL.path) else {
             throw VoiceShortcutAudioNormalizerError.fileNotFound
         }

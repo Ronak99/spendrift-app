@@ -21,96 +21,16 @@
       <BreakpointProxy
          BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
          <BreakpointContent
-            uuid = "A458C38B-5ADF-4AD7-96EE-2CA3D5540D00"
-            shouldBeEnabled = "No"
-            ignoreCount = "0"
-            continueAfterRunningActions = "No"
-            filePath = "Spendrift/Services/OpenAI/OpenAIClient.swift"
-            startingColumnNumber = "9223372036854775807"
-            endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "29"
-            endingLineNumber = "29"
-            landmarkName = "chatCompletionJSONFromAudio(apiKey:model:systemPrompt:userInstruction:audioData:audioFormat:)"
-            landmarkType = "7">
-         </BreakpointContent>
-      </BreakpointProxy>
-      <BreakpointProxy
-         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
-         <BreakpointContent
-            uuid = "6174EA50-0E9A-4008-9B8B-29713ACF028A"
-            shouldBeEnabled = "No"
-            ignoreCount = "0"
-            continueAfterRunningActions = "No"
-            filePath = "Spendrift/Services/OpenAI/OpenAIClient.swift"
-            startingColumnNumber = "9223372036854775807"
-            endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "25"
-            endingLineNumber = "25"
-            landmarkName = "chatCompletionJSONFromAudio(apiKey:model:systemPrompt:userInstruction:audioData:audioFormat:)"
-            landmarkType = "7">
-         </BreakpointContent>
-      </BreakpointProxy>
-      <BreakpointProxy
-         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
-         <BreakpointContent
             uuid = "1207E913-A5C0-4045-9CE3-CED63911E5E2"
             shouldBeEnabled = "No"
             ignoreCount = "0"
             continueAfterRunningActions = "No"
-            filePath = "Spendrift/Services/OpenAI/OpenAIModels.swift"
+            filePath = "Spendrift/Services/AI/AIModels.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "51"
-            endingLineNumber = "51"
-            landmarkName = "OpenAIStatementPayload"
-            landmarkType = "14">
-         </BreakpointContent>
-      </BreakpointProxy>
-      <BreakpointProxy
-         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
-         <BreakpointContent
-            uuid = "DC69AEA0-DB41-493E-AE51-D78B565161F3"
-            shouldBeEnabled = "No"
-            ignoreCount = "0"
-            continueAfterRunningActions = "No"
-            filePath = "Spendrift/Services/OpenAI/OpenAIClient.swift"
-            startingColumnNumber = "9223372036854775807"
-            endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "77"
-            endingLineNumber = "77"
-            landmarkName = "chatCompletionJSONFromAudio(apiKey:model:systemPrompt:userInstruction:audioData:audioFormat:)"
-            landmarkType = "7">
-         </BreakpointContent>
-      </BreakpointProxy>
-      <BreakpointProxy
-         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
-         <BreakpointContent
-            uuid = "25F27E45-7530-4D50-888D-72B24199E46E"
-            shouldBeEnabled = "No"
-            ignoreCount = "0"
-            continueAfterRunningActions = "No"
-            filePath = "Spendrift/Services/OpenAI/OpenAIClient.swift"
-            startingColumnNumber = "9223372036854775807"
-            endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "80"
-            endingLineNumber = "80"
-            landmarkName = "chatCompletionJSONFromAudio(apiKey:model:systemPrompt:userInstruction:audioData:audioFormat:)"
-            landmarkType = "7">
-         </BreakpointContent>
-      </BreakpointProxy>
-      <BreakpointProxy
-         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
-         <BreakpointContent
-            uuid = "8F5CA7EA-6C03-46EA-BE0F-4946171E1C74"
-            shouldBeEnabled = "No"
-            ignoreCount = "0"
-            continueAfterRunningActions = "No"
-            filePath = "Spendrift/Services/OpenAI/OpenAIClient.swift"
-            startingColumnNumber = "9223372036854775807"
-            endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "81"
-            endingLineNumber = "81"
-            landmarkName = "OpenAIClient"
+            startingLineNumber = "43"
+            endingLineNumber = "43"
+            landmarkName = "StatementPayload"
             landmarkType = "14">
          </BreakpointContent>
       </BreakpointProxy>
@@ -150,7 +70,7 @@
                   shouldBeEnabled = "Yes"
                   ignoreCount = "0"
                   continueAfterRunningActions = "No"
-                  symbolName = "(1) suspend resume partial function for Spendrift.SpendriftBackendClient.parseStatement(pdfData: Foundation.Data, filename: Swift.String) async throws -&gt; Spendrift.OpenAIStatementPayload"
+                  symbolName = "(1) suspend resume partial function for Spendrift.SpendriftBackendClient.parseStatement(pdfData: Foundation.Data, filename: Swift.String) async throws -&gt; Spendrift.StatementPayload"
                   moduleName = "Spendrift.debug.dylib"
                   usesParentBreakpointCondition = "Yes"
                   urlString = "file:///Volumes/ssd/Development/projects/spendrift/Spendrift/Spendrift/Services/Backend/SpendriftBackendClient.swift"
@@ -164,7 +84,7 @@
                   shouldBeEnabled = "Yes"
                   ignoreCount = "0"
                   continueAfterRunningActions = "No"
-                  symbolName = "(2) await resume partial function for Spendrift.SpendriftBackendClient.parseStatement(pdfData: Foundation.Data, filename: Swift.String) async throws -&gt; Spendrift.OpenAIStatementPayload"
+                  symbolName = "(2) await resume partial function for Spendrift.SpendriftBackendClient.parseStatement(pdfData: Foundation.Data, filename: Swift.String) async throws -&gt; Spendrift.StatementPayload"
                   moduleName = "Spendrift.debug.dylib"
                   usesParentBreakpointCondition = "Yes"
                   urlString = "file:///Volumes/ssd/Development/projects/spendrift/Spendrift/Spendrift/Services/Backend/SpendriftBackendClient.swift"
@@ -178,7 +98,7 @@
                   shouldBeEnabled = "Yes"
                   ignoreCount = "0"
                   continueAfterRunningActions = "No"
-                  symbolName = "(4) suspend resume partial function for Spendrift.SpendriftBackendClient.parseStatement(pdfData: Foundation.Data, filename: Swift.String) async throws -&gt; Spendrift.OpenAIStatementPayload"
+                  symbolName = "(4) suspend resume partial function for Spendrift.SpendriftBackendClient.parseStatement(pdfData: Foundation.Data, filename: Swift.String) async throws -&gt; Spendrift.StatementPayload"
                   moduleName = "Spendrift.debug.dylib"
                   usesParentBreakpointCondition = "Yes"
                   urlString = "file:///Volumes/ssd/Development/projects/spendrift/Spendrift/Spendrift/Services/Backend/SpendriftBackendClient.swift"

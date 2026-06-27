@@ -1,11 +1,11 @@
 //
-//  OpenAIReceiptTransactionService.swift
+//  ReceiptTransactionService.swift
 //  Spendrift
 //
 
 import Foundation
 
-struct OpenAIReceiptTransactionService {
+struct ReceiptTransactionService {
     private let backend: SpendriftBackendClient?
 
     init(backend: SpendriftBackendClient? = nil) {
@@ -17,9 +17,9 @@ struct OpenAIReceiptTransactionService {
         mimeType: String,
         filename: String,
         categories: [TransactionCategory]
-    ) async throws -> OpenAIReceiptPayload {
+    ) async throws -> ReceiptPayload {
         guard let backend else {
-            throw OpenAIServiceError.missingAPIKey
+            throw AIServiceError.missingAPIKey
         }
 
         do {
@@ -36,7 +36,7 @@ struct OpenAIReceiptTransactionService {
         }
     }
 
-    private func mapBackendError(_ error: SpendriftBackendError) -> OpenAIServiceError {
+    private func mapBackendError(_ error: SpendriftBackendError) -> AIServiceError {
         switch error {
         case .missingConfiguration:
             return .missingAPIKey

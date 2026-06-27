@@ -1,5 +1,5 @@
 //
-//  OpenAIVoiceServiceTests.swift
+//  VoiceServiceTests.swift
 //  SpendriftTests
 //
 //  Created by Cursor on 23/03/26.
@@ -9,9 +9,9 @@ import Foundation
 import Testing
 @testable import Spendrift
 
-struct OpenAIVoiceServiceTests {
+struct VoiceServiceTests {
     @Test
-    func decodeOpenAIErrorPayload() throws {
+    func decodeErrorPayload() throws {
         let raw = """
         {
           "status": "error",
@@ -19,7 +19,7 @@ struct OpenAIVoiceServiceTests {
         }
         """
         let data = try #require(raw.data(using: .utf8))
-        let payload = try JSONDecoder().decode(OpenAIVoiceTransactionPayload.self, from: data)
+        let payload = try JSONDecoder().decode(VoiceTransactionPayload.self, from: data)
         #expect(payload.status == "error")
         #expect(payload.transaction == nil)
         #expect(payload.reason == "Could not extract amount.")
@@ -27,9 +27,9 @@ struct OpenAIVoiceServiceTests {
 
     @Test
     func creatorAcceptsValidAISuccessPayload() {
-        let payload = OpenAIVoiceTransactionPayload(
+        let payload = VoiceTransactionPayload(
             status: "success",
-            transaction: OpenAIVoiceTransaction(
+            transaction: VoiceTransactionData(
                 notes: "Salary credited",
                 amount: 85000,
                 date: "2026-03-23T10:00:00Z",

@@ -28,7 +28,7 @@ struct StatementImportView: View {
     @State private var passwordAttempt = ""
     @State private var passwordFieldError: String?
 
-    private let service = OpenAIBankStatementService()
+    private let service = BankStatementService()
     private static let maxPDFBytes = 20 * 1024 * 1024 // 20 MB
 
     private var selectedAccountID: Binding<UUID?> {
@@ -233,7 +233,7 @@ struct StatementImportView: View {
                 ContentUnavailableView(
                     "No Transactions Found",
                     systemImage: "doc.text.magnifyingglass",
-                    description: Text("OpenAI could not extract any transactions from this PDF.")
+                    description: Text("We couldn't extract any transactions from this PDF.")
                 )
             } else {
                 List {
@@ -343,7 +343,7 @@ struct StatementImportView: View {
     ///
     /// Password-protected PDFs: unlocking with `PDFDocument` only decrypts in memory; calling `write(to:)`
     /// on the same document can still emit encryption metadata or hybrid structures that remote PDF parsers
-    /// (including OpenAI's) reject as corrupted. Copying each page into a new `PDFDocument` strips the
+    /// reject as corrupted. Copying each page into a new `PDFDocument` strips the
     /// security dictionary and yields a normal, unencrypted file.
     private func preparedPDFData(from document: PDFDocument) throws -> Data {
         let export = PDFDocument()
