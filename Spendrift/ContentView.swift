@@ -13,8 +13,9 @@ struct ContentView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.scenePhase) private var scenePhase
     @Query(sort: \TransactionCategory.name) private var categories: [TransactionCategory]
-    @AppStorage("themeColor") private var themeColorName: String = "Blue"
-    @AppStorage(NotificationManager.Keys.dailyReminderEnabled) private var dailyReminderEnabled = false
+    @AppStorage(Color.selectedThemeIndexKey) private var selectedThemeIndex = Color.defaultThemeIndex
+    @AppStorage(Color.legacyThemeColorKey) private var legacyThemeColorName = "Blue"
+    @AppStorage(NotificationManager.Keys.dailyReminderEnabled) private var dailyReminderEnabled = true
     @AppStorage(NotificationManager.Keys.dailyReminderHour) private var dailyReminderHour = NotificationManager.defaultHour
     @AppStorage(NotificationManager.Keys.dailyReminderMinute) private var dailyReminderMinute = NotificationManager.defaultMinute
     @State private var showReminderOptIn = false
@@ -27,6 +28,10 @@ struct ContentView: View {
     @State private var useCompactVoiceCapture = false
     @State private var showSettingsSheet = false
     @State private var transactionPeriodViewModel = TransactionViewModel()
+
+    private var accentColor: Color {
+        Color.accentColor(forThemeIndex: selectedThemeIndex)
+    }
 
     var body: some View {
         TabView(selection: $selectedTab) {
@@ -63,11 +68,12 @@ struct ContentView: View {
                 }
                 .tag(3)
         }
-        .tint(Color.themeColors[themeColorName] ?? .blue)
+        .tint(accentColor)
         .environment(\.openSettings) {
             showSettingsSheet = true
         }
         .onAppear {
+            migrateThemeIfNeeded()
             QuickActionsManager.setupQuickActions()
             seedDefaultCategoriesIfNeeded()
             ScreenshotDemoData.seedIfNeeded(modelContext: modelContext)
@@ -119,6 +125,17 @@ struct ContentView: View {
         case 3: "analytics"
         default: "unknown"
         }
+    }
+
+    private func migrateThemeIfNeeded() {
+        let defaults = UserDefaults.standard
+        guard defaults.object(forKey: Color.selectedThemeIndexKey) == nil else { return }
+        if let legacyIndex = Color.themeIndex(forLegacyThemeName: legacyThemeColorName) {
+            selectedThemeIndex = legacyIndex
+        } else {
+            selectedThemeIndex = Color.defaultThemeIndex
+        }
+        legacyThemeColorName = Color.legacyThemeName(forThemeIndex: selectedThemeIndex)
     }
 
     private func enableDailyReminders() {

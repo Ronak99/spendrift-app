@@ -5,145 +5,543 @@
 //  Created by Ronak Punase on 25/02/26.
 //
 
-import os
 import SwiftUI
+import UIKit
 
-// MARK: - Shortcut card model
+private enum SettingsTokens {
+    static let screenBackground = Color(uiColor: .systemGroupedBackground)
+    static let groupCard = Color(uiColor: .secondarySystemGroupedBackground)
+    static let chevron = Color(uiColor: .tertiaryLabel)
+    static let textPrimary = Color(uiColor: .label)
+    static let textSecondary = Color(uiColor: .secondaryLabel)
+    static let textTertiary = Color(uiColor: .tertiaryLabel)
+    static let divider = Color(uiColor: .separator).opacity(0.35)
+    static let fillSubtle = Color(uiColor: .tertiarySystemFill)
+    static let rowPressHighlight = Color(uiColor: .quaternarySystemFill)
+}
 
-private struct AppShortcutItem: Identifiable {
+private struct CaptureShortcutItem: Identifiable {
     let id: String
+    let icon: String
     let title: String
+    let subtitle: String
     let url: URL?
 }
 
-// MARK: - Shortcut card view
-
-private struct ShortcutCard: View {
-    let item: AppShortcutItem
-
-    private let cardColor = Color(hex: "#7551e0")
+private struct SettingsIconTile: View {
+    let systemName: String
+    let accent: Color
+    let accentSoft: Color
+    let size: CGFloat
+    let cornerRadius: CGFloat
+    let symbolSize: CGFloat
 
     var body: some View {
-        Button {
-            guard let url = item.url else { return }
-            UIApplication.shared.open(url)
-        } label: {
-            ZStack(alignment: .topLeading) {
-                RoundedRectangle(cornerRadius: 20, style: .continuous)
-                    .fill(cardColor)
-
-                VStack(alignment: .leading, spacing: 0) {
-                    Image("OnboardingHeroMark")
-                        .resizable()
-                        .scaledToFit()
-                        .frame(width: 36, height: 36)
-                        .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
-
-                    Spacer()
-
-                    Text(item.title)
-                        .font(.system(size: 15, weight: .bold))
-                        .foregroundStyle(.white)
-                        .multilineTextAlignment(.leading)
-                        .fixedSize(horizontal: false, vertical: true)
-                        .lineLimit(3)
-                }
-                .padding(14)
+        RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+            .fill(accentSoft)
+            .frame(width: size, height: size)
+            .overlay {
+                Image(systemName: systemName)
+                    .font(.system(size: symbolSize, weight: .semibold))
+                    .foregroundStyle(accent)
             }
-            .frame(height: 130)
-        }
-        .buttonStyle(.plain)
     }
 }
 
-// MARK: - Settings view
+private struct SettingsRow: View {
+    enum Accessory {
+        case toggle(Binding<Bool>)
+        case value(String)
+        case chevron
+    }
+
+    let icon: String
+    let title: String
+    let accent: Color
+    let accentSoft: Color
+    let accessory: Accessory
+    let action: (() -> Void)?
+
+    var body: some View {
+        Group {
+            if let action {
+                Button(action: action) {
+                    rowContent
+                }
+                .buttonStyle(SettingsPressStyle())
+            } else {
+                rowContent
+            }
+        }
+    }
+
+    private var rowContent: some View {
+        HStack(spacing: 13) {
+            SettingsIconTile(
+                systemName: icon,
+                accent: accent,
+                accentSoft: accentSoft,
+                size: 30,
+                cornerRadius: 8,
+                symbolSize: 18
+            )
+
+            Text(title)
+                .font(.system(size: 17, weight: .regular))
+                .foregroundStyle(SettingsTokens.textPrimary)
+                .frame(maxWidth: .infinity, alignment: .leading)
+
+            accessoryView
+        }
+        .frame(minHeight: 54)
+        .contentShape(Rectangle())
+    }
+
+    @ViewBuilder
+    private var accessoryView: some View {
+        switch accessory {
+        case let .toggle(value):
+            Toggle(title, isOn: value)
+                .labelsHidden()
+                .tint(accent)
+        case let .value(value):
+            Text(value)
+                .font(.system(size: 16, weight: .regular))
+                .foregroundStyle(SettingsTokens.textPrimary)
+                .padding(.vertical, 5)
+                .padding(.horizontal, 11)
+                .background(SettingsTokens.fillSubtle)
+                .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+        case .chevron:
+            Image(systemName: "chevron.right")
+                .font(.system(size: 15, weight: .semibold))
+                .foregroundStyle(SettingsTokens.chevron)
+                .frame(width: 9, height: 15)
+        }
+    }
+}
+
+private struct SettingsPressStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .background(configuration.isPressed ? SettingsTokens.rowPressHighlight : Color.clear)
+    }
+}
+
+private struct SettingsSection<Content: View>: View {
+    let title: String
+    let content: Content
+
+    init(title: String, @ViewBuilder content: () -> Content) {
+        self.title = title
+        self.content = content()
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(title)
+                .font(.system(size: 13, weight: .medium))
+                .foregroundStyle(SettingsTokens.textSecondary)
+                .padding(.leading, 4)
+            content
+        }
+    }
+}
+
+private struct SettingsCard<Content: View>: View {
+    let content: Content
+
+    init(@ViewBuilder content: () -> Content) {
+        self.content = content()
+    }
+
+    var body: some View {
+        VStack(spacing: 0) {
+            content
+        }
+        .padding(.vertical, 2)
+        .padding(.horizontal, 16)
+        .background(SettingsTokens.groupCard)
+        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+    }
+}
+
+private struct SettingsInsetDivider: View {
+    var body: some View {
+        Rectangle()
+            .fill(SettingsTokens.divider)
+            .frame(height: 1 / UIScreen.main.scale)
+            .padding(.leading, 59)
+    }
+}
+
+private struct CaptureOptionTile: View {
+    let item: CaptureShortcutItem
+    let accent: Color
+    let accentSoft: Color
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            VStack(alignment: .leading, spacing: 0) {
+                SettingsIconTile(
+                    systemName: item.icon,
+                    accent: accent,
+                    accentSoft: accentSoft,
+                    size: 38,
+                    cornerRadius: 10,
+                    symbolSize: 22
+                )
+
+                Spacer(minLength: 16)
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(item.title)
+                        .font(.system(size: 17, weight: .semibold))
+                        .foregroundStyle(SettingsTokens.textPrimary)
+
+                    Text(item.subtitle)
+                        .font(.system(size: 13, weight: .regular))
+                        .foregroundStyle(SettingsTokens.textSecondary)
+                }
+            }
+            .padding(16)
+            .frame(maxWidth: .infinity, minHeight: 120, alignment: .topLeading)
+            .background(SettingsTokens.groupCard)
+            .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+        }
+        .buttonStyle(SettingsPressStyle())
+    }
+}
+
+private struct ShareSheet: UIViewControllerRepresentable {
+    let items: [Any]
+
+    func makeUIViewController(context: Context) -> UIActivityViewController {
+        UIActivityViewController(activityItems: items, applicationActivities: nil)
+    }
+
+    func updateUIViewController(_ uiViewController: UIActivityViewController, context: Context) {}
+}
 
 struct SettingsView: View {
     @Environment(\.dismiss) private var dismiss
-    @AppStorage("themeColor") private var themeColorName: String = "Blue"
-    @AppStorage(NotificationManager.Keys.dailyReminderEnabled) private var dailyReminderEnabled = false
+    @Environment(\.openURL) private var openURL
+
+    @AppStorage(Color.selectedThemeIndexKey) private var selectedThemeIndex = Color.defaultThemeIndex
+    @AppStorage(Color.legacyThemeColorKey) private var legacyThemeColorName = "Blue"
+    @AppStorage(NotificationManager.Keys.dailyReminderEnabled) private var dailyReminderEnabled = true
     @AppStorage(NotificationManager.Keys.dailyReminderHour) private var dailyReminderHour = NotificationManager.defaultHour
     @AppStorage(NotificationManager.Keys.dailyReminderMinute) private var dailyReminderMinute = NotificationManager.defaultMinute
+    @AppStorage(NotificationManager.Keys.dailyReminderTimeInterval) private var reminderTimeInterval = NotificationManager.defaultReminderTimeInterval
 
     @State private var showFeatureRequest = false
-    @State private var permissionDenied = false
+    @State private var showReminderTimePicker = false
+    @State private var showInviteSheet = false
 
-    private let shortcuts: [AppShortcutItem] = [
-        AppShortcutItem(
-            id: "voice",
-            title: "Speak Expense",
+    private let helpFAQURL = URL(string: "https://spendrift.app/faq")
+
+    private let captureShortcuts: [CaptureShortcutItem] = [
+        CaptureShortcutItem(
+            id: "speak",
+            icon: "mic.fill",
+            title: "Speak",
+            subtitle: "Add by voice",
             url: OnboardingShortcutShareLinks.voiceRecordExpense
         ),
-        AppShortcutItem(
-            id: "amount",
-            title: "Type Expense",
+        CaptureShortcutItem(
+            id: "type",
+            icon: "keyboard",
+            title: "Type",
+            subtitle: "Add manually",
             url: OnboardingShortcutShareLinks.logExpenseAmount
         ),
     ]
-    
-    private let themeColors: [(name: String, color: Color)] = [
-        ("Cyan", Color(hex: "#22D3EE")),
-        ("Blue", Color(hex: "#3B82F6")),
-        ("Purple", Color(hex: "#A78BFA")),
-        ("Pink", Color(hex: "#EC4899")),
-        ("Red", Color(hex: "#EF4444")),
-        ("Orange", Color(hex: "#F59E0B")),
-        ("Green", Color(hex: "#34D399")),
-        ("Teal", Color(hex: "#14B8A6"))
-    ]
 
-    private var shareAccent: Color {
-        Color.themeColors[themeColorName] ?? .blue
+    private var accent: Color {
+        Color.accentColor(forThemeIndex: selectedThemeIndex)
     }
 
-    /// Toggle is framed as opt-in ("share"); maps to the inverse of `Analytics.isOptedOut`.
-    private var analyticsSharingBinding: Binding<Bool> {
-        Binding(
-            get: { !Analytics.isOptedOut },
-            set: { Analytics.isOptedOut = !$0 }
-        )
+    private var appVersionLabel: String {
+        let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "—"
+        return "Spendrift · v\(version)"
+    }
+
+    private var accentSoft: Color {
+        accent.opacity(0.16)
+    }
+
+    private var reminderDate: Date {
+        Date(timeIntervalSince1970: reminderTimeInterval)
+    }
+
+    private var reminderDisplayValue: String {
+        Self.reminderFormatter.string(from: reminderDate)
     }
 
     private var reminderEnabledBinding: Binding<Bool> {
         Binding(
             get: { dailyReminderEnabled },
-            set: { handleReminderToggle($0) }
+            set: { isOn in
+                handleReminderToggle(isOn)
+            }
         )
     }
 
-    /// Maps the stored hour/minute to a `Date` for the time picker and back.
     private var reminderTimeBinding: Binding<Date> {
         Binding(
-            get: {
-                Calendar.current.date(
-                    from: DateComponents(hour: dailyReminderHour, minute: dailyReminderMinute)
-                ) ?? Date()
-            },
+            get: { reminderDate },
             set: { newDate in
-                let components = Calendar.current.dateComponents([.hour, .minute], from: newDate)
-                dailyReminderHour = components.hour ?? NotificationManager.defaultHour
-                dailyReminderMinute = components.minute ?? NotificationManager.defaultMinute
+                reminderTimeInterval = newDate.timeIntervalSince1970
+                syncReminderClockComponents(with: newDate)
                 rescheduleIfEnabled()
             }
         )
     }
 
+    var body: some View {
+        NavigationStack {
+            ScrollView(showsIndicators: false) {
+                VStack(alignment: .leading, spacing: 26) {
+                    SettingsSection(title: "Theme") {
+                        themeCard
+                    }
+
+                    SettingsSection(title: "Capture") {
+                        captureCard
+                    }
+
+                    SettingsSection(title: "Reminders") {
+                        SettingsCard {
+                            SettingsRow(
+                                icon: "bell.fill",
+                                title: "Daily reminder",
+                                accent: accent,
+                                accentSoft: accentSoft,
+                                accessory: .toggle(reminderEnabledBinding),
+                                action: nil
+                            )
+
+                            if dailyReminderEnabled {
+                                SettingsInsetDivider()
+
+                                SettingsRow(
+                                    icon: "clock.fill",
+                                    title: "Time",
+                                    accent: accent,
+                                    accentSoft: accentSoft,
+                                    accessory: .value(reminderDisplayValue),
+                                    action: { showReminderTimePicker = true }
+                                )
+                            }
+                        }
+                    }
+
+                    SettingsSection(title: "Support") {
+                        SettingsCard {
+                            SettingsRow(
+                                icon: "lightbulb.fill",
+                                title: "Request a feature",
+                                accent: accent,
+                                accentSoft: accentSoft,
+                                accessory: .chevron,
+                                action: { showFeatureRequest = true }
+                            )
+
+                            SettingsInsetDivider()
+
+                            SettingsRow(
+                                icon: "questionmark.circle.fill",
+                                title: "Help & FAQ",
+                                accent: accent,
+                                accentSoft: accentSoft,
+                                accessory: .chevron,
+                                action: openHelpFAQ
+                            )
+                        }
+                    }
+
+                    SettingsSection(title: "Community") {
+                        SettingsCard {
+                            SettingsRow(
+                                icon: "person.badge.plus",
+                                title: "Invite friends",
+                                accent: accent,
+                                accentSoft: accentSoft,
+                                accessory: .chevron,
+                                action: { showInviteSheet = true }
+                            )
+
+                            SettingsInsetDivider()
+
+                            SettingsRow(
+                                icon: "star.fill",
+                                title: "Rate Spendrift",
+                                accent: accent,
+                                accentSoft: accentSoft,
+                                accessory: .chevron,
+                                action: {
+                                    AppStoreReviewRequest.requestIfFirstTime(forKey: AppStoreReviewRequest.Keys.settingsRateTap)
+                                }
+                            )
+                        }
+                    }
+
+                    Text(appVersionLabel)
+                        .font(.system(size: 12, weight: .regular))
+                        .foregroundStyle(SettingsTokens.textTertiary)
+                        .frame(maxWidth: .infinity, alignment: .center)
+                        .padding(.top, 24)
+                }
+                .padding(.horizontal, 20)
+                .padding(.top, 16)
+                .padding(.bottom, 28)
+            }
+            .background(SettingsTokens.screenBackground.ignoresSafeArea())
+            .navigationTitle("Settings")
+            .navigationBarTitleDisplayMode(.large)
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Done") {
+                        dismiss()
+                    }
+                    .font(.system(size: 17, weight: .semibold))
+                    .foregroundStyle(accent)
+                }
+            }
+        }
+        .tint(accent)
+        .animation(.easeInOut(duration: 0.2), value: selectedThemeIndex)
+        .animation(.easeInOut(duration: 0.2), value: dailyReminderEnabled)
+        .task {
+            migrateThemeIfNeeded()
+            selectedThemeIndex = Color.normalizedThemeIndex(selectedThemeIndex)
+            migrateReminderTimeIfNeeded()
+            syncReminderClockComponents(with: reminderDate)
+        }
+        .onChange(of: selectedThemeIndex) { _, newIndex in
+            legacyThemeColorName = Color.legacyThemeName(forThemeIndex: Color.normalizedThemeIndex(newIndex))
+        }
+        .sheet(isPresented: $showFeatureRequest) {
+            FeatureRequestView()
+        }
+        .sheet(isPresented: $showReminderTimePicker) {
+            reminderTimePickerSheet
+                .presentationDetents([.height(320)])
+        }
+        .sheet(isPresented: $showInviteSheet) {
+            ShareSheet(items: [AppShareContent.fullShareText])
+        }
+    }
+
+    private var themeCard: some View {
+        SettingsCard {
+            LazyVGrid(
+                columns: Array(repeating: GridItem(.flexible(), spacing: 18), count: 4),
+                spacing: 18
+            ) {
+                ForEach(Array(Color.themePalette.enumerated()), id: \.offset) { index, color in
+                    Button {
+                        withAnimation(.easeInOut(duration: 0.2)) {
+                            selectedThemeIndex = index
+                        }
+                    } label: {
+                        themeSwatch(color: color, isSelected: index == selectedThemeIndex)
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+            .padding(22)
+        }
+    }
+
+    private var captureCard: some View {
+        HStack(spacing: 12) {
+            ForEach(captureShortcuts) { item in
+                CaptureOptionTile(
+                    item: item,
+                    accent: accent,
+                    accentSoft: accentSoft
+                ) {
+                    guard let url = item.url else { return }
+                    UIApplication.shared.open(url)
+                }
+            }
+        }
+    }
+
+    private var reminderTimePickerSheet: some View {
+        NavigationStack {
+            VStack {
+                DatePicker(
+                    "Reminder time",
+                    selection: reminderTimeBinding,
+                    displayedComponents: .hourAndMinute
+                )
+                .datePickerStyle(.wheel)
+                .labelsHidden()
+                .padding(.horizontal, 20)
+                .padding(.top, 6)
+
+                Spacer(minLength: 0)
+            }
+            .background(SettingsTokens.screenBackground.ignoresSafeArea())
+            .navigationTitle("Time")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Done") {
+                        showReminderTimePicker = false
+                    }
+                    .foregroundStyle(accent)
+                }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func themeSwatch(color: Color, isSelected: Bool) -> some View {
+        ZStack {
+            Circle()
+                .fill(color)
+                .frame(width: 56, height: 56)
+
+            if isSelected {
+                Circle()
+                    .stroke(SettingsTokens.groupCard, lineWidth: 3)
+                    .frame(width: 62, height: 62)
+
+                Circle()
+                    .stroke(accent, lineWidth: 2)
+                    .frame(width: 66, height: 66)
+
+                Image(systemName: "checkmark")
+                    .font(.system(size: 22, weight: .bold))
+                    .foregroundStyle(.white)
+            }
+        }
+        .frame(width: 56, height: 56)
+    }
+
     private func handleReminderToggle(_ isOn: Bool) {
         guard isOn else {
             dailyReminderEnabled = false
-            NotificationManager.reschedule(enabled: false, hour: dailyReminderHour, minute: dailyReminderMinute)
+            NotificationManager.reschedule(
+                enabled: false,
+                hour: dailyReminderHour,
+                minute: dailyReminderMinute
+            )
             return
         }
 
+        dailyReminderEnabled = true
         Task {
             let granted = await NotificationManager.requestAuthorization()
             await MainActor.run {
                 if granted {
-                    permissionDenied = false
                     dailyReminderEnabled = true
                     rescheduleIfEnabled()
                 } else {
-                    permissionDenied = true
                     dailyReminderEnabled = false
                 }
             }
@@ -159,232 +557,42 @@ struct SettingsView: View {
         )
     }
 
-    private func refreshPermissionState() async {
-        let status = await NotificationManager.authorizationStatus()
-        await MainActor.run {
-            permissionDenied = (status == .denied) && dailyReminderEnabled
+    private func syncReminderClockComponents(with date: Date) {
+        let components = Calendar.current.dateComponents([.hour, .minute], from: date)
+        dailyReminderHour = components.hour ?? NotificationManager.defaultHour
+        dailyReminderMinute = components.minute ?? NotificationManager.defaultMinute
+    }
+
+    private func migrateReminderTimeIfNeeded() {
+        let defaults = UserDefaults.standard
+        guard defaults.object(forKey: NotificationManager.Keys.dailyReminderTimeInterval) == nil else { return }
+        let migratedDate = Calendar.current.date(
+            from: DateComponents(hour: dailyReminderHour, minute: dailyReminderMinute)
+        ) ?? NotificationManager.defaultReminderDate
+        reminderTimeInterval = migratedDate.timeIntervalSince1970
+    }
+
+    private func migrateThemeIfNeeded() {
+        let defaults = UserDefaults.standard
+        guard defaults.object(forKey: Color.selectedThemeIndexKey) == nil else { return }
+        if let legacyIndex = Color.themeIndex(forLegacyThemeName: legacyThemeColorName) {
+            selectedThemeIndex = legacyIndex
+        } else {
+            selectedThemeIndex = Color.defaultThemeIndex
         }
+        legacyThemeColorName = Color.legacyThemeName(forThemeIndex: selectedThemeIndex)
     }
 
-    private func openSystemSettings() {
-        guard let url = URL(string: UIApplication.openSettingsURLString) else { return }
-        UIApplication.shared.open(url)
+    private func openHelpFAQ() {
+        guard let helpFAQURL else { return }
+        openURL(helpFAQURL)
     }
 
-    var body: some View {
-        NavigationStack {
-            Form {
-                Section {
-                    LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 4), spacing: 16) {
-                        ForEach(themeColors, id: \.name) { themeColor in
-                            Button(action: {
-                                themeColorName = themeColor.name
-                            }) {
-                                ZStack {
-                                    Circle()
-                                        .fill(themeColor.color)
-                                        .frame(width: 50, height: 50)
-                                    
-                                    if themeColorName == themeColor.name {
-                                        Image(systemName: "checkmark")
-                                            .font(.headline)
-                                            .foregroundColor(.white)
-                                    }
-                                }
-                            }
-                            .buttonStyle(.borderless)
-                        }
-                    }
-                    .padding(.vertical, 8)
-                } header: {
-                    Text("Theme")
-                }
-
-                Section {
-                    LazyVGrid(
-                        columns: [GridItem(.flexible()), GridItem(.flexible())],
-                        spacing: 12
-                    ) {
-                        ForEach(shortcuts) { shortcut in
-                            ShortcutCard(item: shortcut)
-                        }
-                    }
-                    .padding(.vertical, 4)
-                } header: {
-                    Text("Siri & Shortcuts")
-                } footer: {
-                    Text("Tap a card to add the shortcut to your device, then trigger it with Siri or the Shortcuts app.")
-                        .font(.footnote)
-                }
-
-                Section {
-                    Toggle("Daily spend reminder", isOn: reminderEnabledBinding)
-
-                    if dailyReminderEnabled {
-                        DatePicker(
-                            "Reminder time",
-                            selection: reminderTimeBinding,
-                            displayedComponents: .hourAndMinute
-                        )
-                    }
-
-                    if permissionDenied {
-                        Button {
-                            openSystemSettings()
-                        } label: {
-                            Label("Enable notifications in Settings", systemImage: "exclamationmark.triangle")
-                                .foregroundStyle(.orange)
-                        }
-                    }
-                } header: {
-                    Text("Reminders")
-                } footer: {
-                    Text("A gentle nudge to log today's spending, plus a monthly prompt to upload your statement. Disable any time.")
-                        .font(.footnote)
-                }
-
-                Section {
-                    Button {
-                        showFeatureRequest = true
-                    } label: {
-                        featureRequestBanner
-                    }
-                    .buttonStyle(.plain)
-                } header: {
-                    Text("Feedback")
-                }
-
-//                Section {
-//                    Toggle("Share anonymous analytics", isOn: analyticsSharingBinding)
-//                } header: {
-//                    Text("Privacy")
-//                } footer: {
-//                    Text("Helps improve Spendrift with anonymous usage stats. No account is required, and transaction details, amounts, and personal data are never sent.")
-//                        .font(.footnote)
-//                }
-
-                Section {
-                    ShareLink(
-                        item: AppShareContent.fullShareText,
-                        subject: Text("An app I think you’d enjoy"),
-                        message: Text(AppShareContent.shareMessage),
-                        preview: SharePreview("Spendrift", icon: Image(systemName: "chart.pie.fill"))
-                    ) {
-                        shareInviteBanner
-                    }
-                    .buttonStyle(.plain)
-                } header: {
-                    Text("Share")
-                } footer: {
-                    Text("Pass it along, great apps spread by happy users.")
-                        .font(.footnote)
-                }
-            }
-            .navigationTitle("Settings")
-            .task {
-                await refreshPermissionState()
-            }
-            .sheet(isPresented: $showFeatureRequest) {
-                FeatureRequestView()
-            }
-            .toolbar {
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Done") {
-                        dismiss()
-                    }
-                }
-            }
-        }
-    }
-
-    private var featureRequestBanner: some View {
-        HStack(alignment: .center, spacing: 16) {
-            ZStack {
-                RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    .fill(
-                        LinearGradient(
-                            colors: [
-                                shareAccent.opacity(0.35),
-                                shareAccent.opacity(0.12)
-                            ],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        )
-                    )
-                Image(systemName: "lightbulb.fill")
-                    .font(.system(size: 26))
-                    .foregroundStyle(shareAccent)
-                    .symbolRenderingMode(.hierarchical)
-            }
-            .frame(width: 58, height: 58)
-
-            VStack(alignment: .leading, spacing: 6) {
-                Text("Request a Feature")
-                    .font(.headline)
-                    .foregroundStyle(.primary)
-                Text("Have an idea that would make Spendrift better? Share it with us.")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-
-            Image(systemName: "chevron.right")
-                .font(.subheadline.weight(.semibold))
-                .foregroundStyle(.tertiary)
-        }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 6)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .fill(Color(.secondarySystemGroupedBackground))
-        )
-    }
-
-    private var shareInviteBanner: some View {
-        HStack(alignment: .center, spacing: 16) {
-            ZStack {
-                RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    .fill(
-                        LinearGradient(
-                            colors: [
-                                shareAccent.opacity(0.35),
-                                shareAccent.opacity(0.12)
-                            ],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        )
-                    )
-                Image(systemName: "sparkles.rectangle.stack.fill")
-                    .font(.system(size: 26))
-                    .foregroundStyle(shareAccent)
-                    .symbolRenderingMode(.hierarchical)
-            }
-            .frame(width: 58, height: 58)
-
-            VStack(alignment: .leading, spacing: 6) {
-                Text("Know someone who’d love Spendrift?")
-                    .font(.headline)
-                    .foregroundStyle(.primary)
-                Text("Invite your friends and help them feel on top of their money.")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-
-            Image(systemName: "square.and.arrow.up.circle.fill")
-                .font(.largeTitle)
-                .symbolRenderingMode(.hierarchical)
-                .foregroundStyle(shareAccent, .secondary)
-        }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 6)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .fill(Color(.secondarySystemGroupedBackground))
-        )
-    }
+    private static let reminderFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.timeStyle = .short
+        return formatter
+    }()
 }
 
 #Preview {

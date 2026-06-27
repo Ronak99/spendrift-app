@@ -17,11 +17,22 @@ enum NotificationManager {
         static let dailyReminderEnabled = "dailyReminderEnabled"
         static let dailyReminderHour = "dailyReminderHour"
         static let dailyReminderMinute = "dailyReminderMinute"
+        static let dailyReminderTimeInterval = "dailyReminderTimeInterval"
     }
 
     /// Default reminder time (evening) when the user first opts in.
-    static let defaultHour = 20
-    static let defaultMinute = 0
+    static let defaultHour = 18
+    static let defaultMinute = 39
+
+    static var defaultReminderDate: Date {
+        Calendar.current.date(
+            from: DateComponents(hour: defaultHour, minute: defaultMinute)
+        ) ?? Date()
+    }
+
+    static var defaultReminderTimeInterval: Double {
+        defaultReminderDate.timeIntervalSince1970
+    }
 
     /// Stable identifiers so rescheduling is idempotent.
     private enum RequestID {

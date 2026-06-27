@@ -9,7 +9,7 @@ import SwiftUI
 
 struct FeatureRequestView: View {
     @Environment(\.dismiss) private var dismiss
-    @AppStorage("themeColor") private var themeColorName: String = "Blue"
+    @AppStorage(Color.selectedThemeIndexKey) private var selectedThemeIndex = Color.defaultThemeIndex
 
     @State private var requestText: String = ""
     @State private var selectedPhotoItem: PhotosPickerItem? = nil
@@ -19,7 +19,7 @@ struct FeatureRequestView: View {
     @State private var showSentConfirmation = false
 
     private var accent: Color {
-        Color.themeColors[themeColorName] ?? .blue
+        Color.accentColor(forThemeIndex: selectedThemeIndex)
     }
 
     private var canSend: Bool {
