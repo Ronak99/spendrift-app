@@ -10,11 +10,11 @@ import SwiftData
 
 @Model
 final class Transaction {
-    @Attribute(.unique) var id: UUID
-    var notes: String
-    var amount: Double
-    var date: Date
-    var transactionType: TransactionType
+    var id: UUID = UUID()
+    var notes: String = ""
+    var amount: Double = 0
+    var date: Date = Date()
+    var transactionType: TransactionType = TransactionType.none
     
     @Relationship var category: TransactionCategory?
     @Relationship var account: Account?

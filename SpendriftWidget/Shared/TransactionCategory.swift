@@ -10,11 +10,11 @@ import SwiftData
  
 @Model
 final class TransactionCategory {
-    @Attribute(.unique) var id: UUID
-    var name: String
-    var type: TransactionType
-    var createdOn: Date
-    var icon: CategoryIcon
+    var id: UUID = UUID()
+    var name: String = ""
+    var type: TransactionType = TransactionType.expense
+    var createdOn: Date = Date()
+    var icon: CategoryIcon = CategoryIcon.unknown
     /// Updated whenever a transaction is saved with this category (manual or shortcut).
     var lastUsedAt: Date?
 

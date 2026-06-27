@@ -10,12 +10,12 @@ import SwiftData
 
 @Model
 final class Account {
-    @Attribute(.unique) var id: UUID
-    var name: String
-    var balance: Double
-    var createdOn: Date
-    var icon: AccountIcon
-    var isPrimary: Bool
+    var id: UUID = UUID()
+    var name: String = ""
+    var balance: Double = 0
+    var createdOn: Date = Date()
+    var icon: AccountIcon = AccountIcon.unknown
+    var isPrimary: Bool = false
     /// Updated whenever a transaction is saved with this account (manual, shortcut, voice, or import).
     var lastUsedAt: Date?
 
