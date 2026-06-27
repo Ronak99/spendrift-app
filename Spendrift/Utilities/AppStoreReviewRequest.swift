@@ -13,6 +13,7 @@ enum AppStoreReviewRequest {
     enum Keys {
         static let firstStatementImport = "didRequestAppStoreReviewAfterFirstStatementImport"
         static let firstVoiceTransaction = "didRequestAppStoreReviewAfterFirstVoiceTransaction"
+        static let settingsRateTap = "didRequestAppStoreReviewFromSettings"
     }
 
     /// Persists `true` for `key` and requests a review. No-ops if `key` was already set.
