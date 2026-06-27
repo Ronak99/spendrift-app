@@ -9,16 +9,15 @@ import SwiftUI
 import UIKit
 
 private enum SettingsTokens {
-    static let screenBackground = Color(hex: "#000000")
-    static let groupCard = Color(hex: "#1C1C1E")
-    static let toggleOff = Color(hex: "#39393D")
-    static let chevron = Color(hex: "#48484A")
-    static let textPrimary = Color(hex: "#FFFFFF")
-    static let textSecondary = Color(hex: "#8E8E93")
-    static let textTertiary = Color(hex: "#48484A")
-    static let divider = Color.white.opacity(0.08)
-    static let fillSubtle = Color(red: 118 / 255, green: 118 / 255, blue: 128 / 255).opacity(0.24)
-    static let rowPressHighlight = Color.white.opacity(0.04)
+    static let screenBackground = Color(uiColor: .systemGroupedBackground)
+    static let groupCard = Color(uiColor: .secondarySystemGroupedBackground)
+    static let chevron = Color(uiColor: .tertiaryLabel)
+    static let textPrimary = Color(uiColor: .label)
+    static let textSecondary = Color(uiColor: .secondaryLabel)
+    static let textTertiary = Color(uiColor: .tertiaryLabel)
+    static let divider = Color(uiColor: .separator).opacity(0.35)
+    static let fillSubtle = Color(uiColor: .tertiarySystemFill)
+    static let rowPressHighlight = Color(uiColor: .quaternarySystemFill)
 }
 
 private struct CaptureShortcutItem: Identifiable {
@@ -94,7 +93,6 @@ private struct SettingsRow: View {
 
             accessoryView
         }
-        .padding(.horizontal, 16)
         .frame(minHeight: 54)
         .contentShape(Rectangle())
     }
@@ -103,7 +101,9 @@ private struct SettingsRow: View {
     private var accessoryView: some View {
         switch accessory {
         case let .toggle(value):
-            SettingsToggle(isOn: value, accent: accent)
+            Toggle(title, isOn: value)
+                .labelsHidden()
+                .tint(accent)
         case let .value(value):
             Text(value)
                 .font(.system(size: 16, weight: .regular))
@@ -118,34 +118,6 @@ private struct SettingsRow: View {
                 .foregroundStyle(SettingsTokens.chevron)
                 .frame(width: 9, height: 15)
         }
-    }
-}
-
-private struct SettingsToggle: View {
-    @Binding var isOn: Bool
-    let accent: Color
-
-    var body: some View {
-        Button {
-            withAnimation(.easeInOut(duration: 0.2)) {
-                isOn.toggle()
-            }
-        } label: {
-            ZStack(alignment: .leading) {
-                RoundedRectangle(cornerRadius: 15.5, style: .continuous)
-                    .fill(isOn ? accent : SettingsTokens.toggleOff)
-                    .frame(width: 51, height: 31)
-
-                Circle()
-                    .fill(Color.white)
-                    .frame(width: 27, height: 27)
-                    .offset(x: isOn ? 22 : 2)
-            }
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel("Daily reminder")
-        .accessibilityValue(isOn ? "On" : "Off")
-        .accessibilityAddTraits(.isButton)
     }
 }
 
@@ -187,6 +159,8 @@ private struct SettingsCard<Content: View>: View {
         VStack(spacing: 0) {
             content
         }
+        .padding(.vertical, 2)
+        .padding(.horizontal, 16)
         .background(SettingsTokens.groupCard)
         .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
     }
@@ -343,16 +317,18 @@ struct SettingsView: View {
                                 action: nil
                             )
 
-                            SettingsInsetDivider()
+                            if dailyReminderEnabled {
+                                SettingsInsetDivider()
 
-                            SettingsRow(
-                                icon: "clock.fill",
-                                title: "Time",
-                                accent: accent,
-                                accentSoft: accentSoft,
-                                accessory: .value(reminderDisplayValue),
-                                action: { showReminderTimePicker = true }
-                            )
+                                SettingsRow(
+                                    icon: "clock.fill",
+                                    title: "Time",
+                                    accent: accent,
+                                    accentSoft: accentSoft,
+                                    accessory: .value(reminderDisplayValue),
+                                    action: { showReminderTimePicker = true }
+                                )
+                            }
                         }
                     }
 
@@ -429,9 +405,9 @@ struct SettingsView: View {
                 }
             }
         }
-        .preferredColorScheme(.dark)
         .tint(accent)
         .animation(.easeInOut(duration: 0.2), value: selectedThemeIndex)
+        .animation(.easeInOut(duration: 0.2), value: dailyReminderEnabled)
         .task {
             migrateThemeIfNeeded()
             selectedThemeIndex = Color.normalizedThemeIndex(selectedThemeIndex)
@@ -516,7 +492,6 @@ struct SettingsView: View {
                 }
             }
         }
-        .preferredColorScheme(.dark)
     }
 
     @ViewBuilder
