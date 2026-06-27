@@ -66,7 +66,7 @@
             landmarkType = "7">
             <Locations>
                <Location
-                  uuid = "C20A4156-055F-4022-81C6-16EE1DC96562 - d640ed5bda678ed1"
+                  uuid = "C20A4156-055F-4022-81C6-16EE1DC96562 - 3c7e708fb25a2ffa"
                   shouldBeEnabled = "Yes"
                   ignoreCount = "0"
                   continueAfterRunningActions = "No"
@@ -80,7 +80,7 @@
                   endingLineNumber = "95">
                </Location>
                <Location
-                  uuid = "C20A4156-055F-4022-81C6-16EE1DC96562 - 6f23b1029e45fe8"
+                  uuid = "C20A4156-055F-4022-81C6-16EE1DC96562 - 77edfff42712f602"
                   shouldBeEnabled = "Yes"
                   ignoreCount = "0"
                   continueAfterRunningActions = "No"
@@ -94,7 +94,7 @@
                   endingLineNumber = "95">
                </Location>
                <Location
-                  uuid = "C20A4156-055F-4022-81C6-16EE1DC96562 - c6b542c6c6a190cc"
+                  uuid = "C20A4156-055F-4022-81C6-16EE1DC96562 - 63bc42b10ac431f5"
                   shouldBeEnabled = "Yes"
                   ignoreCount = "0"
                   continueAfterRunningActions = "No"
@@ -108,6 +108,22 @@
                   endingLineNumber = "95">
                </Location>
             </Locations>
+         </BreakpointContent>
+      </BreakpointProxy>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            uuid = "7BF4E618-9871-48A8-91F6-EE92E9E575EC"
+            shouldBeEnabled = "No"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "Spendrift/Services/Backend/SpendriftBackendClient.swift"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "123"
+            endingLineNumber = "123"
+            landmarkName = "parseReceipt(imageData:mimeType:filename:categories:clientTodayIso:timezone:)"
+            landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>
    </Breakpoints>

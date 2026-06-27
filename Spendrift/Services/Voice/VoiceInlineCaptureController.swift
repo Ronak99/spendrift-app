@@ -103,7 +103,7 @@ final class VoiceInlineCaptureController {
         ])
         isRetryAttempt = true
 
-        if reason.canResendAudio, let audioData = retainedAudioData {
+        if lastCaptureSource == .imported, reason.canResendAudio, let audioData = retainedAudioData {
             resendRetainedAudio(
                 audioData,
                 modelContext: modelContext,
