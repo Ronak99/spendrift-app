@@ -80,7 +80,8 @@ enum VoiceTransactionCreator {
         payload: OpenAIVoiceTransactionPayload,
         accounts: [Account],
         categories: [TransactionCategory],
-        modelContext: ModelContext
+        modelContext: ModelContext,
+        isRetry: Bool = false
     ) -> VoiceCreateResult {
         let buildResult = buildDraftFromAIPayload(payload: payload, accounts: accounts, categories: categories)
         if let failure = buildResult.failure {
@@ -129,7 +130,7 @@ enum VoiceTransactionCreator {
         )
         modelContext.insert(transaction)
         try? modelContext.save()
-        Analytics.captureTransactionCreated(method: "voice", type: draft.transactionType.rawValue)
+        Analytics.captureTransactionCreated(method: "voice", type: draft.transactionType.rawValue, isRetry: isRetry)
         return .created(transaction)
     }
 

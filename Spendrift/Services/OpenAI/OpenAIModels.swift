@@ -21,6 +21,23 @@ struct OpenAIVoiceTransaction: Codable {
     let category: String?
 }
 
+// MARK: - Receipt Screenshot Parsing
+
+struct OpenAIReceiptPayload: Codable {
+    let status: String
+    let transaction: OpenAIReceiptTransaction?
+    let missingFields: [String]?
+    let reason: String?
+}
+
+struct OpenAIReceiptTransaction: Codable {
+    let notes: String?
+    let amount: Double?
+    let date: String?
+    let transactionType: String?
+    let category: String?
+}
+
 // MARK: - Bank Statement PDF Parsing
 
 struct OpenAIStatementPayload: Codable {

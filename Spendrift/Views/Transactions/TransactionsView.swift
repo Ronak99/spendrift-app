@@ -16,22 +16,27 @@ struct TransactionsView: View {
     var periodViewModel: TransactionViewModel
     @State private var showCreateSheet = false
     @State private var showStatementImport = false
+    @State private var showReceiptCapture = false
     @State private var voiceInline = VoiceInlineCaptureController()
+    @State private var receiptShare = ReceiptCaptureController()
     @State private var selectedTransaction: Transaction?
     let voiceCaptureTrigger: UUID?
     let useCompactVoiceCapture: Bool
     let shortcutImportedAudio: ShortcutImportedAudioPayload?
+    let receiptImport: ReceiptSharePayload?
 
     init(
         periodViewModel: TransactionViewModel,
         voiceCaptureTrigger: UUID? = nil,
         useCompactVoiceCapture: Bool = false,
-        shortcutImportedAudio: ShortcutImportedAudioPayload? = nil
+        shortcutImportedAudio: ShortcutImportedAudioPayload? = nil,
+        receiptImport: ReceiptSharePayload? = nil
     ) {
         self.periodViewModel = periodViewModel
         self.voiceCaptureTrigger = voiceCaptureTrigger
         self.useCompactVoiceCapture = useCompactVoiceCapture
         self.shortcutImportedAudio = shortcutImportedAudio
+        self.receiptImport = receiptImport
     }
     
     private var transactions: [Transaction] {
@@ -145,6 +150,7 @@ struct TransactionsView: View {
                             onSpeak: { voiceInline.beginCapture() },
                             onType: { showCreateSheet = true },
                             onUploadDocument: { showStatementImport = true },
+                            onScanReceipt: { showReceiptCapture = true },
                             voiceDisabled: voiceInline.blocksNewCapture
                         )
                     )
@@ -199,6 +205,12 @@ struct TransactionsView: View {
                                 } label: {
                                     Label("Upload document", systemImage: "doc.text")
                                 }
+
+                                Button {
+                                    showReceiptCapture = true
+                                } label: {
+                                    Label("Scan receipt", systemImage: "doc.viewfinder")
+                                }
                             } label: {
                                 Image(systemName: "plus")
                             }
@@ -225,6 +237,9 @@ struct TransactionsView: View {
             .sheet(isPresented: $showStatementImport) {
                 StatementImportView()
             }
+            .sheet(isPresented: $showReceiptCapture) {
+                ReceiptCaptureView()
+            }
             .sheet(isPresented: $showCreateSheet) {
                 UpdateTransactionSheet(transaction: nil)
             }
@@ -236,6 +251,33 @@ struct TransactionsView: View {
                     transaction: nil,
                     draft: payload.draft,
                     voiceReviewHint: payload.hint
+                )
+            }
+            .sheet(item: $receiptShare.reviewPayload) { payload in
+                UpdateTransactionSheet(
+                    transaction: nil,
+                    draft: payload.draft,
+                    voiceReviewHint: payload.hint
+                )
+            }
+            .alert("Couldn't Scan Receipt", isPresented: Binding(
+                get: { if case .error = receiptShare.state { return true } else { return false } },
+                set: { if !$0 { receiptShare.dismissError() } }
+            )) {
+                Button("OK", role: .cancel) { receiptShare.dismissError() }
+            } message: {
+                if case .error(let message) = receiptShare.state {
+                    Text(message)
+                }
+            }
+            .task(id: receiptImport?.id) {
+                guard let payload = receiptImport else { return }
+                showCreateSheet = false
+                receiptShare.processSharedImage(
+                    fileURL: payload.fileURL,
+                    accounts: accounts,
+                    categories: categories,
+                    modelContext: modelContext
                 )
             }
             .onChange(of: voiceCaptureTrigger) { _, trigger in

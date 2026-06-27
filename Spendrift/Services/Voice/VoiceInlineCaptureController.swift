@@ -13,7 +13,7 @@ enum VoiceInlineDisplayState: Equatable {
     case hidden
     case recording
     case processing
-    case error(String)
+    case error(VoiceFailureReason)
 }
 
 struct VoiceInlineManualSheetPayload: Identifiable {
@@ -34,6 +34,14 @@ final class VoiceInlineCaptureController {
     private var pipelineService = VoiceExpensePipelineService()
     private var liveActivityController = VoiceLiveActivityController()
 
+    /// Context retained for one-tap retry + analytics attribution.
+    private var lastCaptureSource: VoiceCaptureSource = .inApp
+    /// Last audio bytes sent to the pipeline, kept so a transient processing failure can be
+    /// re-sent without forcing the user to re-record.
+    private var retainedAudioData: Data?
+    /// `true` while the current capture belongs to a retry chain (drives `is_retry`).
+    private var isRetryAttempt = false
+
     /// Mic / new capture blocked while recording or sending to OpenAI.
     var blocksNewCapture: Bool {
         switch displayState {
@@ -49,9 +57,16 @@ final class VoiceInlineCaptureController {
     }
 
     func beginCapture() {
+        isRetryAttempt = false
+        beginCaptureInternal()
+    }
+
+    private func beginCaptureInternal() {
         guard displayState == .hidden else { return }
         displayState = .recording
         manualSheetPayload = nil
+        lastCaptureSource = .inApp
+        retainedAudioData = nil
         Task {
             await startRecordingSession()
         }
@@ -62,13 +77,52 @@ final class VoiceInlineCaptureController {
         recordingStartedAt = nil
         speechService.reset()
         liveActivityController.end(message: "Cancelled")
+        resetRetryContext()
         displayState = .hidden
     }
 
     func dismissError() {
         guard case .error = displayState else { return }
         speechService.reset()
+        resetRetryContext()
         displayState = .hidden
+    }
+
+    /// One-tap recovery from the failure bar. Re-records, or re-sends the retained audio
+    /// for transient processing failures, so the user stays in flow.
+    func retry(
+        modelContext: ModelContext,
+        accounts: [Account],
+        categories: [TransactionCategory]
+    ) {
+        guard case .error(let reason) = displayState else { return }
+
+        Analytics.capture(.voiceCaptureRetried, [
+            Analytics.Key.reason: reason.analyticsValue,
+            Analytics.Key.source: lastCaptureSource.rawValue
+        ])
+        isRetryAttempt = true
+
+        if reason.canResendAudio, let audioData = retainedAudioData {
+            resendRetainedAudio(
+                audioData,
+                modelContext: modelContext,
+                accounts: accounts,
+                categories: categories
+            )
+            return
+        }
+
+        // Re-record from scratch (mic / too-short / no-speech, or no audio to resend).
+        speechService.reset()
+        displayState = .hidden
+        beginCaptureInternal()
+    }
+
+    /// Deep-link to the app's Settings page so the user can grant microphone access.
+    func openSettings() {
+        guard let url = URL(string: UIApplication.openSettingsURLString) else { return }
+        UIApplication.shared.open(url)
     }
 
     func stopAndSubmit(
@@ -88,9 +142,7 @@ final class VoiceInlineCaptureController {
             guard speechService.capturedRecordingURL != nil, byteCount > 0, duration >= VoiceAudioPolicy.minClipDurationSeconds else {
                 speechService.reset()
                 liveActivityController.failAndEnd(message: "Too short")
-                displayState = .error(
-                    "Record at least \(VoiceAudioPolicy.minClipDurationDisplayText) seconds, then try again."
-                )
+                setError(.recordingTooShort)
                 return
             }
 
@@ -114,6 +166,8 @@ final class VoiceInlineCaptureController {
     ) {
         guard displayState == .hidden else { return }
         manualSheetPayload = nil
+        lastCaptureSource = .imported
+        retainedAudioData = nil
 
         liveActivityController.start()
         liveActivityController.update(state: .processing, message: "Saving…")
@@ -128,7 +182,7 @@ final class VoiceInlineCaptureController {
                     Self.removeImportedFileIfPresent(fileURL)
                     speechService.reset()
                     liveActivityController.failAndEnd(message: "Invalid audio")
-                    displayState = .error(error.localizedDescription)
+                    setError(Self.reason(for: error))
                 }
                 return
             }
@@ -138,18 +192,19 @@ final class VoiceInlineCaptureController {
                     Self.removeImportedFileIfPresent(fileURL)
                     speechService.reset()
                     liveActivityController.failAndEnd(message: "Too short")
-                    displayState = .error(
-                        "Recording must be at least \(VoiceAudioPolicy.minClipDurationDisplayText) seconds."
-                    )
+                    setError(.recordingTooShort)
                 }
                 return
             }
+
+            await MainActor.run { retainedAudioData = audioData }
 
             let submitResult = await pipelineService.submitAudio(
                 audioData: audioData,
                 accounts: accounts,
                 categories: categories,
-                modelContext: modelContext
+                modelContext: modelContext,
+                isRetry: isRetryAttempt
             )
 
             await MainActor.run {
@@ -160,7 +215,7 @@ final class VoiceInlineCaptureController {
                     handleCreateResult(result, accounts: accounts)
                 case .failure(let pipelineError):
                     liveActivityController.failAndEnd(message: "Couldn’t save")
-                    displayState = .error(pipelineErrorMessage(pipelineError))
+                    setError(Self.reason(for: pipelineError))
                 }
             }
         }
@@ -182,6 +237,7 @@ final class VoiceInlineCaptureController {
             ),
             hint: hint
         )
+        resetRetryContext()
         displayState = .hidden
     }
 
@@ -190,14 +246,11 @@ final class VoiceInlineCaptureController {
         await speechService.startRecording()
         if speechService.state != .recording {
             liveActivityController.failAndEnd(message: "Mic unavailable")
-            let message: String
-            if case .failed(let reason) = speechService.state {
-                message = reason
-            } else {
-                message = "Could not start recording."
-            }
+            let reason: VoiceFailureReason = speechService.isMicrophonePermissionDenied
+                ? .micPermissionDenied
+                : .micUnavailable
             speechService.reset()
-            displayState = .error(message)
+            setError(reason)
         } else {
             recordingStartedAt = Date()
             liveActivityController.update(state: .recording, message: "Listening…")
@@ -213,19 +266,20 @@ final class VoiceInlineCaptureController {
         do {
             audioData = try speechService.audioDataForChatAPI()
         } catch {
-            await MainActor.run {
-                speechService.reset()
-                liveActivityController.failAndEnd(message: "No audio")
-                displayState = .error("Could not read recording. Try again.")
-            }
+            speechService.reset()
+            liveActivityController.failAndEnd(message: "No audio")
+            setError(.audioUnreadable)
             return
         }
+
+        retainedAudioData = audioData
 
         let submitResult = await pipelineService.submitAudio(
             audioData: audioData,
             accounts: accounts,
             categories: categories,
-            modelContext: modelContext
+            modelContext: modelContext,
+            isRetry: isRetryAttempt
         )
 
         await MainActor.run {
@@ -235,8 +289,37 @@ final class VoiceInlineCaptureController {
                 handleCreateResult(result, accounts: accounts)
             case .failure(let pipelineError):
                 liveActivityController.failAndEnd(message: "Couldn’t save")
-                Analytics.capture(.voiceCaptureFailed, [Analytics.Key.reason: "pipeline_error"])
-                displayState = .error(pipelineErrorMessage(pipelineError))
+                setError(Self.reason(for: pipelineError))
+            }
+        }
+    }
+
+    /// Re-send already-captured audio without re-recording (transient failure recovery).
+    private func resendRetainedAudio(
+        _ audioData: Data,
+        modelContext: ModelContext,
+        accounts: [Account],
+        categories: [TransactionCategory]
+    ) {
+        displayState = .processing
+        liveActivityController.start()
+        liveActivityController.update(state: .processing, message: "Saving…")
+
+        Task { @MainActor in
+            let submitResult = await pipelineService.submitAudio(
+                audioData: audioData,
+                accounts: accounts,
+                categories: categories,
+                modelContext: modelContext,
+                isRetry: isRetryAttempt
+            )
+
+            switch submitResult {
+            case .success(let result):
+                handleCreateResult(result, accounts: accounts)
+            case .failure(let pipelineError):
+                liveActivityController.failAndEnd(message: "Couldn’t save")
+                setError(Self.reason(for: pipelineError))
             }
         }
     }
@@ -248,7 +331,7 @@ final class VoiceInlineCaptureController {
             let amountLabel = transaction.amount.formatCurrency
             liveActivityController.succeedAndEnd(message: "\(amountLabel) · \(categoryName)")
             UIImpactFeedbackGenerator(style: .light).impactOccurred()
-            AppStoreReviewRequest.requestIfFirstTime(forKey: AppStoreReviewRequest.Keys.firstVoiceTransaction)
+            resetRetryContext()
             displayState = .hidden
         case .needsConfirmation(let draft, _):
             liveActivityController.failAndEnd(message: "Review in app")
@@ -256,36 +339,50 @@ final class VoiceInlineCaptureController {
                 draft: draft,
                 hint: "Review the details below, then save."
             )
+            resetRetryContext()
             displayState = .hidden
         case .needsManualEntry(let draft, let failure):
             liveActivityController.failAndEnd(message: "Needs review")
-            Analytics.capture(.voiceCaptureFailed, [Analytics.Key.reason: Self.analyticsReason(for: failure)])
             manualSheetPayload = VoiceInlineManualSheetPayload(
                 draft: draft,
                 hint: failureMessage(for: failure)
             )
+            resetRetryContext()
             displayState = .hidden
         }
     }
 
-    /// Low-cardinality, PII-free token for the failure reason (never the raw AI message).
-    private static func analyticsReason(for failure: VoiceCreateFailure) -> String {
-        switch failure {
-        case .aiError: "ai_error"
-        case .invalidJSON: "invalid_json"
-        case .noPrimaryAccount: "no_primary_account"
-        case .noCategoriesForType: "no_categories_for_type"
-        case .amountMissing: "amount_missing"
-        case .categoryMissing: "category_missing"
-        case .unknownType: "unknown_type"
-        case .invalidDate: "invalid_date"
+    /// Centralized failure entry point: sets the bar state and fires `voice_capture_failed`.
+    private func setError(_ reason: VoiceFailureReason) {
+        displayState = .error(reason)
+        Analytics.capture(.voiceCaptureFailed, [
+            Analytics.Key.reason: reason.analyticsValue,
+            Analytics.Key.source: lastCaptureSource.rawValue,
+            Analytics.Key.isRetry: isRetryAttempt
+        ])
+    }
+
+    private func resetRetryContext() {
+        retainedAudioData = nil
+        isRetryAttempt = false
+    }
+
+    private static func reason(for error: VoicePipelineError) -> VoiceFailureReason {
+        switch error {
+        case .noSpeech: return .noSpeechDetected
+        case .openAI:   return .transcriptionFailed
         }
     }
 
-    private func pipelineErrorMessage(_ error: VoicePipelineError) -> String {
+    private static func reason(for error: Error) -> VoiceFailureReason {
         switch error {
-        case .openAI(let message):
-            return message
+        case VoiceShortcutAudioNormalizerError.durationTooShort,
+             VoiceShortcutAudioNormalizerError.emptyAudio:
+            return .recordingTooShort
+        case is VoiceShortcutAudioNormalizerError:
+            return .audioUnreadable
+        default:
+            return .audioUnreadable
         }
     }
 

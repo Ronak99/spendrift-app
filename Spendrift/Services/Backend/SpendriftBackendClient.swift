@@ -96,6 +96,40 @@ struct SpendriftBackendClient {
         return try decode(OpenAIStatementPayload.self, from: data)
     }
 
+    /// `POST /v1/receipts/parse`
+    func parseReceipt(
+        imageData: Data,
+        mimeType: String,
+        filename: String,
+        categories: [TransactionCategory],
+        clientTodayIso: String,
+        timezone: String
+    ) async throws -> OpenAIReceiptPayload {
+        let categoriesJSON = try Self.encodeCategories(categories)
+        let body = try buildMultipartBody(
+            fields: [
+                ("categories", categoriesJSON, nil),
+                ("clientTodayIso", clientTodayIso, nil),
+                ("timezone", timezone, nil),
+            ],
+            fileFieldName: "image",
+            fileData: imageData,
+            fileName: filename,
+            fileMIMEType: mimeType
+        )
+
+        let url = try endpoint(path: "/v1/receipts/parse")
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        applyAuth(&request)
+        let boundary = body.boundary
+        request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
+        request.httpBody = body.data
+
+        let data = try await perform(request: request, expectsAuth: true)
+        return try decode(OpenAIReceiptPayload.self, from: data)
+    }
+
     // MARK: - Request helpers
 
     private func endpoint(path: String) throws -> URL {

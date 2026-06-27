@@ -12,6 +12,7 @@ struct EmptyStateAddTransactionMenu {
     let onSpeak: () -> Void
     let onType: () -> Void
     let onUploadDocument: () -> Void
+    var onScanReceipt: (() -> Void)? = nil
     var voiceDisabled: Bool = false
 }
 
@@ -54,6 +55,12 @@ struct EmptyStateView: View {
 
                         Button(action: menu.onUploadDocument) {
                             Label("Upload document", systemImage: "doc.text")
+                        }
+
+                        if let onScanReceipt = menu.onScanReceipt {
+                            Button(action: onScanReceipt) {
+                                Label("Scan receipt", systemImage: "doc.viewfinder")
+                            }
                         }
                     } label: {
                         Text(actionTitle)

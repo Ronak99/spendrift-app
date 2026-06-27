@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		65FFD3D22F85103A00D901CF /* SpendriftWidget.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = A10000012E3F70000058CDE8 /* SpendriftWidget.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		C50000032E3F70000058CDE8 /* SpendriftShareExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = C10000012E3F70000058CDE8 /* SpendriftShareExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		FE00000C2E3F70000058CDE8 /* PostHog in Frameworks */ = {isa = PBXBuildFile; productRef = FE00000B2E3F70000058CDE8 /* PostHog */; };
 /* End PBXBuildFile section */
 
@@ -33,6 +34,13 @@
 			remoteGlobalIDString = A10000062E3F70000058CDE8;
 			remoteInfo = SpendriftWidget;
 		};
+		C50000012E3F70000058CDE8 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 65BB66432E3F644F0058CDE8 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = C10000062E3F70000058CDE8;
+			remoteInfo = SpendriftShareExtension;
+		};
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -43,6 +51,7 @@
 			dstSubfolderSpec = 13;
 			files = (
 				65FFD3D22F85103A00D901CF /* SpendriftWidget.appex in Embed Foundation Extensions */,
+				C50000032E3F70000058CDE8 /* SpendriftShareExtension.appex in Embed Foundation Extensions */,
 			);
 			name = "Embed Foundation Extensions";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -54,6 +63,7 @@
 		65BB66582E3F64510058CDE8 /* SpendriftTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SpendriftTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		65BB66622E3F64510058CDE8 /* SpendriftUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SpendriftUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		A10000012E3F70000058CDE8 /* SpendriftWidget.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = SpendriftWidget.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		C10000012E3F70000058CDE8 /* SpendriftShareExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = SpendriftShareExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -70,6 +80,13 @@
 				Info.plist,
 			);
 			target = A10000062E3F70000058CDE8 /* SpendriftWidget */;
+		};
+		C30000012E3F70000058CDE8 /* Exceptions for "SpendriftShareExtension" folder in "SpendriftShareExtension" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = C10000062E3F70000058CDE8 /* SpendriftShareExtension */;
 		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
@@ -98,6 +115,14 @@
 				B30000012E3F70000058CDE8 /* Exceptions for "SpendriftWidget" folder in "SpendriftWidget" target */,
 			);
 			path = SpendriftWidget;
+			sourceTree = "<group>";
+		};
+		C10000022E3F70000058CDE8 /* SpendriftShareExtension */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				C30000012E3F70000058CDE8 /* Exceptions for "SpendriftShareExtension" folder in "SpendriftShareExtension" target */,
+			);
+			path = SpendriftShareExtension;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -132,6 +157,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		C10000032E3F70000058CDE8 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -149,6 +181,7 @@
 				65BB665B2E3F64510058CDE8 /* SpendriftTests */,
 				65BB66652E3F64510058CDE8 /* SpendriftUITests */,
 				A10000022E3F70000058CDE8 /* SpendriftWidget */,
+				C10000022E3F70000058CDE8 /* SpendriftShareExtension */,
 				657A64B72F82972E00814448 /* Frameworks */,
 				65BB664C2E3F644F0058CDE8 /* Products */,
 			);
@@ -161,6 +194,7 @@
 				65BB66582E3F64510058CDE8 /* SpendriftTests.xctest */,
 				65BB66622E3F64510058CDE8 /* SpendriftUITests.xctest */,
 				A10000012E3F70000058CDE8 /* SpendriftWidget.appex */,
+				C10000012E3F70000058CDE8 /* SpendriftShareExtension.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -181,6 +215,7 @@
 			);
 			dependencies = (
 				65FFD3D42F85103A00D901CF /* PBXTargetDependency */,
+				C50000022E3F70000058CDE8 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				65BB664D2E3F644F0058CDE8 /* Spendrift */,
@@ -261,6 +296,28 @@
 			productReference = A10000012E3F70000058CDE8 /* SpendriftWidget.appex */;
 			productType = "com.apple.product-type.app-extension";
 		};
+		C10000062E3F70000058CDE8 /* SpendriftShareExtension */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = C10000072E3F70000058CDE8 /* Build configuration list for PBXNativeTarget "SpendriftShareExtension" */;
+			buildPhases = (
+				C10000052E3F70000058CDE8 /* Sources */,
+				C10000032E3F70000058CDE8 /* Frameworks */,
+				C10000042E3F70000058CDE8 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				C10000022E3F70000058CDE8 /* SpendriftShareExtension */,
+			);
+			name = SpendriftShareExtension;
+			packageProductDependencies = (
+			);
+			productName = SpendriftShareExtension;
+			productReference = C10000012E3F70000058CDE8 /* SpendriftShareExtension.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -283,6 +340,9 @@
 						TestTargetID = 65BB664A2E3F644F0058CDE8;
 					};
 					A10000062E3F70000058CDE8 = {
+						CreatedOnToolsVersion = 16.4;
+					};
+					C10000062E3F70000058CDE8 = {
 						CreatedOnToolsVersion = 16.4;
 					};
 				};
@@ -308,6 +368,7 @@
 				65BB66572E3F64510058CDE8 /* SpendriftTests */,
 				65BB66612E3F64510058CDE8 /* SpendriftUITests */,
 				A10000062E3F70000058CDE8 /* SpendriftWidget */,
+				C10000062E3F70000058CDE8 /* SpendriftShareExtension */,
 			);
 		};
 /* End PBXProject section */
@@ -335,6 +396,13 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		A10000042E3F70000058CDE8 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		C10000042E3F70000058CDE8 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -372,6 +440,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		C10000052E3F70000058CDE8 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
@@ -389,6 +464,11 @@
 			isa = PBXTargetDependency;
 			target = A10000062E3F70000058CDE8 /* SpendriftWidget */;
 			targetProxy = 65FFD3D32F85103A00D901CF /* PBXContainerItemProxy */;
+		};
+		C50000022E3F70000058CDE8 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = C10000062E3F70000058CDE8 /* SpendriftShareExtension */;
+			targetProxy = C50000012E3F70000058CDE8 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -743,6 +823,66 @@
 			};
 			name = Release;
 		};
+		C10000082E3F70000058CDE8 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = SpendriftShareExtension/SpendriftShareExtension.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = YAHK4G4F5A;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = SpendriftShareExtension/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = Spendrift;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.5;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.4.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.ronakpunase.Spendrift.ShareExtension;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Debug;
+		};
+		C10000092E3F70000058CDE8 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = SpendriftShareExtension/SpendriftShareExtension.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = YAHK4G4F5A;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = SpendriftShareExtension/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = Spendrift;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.5;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.4.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.ronakpunase.Spendrift.ShareExtension;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -787,6 +927,15 @@
 			buildConfigurations = (
 				A10000082E3F70000058CDE8 /* Debug */,
 				A10000092E3F70000058CDE8 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		C10000072E3F70000058CDE8 /* Build configuration list for PBXNativeTarget "SpendriftShareExtension" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				C10000082E3F70000058CDE8 /* Debug */,
+				C10000092E3F70000058CDE8 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

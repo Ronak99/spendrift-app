@@ -25,6 +25,12 @@ final class SpeechTranscriptionService {
     /// Playable linear PCM `.wav` (Chat Completions `input_audio` allows `wav` or `mp3` only).
     private(set) var capturedRecordingURL: URL?
 
+    /// `true` when the user has explicitly denied microphone access, so the caller can
+    /// surface a "Open Settings" path instead of a generic "mic unavailable" failure.
+    var isMicrophonePermissionDenied: Bool {
+        AVAudioApplication.shared.recordPermission == .denied
+    }
+
     private var audioRecorder: AVAudioRecorder?
     private var recordingURL: URL?
 

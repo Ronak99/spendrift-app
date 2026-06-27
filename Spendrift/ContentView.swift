@@ -14,10 +14,16 @@ struct ContentView: View {
     @Environment(\.scenePhase) private var scenePhase
     @Query(sort: \TransactionCategory.name) private var categories: [TransactionCategory]
     @AppStorage("themeColor") private var themeColorName: String = "Blue"
+    @AppStorage(NotificationManager.Keys.dailyReminderEnabled) private var dailyReminderEnabled = false
+    @AppStorage(NotificationManager.Keys.dailyReminderHour) private var dailyReminderHour = NotificationManager.defaultHour
+    @AppStorage(NotificationManager.Keys.dailyReminderMinute) private var dailyReminderMinute = NotificationManager.defaultMinute
+    @State private var showReminderOptIn = false
     @State private var selectedTab = 0
     @State private var showCreateTransaction = false
+    @State private var showStatementImport = false
     @State private var voiceCaptureTrigger: UUID?
     @State private var shortcutImportedAudio: ShortcutImportedAudioPayload?
+    @State private var receiptImport: ReceiptSharePayload?
     @State private var useCompactVoiceCapture = false
     @State private var showSettingsSheet = false
     @State private var transactionPeriodViewModel = TransactionViewModel()
@@ -28,7 +34,8 @@ struct ContentView: View {
                 periodViewModel: transactionPeriodViewModel,
                 voiceCaptureTrigger: voiceCaptureTrigger,
                 useCompactVoiceCapture: useCompactVoiceCapture,
-                shortcutImportedAudio: shortcutImportedAudio
+                shortcutImportedAudio: shortcutImportedAudio,
+                receiptImport: receiptImport
             )
                 .tabItem {
                     Image(systemName: "list.bullet")
@@ -65,11 +72,13 @@ struct ContentView: View {
             seedDefaultCategoriesIfNeeded()
             ScreenshotDemoData.seedIfNeeded(modelContext: modelContext)
             handleVoiceIntentLaunchIfNeeded()
+            handlePendingReceiptShareIfNeeded()
             Analytics.capture(.appOpened, [Analytics.Key.daysSinceInstall: Analytics.daysSinceInstall])
         }
         .onChange(of: scenePhase) { _, newPhase in
             guard newPhase == .active else { return }
             handleVoiceIntentLaunchIfNeeded()
+            handlePendingReceiptShareIfNeeded()
             Analytics.capture(.appOpened, [Analytics.Key.daysSinceInstall: Analytics.daysSinceInstall])
         }
         .onChange(of: selectedTab) { _, newTab in
@@ -78,11 +87,24 @@ struct ContentView: View {
         .onReceive(NotificationCenter.default.publisher(for: .voiceExpenseIntentTriggered)) { _ in
             handleVoiceIntentLaunchIfNeeded()
         }
+        .onReceive(NotificationCenter.default.publisher(for: .firstTransactionCreated)) { _ in
+            guard !dailyReminderEnabled else { return }
+            showReminderOptIn = true
+        }
         .onOpenURL { url in
             handleQuickAction(url: url)
         }
+        .alert("Stay on top of your spending?", isPresented: $showReminderOptIn) {
+            Button("Enable reminders") { enableDailyReminders() }
+            Button("Not now", role: .cancel) {}
+        } message: {
+            Text("Get a daily nudge to log your spending and keep your budget accurate.")
+        }
         .sheet(isPresented: $showCreateTransaction) {
             UpdateTransactionSheet(transaction: nil)
+        }
+        .sheet(isPresented: $showStatementImport) {
+            StatementImportView()
         }
         .sheet(isPresented: $showSettingsSheet) {
             SettingsView()
@@ -99,8 +121,26 @@ struct ContentView: View {
         }
     }
 
+    private func enableDailyReminders() {
+        Task {
+            let granted = await NotificationManager.requestAuthorization()
+            guard granted else { return }
+            dailyReminderEnabled = true
+            NotificationManager.reschedule(
+                enabled: true,
+                hour: dailyReminderHour,
+                minute: dailyReminderMinute
+            )
+        }
+    }
+
     private func handleQuickAction(url: URL) {
         guard url.scheme == "spendrift" else { return }
+
+        if url.host == "importReceipt" {
+            handlePendingReceiptShareIfNeeded()
+            return
+        }
 
         Analytics.capture(.widgetTapped, [Analytics.Key.kind: url.host ?? "open"])
 
@@ -114,10 +154,27 @@ struct ContentView: View {
             selectedTab = 0
             useCompactVoiceCapture = true
             voiceCaptureTrigger = UUID()
+        case "importStatement":
+            showCreateTransaction = false
+            useCompactVoiceCapture = false
+            selectedTab = 0
+            showStatementImport = true
         default:
             useCompactVoiceCapture = false
             break
         }
+    }
+
+    /// Picks up a receipt image shared via the Share Extension (stored in the App Group)
+    /// and routes it into the receipt pipeline. Safe to call repeatedly; it no-ops when
+    /// there is nothing pending.
+    private func handlePendingReceiptShareIfNeeded() {
+        guard let url = ReceiptShareInbox.consumePendingImageURL() else { return }
+        showCreateTransaction = false
+        selectedTab = 0
+        useCompactVoiceCapture = false
+        receiptImport = ReceiptSharePayload(id: UUID(), fileURL: url)
+        Analytics.capture(.shortcutUsed, [Analytics.Key.kind: "receipt_share"])
     }
 
     private func handleVoiceIntentLaunchIfNeeded() {

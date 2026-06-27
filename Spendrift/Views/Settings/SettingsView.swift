@@ -61,8 +61,12 @@ private struct ShortcutCard: View {
 struct SettingsView: View {
     @Environment(\.dismiss) private var dismiss
     @AppStorage("themeColor") private var themeColorName: String = "Blue"
+    @AppStorage(NotificationManager.Keys.dailyReminderEnabled) private var dailyReminderEnabled = false
+    @AppStorage(NotificationManager.Keys.dailyReminderHour) private var dailyReminderHour = NotificationManager.defaultHour
+    @AppStorage(NotificationManager.Keys.dailyReminderMinute) private var dailyReminderMinute = NotificationManager.defaultMinute
 
     @State private var showFeatureRequest = false
+    @State private var permissionDenied = false
 
     private let shortcuts: [AppShortcutItem] = [
         AppShortcutItem(
@@ -98,6 +102,73 @@ struct SettingsView: View {
             get: { !Analytics.isOptedOut },
             set: { Analytics.isOptedOut = !$0 }
         )
+    }
+
+    private var reminderEnabledBinding: Binding<Bool> {
+        Binding(
+            get: { dailyReminderEnabled },
+            set: { handleReminderToggle($0) }
+        )
+    }
+
+    /// Maps the stored hour/minute to a `Date` for the time picker and back.
+    private var reminderTimeBinding: Binding<Date> {
+        Binding(
+            get: {
+                Calendar.current.date(
+                    from: DateComponents(hour: dailyReminderHour, minute: dailyReminderMinute)
+                ) ?? Date()
+            },
+            set: { newDate in
+                let components = Calendar.current.dateComponents([.hour, .minute], from: newDate)
+                dailyReminderHour = components.hour ?? NotificationManager.defaultHour
+                dailyReminderMinute = components.minute ?? NotificationManager.defaultMinute
+                rescheduleIfEnabled()
+            }
+        )
+    }
+
+    private func handleReminderToggle(_ isOn: Bool) {
+        guard isOn else {
+            dailyReminderEnabled = false
+            NotificationManager.reschedule(enabled: false, hour: dailyReminderHour, minute: dailyReminderMinute)
+            return
+        }
+
+        Task {
+            let granted = await NotificationManager.requestAuthorization()
+            await MainActor.run {
+                if granted {
+                    permissionDenied = false
+                    dailyReminderEnabled = true
+                    rescheduleIfEnabled()
+                } else {
+                    permissionDenied = true
+                    dailyReminderEnabled = false
+                }
+            }
+        }
+    }
+
+    private func rescheduleIfEnabled() {
+        guard dailyReminderEnabled else { return }
+        NotificationManager.reschedule(
+            enabled: true,
+            hour: dailyReminderHour,
+            minute: dailyReminderMinute
+        )
+    }
+
+    private func refreshPermissionState() async {
+        let status = await NotificationManager.authorizationStatus()
+        await MainActor.run {
+            permissionDenied = (status == .denied) && dailyReminderEnabled
+        }
+    }
+
+    private func openSystemSettings() {
+        guard let url = URL(string: UIApplication.openSettingsURLString) else { return }
+        UIApplication.shared.open(url)
     }
 
     var body: some View {
@@ -147,6 +218,32 @@ struct SettingsView: View {
                 }
 
                 Section {
+                    Toggle("Daily spend reminder", isOn: reminderEnabledBinding)
+
+                    if dailyReminderEnabled {
+                        DatePicker(
+                            "Reminder time",
+                            selection: reminderTimeBinding,
+                            displayedComponents: .hourAndMinute
+                        )
+                    }
+
+                    if permissionDenied {
+                        Button {
+                            openSystemSettings()
+                        } label: {
+                            Label("Enable notifications in Settings", systemImage: "exclamationmark.triangle")
+                                .foregroundStyle(.orange)
+                        }
+                    }
+                } header: {
+                    Text("Reminders")
+                } footer: {
+                    Text("A gentle nudge to log today's spending, plus a monthly prompt to upload your statement. Disable any time.")
+                        .font(.footnote)
+                }
+
+                Section {
                     Button {
                         showFeatureRequest = true
                     } label: {
@@ -184,6 +281,9 @@ struct SettingsView: View {
                 }
             }
             .navigationTitle("Settings")
+            .task {
+                await refreshPermissionState()
+            }
             .sheet(isPresented: $showFeatureRequest) {
                 FeatureRequestView()
             }
