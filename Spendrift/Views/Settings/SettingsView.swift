@@ -262,6 +262,11 @@ struct SettingsView: View {
         Color.accentColor(forThemeIndex: selectedThemeIndex)
     }
 
+    private var appVersionLabel: String {
+        let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "—"
+        return "Spendrift · v\(version)"
+    }
+
     private var accentSoft: Color {
         accent.opacity(0.16)
     }
@@ -382,7 +387,7 @@ struct SettingsView: View {
                         }
                     }
 
-                    Text("Spendrift · v2.1")
+                    Text(appVersionLabel)
                         .font(.system(size: 12, weight: .regular))
                         .foregroundStyle(SettingsTokens.textTertiary)
                         .frame(maxWidth: .infinity, alignment: .center)
