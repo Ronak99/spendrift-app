@@ -145,14 +145,7 @@ struct TransactionsView: View {
                         title: "No Transactions",
                         description: "Get started by adding your first transaction for \(periodViewModel.periodDescription)",
                         actionTitle: "Add Transaction",
-                        action: nil,
-                        addTransactionMenu: EmptyStateAddTransactionMenu(
-                            onSpeak: { voiceInline.beginCapture() },
-                            onType: { showCreateSheet = true },
-                            onUploadDocument: { showStatementImport = true },
-                            onScanReceipt: { showReceiptCapture = true },
-                            voiceDisabled: voiceInline.blocksNewCapture
-                        )
+                        action: { showCreateSheet = true },
                     )
                 } else {
                     List {
@@ -188,17 +181,18 @@ struct TransactionsView: View {
                         if !transactions.isEmpty {
                             Menu {
                                 Button {
+                                    showCreateSheet = true
+                                } label: {
+                                    Label("Type", systemImage: "keyboard")
+                                }
+
+                                Button {
                                     voiceInline.beginCapture()
                                 } label: {
                                     Label("Speak", systemImage: "mic")
                                 }
                                 .disabled(voiceInline.blocksNewCapture)
 
-                                Button {
-                                    showCreateSheet = true
-                                } label: {
-                                    Label("Type", systemImage: "keyboard")
-                                }
 
                                 Button {
                                     showStatementImport = true
@@ -214,6 +208,7 @@ struct TransactionsView: View {
                             } label: {
                                 Image(systemName: "plus")
                             }
+                            .menuOrder(.fixed)
                             .accessibilityLabel("Add transaction")
                             .accessibilityIdentifier("transactionsAddMenu")
                         }

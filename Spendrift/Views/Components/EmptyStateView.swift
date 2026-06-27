@@ -44,14 +44,14 @@ struct EmptyStateView: View {
             if let actionTitle = actionTitle {
                 if let menu = addTransactionMenu {
                     Menu {
+                        Button(action: menu.onType) {
+                            Label("Type", systemImage: "keyboard")
+                        }
+
                         Button(action: menu.onSpeak) {
                             Label("Speak", systemImage: "mic")
                         }
                         .disabled(menu.voiceDisabled)
-
-                        Button(action: menu.onType) {
-                            Label("Type", systemImage: "keyboard")
-                        }
 
                         Button(action: menu.onUploadDocument) {
                             Label("Upload document", systemImage: "doc.text")
@@ -72,6 +72,7 @@ struct EmptyStateView: View {
                             .cornerRadius(10)
                     }
                     .padding(.top, 8)
+                    .menuOrder(.fixed)
                     .accessibilityLabel("Add transaction")
                     .accessibilityIdentifier("transactionsAddMenu")
                 } else if let action = action {
