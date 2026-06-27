@@ -26,7 +26,7 @@ struct SpendriftApp: App {
         }
 
         let isUITesting = ProcessInfo.processInfo.arguments.contains("-UITesting")
-        if let container = try? IntentSwiftData.makeModelContainer() {
+        if let container = try? IntentSwiftData.makeModelContainer(cloudKitSyncEnabled: true) {
             sharedContainer = container
         } else {
             // Last-resort fallback — should never be reached in production.

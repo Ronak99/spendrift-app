@@ -12,7 +12,6 @@ import SwiftUI
 struct ContentView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.scenePhase) private var scenePhase
-    @Query(sort: \TransactionCategory.name) private var categories: [TransactionCategory]
     @AppStorage(Color.selectedThemeIndexKey) private var selectedThemeIndex = Color.defaultThemeIndex
     @AppStorage(Color.legacyThemeColorKey) private var legacyThemeColorName = "Blue"
     @AppStorage(NotificationManager.Keys.dailyReminderEnabled) private var dailyReminderEnabled = true
@@ -222,12 +221,7 @@ struct ContentView: View {
     }
 
     private func seedDefaultCategoriesIfNeeded() {
-        guard categories.isEmpty else { return }
-        let defaults = TransactionCategory.defaultCategories()
-        for category in defaults {
-            modelContext.insert(category)
-        }
-        try? modelContext.save()
+        DefaultCategorySeeder.seedIfNeeded(modelContext: modelContext)
     }
 }
 

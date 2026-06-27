@@ -9,7 +9,7 @@ This document reflects the **current codebase** (not git history): what the app 
 ### 1. App shell, navigation, and persistence
 
 1. **Tab bar** — Four tabs: Transactions, Accounts, Categories, Analytics (Statistics).
-2. **Shared SwiftData container** — Single `ModelContainer` from `IntentSwiftData` so the main app, App Intents, and widgets read/write the same store.
+2. **Shared SwiftData container + CloudKit mirror** — Single `ModelContainer` from `IntentSwiftData` so the main app, App Intents, and widgets read/write the same App Group store, while the app target mirrors accounts/categories/transactions to the user’s private iCloud CloudKit database.
 3. **App launch** — `ExpenseAppShortcuts.updateAppShortcutParameters()` runs so Shortcuts see up-to-date intent parameters.
 4. **UITest mode** — `-UITesting` forces an in-memory store; onboarding is skipped when testing.
 5. **Root sheet priority** — Mandatory App Store update sheet > onboarding > optional update sheet.
@@ -18,7 +18,7 @@ This document reflects the **current codebase** (not git history): what the app 
 
 6. **Three-page dark-mode carousel** — Welcome, Siri & Shortcuts, Get Started; pill page indicator; haptic on completion.
 7. **Versioned onboarding** — `@AppStorage("spendriftOnboardingVersion")`; bump `OnboardingCarouselView.currentVersion` to show onboarding again after major updates.
-8. **Welcome copy** — Highlights multi-account tracking, voice capture, categories, on-device storage (marketing copy; actual AI calls send data off-device when using voice/statement import).
+8. **Welcome copy** — Highlights multi-account tracking, voice capture, categories, and private storage (local + user iCloud CloudKit). AI calls still send feature-specific data off-device for voice/statement parsing.
 9. **Shortcuts page** — Deep links to two iCloud shortcut URLs (`OnboardingShortcutShareLinks`) for “Voice Record Expense” and “Log Expense Amount”; third bullet “Quick Access” has **no URL** (informational only).
 10. **Get Started** — Final CTA completes onboarding.
 
@@ -104,7 +104,7 @@ This document reflects the **current codebase** (not git history): what the app 
 
 ### 11. Categories
 
-67. **Default seed** — If no categories exist, `TransactionCategory.defaultCategories()` inserts bundled income/expense categories with icons.
+67. **Default seed** — `DefaultCategorySeeder` seeds bundled categories once and stores `hasSeededDefaultCategories` in iCloud KVS to prevent duplicate seeds during CloudKit restore after reinstall.
 68. **CRUD** — List, create, edit categories; icons via icon grid picker flow (per existing views).
 69. **`lastUsedAt`** — Optional on model; updated on manual save, shortcut expense, and successful voice create.
 70. **MRU ordering** — `sortedByLastUsage()` used in transaction sheet, voice bar, and Shortcuts entity query.
@@ -177,7 +177,7 @@ These are **strategies**, not recommendations to implement all at once.
 ### Tier D — Growth & retention
 
 9. **Themes** — Free: 2–3 accents; Pro: full palette + app icon.
-10. **Family / shared** — Pro: iCloud sync / household (if you add sync — big lift).
+10. **Family / shared** — If implemented later, this means shared/household collaboration on top of the now-default personal iCloud sync.
 
 ### Tier E — Support & goodwill
 

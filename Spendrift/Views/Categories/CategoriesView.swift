@@ -120,14 +120,7 @@ struct CategoriesView: View {
     }
     
     private func seedDefaultCategoriesIfNeeded() {
-        guard allCategories.isEmpty else { return }
-        
-        let defaults = TransactionCategory.defaultCategories()
-        for category in defaults {
-            modelContext.insert(category)
-        }
-        
-        try? modelContext.save()
+        DefaultCategorySeeder.seedIfNeeded(modelContext: modelContext)
     }
 }
 
