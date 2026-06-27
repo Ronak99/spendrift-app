@@ -188,7 +188,7 @@ private enum VoiceInlineRecordingBarPreviewData {
 
     static let categories: [TransactionCategory] = [
         TransactionCategory(name: "Food", type: .expense),
-        TransactionCategory(name: "Transport", type: .expense),
+        TransactionCategory(name: "Transportation", type: .expense),
         TransactionCategory(name: "Salary", type: .income)
     ]
 

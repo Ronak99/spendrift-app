@@ -14,19 +14,16 @@ struct CategoryMatchResult {
 }
 
 enum CategoryMatcher {
-    // Keys align with the curated default category names (RON-82). Keywords for
-    // dropped defaults (e.g. entertainment, refunds) are folded into the closest
-    // surviving category so voice matching still resolves common phrases.
     private static let keywordMap: [String: [String]] = [
-        "Transport": ["metro", "cab", "uber", "ola", "bus", "train", "rickshaw", "auto", "taxi", "fuel", "petrol", "diesel"],
-        "Groceries": ["grocery", "groceries", "supermarket", "market", "bigbasket", "zepto", "blinkit", "instamart", "dmart", "vegetables"],
-        "Shopping": ["shopping", "mall", "store", "amazon", "flipkart", "myntra", "clothes", "clothing"],
-        "Food": ["food", "snack", "dinner", "lunch", "breakfast", "restaurant", "zomato", "swiggy", "cafe", "coffee"],
-        "Bills & Utilities": ["bill", "bills", "electricity", "water", "internet", "recharge", "broadband", "gas", "dth", "insurance", "premium"],
-        "Rent": ["rent", "landlord"],
-        "Health": ["doctor", "medicine", "medical", "hospital", "pharmacy", "gym", "fitness"],
-        "Salary": ["salary", "paycheck", "pay day", "bonus"],
-        "Other Income": ["refund", "cashback", "dividend", "interest", "reimbursement"]
+        "Transportation": ["metro", "cab", "uber", "ola", "bus", "train", "rickshaw", "auto", "taxi"],
+        "Shopping": ["shopping", "mall", "store", "amazon", "flipkart", "grocery", "market"],
+        "Food": ["food", "snack", "dinner", "lunch", "breakfast", "restaurant", "zomato", "swiggy"],
+        "Bills": ["bill", "electricity", "water", "internet", "recharge"],
+        "Health": ["doctor", "medicine", "medical", "hospital", "pharmacy"],
+        "Entertainment": ["movie", "netflix", "game", "concert", "party"],
+        "Salary": ["salary", "paycheck", "pay day"],
+        "Refunds": ["refund", "cashback"],
+        "Dividend": ["dividend"]
     ]
 
     static func match(
