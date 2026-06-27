@@ -81,6 +81,9 @@ struct ContentView: View {
             handlePendingReceiptShareIfNeeded()
             Analytics.capture(.appOpened, [Analytics.Key.daysSinceInstall: Analytics.daysSinceInstall])
         }
+        .task {
+            await DefaultAccountSeeder.seedIfNeeded(modelContext: modelContext)
+        }
         .onChange(of: scenePhase) { _, newPhase in
             guard newPhase == .active else { return }
             handleVoiceIntentLaunchIfNeeded()

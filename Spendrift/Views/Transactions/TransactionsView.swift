@@ -15,6 +15,9 @@ struct TransactionsView: View {
     @Query(sort: \TransactionCategory.name) private var categories: [TransactionCategory]
     var periodViewModel: TransactionViewModel
     @State private var showCreateSheet = false
+    /// Marks the create sheet as the user's genuine first transaction so it can pre-fill
+    /// Salary/account defaults and auto-focus the amount field.
+    @State private var createSheetQuickStart = false
     @State private var showStatementImport = false
     @State private var showReceiptCapture = false
     @State private var voiceInline = VoiceInlineCaptureController()
@@ -145,14 +148,10 @@ struct TransactionsView: View {
                         title: "No Transactions",
                         description: "Get started by adding your first transaction for \(periodViewModel.periodDescription)",
                         actionTitle: "Add Transaction",
-                        action: nil,
-                        addTransactionMenu: EmptyStateAddTransactionMenu(
-                            onSpeak: { voiceInline.beginCapture() },
-                            onType: { showCreateSheet = true },
-                            onUploadDocument: { showStatementImport = true },
-                            onScanReceipt: { showReceiptCapture = true },
-                            voiceDisabled: voiceInline.blocksNewCapture
-                        )
+                        action: {
+                            createSheetQuickStart = allTransactions.isEmpty
+                            showCreateSheet = true
+                        },
                     )
                 } else {
                     List {
@@ -188,17 +187,19 @@ struct TransactionsView: View {
                         if !transactions.isEmpty {
                             Menu {
                                 Button {
+                                    createSheetQuickStart = false
+                                    showCreateSheet = true
+                                } label: {
+                                    Label("Type", systemImage: "keyboard")
+                                }
+
+                                Button {
                                     voiceInline.beginCapture()
                                 } label: {
                                     Label("Speak", systemImage: "mic")
                                 }
                                 .disabled(voiceInline.blocksNewCapture)
 
-                                Button {
-                                    showCreateSheet = true
-                                } label: {
-                                    Label("Type", systemImage: "keyboard")
-                                }
 
                                 Button {
                                     showStatementImport = true
@@ -214,6 +215,7 @@ struct TransactionsView: View {
                             } label: {
                                 Image(systemName: "plus")
                             }
+                            .menuOrder(.fixed)
                             .accessibilityLabel("Add transaction")
                             .accessibilityIdentifier("transactionsAddMenu")
                         }
@@ -241,7 +243,7 @@ struct TransactionsView: View {
                 ReceiptCaptureView()
             }
             .sheet(isPresented: $showCreateSheet) {
-                UpdateTransactionSheet(transaction: nil)
+                UpdateTransactionSheet(transaction: nil, quickStartFirstTransaction: createSheetQuickStart)
             }
             .sheet(item: $selectedTransaction) { transaction in
                 UpdateTransactionSheet(transaction: transaction)
