@@ -32,149 +32,35 @@ final class TransactionCategory {
 }
 
 extension TransactionCategory {
+    /// Curated default set seeded on first launch. Kept intentionally short so users
+    /// add their own instead of cleaning up a long list (see RON-82).
     static func defaultCategories() -> [TransactionCategory] {
+        universalCore() + localeAdditions(for: Locale.current)
+    }
+
+    /// Compact set of categories that apply regardless of region.
+    private static func universalCore() -> [TransactionCategory] {
         [
             // Income
-            TransactionCategory(
-                name: "Dividend",
-                type: .income,
-                createdOn: Date(),
-                icon: .dividend
-            ),
-            TransactionCategory(
-                name: "Friends",
-                type: .income,
-                createdOn: Date(),
-                icon: .friends
-            ),
-            TransactionCategory(
-                name: "Salary",
-                type: .income,
-                createdOn: Date(),
-                icon: .salary
-            ),
-            TransactionCategory(
-                name: "Coupons",
-                type: .income,
-                createdOn: Date(),
-                icon: .coupons
-            ),
-            TransactionCategory(
-                name: "Refunds",
-                type: .income,
-                createdOn: Date(),
-                icon: .refunds
-            ),
-            TransactionCategory(
-                name: "Sale",
-                type: .income,
-                createdOn: Date(),
-                icon: .sale
-            ),
+            TransactionCategory(name: "Salary", type: .income, icon: .salary),
+            TransactionCategory(name: "Other Income", type: .income, icon: .sale),
             // Expense
-            TransactionCategory(
-                name: "Bills",
-                type: .expense,
-                createdOn: Date(),
-                icon: .bills
-            ),
-            TransactionCategory(
-                name: "Education",
-                type: .expense,
-                createdOn: Date(),
-                icon: .education
-            ),
-            TransactionCategory(
-                name: "Entertainment",
-                type: .expense,
-                createdOn: Date(),
-                icon: .entertainment
-            ),
-            TransactionCategory(
-                name: "Food",
-                type: .expense,
-                createdOn: Date(),
-                icon: .food
-            ),
-            TransactionCategory(
-                name: "Health",
-                type: .expense,
-                createdOn: Date(),
-                icon: .health
-            ),
-            TransactionCategory(
-                name: "Home Hygiene",
-                type: .expense,
-                createdOn: Date(),
-                icon: .home
-            ),
-            TransactionCategory(
-                name: "Investments",
-                type: .expense,
-                createdOn: Date(),
-                icon: .investments
-            ),
-            TransactionCategory(
-                name: "Shopping",
-                type: .expense,
-                createdOn: Date(),
-                icon: .shopping
-            ),
-            TransactionCategory(
-                name: "Sport",
-                type: .expense,
-                createdOn: Date(),
-                icon: .sport
-            ),
-            TransactionCategory(
-                name: "Transportation",
-                type: .expense,
-                createdOn: Date(),
-                icon: .transportation
-            ),
-            TransactionCategory(
-                name: "Baby",
-                type: .expense,
-                createdOn: Date(),
-                icon: .baby
-            ),
-            TransactionCategory(
-                name: "Beauty",
-                type: .expense,
-                createdOn: Date(),
-                icon: .beauty
-            ),
-            TransactionCategory(
-                name: "Clothing",
-                type: .expense,
-                createdOn: Date(),
-                icon: .clothing
-            ),
-            TransactionCategory(
-                name: "Electronics",
-                type: .expense,
-                createdOn: Date(),
-                icon: .electronics
-            ),
-            TransactionCategory(
-                name: "Insurance",
-                type: .expense,
-                createdOn: Date(),
-                icon: .insurance
-            ),
-            TransactionCategory(
-                name: "Tax",
-                type: .expense,
-                createdOn: Date(),
-                icon: .tax
-            ),
-            TransactionCategory(
-                name: "Miscellaneous",
-                type: .expense,
-                createdOn: Date(),
-                icon: .miscellaneous
-            )
+            TransactionCategory(name: "Food", type: .expense, icon: .food),
+            TransactionCategory(name: "Groceries", type: .expense, icon: .groceries),
+            TransactionCategory(name: "Transport", type: .expense, icon: .transportation),
+            TransactionCategory(name: "Bills & Utilities", type: .expense, icon: .bills),
+            TransactionCategory(name: "Rent", type: .expense, icon: .rent),
+            TransactionCategory(name: "Shopping", type: .expense, icon: .shopping),
+            TransactionCategory(name: "Health", type: .expense, icon: .health),
+            TransactionCategory(name: "Miscellaneous", type: .expense, icon: .miscellaneous)
         ]
+    }
+
+    /// Region-specific extras layered on top of the universal core.
+    /// v1 ships a single curated set, so this returns no additions; region-specific
+    /// categories can be slotted in here later without touching the seed call sites.
+    private static func localeAdditions(for locale: Locale) -> [TransactionCategory] {
+        []
     }
 }
 
