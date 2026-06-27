@@ -142,7 +142,7 @@ final class ReceiptCaptureController {
 
     private func pipelineErrorMessage(_ error: ReceiptPipelineError) -> String {
         switch error {
-        case .openAI(let message):
+        case .aiService(let message):
             return message
         }
     }

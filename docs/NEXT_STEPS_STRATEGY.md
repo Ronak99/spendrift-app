@@ -15,8 +15,8 @@
 - **YouTube is the proven growth channel** — all traction traces back to 3 videos
 - **Feature set is already strong** for a v1 (~89 features documented in `FEATURES_AND_MONETIZATION.md`):
   - Manual transaction entry
-  - Voice capture (OpenAI `gpt-audio-mini`)
-  - PDF bank statement import (OpenAI `gpt-4o`)
+  - Voice capture (via backend AI proxy)
+  - PDF bank statement import (via backend AI proxy)
   - Siri Shortcuts & widgets + Live Activities
   - Multi-account, categories (MRU ordering), themes
   - Full analytics tab (Statistics)
@@ -27,7 +27,7 @@
 |-----|------|----------|
 | **No product analytics** | Can't measure activation, retention, or feature usage | High |
 | **No crash reporting** | Blind to production failures | High |
-| **OpenAI key still in app bundle** (`AppSecrets.openAIAPIKey`) | Key extraction + unbounded API cost per download | **Urgent** (blocked on backend proxy) |
+| **AI model keys now live only in the backend proxy** — the app ships no model API key and calls AI through `SpendriftBackendClient` | Removes key-extraction and unbounded per-download cost risk | Done |
 | **No monetization** | Every AI feature user costs money with $0 revenue | Medium (plan now, charge later) |
 | **Small UX papercuts** | Friction for users videos send to the app | Medium |
 

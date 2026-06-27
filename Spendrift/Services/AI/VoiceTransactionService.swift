@@ -1,5 +1,5 @@
 //
-//  OpenAIVoiceTransactionService.swift
+//  VoiceTransactionService.swift
 //  Spendrift
 //
 //  Created by Cursor on 23/03/26.
@@ -7,7 +7,7 @@
 
 import Foundation
 
-struct OpenAIVoiceTransactionService {
+struct VoiceTransactionService {
     private let backend: SpendriftBackendClient?
 
     init(backend: SpendriftBackendClient? = nil) {
@@ -17,9 +17,9 @@ struct OpenAIVoiceTransactionService {
     func parseTransaction(
         audioData: Data,
         categories: [TransactionCategory]
-    ) async throws -> OpenAIVoiceTransactionPayload {
+    ) async throws -> VoiceTransactionPayload {
         guard let backend else {
-            throw OpenAIServiceError.missingAPIKey
+            throw AIServiceError.missingAPIKey
         }
 
         do {
@@ -34,7 +34,7 @@ struct OpenAIVoiceTransactionService {
         }
     }
 
-    private func mapBackendError(_ error: SpendriftBackendError) -> OpenAIServiceError {
+    private func mapBackendError(_ error: SpendriftBackendError) -> AIServiceError {
         switch error {
         case .missingConfiguration:
             return .missingAPIKey

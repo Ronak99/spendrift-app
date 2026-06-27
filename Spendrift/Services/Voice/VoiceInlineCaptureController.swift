@@ -42,7 +42,7 @@ final class VoiceInlineCaptureController {
     /// `true` while the current capture belongs to a retry chain (drives `is_retry`).
     private var isRetryAttempt = false
 
-    /// Mic / new capture blocked while recording or sending to OpenAI.
+    /// Mic / new capture blocked while recording or sending to the AI service.
     var blocksNewCapture: Bool {
         switch displayState {
         case .recording, .processing:
@@ -176,7 +176,7 @@ final class VoiceInlineCaptureController {
         Task {
             let audioData: Data
             do {
-                audioData = try await VoiceShortcutAudioNormalizer.dataForOpenAIVoicePipeline(from: fileURL)
+                audioData = try await VoiceShortcutAudioNormalizer.dataForVoicePipeline(from: fileURL)
             } catch {
                 await MainActor.run {
                     Self.removeImportedFileIfPresent(fileURL)
@@ -369,8 +369,8 @@ final class VoiceInlineCaptureController {
 
     private static func reason(for error: VoicePipelineError) -> VoiceFailureReason {
         switch error {
-        case .noSpeech: return .noSpeechDetected
-        case .openAI:   return .transcriptionFailed
+        case .noSpeech:  return .noSpeechDetected
+        case .aiService: return .transcriptionFailed
         }
     }
 
