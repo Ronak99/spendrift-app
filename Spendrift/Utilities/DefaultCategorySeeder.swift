@@ -18,19 +18,12 @@ enum DefaultCategorySeeder {
         DefaultCategoryMigration.backfillIsDefaultIfNeeded(modelContext: modelContext)
         DefaultCategoryMigration.backfillSortOrderIfNeeded(modelContext: modelContext)
 
-        let cloudDefaults = NSUbiquitousKeyValueStore.default
-        if cloudDefaults.bool(forKey: hasSeededDefaultCategoriesKey) {
-            return
-        }
-
         let descriptor = FetchDescriptor<TransactionCategory>()
         let existingCategories = (try? modelContext.fetch(descriptor)) ?? []
 
         // If categories already exist (legacy installs or CloudKit download completed),
         // mark as seeded to avoid any future duplicate inserts.
         guard existingCategories.isEmpty else {
-            cloudDefaults.set(true, forKey: hasSeededDefaultCategoriesKey)
-            cloudDefaults.synchronize()
             return
         }
 
@@ -40,8 +33,6 @@ enum DefaultCategorySeeder {
 
         do {
             try modelContext.save()
-            cloudDefaults.set(true, forKey: hasSeededDefaultCategoriesKey)
-            cloudDefaults.synchronize()
         } catch {
             // Save failures should not mark the seed flag.
         }

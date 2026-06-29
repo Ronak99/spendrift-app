@@ -104,7 +104,7 @@ This document reflects the **current codebase** (not git history): what the app 
 
 ### 11. Categories
 
-67. **Default seed** — `DefaultCategorySeeder` seeds bundled categories once and stores `hasSeededDefaultCategories` in iCloud KVS to prevent duplicate seeds during CloudKit restore after reinstall.
+67. **Default seed** — Unified in `DefaultDataSeeder`, triggered once when onboarding starts: it waits for CloudKit's initial import, then seeds the bundled categories only if none exist after sync (so it never duplicates restored data). UI tests skip onboarding and instead seed categories synchronously via `DefaultCategorySeeder`.
 68. **CRUD** — List, create, edit categories; icons via icon grid picker flow (per existing views).
 69. **`lastUsedAt`** — Optional on model; updated on manual save, shortcut expense, and successful voice create.
 70. **MRU ordering** — `sortedByLastUsage()` used in transaction sheet, voice bar, and Shortcuts entity query.
@@ -112,7 +112,7 @@ This document reflects the **current codebase** (not git history): what the app 
 ### 12. Accounts
 
 71. **Primary account** — `isPrimary` flag; shortcuts and statement import assume a **primary** account for quick paths.
-71a. **Default account seed** — `DefaultAccountSeeder` waits for CloudKit's initial import (with a timeout fallback) before seeding a single primary "Savings" account (balance 100) only when no account exists anywhere, so it never collides with synced accounts. Guarded by `hasSeededDefaultAccount` in iCloud KVS.
+71a. **Default account seed** — Unified in `DefaultDataSeeder` (same onboarding-start trigger as categories): after CloudKit's initial import settles, it seeds a single primary "Savings" account (balance 100) only when no account exists anywhere, so it never collides with synced accounts.
 72. **Balance model** — `currentBalance` derived from opening balance plus income minus expenses on linked transactions.
 73. **Per-account transaction screen** — Filtered month view + same patterns as main transactions.
 

@@ -115,7 +115,6 @@ struct CategoriesView: View {
                     .padding(.horizontal, allCategories.isEmpty ? 0 : 8)
                 }
             }
-            .onAppear(perform: seedDefaultCategoriesIfNeeded)
             .sheet(isPresented: $showCreateSheet) {
                 UpdateCategorySheet(category: nil)
             }
@@ -217,10 +216,6 @@ struct CategoriesView: View {
             category.sortOrder = index
         }
         try? modelContext.save()
-    }
-
-    private func seedDefaultCategoriesIfNeeded() {
-        DefaultCategorySeeder.seedIfNeeded(modelContext: modelContext)
     }
 }
 

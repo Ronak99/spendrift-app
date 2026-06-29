@@ -49,7 +49,7 @@ struct SpendriftApp: App {
 // MARK: - Root sheet priority queue
 
 /// All sheets that RootContainerView can display, ordered by priority (highest first).
-private enum RootSheet: Identifiable {
+private enum RootSheet: Identifiable, Equatable {
     case mandatoryUpdate(version: String?, storeURL: URL?)
     case onboarding
     case optionalUpdate(version: String?, storeURL: URL?)
@@ -66,12 +66,16 @@ private enum RootSheet: Identifiable {
 // MARK: - Root container
 
 private struct RootContainerView: View {
+    @Environment(\.modelContext) private var modelContext
+
     /// Stores the onboarding version the user has completed.
     /// 0 = never shown. Bump `OnboardingCarouselView.currentVersion` in code to re-show on major updates.
     @AppStorage("spendriftOnboardingVersion") private var onboardingVersion = 0
 
     @State private var checker = AppUpdateChecker()
     @State private var activeSheet: RootSheet?
+    /// Guards against starting the background seed more than once per launch.
+    @State private var didStartSeeding = false
 
     private var isUITesting: Bool {
         ProcessInfo.processInfo.arguments.contains("-UITesting")
@@ -91,6 +95,15 @@ private struct RootContainerView: View {
             // or the sheet never dismisses (onDisappear never runs while `.onboarding` stays set).
             .onChange(of: onboardingVersion) { _, _ in
                 resolveActiveSheet()
+            }
+            // Seeding is unified here: the moment onboarding starts we silently sync
+            // CloudKit and seed the default account/categories if the store is empty.
+            // An unstructured Task is used so the work survives the onboarding sheet
+            // being dismissed before the cloud import settles.
+            .onChange(of: activeSheet) { _, sheet in
+                guard case .onboarding = sheet, !didStartSeeding else { return }
+                didStartSeeding = true
+                Task { await DefaultDataSeeder.seedIfNeeded(modelContext: modelContext) }
             }
             .sheet(item: $activeSheet) { sheet in
                 switch sheet {

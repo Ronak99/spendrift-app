@@ -81,9 +81,6 @@ struct ContentView: View {
             handlePendingReceiptShareIfNeeded()
             Analytics.capture(.appOpened, [Analytics.Key.daysSinceInstall: Analytics.daysSinceInstall])
         }
-        .task {
-            await DefaultAccountSeeder.seedIfNeeded(modelContext: modelContext)
-        }
         .onChange(of: scenePhase) { _, newPhase in
             guard newPhase == .active else { return }
             handleVoiceIntentLaunchIfNeeded()
@@ -226,9 +223,10 @@ struct ContentView: View {
 
     private var shouldSeedCategoriesOnLaunch: Bool {
         ProcessInfo.processInfo.arguments.contains("-UITesting")
-            || onboardingVersion >= OnboardingCarouselView.currentVersion
     }
 
+    /// Production seeding is unified in `DefaultDataSeeder` and triggered when onboarding
+    /// starts. UI tests skip onboarding, so they get a synchronous category seed here.
     private func seedDefaultCategoriesIfNeeded() {
         guard shouldSeedCategoriesOnLaunch else { return }
         DefaultCategorySeeder.seedIfNeeded(modelContext: modelContext)

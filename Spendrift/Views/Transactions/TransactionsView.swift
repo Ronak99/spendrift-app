@@ -15,8 +15,8 @@ struct TransactionsView: View {
     @Query(sort: \TransactionCategory.name) private var categories: [TransactionCategory]
     var periodViewModel: TransactionViewModel
     @State private var showCreateSheet = false
-    /// Marks the create sheet as the user's genuine first transaction so it can pre-fill
-    /// Salary/account defaults and auto-focus the amount field.
+    /// When the create sheet is opened from the empty-state CTA, pre-fill income/Salary and the
+    /// first account, and auto-focus the amount field. Stays false for the toolbar "Type" entry.
     @State private var createSheetQuickStart = false
     @State private var showStatementImport = false
     @State private var showReceiptCapture = false
@@ -149,7 +149,7 @@ struct TransactionsView: View {
                         description: "Get started by adding your first transaction for \(periodViewModel.periodDescription)",
                         actionTitle: "Add Transaction",
                         action: {
-                            createSheetQuickStart = allTransactions.isEmpty
+                            createSheetQuickStart = true
                             showCreateSheet = true
                         },
                     )
@@ -243,7 +243,9 @@ struct TransactionsView: View {
                 ReceiptCaptureView()
             }
             .sheet(isPresented: $showCreateSheet) {
-                UpdateTransactionSheet(transaction: nil, quickStartFirstTransaction: createSheetQuickStart)
+                UpdateTransactionSheet(
+                    transaction: nil, quickStartFirstTransaction: createSheetQuickStart
+                )
             }
             .sheet(item: $selectedTransaction) { transaction in
                 UpdateTransactionSheet(transaction: transaction)

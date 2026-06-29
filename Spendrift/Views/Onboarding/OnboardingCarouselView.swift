@@ -13,10 +13,8 @@ struct OnboardingCarouselView: View {
     @Environment(\.modelContext) private var modelContext
     @Binding var onboardingVersion: Int
     @State private var currentPage = 0
-    @State private var categoryChoice: CategoryCatalogService.OnboardingChoice = .keepSuggested
-    @State private var didSeedCategories = false
 
-    private let totalPages = 4
+    private let totalPages = 3
 
     private static let heroConfigurations: [OnboardingHeroPageConfiguration] = [
         OnboardingHeroPageConfiguration(
@@ -32,11 +30,6 @@ struct OnboardingCarouselView: View {
         OnboardingHeroPageConfiguration(
             mark: .sfSymbol("bolt.circle.fill"),
             glowColor: Color(hex: "#A78BFA"),
-            size: 45
-        ),
-        OnboardingHeroPageConfiguration(
-            mark: .sfSymbol("folder.fill"),
-            glowColor: Color(hex: "#F59E0B"),
             size: 45
         ),
         OnboardingHeroPageConfiguration(
@@ -73,11 +66,8 @@ struct OnboardingCarouselView: View {
                         .tag(0)
                     ShortcutsPage()
                         .tag(1)
-                    OnboardingCategoriesPage(choice: $categoryChoice)
-                        .tag(2)
-                        .onAppear(perform: seedCategoriesForOnboardingIfNeeded)
                     GetStartedPage()
-                        .tag(3)
+                        .tag(2)
                 }
                 .tabViewStyle(.page(indexDisplayMode: .never))
             }
@@ -99,9 +89,6 @@ struct OnboardingCarouselView: View {
 
             Button {
                 if currentPage < totalPages - 1 {
-                    if currentPage == 2 {
-                        CategoryCatalogService.applyOnboardingChoice(categoryChoice, modelContext: modelContext)
-                    }
                     withAnimation(.easeInOut(duration: 0.35)) { currentPage += 1 }
                 } else {
                     completeOnboarding()
@@ -124,19 +111,13 @@ struct OnboardingCarouselView: View {
         .padding(.bottom, 40)
     }
 
-    private func seedCategoriesForOnboardingIfNeeded() {
-        guard !didSeedCategories else { return }
-        DefaultCategorySeeder.seedIfNeeded(modelContext: modelContext)
-        didSeedCategories = true
-    }
-
     private func completeOnboarding() {
         UINotificationFeedbackGenerator().notificationOccurred(.success)
         Analytics.capture(.onboardingCompleted, [Analytics.Key.version: OnboardingCarouselView.currentVersion])
         onboardingVersion = OnboardingCarouselView.currentVersion
     }
 
-    /// Version 2 adds the categories setup step; bump to re-show onboarding on major updates.
+    /// Bump to re-show onboarding on major updates.
     static let currentVersion = 2
 }
 
