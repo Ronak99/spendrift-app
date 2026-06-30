@@ -29,7 +29,6 @@ struct CategoriesView: View {
     @State private var isEditing = false
     @State private var selection = Set<UUID>()
     @State private var showBulkDeleteConfirmation = false
-    @State private var showResetConfirmation = false
 
     private var filteredIncomeCategories: [TransactionCategory] {
         if searchText.isEmpty { return incomeCategories }
@@ -98,11 +97,12 @@ struct CategoriesView: View {
                             Button("Delete", role: .destructive) {
                                 showBulkDeleteConfirmation = true
                             }
+                        } else {
+                            Button(action: { showCreateSheet = true }) {
+                                Image(systemName: "plus")
+                            }
+                            ProfileSettingsToolbarButton()
                         }
-                        Button(action: { showCreateSheet = true }) {
-                            Image(systemName: "plus")
-                        }
-                        ProfileSettingsToolbarButton()
                     }
                     .padding(.horizontal, allCategories.isEmpty ? 0 : 8)
                 }
@@ -121,21 +121,6 @@ struct CategoriesView: View {
                 Button("Cancel", role: .cancel) {}
             } message: {
                 Text("Deleting a category also deletes all transactions assigned to it.")
-            }
-            .confirmationDialog(
-                "Reset to suggested categories?",
-                isPresented: $showResetConfirmation,
-                titleVisibility: .visible
-            ) {
-                Button("Reset Unused Defaults") {
-                    try? CategoryCatalogService.resetToSuggestedCategories(
-                        modelContext: modelContext,
-                        source: .manual
-                    )
-                }
-                Button("Cancel", role: .cancel) {}
-            } message: {
-                Text("Unused bundled categories are removed and any missing suggested categories are added. Categories with transactions are kept.")
             }
         }
     }
@@ -159,9 +144,6 @@ struct CategoriesView: View {
         }
         .onDelete { indexSet in
             deleteCategories(at: indexSet, from: displayed, source: .manual)
-        }
-        .onMove { source, destination in
-            moveCategories(from: source, to: destination, in: movable)
         }
     }
 
@@ -192,22 +174,15 @@ struct CategoriesView: View {
             ])
             modelContext.delete(category)
         }
+        if selected.count > 1 {
+            Analytics.capture(.categoryDeleted, [
+                Analytics.Key.count: selected.count,
+                Analytics.Key.source: CategoryEventSource.bulkEdit.rawValue
+            ])
+        }
         try? modelContext.save()
         selection.removeAll()
         isEditing = false
-    }
-
-    private func moveCategories(
-        from source: IndexSet,
-        to destination: Int,
-        in categories: [TransactionCategory]
-    ) {
-        var ordered = categories
-        ordered.move(fromOffsets: source, toOffset: destination)
-        for (index, category) in ordered.enumerated() {
-            category.sortOrder = index
-        }
-        try? modelContext.save()
     }
 }
 
