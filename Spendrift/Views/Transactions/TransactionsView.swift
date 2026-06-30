@@ -8,16 +8,25 @@
 import SwiftUI
 import SwiftData
 
+/// Drives the manual create-transaction sheet so quick-start mode is chosen atomically with presentation.
+private enum CreateTransactionSheetMode: Identifiable {
+    case standard
+    case quickStartFirst
+
+    var id: Self { self }
+
+    var quickStartFirstTransaction: Bool {
+        self == .quickStartFirst
+    }
+}
+
 struct TransactionsView: View {
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \Transaction.date, order: .reverse) private var allTransactions: [Transaction]
     @Query(sort: \Account.createdOn) private var accounts: [Account]
     @Query(sort: \TransactionCategory.name) private var categories: [TransactionCategory]
     var periodViewModel: TransactionViewModel
-    @State private var showCreateSheet = false
-    /// When the create sheet is opened from the empty-state CTA, pre-fill income/Salary and the
-    /// first account, and auto-focus the amount field. Stays false for the toolbar "Type" entry.
-    @State private var createSheetQuickStart = false
+    @State private var createTransactionSheet: CreateTransactionSheetMode?
     @State private var showStatementImport = false
     @State private var showReceiptCapture = false
     @State private var voiceInline = VoiceInlineCaptureController()
@@ -149,8 +158,7 @@ struct TransactionsView: View {
                         description: "Get started by adding your first transaction for \(periodViewModel.periodDescription)",
                         actionTitle: "Add Transaction",
                         action: {
-                            createSheetQuickStart = true
-                            showCreateSheet = true
+                            createTransactionSheet = .quickStartFirst
                         },
                     )
                 } else {
@@ -187,8 +195,7 @@ struct TransactionsView: View {
                         if !transactions.isEmpty {
                             Menu {
                                 Button {
-                                    createSheetQuickStart = false
-                                    showCreateSheet = true
+                                    createTransactionSheet = .standard
                                 } label: {
                                     Label("Type", systemImage: "keyboard")
                                 }
@@ -242,9 +249,10 @@ struct TransactionsView: View {
             .sheet(isPresented: $showReceiptCapture) {
                 ReceiptCaptureView()
             }
-            .sheet(isPresented: $showCreateSheet) {
+            .sheet(item: $createTransactionSheet) { mode in
                 UpdateTransactionSheet(
-                    transaction: nil, quickStartFirstTransaction: createSheetQuickStart
+                    transaction: nil,
+                    quickStartFirstTransaction: mode.quickStartFirstTransaction
                 )
             }
             .sheet(item: $selectedTransaction) { transaction in
@@ -276,7 +284,7 @@ struct TransactionsView: View {
             }
             .task(id: receiptImport?.id) {
                 guard let payload = receiptImport else { return }
-                showCreateSheet = false
+                createTransactionSheet = nil
                 receiptShare.processSharedImage(
                     fileURL: payload.fileURL,
                     accounts: accounts,
@@ -286,12 +294,12 @@ struct TransactionsView: View {
             }
             .onChange(of: voiceCaptureTrigger) { _, trigger in
                 guard trigger != nil else { return }
-                showCreateSheet = false
+                createTransactionSheet = nil
                 voiceInline.beginCapture()
             }
             .task(id: shortcutImportedAudio?.id) {
                 guard let payload = shortcutImportedAudio else { return }
-                showCreateSheet = false
+                createTransactionSheet = nil
                 voiceInline.processImportedAudio(
                     fileURL: payload.fileURL,
                     modelContext: modelContext,
