@@ -11,9 +11,11 @@ import SwiftUI
 struct EmptyStateAddTransactionMenu {
     let onSpeak: () -> Void
     let onType: () -> Void
-    let onUploadDocument: () -> Void
+    var onUploadDocument: (() -> Void)? = nil
     var onScanReceipt: (() -> Void)? = nil
     var voiceDisabled: Bool = false
+    var typeLabel: String = "Type"
+    var speakLabel: String = "Speak"
 }
 
 struct EmptyStateView: View {
@@ -45,16 +47,18 @@ struct EmptyStateView: View {
                 if let menu = addTransactionMenu {
                     Menu {
                         Button(action: menu.onType) {
-                            Label("Type", systemImage: "keyboard")
+                            Label(menu.typeLabel, systemImage: "keyboard")
                         }
 
                         Button(action: menu.onSpeak) {
-                            Label("Speak", systemImage: "mic")
+                            Label(menu.speakLabel, systemImage: "mic")
                         }
                         .disabled(menu.voiceDisabled)
 
-                        Button(action: menu.onUploadDocument) {
-                            Label("Upload document", systemImage: "doc.text")
+                        if let onUploadDocument = menu.onUploadDocument {
+                            Button(action: onUploadDocument) {
+                                Label("Upload document", systemImage: "doc.text")
+                            }
                         }
 
                         if let onScanReceipt = menu.onScanReceipt {

@@ -104,7 +104,7 @@ This document reflects the **current codebase** (not git history): what the app 
 
 ### 11. Categories
 
-67. **Default seed** — Unified in `DefaultDataSeeder`, triggered once when onboarding starts: it waits for CloudKit's initial import, then seeds the bundled categories only if none exist after sync (so it never duplicates restored data). UI tests skip onboarding and instead seed categories synchronously via `DefaultCategorySeeder`.
+67. **Default seed** — Unified in `DefaultDataSeeder`, triggered once when onboarding starts: it seeds the bundled categories instantly (so pickers are never empty), then waits for CloudKit's initial import and reconciles — if the import delivers real categories it deletes the just-seeded placeholders, otherwise it keeps the defaults. UI tests skip onboarding and instead seed categories synchronously via `DefaultCategorySeeder`.
 68. **CRUD** — List, create, edit categories; icons via icon grid picker flow (per existing views).
 69. **`lastUsedAt`** — Optional on model; updated on manual save, shortcut expense, and successful voice create.
 70. **MRU ordering** — `sortedByLastUsage()` used in transaction sheet, voice bar, and Shortcuts entity query.
@@ -112,7 +112,7 @@ This document reflects the **current codebase** (not git history): what the app 
 ### 12. Accounts
 
 71. **Primary account** — `isPrimary` flag; shortcuts and statement import assume a **primary** account for quick paths.
-71a. **Default account seed** — Unified in `DefaultDataSeeder` (same onboarding-start trigger as categories): after CloudKit's initial import settles, it seeds a single primary "Savings" account (balance 100) only when no account exists anywhere, so it never collides with synced accounts.
+71a. **Default account seed** — Unified in `DefaultDataSeeder` (same onboarding-start trigger as categories): it seeds a single primary "Savings" account (balance 100) instantly when no account exists locally, then waits for CloudKit's initial import and reconciles — if real accounts arrive it deletes the seeded placeholder, otherwise the default stays.
 72. **Balance model** — `currentBalance` derived from opening balance plus income minus expenses on linked transactions.
 73. **Per-account transaction screen** — Filtered month view + same patterns as main transactions.
 

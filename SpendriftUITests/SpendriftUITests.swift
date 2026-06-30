@@ -49,6 +49,11 @@ class SpendriftUITestBase: XCTestCase {
             .element(boundBy: 0)
         XCTAssertTrue(menuButton.waitForExistence(timeout: 3))
         menuButton.tap()
+        let createExpenseButton = app.buttons["Create Expense"].firstMatch
+        if createExpenseButton.waitForExistence(timeout: 2) {
+            createExpenseButton.tap()
+            return
+        }
         let typeButton = app.buttons["Type"].firstMatch
         if typeButton.waitForExistence(timeout: 2) {
             typeButton.tap()
@@ -468,9 +473,9 @@ final class TransactionIntegrationTests: SpendriftUITestBase {
     func testTransactionsEmptyState_addButtonOpensCreateSheet() {
         navigateToTransactions()
         app.buttons["Add Transaction"].tap()
-        let typeEntry = app.buttons["Type"].firstMatch
-        XCTAssertTrue(typeEntry.waitForExistence(timeout: 3))
-        typeEntry.tap()
+        let createExpenseEntry = app.buttons["Create Expense"].firstMatch
+        XCTAssertTrue(createExpenseEntry.waitForExistence(timeout: 3))
+        createExpenseEntry.tap()
         XCTAssertTrue(app.navigationBars["New Transaction"].waitForExistence(timeout: 3))
     }
 

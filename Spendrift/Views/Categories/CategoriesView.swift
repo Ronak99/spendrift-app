@@ -99,16 +99,8 @@ struct CategoriesView: View {
                                 showBulkDeleteConfirmation = true
                             }
                         }
-                        if !allCategories.isEmpty {
-                            Menu {
-                                Button("Reset to suggested categories", action: { showResetConfirmation = true })
-                                Button("Add Category", action: { showCreateSheet = true })
-                            } label: {
-                                Image(systemName: "ellipsis.circle")
-                            }
-                            Button(action: { showCreateSheet = true }) {
-                                Image(systemName: "plus")
-                            }
+                        Button(action: { showCreateSheet = true }) {
+                            Image(systemName: "plus")
                         }
                         ProfileSettingsToolbarButton()
                     }
