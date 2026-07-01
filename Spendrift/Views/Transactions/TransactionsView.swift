@@ -32,6 +32,8 @@ struct TransactionsView: View {
     @State private var showReceiptLibrary = false
     @State private var voiceInline = VoiceInlineCaptureController()
     @State private var receiptShare = ReceiptCaptureController()
+    /// Drives the transient "Transaction added" confirmation after a shared receipt is created.
+    @State private var showReceiptShareCreated = false
     @State private var selectedTransaction: Transaction?
     @AppStorage("didFireFirstTransactionCreated") private var hasEverCreatedTransaction = false
     let voiceCaptureTrigger: UUID?
@@ -94,6 +96,12 @@ struct TransactionsView: View {
         categories.sortedByLastUsage()
     }
 
+    /// Status of the receipt shared into the app via the Share Extension.
+    /// Scanning takes precedence over the brief post-create confirmation.
+    private var receiptShareStatus: ReceiptShareStatus {
+        if receiptShare.isProcessing { return .scanning }
+        if showReceiptShareCreated { return .created }
+        return .hidden
     /// Empty-state add menu. Before the user has ever created a transaction it shows a focused
     /// two-option menu (Create Expense / Speak Expense); afterwards it mirrors the toolbar add menu.
     private var emptyStateAddMenu: EmptyStateAddTransactionMenu {
@@ -279,6 +287,8 @@ struct TransactionsView: View {
                 }
             }
             .overlay(alignment: .bottom) {
+                VStack(spacing: 8) {
+                    ReceiptShareStatusBar(status: receiptShareStatus)
                 if receiptShare.isProcessing {
                     HStack(spacing: 12) {
                         ProgressView()
@@ -363,12 +373,22 @@ struct TransactionsView: View {
             .task(id: receiptImport?.id) {
                 guard let payload = receiptImport else { return }
                 createTransactionSheet = nil
+                showReceiptShareCreated = false
                 receiptShare.processSharedImage(
                     fileURL: payload.fileURL,
                     accounts: accounts,
                     categories: categories,
                     modelContext: modelContext
                 )
+            }
+            .onChange(of: receiptShare.didCreate) { _, created in
+                guard created else { return }
+                receiptShare.acknowledgeCreate()
+                showReceiptShareCreated = true
+                Task {
+                    try? await Task.sleep(for: .seconds(2.2))
+                    showReceiptShareCreated = false
+                }
             }
             .onChange(of: voiceCaptureTrigger) { _, trigger in
                 guard trigger != nil else { return }

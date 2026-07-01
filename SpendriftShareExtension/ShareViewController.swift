@@ -36,10 +36,20 @@ final class ShareViewController: UIViewController {
 
         provider.loadDataRepresentation(forTypeIdentifier: UTType.image.identifier) { [weak self] data, _ in
             guard let self else { return }
-            if let data, self.persist(imageData: data, provider: provider) {
-                self.openHostApp()
+            let didPersist = data.map { self.persist(imageData: $0, provider: provider) } ?? false
+
+            // Opening the host app (via the responder-chain `openURL:` hack) and tearing
+            // the extension down must both happen on the main thread. Completing the
+            // request immediately would dismiss the extension before the open fires, so
+            // open first and defer `complete()` by a beat to let the launch take effect.
+            DispatchQueue.main.async {
+                if didPersist {
+                    self.openHostApp()
+                }
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
+                    self.complete()
+                }
             }
-            self.complete()
         }
     }
 
