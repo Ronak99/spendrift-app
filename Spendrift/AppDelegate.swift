@@ -14,7 +14,26 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
         didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil
     ) -> Bool {
         UNUserNotificationCenter.current().delegate = self
+        if let url = launchOptions?[.url] as? URL {
+            handleIncomingURL(url)
+        }
         return true
+    }
+
+    func application(
+        _ app: UIApplication,
+        open url: URL,
+        options: [UIApplication.OpenURLOptionsKey: Any] = [:]
+    ) -> Bool {
+        handleIncomingURL(url)
+        return true
+    }
+
+    private func handleIncomingURL(_ url: URL) {
+        guard url.scheme == "spendrift", url.host == "importReceipt" else { return }
+        DispatchQueue.main.async {
+            NotificationCenter.default.post(name: .receiptShareImportTriggered, object: nil)
+        }
     }
 
     func application(_ application: UIApplication, performActionFor shortcutItem: UIApplicationShortcutItem, completionHandler: @escaping (Bool) -> Void) {

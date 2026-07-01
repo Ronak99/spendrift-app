@@ -98,6 +98,9 @@ struct ContentView: View {
         .onReceive(NotificationCenter.default.publisher(for: .voiceExpenseIntentTriggered)) { _ in
             handleVoiceIntentLaunchIfNeeded()
         }
+        .onReceive(NotificationCenter.default.publisher(for: .receiptShareImportTriggered)) { _ in
+            handlePendingReceiptShareIfNeeded()
+        }
         .onReceive(NotificationCenter.default.publisher(for: .firstTransactionCreated)) { _ in
             guard !dailyReminderEnabled else { return }
             showReminderOptIn = true

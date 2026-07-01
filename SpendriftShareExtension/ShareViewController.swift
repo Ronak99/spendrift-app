@@ -23,9 +23,41 @@ final class ShareViewController: UIViewController {
         static let openURL = URL(string: "spendrift://importReceipt")!
     }
 
+    private let activityIndicator = UIActivityIndicatorView(style: .large)
+    private let statusLabel = UILabel()
+
     override func viewDidLoad() {
         super.viewDidLoad()
+        configureLoadingUI()
         handleSharedImage()
+    }
+
+    private func configureLoadingUI() {
+        view.backgroundColor = .systemBackground
+
+        activityIndicator.translatesAutoresizingMaskIntoConstraints = false
+        activityIndicator.startAnimating()
+
+        statusLabel.translatesAutoresizingMaskIntoConstraints = false
+        statusLabel.text = "Opening Spendrift…"
+        statusLabel.font = .preferredFont(forTextStyle: .body)
+        statusLabel.textColor = .secondaryLabel
+        statusLabel.textAlignment = .center
+        statusLabel.numberOfLines = 0
+
+        let stack = UIStackView(arrangedSubviews: [activityIndicator, statusLabel])
+        stack.translatesAutoresizingMaskIntoConstraints = false
+        stack.axis = .vertical
+        stack.alignment = .center
+        stack.spacing = 16
+        view.addSubview(stack)
+
+        NSLayoutConstraint.activate([
+            stack.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            stack.centerYAnchor.constraint(equalTo: view.centerYAnchor),
+            stack.leadingAnchor.constraint(greaterThanOrEqualTo: view.leadingAnchor, constant: 24),
+            stack.trailingAnchor.constraint(lessThanOrEqualTo: view.trailingAnchor, constant: -24)
+        ])
     }
 
     private func handleSharedImage() {
@@ -38,15 +70,12 @@ final class ShareViewController: UIViewController {
             guard let self else { return }
             let didPersist = data.map { self.persist(imageData: $0, provider: provider) } ?? false
 
-            // Opening the host app (via the responder-chain `openURL:` hack) and tearing
-            // the extension down must both happen on the main thread. Completing the
-            // request immediately would dismiss the extension before the open fires, so
-            // open first and defer `complete()` by a beat to let the launch take effect.
             DispatchQueue.main.async {
                 if didPersist {
-                    self.openHostApp()
-                }
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
+                    self.openHostApp {
+                        self.complete()
+                    }
+                } else {
                     self.complete()
                 }
             }
@@ -97,9 +126,26 @@ final class ShareViewController: UIViewController {
         return "jpg"
     }
 
-    private func openHostApp() {
-        // Share extensions cannot call UIApplication.shared.open directly; walk the
-        // responder chain to find an object that responds to openURL:.
+    private func openHostApp(completion: @escaping () -> Void) {
+        guard let context = extensionContext else {
+            completion()
+            return
+        }
+
+        // The supported API for launching the containing app from a share extension.
+        // Do not call `completeRequest` until this finishes or the open may never fire.
+        context.open(Inbox.openURL) { [weak self] success in
+            DispatchQueue.main.async {
+                if !success {
+                    self?.openHostAppViaResponderChain()
+                }
+                completion()
+            }
+        }
+    }
+
+    /// Legacy fallback when `extensionContext.open` is unavailable or fails.
+    private func openHostAppViaResponderChain() {
         let selector = NSSelectorFromString("openURL:")
         var responder: UIResponder? = self
         while let current = responder {
