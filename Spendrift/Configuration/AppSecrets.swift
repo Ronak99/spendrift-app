@@ -33,4 +33,18 @@ enum AppSecrets {
         guard let base = backendBaseURL else { return nil }
         return base.absoluteString.trimmingCharacters(in: CharacterSet(charactersIn: "/")) + "/ingest"
     }
+
+    static var sentryDSN: String {
+        (Bundle.main.infoDictionary?["SpendriftSentryDSN"] as? String ?? "")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    /// Sentry envelopes are tunneled through the backend's `/sentry` route, so
+    /// the tunnel URL is derived from `backendBaseURL` rather than configured
+    /// separately. Returns nil when the backend URL is missing.
+    static var sentryTunnelURL: URL? {
+        guard let base = backendBaseURL else { return nil }
+        let trimmed = base.absoluteString.trimmingCharacters(in: CharacterSet(charactersIn: "/"))
+        return URL(string: trimmed + "/sentry")
+    }
 }

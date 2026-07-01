@@ -366,6 +366,12 @@ struct StatementImportView: View {
     private func startParsing(data: Data, filename: String) {
         isLoading = true
         errorMessage = nil
+        Diagnostics.breadcrumb(
+            category: .feature,
+            message: "pdf_upload_started",
+            feature: .pdf,
+            stage: .upload
+        )
 
         Task {
             do {
@@ -384,6 +390,25 @@ struct StatementImportView: View {
                         reason = String(describing: type(of: error))
                     }
                     Analytics.capture(.pdfImportFailed, [Analytics.Key.reason: reason])
+                    Diagnostics.breadcrumb(
+                        category: .error,
+                        message: "pdf_import_failed",
+                        feature: .pdf,
+                        stage: .parse,
+                        data: [
+                            Diagnostics.Tag.reason: reason,
+                            Diagnostics.Tag.method: "pdf"
+                        ]
+                    )
+                    Diagnostics.log(
+                        "pdf import failed",
+                        level: .warning,
+                        tags: [
+                            Diagnostics.Tag.reason: reason,
+                            Diagnostics.Tag.feature: Diagnostics.Feature.pdf.rawValue,
+                            Diagnostics.Tag.method: "pdf"
+                        ]
+                    )
                     errorMessage = error.localizedDescription
                     isLoading = false
                 }

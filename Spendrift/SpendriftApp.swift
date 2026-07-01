@@ -19,6 +19,7 @@ struct SpendriftApp: App {
 
     init() {
         Analytics.bootstrap()
+        Diagnostics.bootstrap()
 
         // Ensure Shortcuts picks up newly added/changed intent parameters.
         Task {
@@ -30,6 +31,14 @@ struct SpendriftApp: App {
             sharedContainer = container
         } else {
             // Last-resort fallback — should never be reached in production.
+            Diagnostics.log(
+                "ModelContainer bootstrap fell back to in-memory store",
+                level: .error,
+                tags: [
+                    Diagnostics.Tag.feature: Diagnostics.Feature.app.rawValue,
+                    Diagnostics.Tag.stage: Diagnostics.Stage.bootstrap.rawValue
+                ]
+            )
             let schema = Schema([Transaction.self, Account.self, TransactionCategory.self])
             sharedContainer = try! ModelContainer(
                 for: schema,

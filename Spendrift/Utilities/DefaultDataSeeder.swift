@@ -39,6 +39,13 @@ enum DefaultDataSeeder {
     /// CloudKit's initial import. Idempotent and safe to call repeatedly.
     @MainActor
     static func seedIfNeeded(modelContext: ModelContext) async {
+        Diagnostics.breadcrumb(
+            category: .feature,
+            message: "default_data_seed_started",
+            feature: .seeding,
+            stage: .bootstrap
+        )
+
         // Bring legacy rows up to date regardless of whether we seed (idempotent,
         // guarded by their own UserDefaults flags).
         DefaultCategoryMigration.backfillIsDefaultIfNeeded(modelContext: modelContext)
@@ -48,7 +55,15 @@ enum DefaultDataSeeder {
         let needsCategories = !hasAny(TransactionCategory.self, in: modelContext)
 
         // Everything already present locally — nothing to seed, skip the wait.
-        guard needsAccount || needsCategories else { return }
+        guard needsAccount || needsCategories else {
+            Diagnostics.breadcrumb(
+                category: .feature,
+                message: "default_data_seed_skipped",
+                feature: .seeding,
+                stage: .reconcile
+            )
+            return
+        }
 
         // 1. Seed instantly so the UI is never empty while sync runs.
         let seededAccountIDs = needsAccount ? seedDefaultAccount(in: modelContext) : []
@@ -65,6 +80,13 @@ enum DefaultDataSeeder {
         if !seededCategoryIDs.isEmpty {
             reconcileSeededRows(TransactionCategory.self, seededIDs: seededCategoryIDs, in: modelContext)
         }
+
+        Diagnostics.breadcrumb(
+            category: .feature,
+            message: "default_data_seed_completed",
+            feature: .seeding,
+            stage: .reconcile
+        )
     }
 
     @discardableResult

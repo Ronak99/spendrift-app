@@ -360,6 +360,23 @@ final class VoiceInlineCaptureController {
             Analytics.Key.source: lastCaptureSource.rawValue,
             Analytics.Key.isRetry: isRetryAttempt
         ])
+        let tags = [
+            Diagnostics.Tag.reason: reason.analyticsValue,
+            Diagnostics.Tag.source: lastCaptureSource.rawValue,
+            Diagnostics.Tag.method: "voice"
+        ]
+        Diagnostics.breadcrumb(
+            category: .error,
+            message: "voice_capture_failed",
+            feature: .voice,
+            stage: .transcribe,
+            data: tags
+        )
+        if reason == .unknown {
+            Diagnostics.log("voice capture failed with unknown reason", level: .error, tags: tags)
+        } else {
+            Diagnostics.log("voice capture failed", level: .warning, tags: tags)
+        }
     }
 
     private func resetRetryContext() {

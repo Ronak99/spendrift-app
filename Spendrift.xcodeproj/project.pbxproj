@@ -10,6 +10,7 @@
 		65FFD3D22F85103A00D901CF /* SpendriftWidget.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = A10000012E3F70000058CDE8 /* SpendriftWidget.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		C50000032E3F70000058CDE8 /* SpendriftShareExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = C10000012E3F70000058CDE8 /* SpendriftShareExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		FE00000C2E3F70000058CDE8 /* PostHog in Frameworks */ = {isa = PBXBuildFile; productRef = FE00000B2E3F70000058CDE8 /* PostHog */; };
+		FE00000E2E3F70000058CDE8 /* Sentry in Frameworks */ = {isa = PBXBuildFile; productRef = FE00000D2E3F70000058CDE8 /* Sentry */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -133,6 +134,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				FE00000C2E3F70000058CDE8 /* PostHog in Frameworks */,
+				FE00000E2E3F70000058CDE8 /* Sentry in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -223,6 +225,7 @@
 			name = Spendrift;
 			packageProductDependencies = (
 				FE00000B2E3F70000058CDE8 /* PostHog */,
+				FE00000D2E3F70000058CDE8 /* Sentry */,
 			);
 			productName = Spendrift;
 			productReference = 65BB664B2E3F644F0058CDE8 /* Spendrift.app */;
@@ -358,6 +361,7 @@
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
 				FE00000A2E3F70000058CDE8 /* XCRemoteSwiftPackageReference "posthog-ios" */,
+				FE00000F2E3F70000058CDE8 /* XCRemoteSwiftPackageReference "sentry-cocoa" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 65BB664C2E3F644F0058CDE8 /* Products */;
@@ -953,6 +957,14 @@
 				minimumVersion = 3.58.0;
 			};
 		};
+		FE00000F2E3F70000058CDE8 /* XCRemoteSwiftPackageReference "sentry-cocoa" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/getsentry/sentry-cocoa";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 8.40.0;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -960,6 +972,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = FE00000A2E3F70000058CDE8 /* XCRemoteSwiftPackageReference "posthog-ios" */;
 			productName = PostHog;
+		};
+		FE00000D2E3F70000058CDE8 /* Sentry */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = FE00000F2E3F70000058CDE8 /* XCRemoteSwiftPackageReference "sentry-cocoa" */;
+			productName = Sentry;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};
