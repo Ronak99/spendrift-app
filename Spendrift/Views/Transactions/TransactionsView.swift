@@ -31,6 +31,8 @@ struct TransactionsView: View {
     @State private var showReceiptCapture = false
     @State private var voiceInline = VoiceInlineCaptureController()
     @State private var receiptShare = ReceiptCaptureController()
+    /// Drives the transient "Transaction added" confirmation after a shared receipt is created.
+    @State private var showReceiptShareCreated = false
     @State private var selectedTransaction: Transaction?
     let voiceCaptureTrigger: UUID?
     let useCompactVoiceCapture: Bool
@@ -90,6 +92,14 @@ struct TransactionsView: View {
 
     private var categoriesSortedByLastUsed: [TransactionCategory] {
         categories.sortedByLastUsage()
+    }
+
+    /// Status of the receipt shared into the app via the Share Extension.
+    /// Scanning takes precedence over the brief post-create confirmation.
+    private var receiptShareStatus: ReceiptShareStatus {
+        if receiptShare.isProcessing { return .scanning }
+        if showReceiptShareCreated { return .created }
+        return .hidden
     }
 
     var body: some View {
@@ -233,7 +243,9 @@ struct TransactionsView: View {
                 }
             }
             .overlay(alignment: .bottom) {
-                if true {
+                VStack(spacing: 8) {
+                    ReceiptShareStatusBar(status: receiptShareStatus)
+
                     VoiceInlineRecordingBar(
                         controller: voiceInline,
                         accounts: accounts,
@@ -285,12 +297,22 @@ struct TransactionsView: View {
             .task(id: receiptImport?.id) {
                 guard let payload = receiptImport else { return }
                 createTransactionSheet = nil
+                showReceiptShareCreated = false
                 receiptShare.processSharedImage(
                     fileURL: payload.fileURL,
                     accounts: accounts,
                     categories: categories,
                     modelContext: modelContext
                 )
+            }
+            .onChange(of: receiptShare.didCreate) { _, created in
+                guard created else { return }
+                receiptShare.acknowledgeCreate()
+                showReceiptShareCreated = true
+                Task {
+                    try? await Task.sleep(for: .seconds(2.2))
+                    showReceiptShareCreated = false
+                }
             }
             .onChange(of: voiceCaptureTrigger) { _, trigger in
                 guard trigger != nil else { return }
