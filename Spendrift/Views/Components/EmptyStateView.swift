@@ -11,9 +11,11 @@ import SwiftUI
 struct EmptyStateAddTransactionMenu {
     let onSpeak: () -> Void
     let onType: () -> Void
-    let onUploadDocument: () -> Void
+    var onUploadDocument: (() -> Void)? = nil
     var onScanReceipt: (() -> Void)? = nil
     var voiceDisabled: Bool = false
+    var typeLabel: String = "Type"
+    var speakLabel: String = "Speak"
 }
 
 struct EmptyStateView: View {
@@ -24,6 +26,7 @@ struct EmptyStateView: View {
     var action: (() -> Void)? = nil
     /// When non-nil, `action` is ignored and the primary control becomes a menu (Speak / Type / Upload document).
     var addTransactionMenu: EmptyStateAddTransactionMenu? = nil
+
 
     var body: some View {
         VStack(spacing: 16) {
@@ -41,56 +44,74 @@ struct EmptyStateView: View {
                 .multilineTextAlignment(.center)
                 .padding(.horizontal)
 
-            if let actionTitle = actionTitle {
-                if let menu = addTransactionMenu {
-                    Menu {
-                        Button(action: menu.onType) {
-                            Label("Type", systemImage: "keyboard")
-                        }
-
-                        Button(action: menu.onSpeak) {
-                            Label("Speak", systemImage: "mic")
-                        }
-                        .disabled(menu.voiceDisabled)
-
-                        Button(action: menu.onUploadDocument) {
-                            Label("Upload document", systemImage: "doc.text")
-                        }
-
-                        if let onScanReceipt = menu.onScanReceipt {
-                            Button(action: onScanReceipt) {
-                                Label("Scan receipt", systemImage: "doc.viewfinder")
-                            }
-                        }
-                    } label: {
-                        Text(actionTitle)
-                            .font(.headline)
-                            .foregroundColor(.white)
-                            .padding(.horizontal, 24)
-                            .padding(.vertical, 12)
-                            .background(Color.accentColor)
-                            .cornerRadius(10)
-                    }
-                    .padding(.top, 8)
-                    .menuOrder(.fixed)
-                    .accessibilityLabel("Add transaction")
-                    .accessibilityIdentifier("transactionsAddMenu")
-                } else if let action = action {
-                    Button(action: action) {
-                        Text(actionTitle)
-                            .font(.headline)
-                            .foregroundColor(.white)
-                            .padding(.horizontal, 24)
-                            .padding(.vertical, 12)
-                            .background(Color.accentColor)
-                            .cornerRadius(10)
-                    }
-                    .padding(.top, 8)
-                }
+            if let actionTitle {
+                primaryAction(for: actionTitle)
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .padding()
+    }
+
+    @ViewBuilder
+    private func primaryAction(for actionTitle: String) -> some View {
+        if let menu = addTransactionMenu {
+            addTransactionMenuButton(title: actionTitle, menu: menu)
+        } else if let action {
+            primaryButton(title: actionTitle, action: action)
+        }
+    }
+
+    private func primaryButton(title: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Text(title)
+                .font(.headline)
+                .foregroundColor(.white)
+                .padding(.horizontal, 24)
+                .padding(.vertical, 12)
+                .background(Color.accentColor)
+                .cornerRadius(10)
+        }
+        .padding(.top, 8)
+    }
+
+    private func addTransactionMenuButton(
+        title: String,
+        menu: EmptyStateAddTransactionMenu
+    ) -> some View {
+        Menu {
+            Button(action: menu.onType) {
+                Label(menu.typeLabel, systemImage: "keyboard")
+            }
+
+            Button(action: menu.onSpeak) {
+                Label(menu.speakLabel, systemImage: "mic")
+            }
+            .disabled(menu.voiceDisabled)
+
+            if let onUploadDocument = menu.onUploadDocument {
+                Button(action: onUploadDocument) {
+                    Label("Upload document", systemImage: "doc.text")
+                }
+            }
+
+            if let onScanReceipt = menu.onScanReceipt {
+                Button(action: onScanReceipt) {
+                    Label("Scan receipt", systemImage: "doc.viewfinder")
+                }
+            }
+        } label: {
+            Text(title)
+                .font(.headline)
+                .foregroundColor(.white)
+                .padding(.horizontal, 24)
+                .padding(.vertical, 12)
+                .background(Color.accentColor)
+                .cornerRadius(10)
+        }
+        .padding(.top, 8)
+        .menuOrder(.fixed)
+        .accessibilityLabel("Add transaction")
+        .accessibilityIdentifier("transactionsAddMenu")
     }
 }
 
@@ -144,12 +165,4 @@ struct EmptyStateFloatingCTA: View {
         action: nil,
         addTransactionMenu: EmptyStateAddTransactionMenu(onSpeak: {}, onType: {}, onUploadDocument: {})
     )
-    
-//    action: nil,
-//    addTransactionMenu: EmptyStateAddTransactionMenu(
-//        onSpeak: { voiceInline.beginCapture() },
-//        onType: { showCreateSheet = true },
-//        onUploadDocument: { showStatementImport = true },
-//        voiceDisabled: voiceInline.blocksNewCapture
-//    )
 }

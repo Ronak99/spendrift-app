@@ -40,6 +40,21 @@ final class ReceiptCaptureController {
         guard let prepared = ReceiptImagePreparer.prepare(image) else {
             state = .error("Couldn't process this image. Try a different photo.")
             Analytics.capture(.receiptScanFailed, [Analytics.Key.reason: "image_prepare_failed"])
+            Diagnostics.breadcrumb(
+                category: .error,
+                message: "receipt_scan_failed",
+                feature: .receipt,
+                stage: .capture,
+                data: [Diagnostics.Tag.reason: "image_prepare_failed"]
+            )
+            Diagnostics.log(
+                "receipt image prepare failed",
+                level: .warning,
+                tags: [
+                    Diagnostics.Tag.reason: "image_prepare_failed",
+                    Diagnostics.Tag.feature: Diagnostics.Feature.receipt.rawValue
+                ]
+            )
             return
         }
 
@@ -70,6 +85,13 @@ final class ReceiptCaptureController {
             ReceiptShareInbox.removeFileIfPresent(fileURL)
             state = .error("Couldn't read the shared image. Try sharing it again.")
             Analytics.capture(.receiptScanFailed, [Analytics.Key.reason: "shared_image_unreadable"])
+            Diagnostics.breadcrumb(
+                category: .error,
+                message: "receipt_scan_failed",
+                feature: .receipt,
+                stage: .capture,
+                data: [Diagnostics.Tag.reason: "shared_image_unreadable"]
+            )
             return
         }
 
@@ -77,6 +99,13 @@ final class ReceiptCaptureController {
             ReceiptShareInbox.removeFileIfPresent(fileURL)
             state = .error("Couldn't process the shared image. Try a different one.")
             Analytics.capture(.receiptScanFailed, [Analytics.Key.reason: "image_prepare_failed"])
+            Diagnostics.breadcrumb(
+                category: .error,
+                message: "receipt_scan_failed",
+                feature: .receipt,
+                stage: .capture,
+                data: [Diagnostics.Tag.reason: "image_prepare_failed"]
+            )
             return
         }
 
@@ -108,6 +137,12 @@ final class ReceiptCaptureController {
         modelContext: ModelContext
     ) {
         state = .processing
+        Diagnostics.breadcrumb(
+            category: .feature,
+            message: "receipt_pipeline_started",
+            feature: .receipt,
+            stage: .parse
+        )
         Task {
             let result = await pipeline.submitImage(
                 imageData: imageData,
@@ -123,6 +158,21 @@ final class ReceiptCaptureController {
                 handleCreateResult(createResult)
             case .failure(let pipelineError):
                 Analytics.capture(.receiptScanFailed, [Analytics.Key.reason: "pipeline_error"])
+                Diagnostics.breadcrumb(
+                    category: .error,
+                    message: "receipt_scan_failed",
+                    feature: .receipt,
+                    stage: .parse,
+                    data: [Diagnostics.Tag.reason: "pipeline_error"]
+                )
+                Diagnostics.log(
+                    "receipt pipeline failed",
+                    level: .warning,
+                    tags: [
+                        Diagnostics.Tag.reason: "pipeline_error",
+                        Diagnostics.Tag.feature: Diagnostics.Feature.receipt.rawValue
+                    ]
+                )
                 state = .error(pipelineErrorMessage(pipelineError))
             }
         }

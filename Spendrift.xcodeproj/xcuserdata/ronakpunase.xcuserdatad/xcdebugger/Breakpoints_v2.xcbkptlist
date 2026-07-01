@@ -64,50 +64,6 @@
             endingLineNumber = "95"
             landmarkName = "parseStatement(pdfData:filename:)"
             landmarkType = "7">
-            <Locations>
-               <Location
-                  uuid = "C20A4156-055F-4022-81C6-16EE1DC96562 - 3c7e708fb25a2ffa"
-                  shouldBeEnabled = "Yes"
-                  ignoreCount = "0"
-                  continueAfterRunningActions = "No"
-                  symbolName = "(1) suspend resume partial function for Spendrift.SpendriftBackendClient.parseStatement(pdfData: Foundation.Data, filename: Swift.String) async throws -&gt; Spendrift.StatementPayload"
-                  moduleName = "Spendrift.debug.dylib"
-                  usesParentBreakpointCondition = "Yes"
-                  urlString = "file:///Volumes/ssd/Development/projects/spendrift/Spendrift/Spendrift/Services/Backend/SpendriftBackendClient.swift"
-                  startingColumnNumber = "9223372036854775807"
-                  endingColumnNumber = "9223372036854775807"
-                  startingLineNumber = "95"
-                  endingLineNumber = "95">
-               </Location>
-               <Location
-                  uuid = "C20A4156-055F-4022-81C6-16EE1DC96562 - 77edfff42712f602"
-                  shouldBeEnabled = "Yes"
-                  ignoreCount = "0"
-                  continueAfterRunningActions = "No"
-                  symbolName = "(2) await resume partial function for Spendrift.SpendriftBackendClient.parseStatement(pdfData: Foundation.Data, filename: Swift.String) async throws -&gt; Spendrift.StatementPayload"
-                  moduleName = "Spendrift.debug.dylib"
-                  usesParentBreakpointCondition = "Yes"
-                  urlString = "file:///Volumes/ssd/Development/projects/spendrift/Spendrift/Spendrift/Services/Backend/SpendriftBackendClient.swift"
-                  startingColumnNumber = "9223372036854775807"
-                  endingColumnNumber = "9223372036854775807"
-                  startingLineNumber = "95"
-                  endingLineNumber = "95">
-               </Location>
-               <Location
-                  uuid = "C20A4156-055F-4022-81C6-16EE1DC96562 - 63bc42b10ac431f5"
-                  shouldBeEnabled = "Yes"
-                  ignoreCount = "0"
-                  continueAfterRunningActions = "No"
-                  symbolName = "(4) suspend resume partial function for Spendrift.SpendriftBackendClient.parseStatement(pdfData: Foundation.Data, filename: Swift.String) async throws -&gt; Spendrift.StatementPayload"
-                  moduleName = "Spendrift.debug.dylib"
-                  usesParentBreakpointCondition = "Yes"
-                  urlString = "file:///Volumes/ssd/Development/projects/spendrift/Spendrift/Spendrift/Services/Backend/SpendriftBackendClient.swift"
-                  startingColumnNumber = "9223372036854775807"
-                  endingColumnNumber = "9223372036854775807"
-                  startingLineNumber = "95"
-                  endingLineNumber = "95">
-               </Location>
-            </Locations>
          </BreakpointContent>
       </BreakpointProxy>
       <BreakpointProxy
@@ -152,40 +108,10 @@
             filePath = "Spendrift/Views/Transactions/TransactionsView.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "251"
-            endingLineNumber = "251"
+            startingLineNumber = "248"
+            endingLineNumber = "248"
             landmarkName = "body"
             landmarkType = "24">
-            <Locations>
-               <Location
-                  uuid = "39C88D83-5CAC-4028-96A5-9C46617A8F53 - 662cbac37265a973"
-                  shouldBeEnabled = "Yes"
-                  ignoreCount = "0"
-                  continueAfterRunningActions = "No"
-                  symbolName = "closure #1 () -&gt; &lt;&lt;opaque return type of SwiftUI.View.task&lt;&#x3c4;_0_0 where &#x3c4;_1_0: Swift.Equatable&gt;(id: &#x3c4;_1_0, priority: Swift.TaskPriority, _: @Sendable () async -&gt; ()) -&gt; some&gt;&gt;.0 in Spendrift.TransactionsView.body.getter : some"
-                  moduleName = "Spendrift.debug.dylib"
-                  usesParentBreakpointCondition = "Yes"
-                  urlString = "file:///Volumes/ssd/Development/projects/spendrift/Spendrift/Spendrift/Views/Transactions/TransactionsView.swift"
-                  startingColumnNumber = "9223372036854775807"
-                  endingColumnNumber = "9223372036854775807"
-                  startingLineNumber = "251"
-                  endingLineNumber = "251">
-               </Location>
-               <Location
-                  uuid = "39C88D83-5CAC-4028-96A5-9C46617A8F53 - 3c35d6ddcb554332"
-                  shouldBeEnabled = "Yes"
-                  ignoreCount = "0"
-                  continueAfterRunningActions = "No"
-                  symbolName = "closure #8 (Spendrift.VoiceInlineManualSheetPayload) -&gt; Spendrift.UpdateTransactionSheet in closure #1 () -&gt; &lt;&lt;opaque return type of SwiftUI.View.task&lt;&#x3c4;_0_0 where &#x3c4;_1_0: Swift.Equatable&gt;(id: &#x3c4;_1_0, priority: Swift.TaskPriority, _: @Sendable () async -&gt; ()) -&gt; some&gt;&gt;.0 in Spendrift.TransactionsView.body.getter : some"
-                  moduleName = "Spendrift.debug.dylib"
-                  usesParentBreakpointCondition = "Yes"
-                  urlString = "file:///Volumes/ssd/Development/projects/spendrift/Spendrift/Spendrift/Views/Transactions/TransactionsView.swift"
-                  startingColumnNumber = "9223372036854775807"
-                  endingColumnNumber = "9223372036854775807"
-                  startingLineNumber = "251"
-                  endingLineNumber = "251">
-               </Location>
-            </Locations>
          </BreakpointContent>
       </BreakpointProxy>
    </Breakpoints>

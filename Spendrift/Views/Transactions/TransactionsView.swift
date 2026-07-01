@@ -34,6 +34,7 @@ struct TransactionsView: View {
     /// Drives the transient "Transaction added" confirmation after a shared receipt is created.
     @State private var showReceiptShareCreated = false
     @State private var selectedTransaction: Transaction?
+    @AppStorage("didFireFirstTransactionCreated") private var hasEverCreatedTransaction = false
     let voiceCaptureTrigger: UUID?
     let useCompactVoiceCapture: Bool
     let shortcutImportedAudio: ShortcutImportedAudioPayload?
@@ -100,6 +101,25 @@ struct TransactionsView: View {
         if receiptShare.isProcessing { return .scanning }
         if showReceiptShareCreated { return .created }
         return .hidden
+    /// Empty-state add menu. Before the user has ever created a transaction it shows a focused
+    /// two-option menu (Create Expense / Speak Expense); afterwards it mirrors the toolbar add menu.
+    private var emptyStateAddMenu: EmptyStateAddTransactionMenu {
+        if hasEverCreatedTransaction {
+            return EmptyStateAddTransactionMenu(
+                onSpeak: { voiceInline.beginCapture() },
+                onType: { createTransactionSheet = .standard },
+                onUploadDocument: { showStatementImport = true },
+                onScanReceipt: { showReceiptCapture = true },
+                voiceDisabled: voiceInline.blocksNewCapture
+            )
+        }
+        return EmptyStateAddTransactionMenu(
+            onSpeak: { voiceInline.beginCapture() },
+            onType: { createTransactionSheet = .quickStartFirst },
+            voiceDisabled: voiceInline.blocksNewCapture,
+            typeLabel: "Create Expense",
+            speakLabel: "Speak Expense"
+        )
     }
 
     var body: some View {
@@ -167,9 +187,7 @@ struct TransactionsView: View {
                         title: "No Transactions",
                         description: "Get started by adding your first transaction for \(periodViewModel.periodDescription)",
                         actionTitle: "Add Transaction",
-                        action: {
-                            createTransactionSheet = .quickStartFirst
-                        },
+                        addTransactionMenu: emptyStateAddMenu,
                     )
                 } else {
                     List {

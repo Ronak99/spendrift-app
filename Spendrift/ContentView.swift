@@ -89,6 +89,11 @@ struct ContentView: View {
         }
         .onChange(of: selectedTab) { _, newTab in
             Analytics.capture(.screenViewed, [Analytics.Key.tab: Self.tabName(for: newTab)])
+            Diagnostics.breadcrumb(
+                category: .navigation,
+                message: "tab_changed",
+                data: [Diagnostics.Tag.tab: Self.tabName(for: newTab)]
+            )
         }
         .onReceive(NotificationCenter.default.publisher(for: .voiceExpenseIntentTriggered)) { _ in
             handleVoiceIntentLaunchIfNeeded()
