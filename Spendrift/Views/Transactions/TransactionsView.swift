@@ -35,6 +35,11 @@ struct TransactionsView: View {
     /// Drives the transient "Transaction added" confirmation after a shared receipt is created.
     @State private var showReceiptShareCreated = false
     @State private var selectedTransaction: Transaction?
+    /// Ids of the trigger payloads already handled, so a `.task(id:)` that restarts on
+    /// tab reappearance does not reprocess the same (already-consumed) file and resurrect
+    /// a previously dismissed error.
+    @State private var lastProcessedReceiptImportID: UUID?
+    @State private var lastProcessedShortcutAudioID: UUID?
     @AppStorage("didFireFirstTransactionCreated") private var hasEverCreatedTransaction = false
     let voiceCaptureTrigger: UUID?
     let useCompactVoiceCapture: Bool
@@ -379,6 +384,8 @@ struct TransactionsView: View {
             }
             .task(id: receiptImport?.id) {
                 guard let payload = receiptImport else { return }
+                guard lastProcessedReceiptImportID != payload.id else { return }
+                lastProcessedReceiptImportID = payload.id
                 createTransactionSheet = nil
                 showReceiptShareCreated = false
                 receiptShare.processSharedImage(
@@ -404,6 +411,8 @@ struct TransactionsView: View {
             }
             .task(id: shortcutImportedAudio?.id) {
                 guard let payload = shortcutImportedAudio else { return }
+                guard lastProcessedShortcutAudioID != payload.id else { return }
+                lastProcessedShortcutAudioID = payload.id
                 createTransactionSheet = nil
                 voiceInline.processImportedAudio(
                     fileURL: payload.fileURL,
