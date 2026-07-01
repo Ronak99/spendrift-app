@@ -57,7 +57,11 @@ struct ReceiptCaptureView: View {
                     }
                     .disabled(!cameraAvailable || controller.isProcessing)
 
-                    PhotosPicker(selection: $photoItem, matching: .images, photoLibrary: .shared()) {
+                    // NOTE: Do not pass `photoLibrary: .shared()` here. Doing so runs the
+                    // picker in-process and requires photo-library authorization, which makes
+                    // iOS repeatedly prompt for access and re-present the picker. The default
+                    // out-of-process picker needs no permission and opens exactly once.
+                    PhotosPicker(selection: $photoItem, matching: .images) {
                         Label("Choose from Library", systemImage: "photo.on.rectangle")
                     }
                     .disabled(controller.isProcessing)
