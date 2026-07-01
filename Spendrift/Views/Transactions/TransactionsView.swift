@@ -97,11 +97,27 @@ struct TransactionsView: View {
     }
 
     /// Status of the receipt shared into the app via the Share Extension.
-    /// Scanning takes precedence over the brief post-create confirmation.
+    /// Scanning is shown by the compact processing capsule below; this bar only
+    /// surfaces the brief post-create confirmation.
     private var receiptShareStatus: ReceiptShareStatus {
-        if receiptShare.isProcessing { return .scanning }
         if showReceiptShareCreated { return .created }
         return .hidden
+    }
+
+    private var cameraAvailable: Bool {
+        UIImagePickerController.isSourceTypeAvailable(.camera)
+    }
+
+    private var receiptScanActions: ReceiptScanMenuActions {
+        ReceiptScanMenuActions(
+            onTakePhoto: { showReceiptCamera = true },
+            onChooseFromLibrary: { showReceiptLibrary = true },
+            cameraDisabled: !cameraAvailable,
+            disabled: receiptShare.isProcessing
+        )
+    }
+
+
     /// Empty-state add menu. Before the user has ever created a transaction it shows a focused
     /// two-option menu (Create Expense / Speak Expense); afterwards it mirrors the toolbar add menu.
     private var emptyStateAddMenu: EmptyStateAddTransactionMenu {
@@ -110,19 +126,19 @@ struct TransactionsView: View {
                 onSpeak: { voiceInline.beginCapture() },
                 onType: { createTransactionSheet = .standard },
                 onUploadDocument: { showStatementImport = true },
-                onScanReceipt: { showReceiptCapture = true },
+                receiptScan: receiptScanActions,
                 voiceDisabled: voiceInline.blocksNewCapture
             )
         }
         return EmptyStateAddTransactionMenu(
             onSpeak: { voiceInline.beginCapture() },
             onType: { createTransactionSheet = .quickStartFirst },
+            onUploadDocument: { showStatementImport = true },
             voiceDisabled: voiceInline.blocksNewCapture,
             typeLabel: "Create Expense",
-            speakLabel: "Speak Expense"
+            speakLabel: "Speak Expense",
+            showsUploadAndScan: false
         )
-    private var cameraAvailable: Bool {
-        UIImagePickerController.isSourceTypeAvailable(.camera)
     }
 
     var body: some View {
@@ -190,18 +206,7 @@ struct TransactionsView: View {
                         title: "No Transactions",
                         description: "Get started by adding your first transaction for \(periodViewModel.periodDescription)",
                         actionTitle: "Add Transaction",
-                        addTransactionMenu: EmptyStateAddTransactionMenu(
-                            onSpeak: { voiceInline.beginCapture() },
-                            onType: { createTransactionSheet = .quickStartFirst },
-                            onUploadDocument: { showStatementImport = true },
-                            receiptScan: ReceiptScanMenuActions(
-                                onTakePhoto: { showReceiptCamera = true },
-                                onChooseFromLibrary: { showReceiptLibrary = true },
-                                cameraDisabled: !cameraAvailable,
-                                disabled: receiptShare.isProcessing
-                            ),
-                            voiceDisabled: voiceInline.blocksNewCapture
-                        )
+                        addTransactionMenu: emptyStateAddMenu
                     )
                 } else {
                     List {
@@ -289,29 +294,31 @@ struct TransactionsView: View {
             .overlay(alignment: .bottom) {
                 VStack(spacing: 8) {
                     ReceiptShareStatusBar(status: receiptShareStatus)
-                if receiptShare.isProcessing {
-                    HStack(spacing: 12) {
-                        ProgressView()
-                        Text("Reading receipt…")
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
+
+                    if receiptShare.isProcessing {
+                        HStack(spacing: 12) {
+                            ProgressView()
+                            Text("Reading receipt…")
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
+                        }
+                        .padding(.horizontal, 20)
+                        .padding(.vertical, 14)
+                        .background(
+                            Capsule()
+                                .fill(.ultraThinMaterial)
+                                .shadow(color: .black.opacity(0.12), radius: 10, y: 4)
+                        )
+                        .padding(.bottom, 16)
+                        .transition(.move(edge: .bottom).combined(with: .opacity))
+                    } else {
+                        VoiceInlineRecordingBar(
+                            controller: voiceInline,
+                            accounts: accounts,
+                            categories: categoriesSortedByLastUsed
+                        )
+                        .transition(.move(edge: .bottom).combined(with: .opacity))
                     }
-                    .padding(.horizontal, 20)
-                    .padding(.vertical, 14)
-                    .background(
-                        Capsule()
-                            .fill(.ultraThinMaterial)
-                            .shadow(color: .black.opacity(0.12), radius: 10, y: 4)
-                    )
-                    .padding(.bottom, 16)
-                    .transition(.move(edge: .bottom).combined(with: .opacity))
-                } else {
-                    VoiceInlineRecordingBar(
-                        controller: voiceInline,
-                        accounts: accounts,
-                        categories: categoriesSortedByLastUsed
-                    )
-                    .transition(.move(edge: .bottom).combined(with: .opacity))
                 }
             }
             .animation(.spring(response: 0.38, dampingFraction: 0.86), value: voiceInline.displayState)

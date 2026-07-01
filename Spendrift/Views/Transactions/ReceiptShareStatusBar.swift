@@ -2,10 +2,9 @@
 //  ReceiptShareStatusBar.swift
 //  Spendrift
 //
-//  Bottom status bar shown while a receipt shared into the app (via the Share
-//  Extension) is being scanned, and briefly again once a transaction is created.
-//  This is the visible counterpart to `ReceiptCaptureController`'s processing state
-//  for the share-sheet flow, mirroring `VoiceInlineRecordingBar`'s look.
+//  Bottom status bar shown briefly once a transaction is created from a receipt
+//  shared into the app (via the Share Extension). Scanning progress itself is
+//  surfaced by the compact processing capsule in `TransactionsView`.
 //
 
 import SwiftUI
@@ -14,8 +13,6 @@ import SwiftUI
 enum ReceiptShareStatus: Equatable {
     /// Nothing to show.
     case hidden
-    /// The shared image is being read by the backend.
-    case scanning
     /// A transaction was created directly (auto-dismisses).
     case created
 }
@@ -28,12 +25,6 @@ struct ReceiptShareStatusBar: View {
             switch status {
             case .hidden:
                 EmptyView()
-            case .scanning:
-                content(
-                    icon: { ProgressView().tint(.accentColor) },
-                    title: "Scanning receipt…",
-                    subtitle: "Reading the details from your image."
-                )
             case .created:
                 content(
                     icon: {
@@ -80,13 +71,6 @@ struct ReceiptShareStatusBar: View {
 }
 
 #if DEBUG
-#Preview("Scanning") {
-    ZStack(alignment: .bottom) {
-        Color(.systemGroupedBackground).ignoresSafeArea()
-        ReceiptShareStatusBar(status: .scanning)
-    }
-}
-
 #Preview("Created") {
     ZStack(alignment: .bottom) {
         Color(.systemGroupedBackground).ignoresSafeArea()
