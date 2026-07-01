@@ -103,30 +103,6 @@ enum Diagnostics {
         }
     }
 
-    // MARK: - Test crash (DEBUG only)
-
-    #if DEBUG
-    /// Sends an immediate error, flushes, then crashes natively so Sentry can
-    /// capture the crash report on the next launch. Run without the Xcode
-    /// debugger attached for reliable crash capture (launch from home screen).
-    static func triggerTestCrash() {
-        guard !ProcessInfo.processInfo.arguments.contains("-UITesting") else { return }
-        breadcrumb(
-            category: .feature,
-            message: "sentry_test_crash_triggered",
-            feature: .app,
-            stage: .bootstrap
-        )
-        log(
-            "Sentry connectivity test — if you see this, the tunnel works",
-            level: .error,
-            tags: [Tag.feature: Feature.app.rawValue, Tag.stage: Stage.bootstrap.rawValue]
-        )
-        SentrySDK.flush(timeout: 2)
-        SentrySDK.crash()
-    }
-    #endif
-
     // MARK: - Breadcrumbs
 
     /// Cheap verbose trail for reconstructing context before a crash or error.

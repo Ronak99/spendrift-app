@@ -180,7 +180,6 @@ struct TransactionsView: View {
                         description: "Get started by adding your first transaction for \(periodViewModel.periodDescription)",
                         actionTitle: "Add Transaction",
                         addTransactionMenu: emptyStateAddMenu,
-                        debugCrashOnCTATap: true,
                     )
                 } else {
                     List {

@@ -26,8 +26,6 @@ struct EmptyStateView: View {
     var action: (() -> Void)? = nil
     /// When non-nil, `action` is ignored and the primary control becomes a menu (Speak / Type / Upload document).
     var addTransactionMenu: EmptyStateAddTransactionMenu? = nil
-    /// Replaces the add menu with a button that triggers a Sentry test crash on tap.
-    var debugCrashOnCTATap: Bool = false
 
 
     var body: some View {
@@ -56,21 +54,11 @@ struct EmptyStateView: View {
 
     @ViewBuilder
     private func primaryAction(for actionTitle: String) -> some View {
-        #if DEBUG
-        if debugCrashOnCTATap {
-            primaryButton(title: actionTitle, action: Diagnostics.triggerTestCrash)
-        } else if let menu = addTransactionMenu {
-            addTransactionMenuButton(title: actionTitle, menu: menu)
-        } else if let action {
-            primaryButton(title: actionTitle, action: action)
-        }
-        #else
         if let menu = addTransactionMenu {
             addTransactionMenuButton(title: actionTitle, menu: menu)
         } else if let action {
             primaryButton(title: actionTitle, action: action)
         }
-        #endif
     }
 
     private func primaryButton(title: String, action: @escaping () -> Void) -> some View {
