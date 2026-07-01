@@ -7,12 +7,20 @@
 
 import SwiftUI
 
+/// Take photo / choose from library actions for the Scan receipt submenu.
+struct ReceiptScanMenuActions {
+    let onTakePhoto: () -> Void
+    let onChooseFromLibrary: () -> Void
+    var cameraDisabled: Bool = false
+    var disabled: Bool = false
+}
+
 /// Actions for the transactions empty-state **Add Transaction** control when it should match the toolbar add menu.
 struct EmptyStateAddTransactionMenu {
     let onSpeak: () -> Void
     let onType: () -> Void
-    var onUploadDocument: (() -> Void)? = nil
-    var onScanReceipt: (() -> Void)? = nil
+    let onUploadDocument: () -> Void
+    var receiptScan: ReceiptScanMenuActions? = nil
     var voiceDisabled: Bool = false
     var typeLabel: String = "Type"
     var speakLabel: String = "Speak"
@@ -44,8 +52,62 @@ struct EmptyStateView: View {
                 .multilineTextAlignment(.center)
                 .padding(.horizontal)
 
-            if let actionTitle {
-                primaryAction(for: actionTitle)
+            if let actionTitle = actionTitle {
+                if let menu = addTransactionMenu {
+                    Menu {
+                        Button(action: menu.onType) {
+                            Label("Type", systemImage: "keyboard")
+                        }
+
+                        Button(action: menu.onSpeak) {
+                            Label("Speak", systemImage: "mic")
+                        }
+                        .disabled(menu.voiceDisabled)
+
+                        Button(action: menu.onUploadDocument) {
+                            Label("Upload document", systemImage: "doc.text")
+                        }
+
+                        if let scan = menu.receiptScan {
+                            Menu {
+                                Button(action: scan.onTakePhoto) {
+                                    Label("Take Photo", systemImage: "camera")
+                                }
+                                .disabled(scan.cameraDisabled || scan.disabled)
+
+                                Button(action: scan.onChooseFromLibrary) {
+                                    Label("Choose from Library", systemImage: "photo.on.rectangle")
+                                }
+                                .disabled(scan.disabled)
+                            } label: {
+                                Label("Scan receipt", systemImage: "doc.viewfinder")
+                            }
+                        }
+                    } label: {
+                        Text(actionTitle)
+                            .font(.headline)
+                            .foregroundColor(.white)
+                            .padding(.horizontal, 24)
+                            .padding(.vertical, 12)
+                            .background(Color.accentColor)
+                            .cornerRadius(10)
+                    }
+                    .padding(.top, 8)
+                    .menuOrder(.fixed)
+                    .accessibilityLabel("Add transaction")
+                    .accessibilityIdentifier("transactionsAddMenu")
+                } else if let action = action {
+                    Button(action: action) {
+                        Text(actionTitle)
+                            .font(.headline)
+                            .foregroundColor(.white)
+                            .padding(.horizontal, 24)
+                            .padding(.vertical, 12)
+                            .background(Color.accentColor)
+                            .cornerRadius(10)
+                    }
+                    .padding(.top, 8)
+                }
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)

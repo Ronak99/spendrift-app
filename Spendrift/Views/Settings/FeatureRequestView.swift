@@ -4,16 +4,16 @@
 //
 
 import MessageUI
-import PhotosUI
 import SwiftUI
+import UIKit
 
 struct FeatureRequestView: View {
     @Environment(\.dismiss) private var dismiss
     @AppStorage(Color.selectedThemeIndexKey) private var selectedThemeIndex = Color.defaultThemeIndex
 
     @State private var requestText: String = ""
-    @State private var selectedPhotoItem: PhotosPickerItem? = nil
     @State private var selectedImageData: Data? = nil
+    @State private var showLibrary = false
     @State private var showMailComposer  = false
     @State private var showMailUnavailableAlert = false
     @State private var showSentConfirmation = false
@@ -49,11 +49,9 @@ struct FeatureRequestView: View {
                 }
 
                 Section {
-                    PhotosPicker(
-                        selection: $selectedPhotoItem,
-                        matching: .images,
-                        photoLibrary: .shared()
-                    ) {
+                    Button {
+                        showLibrary = true
+                    } label: {
                         HStack {
                             Label("Attach a screenshot", systemImage: "photo.on.rectangle.angled")
                             Spacer()
@@ -61,11 +59,6 @@ struct FeatureRequestView: View {
                                 Image(systemName: "checkmark.circle.fill")
                                     .foregroundStyle(accent)
                             }
-                        }
-                    }
-                    .onChange(of: selectedPhotoItem) { _, newItem in
-                        Task {
-                            selectedImageData = try? await newItem?.loadTransferable(type: Data.self)
                         }
                     }
 
@@ -83,7 +76,6 @@ struct FeatureRequestView: View {
                         .padding(.vertical, 4)
 
                         Button(role: .destructive) {
-                            selectedPhotoItem = nil
                             selectedImageData = nil
                         } label: {
                             Label("Remove screenshot", systemImage: "trash")
@@ -122,6 +114,15 @@ struct FeatureRequestView: View {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") { dismiss() }
                 }
+            }
+            .sheet(isPresented: $showLibrary) {
+                PhotoLibraryPicker { image in
+                    showLibrary = false
+                    if let image {
+                        selectedImageData = image.jpegData(compressionQuality: 0.85)
+                    }
+                }
+                .ignoresSafeArea()
             }
             .sheet(isPresented: $showMailComposer) {
                 MailComposerView(
