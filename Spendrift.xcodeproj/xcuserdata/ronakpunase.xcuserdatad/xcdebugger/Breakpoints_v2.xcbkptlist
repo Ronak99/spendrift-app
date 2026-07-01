@@ -92,8 +92,8 @@
             filePath = "Spendrift/Views/Transactions/TransactionsView.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "152"
-            endingLineNumber = "152"
+            startingLineNumber = "151"
+            endingLineNumber = "151"
             landmarkName = "body"
             landmarkType = "24">
          </BreakpointContent>
@@ -108,8 +108,13 @@
             filePath = "Spendrift/Views/Transactions/TransactionsView.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
+<<<<<<< HEAD
             startingLineNumber = "248"
             endingLineNumber = "248"
+=======
+            startingLineNumber = "250"
+            endingLineNumber = "250"
+>>>>>>> 3e0f31c (refactor: replace PhotosPicker with custom PhotoLibraryPicker in FeatureRequestView and ReceiptCaptureView)
             landmarkName = "body"
             landmarkType = "24">
          </BreakpointContent>

@@ -9,7 +9,6 @@
 
 import SwiftUI
 import SwiftData
-import PhotosUI
 import UIKit
 
 struct ReceiptCaptureView: View {
@@ -19,7 +18,7 @@ struct ReceiptCaptureView: View {
     @Query(sort: \TransactionCategory.name) private var categories: [TransactionCategory]
 
     @State private var controller = ReceiptCaptureController()
-    @State private var photoItem: PhotosPickerItem?
+    @State private var showLibrary = false
     @State private var showCamera = false
 
     private var cameraAvailable: Bool {
@@ -57,11 +56,14 @@ struct ReceiptCaptureView: View {
                     }
                     .disabled(!cameraAvailable || controller.isProcessing)
 
-                    // NOTE: Do not pass `photoLibrary: .shared()` here. Doing so runs the
-                    // picker in-process and requires photo-library authorization, which makes
-                    // iOS repeatedly prompt for access and re-present the picker. The default
-                    // out-of-process picker needs no permission and opens exactly once.
-                    PhotosPicker(selection: $photoItem, matching: .images) {
+                    // NOTE: Use PhotoLibraryPicker (UIKit PHPickerViewController) rather than
+                    // SwiftUI's `PhotosPicker`. Embedding `PhotosPicker` as a row inside a Form
+                    // that lives in a sheet makes iOS repeatedly dismiss and re-present the
+                    // gallery (it "blinks"). PHPicker presents exactly once and needs no
+                    // photo-library permission.
+                    Button {
+                        showLibrary = true
+                    } label: {
                         Label("Choose from Library", systemImage: "photo.on.rectangle")
                     }
                     .disabled(controller.isProcessing)
@@ -98,9 +100,14 @@ struct ReceiptCaptureView: View {
                 }
                 .ignoresSafeArea()
             }
-            .onChange(of: photoItem) { _, newItem in
-                guard let newItem else { return }
-                Task { await loadPickedPhoto(newItem) }
+            .sheet(isPresented: $showLibrary) {
+                PhotoLibraryPicker { image in
+                    showLibrary = false
+                    if let image {
+                        handle(image: image)
+                    }
+                }
+                .ignoresSafeArea()
             }
             .alert("Couldn't Scan Receipt", isPresented: Binding(
                 get: { if case .error = controller.state { return true } else { return false } },
@@ -124,20 +131,6 @@ struct ReceiptCaptureView: View {
                     draft: payload.draft,
                     voiceReviewHint: payload.hint
                 )
-            }
-        }
-    }
-
-    private func loadPickedPhoto(_ item: PhotosPickerItem) async {
-        if let data = try? await item.loadTransferable(type: Data.self),
-           let image = UIImage(data: data) {
-            await MainActor.run {
-                photoItem = nil
-                handle(image: image)
-            }
-        } else {
-            await MainActor.run {
-                photoItem = nil
             }
         }
     }
