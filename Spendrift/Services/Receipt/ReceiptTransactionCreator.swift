@@ -77,8 +77,11 @@ enum ReceiptTransactionCreator {
         if !(draft.amount ?? 0 > 0) { missing.append("Amount") }
         if draft.account == nil { missing.append("Account") }
         if draft.category == nil { missing.append("Category") }
-        if draft.notes.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-            missing.append("Notes")
+        // Notes are optional: mirror the voice flow and never block on empty notes.
+        // The receipt had no legible date, so route to the review sheet (pre-filled
+        // with today) to let the user confirm it rather than defaulting silently.
+        if payload.transaction?.date == nil {
+            missing.append("Date")
         }
 
         guard missing.isEmpty,
