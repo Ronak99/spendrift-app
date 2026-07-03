@@ -71,11 +71,17 @@ final class ShareViewController: UIViewController {
             let didPersist = data.map { self.persist(imageData: $0, provider: provider) } ?? false
 
             DispatchQueue.main.async {
-                if didPersist {
-                    self.openHostApp {
-                        self.complete()
+                guard didPersist else {
+                    self.complete()
+                    return
+                }
+                self.openHostApp { opened in
+                    if !opened {
+                        // The image is already saved in the App Group inbox, so it will
+                        // import the next time the user opens Spendrift manually.
+                        self.statusLabel.text = "Saved. Open Spendrift to finish importing."
+                        self.activityIndicator.stopAnimating()
                     }
-                } else {
                     self.complete()
                 }
             }
@@ -126,35 +132,28 @@ final class ShareViewController: UIViewController {
         return "jpg"
     }
 
-    private func openHostApp(completion: @escaping () -> Void) {
-        guard let context = extensionContext else {
-            completion()
-            return
-        }
-
-        // The supported API for launching the containing app from a share extension.
-        // Do not call `completeRequest` until this finishes or the open may never fire.
-        context.open(Inbox.openURL) { [weak self] success in
-            DispatchQueue.main.async {
-                if !success {
-                    self?.openHostAppViaResponderChain()
-                }
-                completion()
-            }
-        }
-    }
-
-    /// Legacy fallback when `extensionContext.open` is unavailable or fails.
-    private func openHostAppViaResponderChain() {
-        let selector = NSSelectorFromString("openURL:")
+    /// Launches the containing app by walking the responder chain to reach the
+    /// `UIApplication` instance and calling the modern `open(_:options:completionHandler:)`.
+    ///
+    /// `NSExtensionContext.open` is not honored for share extensions (it always reports
+    /// failure), and the deprecated `openURL:` selector is a no-op on iOS 18+ (it always
+    /// returns `false`). Casting to `UIApplication` is allowed here because only
+    /// `UIApplication.shared` is marked unavailable in extensions, not the instance method.
+    ///
+    /// `completion` receives whether the open was dispatched successfully. Do not call
+    /// `completeRequest` until it fires, or the pending open may be cancelled.
+    private func openHostApp(completion: @escaping (Bool) -> Void) {
         var responder: UIResponder? = self
         while let current = responder {
-            if current.responds(to: selector) {
-                current.perform(selector, with: Inbox.openURL)
+            if let application = current as? UIApplication {
+                application.open(Inbox.openURL, options: [:]) { success in
+                    DispatchQueue.main.async { completion(success) }
+                }
                 return
             }
             responder = current.next
         }
+        completion(false)
     }
 
     private func complete() {
