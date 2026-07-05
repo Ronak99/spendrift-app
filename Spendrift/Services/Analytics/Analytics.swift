@@ -20,13 +20,20 @@ enum Analytics {
         case transactionCreated = "transaction_created"
         case firstTransactionCreated = "first_transaction_created"
         case voiceCaptureFailed = "voice_capture_failed"
+        case voiceCaptureRetried = "voice_capture_retried"
         case pdfImportFailed = "pdf_import_failed"
+        case receiptScanFailed = "receipt_scan_failed"
         case shortcutUsed = "shortcut_used"
         case widgetTapped = "widget_tapped"
         case categoryCreated = "category_created"
         case categoryDeleted = "category_deleted"
+        case categoriesConfigured = "categories_configured"
         case accountCreated = "account_created"
         case accountDeleted = "account_deleted"
+        case notificationPermissionRequested = "notification_permission_requested"
+        case notificationPermissionGranted = "notification_permission_granted"
+        case notificationScheduled = "notification_scheduled"
+        case notificationOpened = "notification_opened"
     }
 
     /// Property keys. Keep flat and free of PII — never send transaction amounts or notes.
@@ -39,10 +46,16 @@ enum Analytics {
         static let tab = "tab"
         static let kind = "kind"
         static let reason = "reason"
+        static let source = "source"
+        static let isRetry = "is_retry"
         static let version = "version"
         static let daysSinceInstall = "days_since_install"
         static let name = "name"
+        static let isDefault = "is_default"
         static let initialBalance = "initial_balance"
+        static let granted = "granted"
+        static let removedCount = "removed_count"
+        static let keptCount = "kept_count"
     }
 
     private static let optOutDefaultsKey = "analyticsOptOut"
@@ -89,13 +102,24 @@ enum Analytics {
     /// Captures `transaction_created` and, on the very first transaction ever,
     /// the one-shot `first_transaction_created` activation event.
     /// `method` is one of "manual" / "voice" / "pdf"; `count` covers batch imports.
-    static func captureTransactionCreated(method: String, type: String, count: Int = 1) {
-        capture(.transactionCreated, [Key.method: method, Key.type: type, Key.count: count])
+    /// `isRetry` flags transactions that landed only after a voice retry, so retry
+    /// success rate = `transaction_created`(is_retry) / `voice_capture_retried`.
+    static func captureTransactionCreated(method: String, type: String, count: Int = 1, isRetry: Bool = false) {
+        capture(.transactionCreated, [
+            Key.method: method,
+            Key.type: type,
+            Key.count: count,
+            Key.isRetry: isRetry
+        ])
 
         let defaults = UserDefaults.standard
         guard !defaults.bool(forKey: firstTransactionKey) else { return }
         defaults.set(true, forKey: firstTransactionKey)
         capture(.firstTransactionCreated, [Key.method: method])
+
+        // Surface the contextual notification opt-in prompt (after first transaction,
+        // never at cold start). UI lives in the view layer, so just broadcast.
+        NotificationCenter.default.post(name: .firstTransactionCreated, object: nil)
     }
 
     // MARK: - Opt-out

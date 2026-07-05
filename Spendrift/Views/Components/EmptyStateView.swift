@@ -7,12 +7,25 @@
 
 import SwiftUI
 
+/// Take photo / choose from library actions for the Scan receipt submenu.
+struct ReceiptScanMenuActions {
+    let onTakePhoto: () -> Void
+    let onChooseFromLibrary: () -> Void
+    var cameraDisabled: Bool = false
+    var disabled: Bool = false
+}
+
 /// Actions for the transactions empty-state **Add Transaction** control when it should match the toolbar add menu.
 struct EmptyStateAddTransactionMenu {
     let onSpeak: () -> Void
     let onType: () -> Void
     let onUploadDocument: () -> Void
+    var receiptScan: ReceiptScanMenuActions? = nil
     var voiceDisabled: Bool = false
+    var typeLabel: String = "Type"
+    var speakLabel: String = "Speak"
+    /// When false, only Type and Speak are shown (first-transaction onboarding menu).
+    var showsUploadAndScan: Bool = true
 }
 
 struct EmptyStateView: View {
@@ -40,21 +53,10 @@ struct EmptyStateView: View {
                 .multilineTextAlignment(.center)
                 .padding(.horizontal)
 
-            if let actionTitle = actionTitle {
+            if let actionTitle {
                 if let menu = addTransactionMenu {
                     Menu {
-                        Button(action: menu.onSpeak) {
-                            Label("Speak", systemImage: "mic")
-                        }
-                        .disabled(menu.voiceDisabled)
-
-                        Button(action: menu.onType) {
-                            Label("Type", systemImage: "keyboard")
-                        }
-
-                        Button(action: menu.onUploadDocument) {
-                            Label("Upload document", systemImage: "doc.text")
-                        }
+                        addTransactionMenuItems(menu: menu)
                     } label: {
                         Text(actionTitle)
                             .font(.headline)
@@ -65,9 +67,10 @@ struct EmptyStateView: View {
                             .cornerRadius(10)
                     }
                     .padding(.top, 8)
+                    .menuOrder(.fixed)
                     .accessibilityLabel("Add transaction")
                     .accessibilityIdentifier("transactionsAddMenu")
-                } else if let action = action {
+                } else if let action {
                     Button(action: action) {
                         Text(actionTitle)
                             .font(.headline)
@@ -83,6 +86,40 @@ struct EmptyStateView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .padding()
+    }
+
+    @ViewBuilder
+    private func addTransactionMenuItems(menu: EmptyStateAddTransactionMenu) -> some View {
+        Button(action: menu.onType) {
+            Label(menu.typeLabel, systemImage: "keyboard")
+        }
+
+        Button(action: menu.onSpeak) {
+            Label(menu.speakLabel, systemImage: "mic")
+        }
+        .disabled(menu.voiceDisabled)
+
+        if menu.showsUploadAndScan {
+            Button(action: menu.onUploadDocument) {
+                Label("Upload document", systemImage: "doc.text")
+            }
+        }
+
+        if let scan = menu.receiptScan {
+            Menu {
+                Button(action: scan.onTakePhoto) {
+                    Label("Take Photo", systemImage: "camera")
+                }
+                .disabled(scan.cameraDisabled || scan.disabled)
+
+                Button(action: scan.onChooseFromLibrary) {
+                    Label("Choose from Library", systemImage: "photo.on.rectangle")
+                }
+                .disabled(scan.disabled)
+            } label: {
+                Label("Scan receipt", systemImage: "doc.viewfinder")
+            }
+        }
     }
 }
 
@@ -136,12 +173,4 @@ struct EmptyStateFloatingCTA: View {
         action: nil,
         addTransactionMenu: EmptyStateAddTransactionMenu(onSpeak: {}, onType: {}, onUploadDocument: {})
     )
-    
-//    action: nil,
-//    addTransactionMenu: EmptyStateAddTransactionMenu(
-//        onSpeak: { voiceInline.beginCapture() },
-//        onType: { showCreateSheet = true },
-//        onUploadDocument: { showStatementImport = true },
-//        voiceDisabled: voiceInline.blocksNewCapture
-//    )
 }

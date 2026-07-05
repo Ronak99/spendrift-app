@@ -9,26 +9,29 @@ import Foundation
 import SwiftData
 
 enum VoicePipelineError: Error {
-    case openAI(String)
+    /// On-device speech-presence gate rejected the clip (silence / no speech).
+    case noSpeech
+    case aiService(String)
 }
 
 struct VoiceExpensePipelineService {
-    var openAIService = OpenAIVoiceTransactionService()
+    var voiceService = VoiceTransactionService()
 
     @MainActor
     func submitAudio(
         audioData: Data,
         accounts: [Account],
         categories: [TransactionCategory],
-        modelContext: ModelContext
+        modelContext: ModelContext,
+        isRetry: Bool = false
     ) async -> Result<VoiceCreateResult, VoicePipelineError> {
         let speechLikely = await VoiceRecordingSpeechPresence.likelyContainsSpeech(wavData: audioData)
         if !speechLikely {
-            return .failure(.openAI("No speech detected in the recording."))
+            return .failure(.noSpeech)
         }
 
         do {
-            let payload = try await openAIService.parseTransaction(
+            let payload = try await voiceService.parseTransaction(
                 audioData: audioData,
                 categories: categories
             )
@@ -37,11 +40,12 @@ struct VoiceExpensePipelineService {
                 payload: payload,
                 accounts: accounts,
                 categories: categories,
-                modelContext: modelContext
+                modelContext: modelContext,
+                isRetry: isRetry
             )
             return .success(result)
         } catch {
-            return .failure(.openAI(error.localizedDescription))
+            return .failure(.aiService(error.localizedDescription))
         }
     }
 }

@@ -7,26 +7,38 @@
 
 import Foundation
 import SwiftData
- 
+
 @Model
 final class TransactionCategory {
-    @Attribute(.unique) var id: UUID
-    var name: String
-    var type: TransactionType
-    var createdOn: Date
-    var icon: CategoryIcon
+    var id: UUID = UUID()
+    var name: String = ""
+    var type: TransactionType = TransactionType.expense
+    var createdOn: Date = Date()
+    var icon: CategoryIcon = CategoryIcon.unknown
+    var isDefault: Bool = false
+    var sortOrder: Int = 0
     /// Updated whenever a transaction is saved with this category (manual or shortcut).
     var lastUsedAt: Date?
 
     @Relationship(deleteRule: .cascade, inverse: \Transaction.category)
     var transactions: [Transaction]?
-    
-    init(id: UUID = UUID(), name: String, type: TransactionType, createdOn: Date = Date(), icon: CategoryIcon = .unknown) {
+
+    init(
+        id: UUID = UUID(),
+        name: String,
+        type: TransactionType,
+        createdOn: Date = Date(),
+        icon: CategoryIcon = .unknown,
+        isDefault: Bool = false,
+        sortOrder: Int = 0
+    ) {
         self.id = id
         self.name = name
         self.type = type
         self.createdOn = createdOn
         self.icon = icon
+        self.isDefault = isDefault
+        self.sortOrder = sortOrder
         self.transactions = []
     }
 }

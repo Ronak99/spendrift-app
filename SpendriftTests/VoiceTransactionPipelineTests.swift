@@ -23,7 +23,7 @@ struct VoiceTransactionPipelineTests {
     }
 
     @Test
-    func decodeOpenAISuccessPayload() throws {
+    func decodeSuccessPayload() throws {
         let raw = """
         {
           "status": "success",
@@ -37,17 +37,44 @@ struct VoiceTransactionPipelineTests {
         }
         """
         let data = try #require(raw.data(using: .utf8))
-        let payload = try JSONDecoder().decode(OpenAIVoiceTransactionPayload.self, from: data)
+        let payload = try JSONDecoder().decode(VoiceTransactionPayload.self, from: data)
         #expect(payload.status == "success")
         #expect(payload.transaction?.amount == 120)
         #expect(payload.transaction?.transactionType == "expense")
     }
 
     @Test
-    func creatorRejectsCategoryOutsideDynamicList() throws {
-        let payload = OpenAIVoiceTransactionPayload(
+    func creatorResolvesLegacyCategoryAlias() throws {
+        let payload = VoiceTransactionPayload(
             status: "success",
-            transaction: OpenAIVoiceTransaction(
+            transaction: VoiceTransactionData(
+                notes: "Metro ride",
+                amount: 50,
+                date: "2026-03-23T10:00:00Z",
+                transactionType: "expense",
+                category: "Transportation"
+            ),
+            reason: nil
+        )
+        let categories = [
+            TransactionCategory(name: "Transport", type: .expense),
+            TransactionCategory(name: "Shopping", type: .expense)
+        ]
+        let draftResult = VoiceTransactionCreator.buildDraftFromAIPayload(
+            payload: payload,
+            accounts: [],
+            categories: categories
+        )
+
+        #expect(draftResult.failure == nil)
+        #expect(draftResult.draft?.category?.name == "Transport")
+    }
+
+    @Test
+    func creatorRejectsCategoryOutsideDynamicList() throws {
+        let payload = VoiceTransactionPayload(
+            status: "success",
+            transaction: VoiceTransactionData(
                 notes: "Metro ride",
                 amount: 50,
                 date: "2026-03-23T10:00:00Z",
@@ -81,9 +108,9 @@ struct VoiceTransactionPipelineTests {
         context.insert(account)
         context.insert(category)
 
-        let payload = OpenAIVoiceTransactionPayload(
+        let payload = VoiceTransactionPayload(
             status: "success",
-            transaction: OpenAIVoiceTransaction(
+            transaction: VoiceTransactionData(
                 notes: "Cab",
                 amount: 50,
                 date: "2026-03-23T10:00:00Z",
@@ -116,9 +143,9 @@ struct VoiceTransactionPipelineTests {
         context.insert(account)
         context.insert(category)
 
-        let payload = OpenAIVoiceTransactionPayload(
+        let payload = VoiceTransactionPayload(
             status: "success",
-            transaction: OpenAIVoiceTransaction(
+            transaction: VoiceTransactionData(
                 notes: "Lunch",
                 amount: 450,
                 date: "2025-03-24T00:00:00",
@@ -157,9 +184,9 @@ struct VoiceTransactionPipelineTests {
         context.insert(category)
 
         let now = Date()
-        let payload = OpenAIVoiceTransactionPayload(
+        let payload = VoiceTransactionPayload(
             status: "success",
-            transaction: OpenAIVoiceTransaction(
+            transaction: VoiceTransactionData(
                 notes: "Lunch",
                 amount: 450,
                 date: "not-a-date",

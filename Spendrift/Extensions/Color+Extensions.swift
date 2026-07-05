@@ -8,16 +8,48 @@
 import SwiftUI
 
 extension Color {
-    static let themeColors: [String: Color] = [
-        "Cyan": Color(hex: "#22D3EE"),
-        "Blue": Color(hex: "#3B82F6"),
-        "Purple": Color(hex: "#A78BFA"),
-        "Pink": Color(hex: "#EC4899"),
-        "Red": Color(hex: "#EF4444"),
-        "Orange": Color(hex: "#F59E0B"),
-        "Green": Color(hex: "#34D399"),
-        "Teal": Color(hex: "#14B8A6")
+    static let selectedThemeIndexKey = "selectedThemeIndex"
+    static let legacyThemeColorKey = "themeColor"
+    static let defaultThemeIndex = 1
+
+    static let themePalette: [Color] = [
+        Color(hex: "#22C3E6"), // cyan
+        Color(hex: "#3A7BFF"), // blue (default)
+        Color(hex: "#9B7BFF"), // purple
+        Color(hex: "#EC4899"), // pink
+        Color(hex: "#EF4444"), // red
+        Color(hex: "#F59E0B"), // orange
+        Color(hex: "#22C55E"), // green
+        Color(hex: "#14B8A6"), // teal
     ]
+
+    private static let legacyThemeNames = [
+        "Cyan",
+        "Blue",
+        "Purple",
+        "Pink",
+        "Red",
+        "Orange",
+        "Green",
+        "Teal",
+    ]
+
+    static func accentColor(forThemeIndex index: Int) -> Color {
+        themePalette[normalizedThemeIndex(index)]
+    }
+
+    static func normalizedThemeIndex(_ index: Int) -> Int {
+        guard !themePalette.isEmpty else { return 0 }
+        return max(0, min(index, themePalette.count - 1))
+    }
+
+    static func legacyThemeName(forThemeIndex index: Int) -> String {
+        legacyThemeNames[normalizedThemeIndex(index)]
+    }
+
+    static func themeIndex(forLegacyThemeName name: String) -> Int? {
+        legacyThemeNames.firstIndex(of: name)
+    }
     
     init(hex: String) {
         let hex = hex.trimmingCharacters(in: CharacterSet.alphanumerics.inverted)

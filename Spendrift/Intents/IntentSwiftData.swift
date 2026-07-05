@@ -10,10 +10,11 @@ import SwiftData
 
 enum IntentSwiftData {
     static let appGroupID = "group.com.ronakpunase.Spendrift"
+    static let cloudKitContainerID = "iCloud.com.ronakpunase.Spendrift"
 
     /// Shared SwiftData container used by the main app, App Intents, and the widget extension.
     /// Uses the App Group container so all processes share the same on-disk store.
-    static func makeModelContainer() throws -> ModelContainer {
+    static func makeModelContainer(cloudKitSyncEnabled: Bool = false) throws -> ModelContainer {
         let inMemory = ProcessInfo.processInfo.arguments.contains("-UITesting")
         let schema = Schema([Transaction.self, Account.self, TransactionCategory.self])
 
@@ -26,7 +27,10 @@ enum IntentSwiftData {
             forSecurityApplicationGroupIdentifier: appGroupID
         ) {
             let storeURL = groupURL.appendingPathComponent("Spendrift.sqlite")
-            let config = ModelConfiguration(url: storeURL)
+            let config = ModelConfiguration(
+                url: storeURL,
+                cloudKitDatabase: cloudKitSyncEnabled ? .private(cloudKitContainerID) : .none
+            )
             return try ModelContainer(for: schema, configurations: [config])
         }
 

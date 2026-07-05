@@ -15,6 +15,7 @@ struct SpendriftHealthResponse: Decodable, Equatable {
     struct Models: Decodable, Equatable {
         let voice: String
         let statement: String
+        let receipt: String
     }
 }
 

@@ -16,15 +16,18 @@ struct UpdateCategorySheet: View {
     /// When creating a category, pre-select this transaction type (for example from the transaction form).
     let defaultTypeWhenCreating: TransactionType?
     var onCreated: ((TransactionCategory) -> Void)?
+    private let eventSource: CategoryEventSource
 
     init(
         category: TransactionCategory?,
         defaultTypeWhenCreating: TransactionType? = nil,
-        onCreated: ((TransactionCategory) -> Void)? = nil
+        onCreated: ((TransactionCategory) -> Void)? = nil,
+        eventSource: CategoryEventSource = .manual
     ) {
         self.category = category
         self.defaultTypeWhenCreating = defaultTypeWhenCreating
         self.onCreated = onCreated
+        self.eventSource = eventSource
     }
     
     @State private var name: String = ""
@@ -98,7 +101,11 @@ struct UpdateCategorySheet: View {
                 icon: icon
             )
             modelContext.insert(newCategory)
-            Analytics.capture(.categoryCreated, [Analytics.Key.name: name])
+            Analytics.capture(.categoryCreated, [
+                Analytics.Key.name: name,
+                Analytics.Key.isDefault: false,
+                Analytics.Key.source: eventSource.rawValue
+            ])
             onCreated?(newCategory)
         }
         

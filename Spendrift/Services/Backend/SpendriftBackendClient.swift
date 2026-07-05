@@ -44,7 +44,7 @@ struct SpendriftBackendClient {
         categories: [TransactionCategory],
         clientTodayIso: String,
         timezone: String
-    ) async throws -> OpenAIVoiceTransactionPayload {
+    ) async throws -> VoiceTransactionPayload {
         let categoriesJSON = try Self.encodeCategories(categories)
         let body = try buildMultipartBody(
             fields: [
@@ -67,14 +67,14 @@ struct SpendriftBackendClient {
         request.httpBody = body.data
 
         let data = try await perform(request: request, expectsAuth: true)
-        return try decode(OpenAIVoiceTransactionPayload.self, from: data)
+        return try decode(VoiceTransactionPayload.self, from: data)
     }
 
     /// `POST /v1/statements/parse`
     func parseStatement(
         pdfData: Data,
         filename: String
-    ) async throws -> OpenAIStatementPayload {
+    ) async throws -> StatementPayload {
         let uploadName = Self.sanitizedPDFFilename(filename)
         let body = try buildMultipartBody(
             fields: [("filename", uploadName, nil)],
@@ -93,7 +93,41 @@ struct SpendriftBackendClient {
         request.httpBody = body.data
 
         let data = try await perform(request: request, expectsAuth: true)
-        return try decode(OpenAIStatementPayload.self, from: data)
+        return try decode(StatementPayload.self, from: data)
+    }
+
+    /// `POST /v1/receipts/parse`
+    func parseReceipt(
+        imageData: Data,
+        mimeType: String,
+        filename: String,
+        categories: [TransactionCategory],
+        clientTodayIso: String,
+        timezone: String
+    ) async throws -> ReceiptPayload {
+        let categoriesJSON = try Self.encodeCategories(categories)
+        let body = try buildMultipartBody(
+            fields: [
+                ("categories", categoriesJSON, nil),
+                ("clientTodayIso", clientTodayIso, nil),
+                ("timezone", timezone, nil),
+            ],
+            fileFieldName: "image",
+            fileData: imageData,
+            fileName: filename,
+            fileMIMEType: mimeType
+        )
+
+        let url = try endpoint(path: "/v1/receipts/parse")
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        applyAuth(&request)
+        let boundary = body.boundary
+        request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
+        request.httpBody = body.data
+
+        let data = try await perform(request: request, expectsAuth: true)
+        return try decode(ReceiptPayload.self, from: data)
     }
 
     // MARK: - Request helpers

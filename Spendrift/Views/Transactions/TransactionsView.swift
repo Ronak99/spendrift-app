@@ -3,10 +3,22 @@
 //  Spendrift
 //
 //  Created by Ronak Punase on 25/02/26.
-//
 
 import SwiftUI
 import SwiftData
+import UIKit
+
+/// Drives the manual create-transaction sheet so quick-start mode is chosen atomically with presentation.
+private enum CreateTransactionSheetMode: Identifiable {
+    case standard
+    case quickStartFirst
+
+    var id: Self { self }
+
+    var quickStartFirstTransaction: Bool {
+        self == .quickStartFirst
+    }
+}
 
 struct TransactionsView: View {
     @Environment(\.modelContext) private var modelContext
@@ -14,24 +26,38 @@ struct TransactionsView: View {
     @Query(sort: \Account.createdOn) private var accounts: [Account]
     @Query(sort: \TransactionCategory.name) private var categories: [TransactionCategory]
     var periodViewModel: TransactionViewModel
-    @State private var showCreateSheet = false
+    @State private var createTransactionSheet: CreateTransactionSheetMode?
     @State private var showStatementImport = false
+    @State private var showReceiptCamera = false
+    @State private var showReceiptLibrary = false
     @State private var voiceInline = VoiceInlineCaptureController()
+    @State private var receiptShare = ReceiptCaptureController()
+    /// Drives the transient "Transaction added" confirmation after a shared receipt is created.
+    @State private var showReceiptShareCreated = false
     @State private var selectedTransaction: Transaction?
+    /// Ids of the trigger payloads already handled, so a `.task(id:)` that restarts on
+    /// tab reappearance does not reprocess the same (already-consumed) file and resurrect
+    /// a previously dismissed error.
+    @State private var lastProcessedReceiptImportID: UUID?
+    @State private var lastProcessedShortcutAudioID: UUID?
+    @AppStorage("didFireFirstTransactionCreated") private var hasEverCreatedTransaction = false
     let voiceCaptureTrigger: UUID?
     let useCompactVoiceCapture: Bool
     let shortcutImportedAudio: ShortcutImportedAudioPayload?
+    let receiptImport: ReceiptSharePayload?
 
     init(
         periodViewModel: TransactionViewModel,
         voiceCaptureTrigger: UUID? = nil,
         useCompactVoiceCapture: Bool = false,
-        shortcutImportedAudio: ShortcutImportedAudioPayload? = nil
+        shortcutImportedAudio: ShortcutImportedAudioPayload? = nil,
+        receiptImport: ReceiptSharePayload? = nil
     ) {
         self.periodViewModel = periodViewModel
         self.voiceCaptureTrigger = voiceCaptureTrigger
         self.useCompactVoiceCapture = useCompactVoiceCapture
         self.shortcutImportedAudio = shortcutImportedAudio
+        self.receiptImport = receiptImport
     }
     
     private var transactions: [Transaction] {
@@ -73,6 +99,51 @@ struct TransactionsView: View {
 
     private var categoriesSortedByLastUsed: [TransactionCategory] {
         categories.sortedByLastUsage()
+    }
+
+    /// Status of the receipt shared into the app via the Share Extension.
+    /// Scanning is shown by the compact processing capsule below; this bar only
+    /// surfaces the brief post-create confirmation.
+    private var receiptShareStatus: ReceiptShareStatus {
+        if showReceiptShareCreated { return .created }
+        return .hidden
+    }
+
+    private var cameraAvailable: Bool {
+        UIImagePickerController.isSourceTypeAvailable(.camera)
+    }
+
+    private var receiptScanActions: ReceiptScanMenuActions {
+        ReceiptScanMenuActions(
+            onTakePhoto: { showReceiptCamera = true },
+            onChooseFromLibrary: { showReceiptLibrary = true },
+            cameraDisabled: !cameraAvailable,
+            disabled: receiptShare.isProcessing
+        )
+    }
+
+
+    /// Empty-state add menu. Before the user has ever created a transaction it shows a focused
+    /// two-option menu (Create Expense / Speak Expense); afterwards it mirrors the toolbar add menu.
+    private var emptyStateAddMenu: EmptyStateAddTransactionMenu {
+        if hasEverCreatedTransaction {
+            return EmptyStateAddTransactionMenu(
+                onSpeak: { voiceInline.beginCapture() },
+                onType: { createTransactionSheet = .standard },
+                onUploadDocument: { showStatementImport = true },
+                receiptScan: receiptScanActions,
+                voiceDisabled: voiceInline.blocksNewCapture
+            )
+        }
+        return EmptyStateAddTransactionMenu(
+            onSpeak: { voiceInline.beginCapture() },
+            onType: { createTransactionSheet = .quickStartFirst },
+            onUploadDocument: { showStatementImport = true },
+            voiceDisabled: voiceInline.blocksNewCapture,
+            typeLabel: "Create Expense",
+            speakLabel: "Speak Expense",
+            showsUploadAndScan: false
+        )
     }
 
     var body: some View {
@@ -140,13 +211,7 @@ struct TransactionsView: View {
                         title: "No Transactions",
                         description: "Get started by adding your first transaction for \(periodViewModel.periodDescription)",
                         actionTitle: "Add Transaction",
-                        action: nil,
-                        addTransactionMenu: EmptyStateAddTransactionMenu(
-                            onSpeak: { voiceInline.beginCapture() },
-                            onType: { showCreateSheet = true },
-                            onUploadDocument: { showStatementImport = true },
-                            voiceDisabled: voiceInline.blocksNewCapture
-                        )
+                        addTransactionMenu: emptyStateAddMenu
                     )
                 } else {
                     List {
@@ -182,26 +247,46 @@ struct TransactionsView: View {
                         if !transactions.isEmpty {
                             Menu {
                                 Button {
+                                    createTransactionSheet = .standard
+                                } label: {
+                                    Label("Type", systemImage: "keyboard")
+                                }
+
+                                Button {
                                     voiceInline.beginCapture()
                                 } label: {
                                     Label("Speak", systemImage: "mic")
                                 }
                                 .disabled(voiceInline.blocksNewCapture)
 
-                                Button {
-                                    showCreateSheet = true
-                                } label: {
-                                    Label("Type", systemImage: "keyboard")
-                                }
 
                                 Button {
                                     showStatementImport = true
                                 } label: {
                                     Label("Upload document", systemImage: "doc.text")
                                 }
+
+                                Menu {
+                                    Button {
+                                        showReceiptCamera = true
+                                    } label: {
+                                        Label("Take Photo", systemImage: "camera")
+                                    }
+                                    .disabled(!cameraAvailable || receiptShare.isProcessing)
+
+                                    Button {
+                                        showReceiptLibrary = true
+                                    } label: {
+                                        Label("Choose from Library", systemImage: "photo.on.rectangle")
+                                    }
+                                    .disabled(receiptShare.isProcessing)
+                                } label: {
+                                    Label("Scan receipt", systemImage: "doc.viewfinder")
+                                }
                             } label: {
                                 Image(systemName: "plus")
                             }
+                            .menuOrder(.fixed)
                             .accessibilityLabel("Add transaction")
                             .accessibilityIdentifier("transactionsAddMenu")
                         }
@@ -212,21 +297,63 @@ struct TransactionsView: View {
                 }
             }
             .overlay(alignment: .bottom) {
-                if true {
-                    VoiceInlineRecordingBar(
-                        controller: voiceInline,
-                        accounts: accounts,
-                        categories: categoriesSortedByLastUsed
-                    )
-                    .transition(.move(edge: .bottom).combined(with: .opacity))
+                VStack(spacing: 8) {
+                    ReceiptShareStatusBar(status: receiptShareStatus)
+
+                    if receiptShare.isProcessing {
+                        HStack(spacing: 12) {
+                            ProgressView()
+                            Text("Reading receipt…")
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
+                        }
+                        .padding(.horizontal, 20)
+                        .padding(.vertical, 14)
+                        .background(
+                            Capsule()
+                                .fill(.ultraThinMaterial)
+                                .shadow(color: .black.opacity(0.12), radius: 10, y: 4)
+                        )
+                        .padding(.bottom, 16)
+                        .transition(.move(edge: .bottom).combined(with: .opacity))
+                    } else {
+                        VoiceInlineRecordingBar(
+                            controller: voiceInline,
+                            accounts: accounts,
+                            categories: categoriesSortedByLastUsed
+                        )
+                        .transition(.move(edge: .bottom).combined(with: .opacity))
+                    }
                 }
             }
             .animation(.spring(response: 0.38, dampingFraction: 0.86), value: voiceInline.displayState)
+            .animation(.spring(response: 0.38, dampingFraction: 0.86), value: receiptShare.isProcessing)
             .sheet(isPresented: $showStatementImport) {
                 StatementImportView()
             }
-            .sheet(isPresented: $showCreateSheet) {
-                UpdateTransactionSheet(transaction: nil)
+            .fullScreenCover(isPresented: $showReceiptCamera) {
+                ReceiptCameraPicker { image in
+                    showReceiptCamera = false
+                    if let image {
+                        processReceiptImage(image)
+                    }
+                }
+                .ignoresSafeArea()
+            }
+            .sheet(isPresented: $showReceiptLibrary) {
+                PhotoLibraryPicker { image in
+                    showReceiptLibrary = false
+                    if let image {
+                        processReceiptImage(image)
+                    }
+                }
+                .ignoresSafeArea()
+            }
+            .sheet(item: $createTransactionSheet) { mode in
+                UpdateTransactionSheet(
+                    transaction: nil,
+                    quickStartFirstTransaction: mode.quickStartFirstTransaction
+                )
             }
             .sheet(item: $selectedTransaction) { transaction in
                 UpdateTransactionSheet(transaction: transaction)
@@ -238,14 +365,55 @@ struct TransactionsView: View {
                     voiceReviewHint: payload.hint
                 )
             }
+            .sheet(item: $receiptShare.reviewPayload) { payload in
+                UpdateTransactionSheet(
+                    transaction: nil,
+                    draft: payload.draft,
+                    voiceReviewHint: payload.hint
+                )
+            }
+            .alert("Couldn't Scan Receipt", isPresented: Binding(
+                get: { if case .error = receiptShare.state { return true } else { return false } },
+                set: { if !$0 { receiptShare.dismissError() } }
+            )) {
+                Button("OK", role: .cancel) { receiptShare.dismissError() }
+            } message: {
+                if case .error(let message) = receiptShare.state {
+                    Text(message)
+                }
+            }
+            .task(id: receiptImport?.id) {
+                guard let payload = receiptImport else { return }
+                guard lastProcessedReceiptImportID != payload.id else { return }
+                lastProcessedReceiptImportID = payload.id
+                createTransactionSheet = nil
+                showReceiptShareCreated = false
+                receiptShare.processSharedImage(
+                    fileURL: payload.fileURL,
+                    accounts: accounts,
+                    categories: categories,
+                    modelContext: modelContext
+                )
+            }
+            .onChange(of: receiptShare.didCreate) { _, created in
+                guard created else { return }
+                receiptShare.acknowledgeCreate()
+                showReceiptShareCreated = true
+                Task {
+                    try? await Task.sleep(for: .seconds(2.2))
+                    showReceiptShareCreated = false
+                }
+            }
             .onChange(of: voiceCaptureTrigger) { _, trigger in
                 guard trigger != nil else { return }
-                showCreateSheet = false
+                createTransactionSheet = nil
                 voiceInline.beginCapture()
             }
             .task(id: shortcutImportedAudio?.id) {
                 guard let payload = shortcutImportedAudio else { return }
-                showCreateSheet = false
+                guard lastProcessedShortcutAudioID != payload.id else { return }
+                lastProcessedShortcutAudioID = payload.id
+                createTransactionSheet = nil
                 voiceInline.processImportedAudio(
                     fileURL: payload.fileURL,
                     modelContext: modelContext,
@@ -261,6 +429,15 @@ struct TransactionsView: View {
             modelContext.delete(transactionsForDay[index])
         }
         try? modelContext.save()
+    }
+
+    private func processReceiptImage(_ image: UIImage) {
+        receiptShare.process(
+            image: image,
+            accounts: accounts,
+            categories: categories,
+            modelContext: modelContext
+        )
     }
 }
 

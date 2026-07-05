@@ -9,7 +9,7 @@ This document reflects the **current codebase** (not git history): what the app 
 ### 1. App shell, navigation, and persistence
 
 1. **Tab bar** — Four tabs: Transactions, Accounts, Categories, Analytics (Statistics).
-2. **Shared SwiftData container** — Single `ModelContainer` from `IntentSwiftData` so the main app, App Intents, and widgets read/write the same store.
+2. **Shared SwiftData container + CloudKit mirror** — Single `ModelContainer` from `IntentSwiftData` so the main app, App Intents, and widgets read/write the same App Group store, while the app target mirrors accounts/categories/transactions to the user’s private iCloud CloudKit database.
 3. **App launch** — `ExpenseAppShortcuts.updateAppShortcutParameters()` runs so Shortcuts see up-to-date intent parameters.
 4. **UITest mode** — `-UITesting` forces an in-memory store; onboarding is skipped when testing.
 5. **Root sheet priority** — Mandatory App Store update sheet > onboarding > optional update sheet.
@@ -18,7 +18,7 @@ This document reflects the **current codebase** (not git history): what the app 
 
 6. **Three-page dark-mode carousel** — Welcome, Siri & Shortcuts, Get Started; pill page indicator; haptic on completion.
 7. **Versioned onboarding** — `@AppStorage("spendriftOnboardingVersion")`; bump `OnboardingCarouselView.currentVersion` to show onboarding again after major updates.
-8. **Welcome copy** — Highlights multi-account tracking, voice capture, categories, on-device storage (marketing copy; actual AI calls send data off-device when using voice/statement import).
+8. **Welcome copy** — Highlights multi-account tracking, voice capture, categories, and private storage (local + user iCloud CloudKit). AI calls still send feature-specific data off-device for voice/statement parsing.
 9. **Shortcuts page** — Deep links to two iCloud shortcut URLs (`OnboardingShortcutShareLinks`) for “Voice Record Expense” and “Log Expense Amount”; third bullet “Quick Access” has **no URL** (informational only).
 10. **Get Started** — Final CTA completes onboarding.
 
@@ -59,7 +59,7 @@ This document reflects the **current codebase** (not git history): what the app 
 
 35. **Voice policy** — Minimum clip length **2 seconds**; maximum **30 seconds**; auto-submit when max duration reached.
 36. **Recording UI** — Cancel, mini waveform, circular progress toward max duration, stop button.
-37. **Pipeline** — WAV → optional speech-presence check → **OpenAI `gpt-4o-audio-preview`** chat completion with audio → JSON payload → `VoiceTransactionCreator` (accounts, categories, SwiftData insert).
+37. **Pipeline** — WAV → optional speech-presence check → **backend AI proxy** (`VoiceTransactionService` → `SpendriftBackendClient`) → JSON payload → `VoiceTransactionCreator` (accounts, categories, SwiftData insert).
 38. **Failures** — Too short, no speech, API errors surfaced in UI; Live Activity can show failure/success when ActivityKit is enabled.
 39. **Shortcut-imported audio** — Same pipeline after `VoiceShortcutAudioNormalizer` (length/format checks); file copied to caches, then processed.
 40. **Live Activities** — `VoiceLiveActivityController` updates state (recording → processing → success/fail); success/failure messages can linger briefly before dismiss (default ~3s).
@@ -97,14 +97,14 @@ This document reflects the **current codebase** (not git history): what the app 
 60. **Password-protected PDFs** — `validatePDF` tries `unlock(withPassword: "")`; **encrypted PDFs that do not unlock with empty password** throw `passwordProtected` — **no password entry UI** (user must use an unlocked/exported PDF).
 61. **Privacy** — Explicit **privacy notice** and **toggle** “I understand…” required before “Choose PDF” is enabled.
 62. **Account binding** — User picks which account receives imported rows (defaults to primary on appear); empty accounts shows guidance to add an account first.
-63. **AI parsing** — PDF bytes sent to **OpenAI `gpt-4o`** via Responses API path (`OpenAIBankStatementService`); extracts JSON list of transactions.
+63. **AI parsing** — PDF bytes sent to the **backend AI proxy** (`BankStatementService` → `SpendriftBackendClient`); extracts JSON list of transactions.
 64. **Preview** — Editable list of rows; user can **delete rows** before save.
 65. **Save behavior** — Inserts `Transaction` per row with **`category: nil`** (imported lines are **not** auto-categorized in the model).
 66. **Nitpick** — `TransactionType` comes from parsed JSON; amounts ≤ 0 dropped in mapping.
 
 ### 11. Categories
 
-67. **Default seed** — If no categories exist, `TransactionCategory.defaultCategories()` inserts bundled income/expense categories with icons.
+67. **Default seed** — Unified in `DefaultDataSeeder`, triggered once when onboarding starts: it seeds the bundled categories instantly (so pickers are never empty), then waits for CloudKit's initial import and reconciles — if the import delivers real categories it deletes the just-seeded placeholders, otherwise it keeps the defaults. UI tests skip onboarding and instead seed categories synchronously via `DefaultCategorySeeder`.
 68. **CRUD** — List, create, edit categories; icons via icon grid picker flow (per existing views).
 69. **`lastUsedAt`** — Optional on model; updated on manual save, shortcut expense, and successful voice create.
 70. **MRU ordering** — `sortedByLastUsage()` used in transaction sheet, voice bar, and Shortcuts entity query.
@@ -112,6 +112,7 @@ This document reflects the **current codebase** (not git history): what the app 
 ### 12. Accounts
 
 71. **Primary account** — `isPrimary` flag; shortcuts and statement import assume a **primary** account for quick paths.
+71a. **Default account seed** — Unified in `DefaultDataSeeder` (same onboarding-start trigger as categories): it seeds a single primary "Savings" account (balance 100) instantly when no account exists locally, then waits for CloudKit's initial import and reconciles — if real accounts arrive it deletes the seeded placeholder, otherwise the default stays.
 72. **Balance model** — `currentBalance` derived from opening balance plus income minus expenses on linked transactions.
 73. **Per-account transaction screen** — Filtered month view + same patterns as main transactions.
 
@@ -138,7 +139,7 @@ This document reflects the **current codebase** (not git history): what the app 
 86. **Screenshot demo data** — `ScreenshotDemoData.seedIfNeeded` for marketing screenshots.
 87. **Debug view** — Simple monospaced scroll (used for debugging).
 88. **Currency** — INR `en_IN`; main app lists use up to 2 decimals; widgets use integer rupees in display helpers.
-89. **App secrets** — `AppSecrets.openAIAPIKey` for OpenAI calls (voice + bank statement).
+89. **App secrets** — `AppSecrets.backendBaseURL` and `AppSecrets.backendClientToken` for the backend AI proxy (voice + bank statement + receipts).
 
 ### 16. Nitpick summary (limits & consistency)
 
@@ -159,7 +160,7 @@ These are **strategies**, not recommendations to implement all at once.
 
 ### Tier A — High perceived value, recurring cost
 
-1. **AI voice limits** — Free: N voice parses per month; Pro: higher cap or unlimited (directly ties to OpenAI cost).
+1. **AI voice limits** — Free: N voice parses per month; Pro: higher cap or unlimited (directly ties to backend AI cost).
 2. **Statement import** — Free: 1–3 PDFs/month or first N pages; Pro: higher limits or batch (covers API cost + positions as “power user”).
 3. **Multi-currency / non-INR** — If added later, Pro-only (or free single currency).
 
@@ -177,7 +178,7 @@ These are **strategies**, not recommendations to implement all at once.
 ### Tier D — Growth & retention
 
 9. **Themes** — Free: 2–3 accents; Pro: full palette + app icon.
-10. **Family / shared** — Pro: iCloud sync / household (if you add sync — big lift).
+10. **Family / shared** — If implemented later, this means shared/household collaboration on top of the now-default personal iCloud sync.
 
 ### Tier E — Support & goodwill
 

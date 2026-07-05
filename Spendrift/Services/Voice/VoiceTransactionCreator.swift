@@ -36,7 +36,7 @@ enum VoiceCreateResult {
 
 enum VoiceTransactionCreator {
     static func buildDraftFromAIPayload(
-        payload: OpenAIVoiceTransactionPayload,
+        payload: VoiceTransactionPayload,
         accounts: [Account],
         categories: [TransactionCategory]
     ) -> (draft: VoiceTransactionDraft?, failure: VoiceCreateFailure?) {
@@ -54,9 +54,12 @@ enum VoiceTransactionCreator {
         let parsedDate = parseTransactionDate(transaction.date) ?? Date()
 
         let typeCategory: TransactionType = transactionType == .expense ? .expense : .income
-        let category = categories.first(where: {
-            $0.type == typeCategory && $0.name.caseInsensitiveCompare(transaction.category ?? "") == .orderedSame
-        })
+        let category = CategoryResolver.resolve(
+            categoryName: transaction.category,
+            notes: transaction.notes,
+            type: typeCategory,
+            categories: categories
+        )
         let primary = resolvePrimaryAccount(from: accounts)
 
         return (
@@ -77,10 +80,11 @@ enum VoiceTransactionCreator {
     /// reading them off-thread corrupts the context's identity map and traps on `save()`.
     @MainActor
     static func createFromAIVoice(
-        payload: OpenAIVoiceTransactionPayload,
+        payload: VoiceTransactionPayload,
         accounts: [Account],
         categories: [TransactionCategory],
-        modelContext: ModelContext
+        modelContext: ModelContext,
+        isRetry: Bool = false
     ) -> VoiceCreateResult {
         let buildResult = buildDraftFromAIPayload(payload: payload, accounts: accounts, categories: categories)
         if let failure = buildResult.failure {
@@ -129,7 +133,7 @@ enum VoiceTransactionCreator {
         )
         modelContext.insert(transaction)
         try? modelContext.save()
-        Analytics.captureTransactionCreated(method: "voice", type: draft.transactionType.rawValue)
+        Analytics.captureTransactionCreated(method: "voice", type: draft.transactionType.rawValue, isRetry: isRetry)
         return .created(transaction)
     }
 

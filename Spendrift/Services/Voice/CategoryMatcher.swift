@@ -14,9 +14,7 @@ struct CategoryMatchResult {
 }
 
 enum CategoryMatcher {
-    // Keys align with the curated default category names (RON-82). Keywords for
-    // dropped defaults (e.g. entertainment, refunds) are folded into the closest
-    // surviving category so voice matching still resolves common phrases.
+    // Keys align with the curated default category names (RON-82).
     private static let keywordMap: [String: [String]] = [
         "Transport": ["metro", "cab", "uber", "ola", "bus", "train", "rickshaw", "auto", "taxi", "fuel", "petrol", "diesel"],
         "Groceries": ["grocery", "groceries", "supermarket", "market", "bigbasket", "zepto", "blinkit", "instamart", "dmart", "vegetables"],

@@ -1,5 +1,5 @@
 //
-//  OpenAIBankStatementServiceTests.swift
+//  BankStatementServiceTests.swift
 //  SpendriftTests
 //
 //  Created by Cursor on 06/04/26.
@@ -9,7 +9,7 @@ import Foundation
 import Testing
 @testable import Spendrift
 
-struct OpenAIBankStatementServiceTests {
+struct BankStatementServiceTests {
 
     // MARK: - Payload decoding
 
@@ -25,7 +25,7 @@ struct OpenAIBankStatementServiceTests {
         }
         """
         let data = try #require(json.data(using: .utf8))
-        let payload = try JSONDecoder().decode(OpenAIStatementPayload.self, from: data)
+        let payload = try JSONDecoder().decode(StatementPayload.self, from: data)
         #expect(payload.transactions.count == 3)
         #expect(payload.transactions[0].notes == "NEFT-Salary")
         #expect(payload.transactions[0].amount == 50000)
@@ -39,7 +39,7 @@ struct OpenAIBankStatementServiceTests {
         { "transactions": [] }
         """
         let data = try #require(json.data(using: .utf8))
-        let payload = try JSONDecoder().decode(OpenAIStatementPayload.self, from: data)
+        let payload = try JSONDecoder().decode(StatementPayload.self, from: data)
         #expect(payload.transactions.isEmpty)
     }
 
@@ -47,7 +47,7 @@ struct OpenAIBankStatementServiceTests {
 
     @Test
     func parsesISODate() throws {
-        let date = try #require(OpenAIBankStatementService.parseDate("2026-03-15"))
+        let date = try #require(BankStatementService.parseDate("2026-03-15"))
         let components = Calendar.current.dateComponents([.year, .month, .day], from: date)
         #expect(components.year == 2026)
         #expect(components.month == 3)
@@ -56,7 +56,7 @@ struct OpenAIBankStatementServiceTests {
 
     @Test
     func parsesSlashDate() throws {
-        let date = try #require(OpenAIBankStatementService.parseDate("15/03/2026"))
+        let date = try #require(BankStatementService.parseDate("15/03/2026"))
         let components = Calendar.current.dateComponents([.year, .month, .day], from: date)
         #expect(components.year == 2026)
         #expect(components.month == 3)
@@ -65,6 +65,6 @@ struct OpenAIBankStatementServiceTests {
 
     @Test
     func returnsNilForGarbage() {
-        #expect(OpenAIBankStatementService.parseDate("not-a-date") == nil)
+        #expect(BankStatementService.parseDate("not-a-date") == nil)
     }
 }

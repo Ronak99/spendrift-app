@@ -18,7 +18,13 @@ struct UpdateTransactionSheet: View {
     let draft: VoiceTransactionDraft?
     /// When opening from voice flow, explain why manual entry is needed (avoid competing `.alert`).
     let voiceReviewHint: String?
-    
+    /// When true (genuine first transaction from the empty-state CTA), the sheet pre-selects the
+    /// Salary income category, the first available account, and auto-focuses the amount field so the
+    /// user can type an amount and save immediately.
+    let quickStartFirstTransaction: Bool
+
+    @FocusState private var amountFieldFocused: Bool
+
     @State private var notes: String = ""
     @State private var amount: String = ""
     @State private var date: Date = Date()
@@ -74,10 +80,16 @@ struct UpdateTransactionSheet: View {
         }
     }
     
-    init(transaction: Transaction?, draft: VoiceTransactionDraft? = nil, voiceReviewHint: String? = nil) {
+    init(
+        transaction: Transaction?,
+        draft: VoiceTransactionDraft? = nil,
+        voiceReviewHint: String? = nil,
+        quickStartFirstTransaction: Bool = false
+    ) {
         self.transaction = transaction
         self.draft = draft
         self.voiceReviewHint = voiceReviewHint
+        self.quickStartFirstTransaction = quickStartFirstTransaction
     }
 
     var body: some View {
@@ -153,6 +165,7 @@ struct UpdateTransactionSheet: View {
                     TextField("0", text: $amount)
                         .keyboardType(.decimalPad)
                         .multilineTextAlignment(.trailing)
+                        .focused($amountFieldFocused)
                 }
                 
                 
@@ -220,13 +233,29 @@ struct UpdateTransactionSheet: View {
                     }
                 } else {
                     selectedAccount = draft?.account ?? accountsSortedByLastUsed.first ?? accounts.first
-                    transactionType = draft?.transactionType ?? .expense
-                    var category = draft?.category ?? categoriesSortedByLastUsed.first { $0.type == transactionType }
+
+                    if let draftType = draft?.transactionType {
+                        transactionType = draftType
+                    } else if quickStartFirstTransaction {
+                        // First-ever transaction defaults to logging income via the Salary category.
+                        transactionType = .income
+                    } else {
+                        transactionType = .expense
+                    }
+
+                    var category = draft?.category
+                    if category == nil, quickStartFirstTransaction {
+                        category = categoriesSortedByLastUsed.first { $0.type == .income && $0.name == "Salary" }
+                    }
+                    if category == nil {
+                        category = categoriesSortedByLastUsed.first { $0.type == transactionType }
+                    }
                     if category?.type != transactionType {
                         category = categoriesSortedByLastUsed.first { $0.type == transactionType }
                     }
                     selectedCategory = category
                     if let category, category.type == transactionType {
+                        // Pin the tracker so the type-change handler can't override the quick-start pick.
                         categoryTracker[transactionType] = category
                     }
                     if let draft {
@@ -234,6 +263,9 @@ struct UpdateTransactionSheet: View {
                         if let amount = draft.amount {
                             self.amount = amount.wholeAmountDisplayString
                         }
+                    }
+                    if quickStartFirstTransaction {
+                        focusAmountFieldSoon()
                     }
                 }
                 seedCategoryTrackerDefaultsForKnownTypes()
@@ -250,6 +282,14 @@ struct UpdateTransactionSheet: View {
                 }
                 applyCategoryForTransactionType(newType)
             }
+        }
+    }
+
+    /// Focuses the amount field shortly after the sheet appears. The small delay lets the sheet's
+    /// presentation animation settle so the keyboard reliably comes up on the amount field.
+    private func focusAmountFieldSoon() {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+            amountFieldFocused = true
         }
     }
 

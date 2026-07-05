@@ -23,8 +23,8 @@ struct VoiceInlineRecordingBar: View {
                 recordingContent
             case .processing:
                 processingContent
-            case .error(let message):
-                errorContent(message: message)
+            case .error(let reason):
+                errorContent(reason: reason)
             }
         }
         .frame(maxWidth: .infinity)
@@ -128,27 +128,88 @@ struct VoiceInlineRecordingBar: View {
         .padding(.vertical, 18)
     }
 
-    private func errorContent(message: String) -> some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text(message)
-                .font(.subheadline)
-                .foregroundStyle(.primary)
-                .fixedSize(horizontal: false, vertical: true)
+    private func errorContent(reason: VoiceFailureReason) -> some View {
+        VStack(alignment: .leading, spacing: 14) {
+            HStack(alignment: .top, spacing: 12) {
+                Image(systemName: errorIcon(for: reason))
+                    .font(.title3)
+                    .symbolRenderingMode(.hierarchical)
+                    .foregroundStyle(.orange)
+                    .accessibilityHidden(true)
+
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(reason.title)
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(.primary)
+                    Text(reason.guidance)
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+
+                Spacer(minLength: 0)
+            }
 
             HStack(spacing: 12) {
-                Button("Dismiss") {
-                    controller.dismissError()
+                primaryButton(for: reason)
+
+                Button("Enter manually") {
+                    controller.openManualFromError(accounts: accounts, hint: reason.guidance)
                 }
                 .buttonStyle(.bordered)
 
-                Button("Enter manually") {
-                    controller.openManualFromError(accounts: accounts, hint: message)
+                Spacer(minLength: 0)
+
+                Button("Dismiss") {
+                    controller.dismissError()
                 }
-                .buttonStyle(.borderedProminent)
+                .buttonStyle(.borderless)
+                .foregroundStyle(.secondary)
             }
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal, 16)
         .padding(.vertical, 16)
+    }
+
+    /// Prominent, reason-aware recovery action: one-tap retry, or a deep link to Settings
+    /// when microphone access has been denied.
+    @ViewBuilder
+    private func primaryButton(for reason: VoiceFailureReason) -> some View {
+        Button {
+            switch reason.primaryAction {
+            case .retry:
+                controller.retry(
+                    modelContext: modelContext,
+                    accounts: accounts,
+                    categories: categories
+                )
+            case .openSettings:
+                controller.openSettings()
+            }
+        } label: {
+            Label(reason.primaryActionTitle, systemImage: primaryActionIcon(for: reason.primaryAction))
+        }
+        .buttonStyle(.borderedProminent)
+    }
+
+    private func primaryActionIcon(for action: VoiceFailurePrimaryAction) -> String {
+        switch action {
+        case .retry:        return "arrow.clockwise"
+        case .openSettings: return "gear"
+        }
+    }
+
+    private func errorIcon(for reason: VoiceFailureReason) -> String {
+        switch reason {
+        case .micPermissionDenied: return "mic.slash.fill"
+        case .micUnavailable:      return "mic.slash"
+        case .recordingTooShort:   return "clock"
+        case .noSpeechDetected:    return "waveform.slash"
+        case .audioUnreadable:     return "exclamationmark.triangle"
+        case .transcriptionFailed: return "exclamationmark.bubble"
+        case .unknown:             return "exclamationmark.triangle"
+        }
     }
 }
 
@@ -192,8 +253,13 @@ private enum VoiceInlineRecordingBarPreviewData {
         TransactionCategory(name: "Salary", type: .income)
     ]
 
-    /// Tweak this string to iterate on error copy in the canvas.
-    static let sampleErrorMessage = "Transaction could not be created."
+    /// Failure reasons to iterate on error copy in the canvas.
+    static let sampleReasons: [VoiceFailureReason] = [
+        .micPermissionDenied,
+        .recordingTooShort,
+        .noSpeechDetected,
+        .transcriptionFailed
+    ]
 }
 
 /// Hosts the bar over a neutral background; change `state` to switch canvas variants.
@@ -226,16 +292,22 @@ private struct VoiceInlineRecordingBarPreviewHost: View {
     VoiceInlineRecordingBarPreviewHost(state: .processing)
 }
 
-#Preview("Error") {
-    VoiceInlineRecordingBarPreviewHost(state: .error(VoiceInlineRecordingBarPreviewData.sampleErrorMessage))
+#Preview("Error — mic permission") {
+    VoiceInlineRecordingBarPreviewHost(state: .error(.micPermissionDenied))
 }
 
-#Preview("Gallery — all states") {
+#Preview("Error — transcription failed") {
+    VoiceInlineRecordingBarPreviewHost(state: .error(.transcriptionFailed))
+}
+
+#Preview("Gallery — failure reasons") {
     ScrollView(.horizontal, showsIndicators: false) {
         HStack(alignment: .bottom, spacing: 16) {
             previewCell(title: "Recording", state: .recording)
             previewCell(title: "Processing", state: .processing)
-            previewCell(title: "Error", state: .error(VoiceInlineRecordingBarPreviewData.sampleErrorMessage))
+            ForEach(VoiceInlineRecordingBarPreviewData.sampleReasons, id: \.self) { reason in
+                previewCell(title: reason.analyticsValue, state: .error(reason))
+            }
         }
         .padding()
     }
