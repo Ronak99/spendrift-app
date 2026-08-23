@@ -17,9 +17,12 @@ struct StatisticsView: View {
         .blue, .purple, .pink, .orange, .teal, .green, .indigo, .cyan, .mint, .yellow, .brown
     ]
 
+    @State private var trendInterval: TrendInterval
+
     init(periodViewModel: TransactionViewModel) {
         self.periodViewModel = periodViewModel
         _allTransactions = Query(sort: \Transaction.date, order: .reverse)
+        _trendInterval = State(initialValue: Self.defaultInterval(for: periodViewModel.periodGranularity))
     }
 
     private var periodTransactions: [Transaction] {
@@ -93,31 +96,53 @@ struct StatisticsView: View {
         }
     }
 
-    private var dailySpending: [DailySpendingData] {
+    /// Sensible default bucket size for a period so long ranges don't render as unreadable
+    /// day-by-day noise. The user can still override it with the segmented picker.
+    private static func defaultInterval(for period: TransactionPeriod) -> TrendInterval {
+        switch period {
+        case .week, .month: return .daily
+        case .threeMonths, .sixMonths: return .weekly
+        case .year: return .monthly
+        }
+    }
+
+    /// Normalizes a date to the start of the bucket it belongs to for the given interval.
+    private func bucketStart(for date: Date, interval: TrendInterval, calendar: Calendar) -> Date {
+        switch interval {
+        case .daily:
+            return calendar.startOfDay(for: date)
+        case .weekly:
+            return calendar.dateInterval(of: .weekOfYear, for: date)?.start ?? calendar.startOfDay(for: date)
+        case .monthly:
+            return calendar.dateInterval(of: .month, for: date)?.start ?? calendar.startOfDay(for: date)
+        }
+    }
+
+    /// Expenses bucketed by the selected interval across the whole period. Empty buckets are
+    /// filled with zeros so gaps in logging render as flat stretches rather than disappearing.
+    private var trendSpending: [TrendSpendingData] {
         let calendar = Calendar.current
-        let start = calendar.startOfDay(for: periodViewModel.periodStart)
-        let endDay = calendar.startOfDay(for: periodViewModel.periodEnd)
+        let interval = trendInterval
+        let startBucket = bucketStart(for: periodViewModel.periodStart, interval: interval, calendar: calendar)
+        let endBucket = bucketStart(for: periodViewModel.periodEnd, interval: interval, calendar: calendar)
 
         let grouped = Dictionary(grouping: expenseTransactions) { transaction in
-            calendar.startOfDay(for: transaction.date)
+            bucketStart(for: transaction.date, interval: interval, calendar: calendar)
         }
-        let totalsByDay = grouped.mapValues { transactions in
+        let totalsByBucket = grouped.mapValues { transactions in
             transactions.reduce(0) { $0 + $1.amount }
         }
 
-        var days: [Date] = []
-        var d = start
-        while d <= endDay {
-            days.append(d)
-            guard let next = calendar.date(byAdding: .day, value: 1, to: d) else { break }
-            d = next
+        var buckets: [Date] = []
+        var cursor = startBucket
+        while cursor <= endBucket {
+            buckets.append(cursor)
+            guard let next = calendar.date(byAdding: interval.calendarComponent, value: 1, to: cursor) else { break }
+            cursor = next
         }
 
-        return days.map { date in
-            DailySpendingData(
-                date: date,
-                amount: totalsByDay[date] ?? 0
-            )
+        return buckets.map { date in
+            TrendSpendingData(date: date, amount: totalsByBucket[date] ?? 0)
         }
     }
 
@@ -181,7 +206,7 @@ struct StatisticsView: View {
                             }
                         } else {
                             spendingBreakdownCard
-                            dailyTrendCard
+                            spendTrendCard
                             weekdayPatternCard
                         }
                     }
@@ -196,6 +221,9 @@ struct StatisticsView: View {
                         TransactionPeriodToolbarMenu(period: $periodViewModel.periodGranularity)
                     }
                 }
+            }
+            .onChange(of: periodViewModel.periodGranularity) { _, newValue in
+                trendInterval = Self.defaultInterval(for: newValue)
             }
         }
     }
@@ -290,32 +318,54 @@ struct StatisticsView: View {
         }
     }
 
-    private var dailyTrendCard: some View {
+    private var spendTrendCard: some View {
         analyticsCard(
-            title: "Daily Spending Trend",
-            subtitle: "See how your expenses changed over \(periodViewModel.periodDescription)"
+            title: "Spend Trend",
+            subtitle: "How your expenses changed over \(periodViewModel.periodDescription)"
         ) {
-            Chart(dailySpending) { day in
-                AreaMark(
-                    x: .value("Date", day.date),
-                    y: .value("Spent", day.amount)
-                )
-                .foregroundStyle(
-                    LinearGradient(
-                        colors: [Color.blue.opacity(0.35), Color.blue.opacity(0.05)],
-                        startPoint: .top,
-                        endPoint: .bottom
-                    )
-                )
-                .interpolationMethod(.catmullRom)
+            Picker("Interval", selection: $trendInterval) {
+                ForEach(TrendInterval.allCases) { interval in
+                    Text(interval.label).tag(interval)
+                }
+            }
+            .pickerStyle(.segmented)
 
-                LineMark(
-                    x: .value("Date", day.date),
-                    y: .value("Spent", day.amount)
-                )
-                .foregroundStyle(Color.blue)
-                .lineStyle(StrokeStyle(lineWidth: 3, lineCap: .round, lineJoin: .round))
-                .interpolationMethod(.catmullRom)
+            Chart(trendSpending) { bucket in
+                if trendInterval == .daily {
+                    AreaMark(
+                        x: .value("Date", bucket.date),
+                        y: .value("Spent", bucket.amount)
+                    )
+                    .foregroundStyle(
+                        LinearGradient(
+                            colors: [Color.blue.opacity(0.35), Color.blue.opacity(0.05)],
+                            startPoint: .top,
+                            endPoint: .bottom
+                        )
+                    )
+                    .interpolationMethod(.catmullRom)
+
+                    LineMark(
+                        x: .value("Date", bucket.date),
+                        y: .value("Spent", bucket.amount)
+                    )
+                    .foregroundStyle(Color.blue)
+                    .lineStyle(StrokeStyle(lineWidth: 3, lineCap: .round, lineJoin: .round))
+                    .interpolationMethod(.catmullRom)
+                } else {
+                    BarMark(
+                        x: .value("Period", bucket.date, unit: trendInterval.calendarComponent),
+                        y: .value("Spent", bucket.amount)
+                    )
+                    .foregroundStyle(
+                        LinearGradient(
+                            colors: [Color.blue, Color.cyan],
+                            startPoint: .top,
+                            endPoint: .bottom
+                        )
+                    )
+                    .cornerRadius(6)
+                }
             }
             .frame(height: 220)
             .chartYAxis {
@@ -440,12 +490,38 @@ private struct CategorySpendingData: Identifiable {
     }
 }
 
-private struct DailySpendingData: Identifiable {
+private struct TrendSpendingData: Identifiable {
     let date: Date
     let amount: Double
 
     var id: Date {
         date
+    }
+}
+
+/// Bucket size for the spend-trend time series.
+private enum TrendInterval: String, CaseIterable, Identifiable {
+    case daily
+    case weekly
+    case monthly
+
+    var id: String { rawValue }
+
+    var label: String {
+        switch self {
+        case .daily: return "Daily"
+        case .weekly: return "Weekly"
+        case .monthly: return "Monthly"
+        }
+    }
+
+    /// Calendar component used both to step through buckets and to size the bars.
+    var calendarComponent: Calendar.Component {
+        switch self {
+        case .daily: return .day
+        case .weekly: return .weekOfYear
+        case .monthly: return .month
+        }
     }
 }
 
