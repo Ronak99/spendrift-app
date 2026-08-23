@@ -14,9 +14,19 @@ struct CategoryTransactionsView: View {
 
     let category: TransactionCategory
 
-    @State private var viewModel = TransactionViewModel()
+    @State private var viewModel: TransactionViewModel
     @State private var selectedTransaction: Transaction?
     @State private var showEditCategorySheet = false
+
+    /// `initialDate` seeds the period window so drill-downs (e.g. from Analytics)
+    /// open on the same range the caller was viewing. The period granularity is
+    /// app-wide and read from `TransactionViewModel`, so the anchor date is enough.
+    init(category: TransactionCategory, initialDate: Date = Date()) {
+        self.category = category
+        let viewModel = TransactionViewModel()
+        viewModel.selectedDate = initialDate
+        _viewModel = State(initialValue: viewModel)
+    }
 
     private var transactions: [Transaction] {
         allTransactions.filter { transaction in

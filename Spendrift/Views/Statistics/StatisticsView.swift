@@ -13,6 +13,11 @@ struct StatisticsView: View {
     @Query(sort: \Transaction.date, order: .reverse) private var allTransactions: [Transaction]
     var periodViewModel: TransactionViewModel
 
+    /// Category the user tapped in the breakdown; drives navigation to its filtered transactions.
+    @State private var drillCategory: TransactionCategory?
+    /// Cumulative angle value reported by tapping a pie slice; mapped back to a category.
+    @State private var selectedAngle: Double?
+
     private let categoryPalette: [Color] = [
         .blue, .purple, .pink, .orange, .teal, .green, .indigo, .cyan, .mint, .yellow, .brown
     ]
@@ -65,32 +70,36 @@ struct StatisticsView: View {
     }
 
     private var categoryBreakdown: [CategorySpendingData] {
-        let grouped = Dictionary(grouping: expenseTransactions) { transaction in
-            let name = transaction.category?.name ?? "Uncategorized"
-            let iconName = transaction.category?.icon.systemImageName ?? "questionmark.circle"
-            return "\(name)||\(iconName)"
-        }
+        guard totalSpent > 0 else { return [] }
 
-        let rows = grouped.map { key, transactions in
-            let components = key.components(separatedBy: "||")
-            let name = components.first ?? "Uncategorized"
-            let iconName = components.count > 1 ? components[1] : "questionmark.circle"
+        let grouped = Dictionary(grouping: expenseTransactions) { $0.category?.id }
+
+        let rows = grouped.map { _, transactions -> (category: TransactionCategory?, amount: Double) in
             let amount = transactions.reduce(0) { $0 + $1.amount }
-            return (name: name, iconName: iconName, amount: amount)
+            return (transactions.first?.category, amount)
         }
         .sorted { $0.amount > $1.amount }
 
-        guard totalSpent > 0 else { return [] }
-
         return rows.enumerated().map { index, row in
             CategorySpendingData(
-                name: row.name,
-                iconName: row.iconName,
+                category: row.category,
+                name: row.category?.name ?? "Uncategorized",
+                iconName: row.category?.icon.systemImageName ?? "questionmark.circle",
                 amount: row.amount,
                 share: row.amount / totalSpent,
                 color: categoryPalette[index % categoryPalette.count]
             )
         }
+    }
+
+    /// Maps a cumulative angle value (from `chartAngleSelection`) back to the slice it falls in.
+    private func categoryData(atAngleValue value: Double) -> CategorySpendingData? {
+        var cumulative = 0.0
+        for item in categoryBreakdown {
+            cumulative += item.amount
+            if value <= cumulative { return item }
+        }
+        return categoryBreakdown.last
     }
 
     private var dailySpending: [DailySpendingData] {
@@ -197,6 +206,12 @@ struct StatisticsView: View {
                     }
                 }
             }
+            .navigationDestination(item: $drillCategory) { category in
+                CategoryTransactionsView(
+                    category: category,
+                    initialDate: periodViewModel.selectedDate
+                )
+            }
         }
     }
 
@@ -233,7 +248,7 @@ struct StatisticsView: View {
     private var spendingBreakdownCard: some View {
         analyticsCard(
             title: "Spending Breakdown",
-            subtitle: "Category share for \(periodViewModel.periodDescription)"
+            subtitle: "Tap a category to see its transactions for \(periodViewModel.periodDescription)"
         ) {
             ZStack {
                 Chart(categoryBreakdown) { category in
@@ -247,6 +262,7 @@ struct StatisticsView: View {
                 }
                 .frame(height: 260)
                 .chartLegend(.hidden)
+                .chartAngleSelection(value: $selectedAngle)
 
                 VStack(spacing: 6) {
                     Text("Total Spent")
@@ -260,34 +276,62 @@ struct StatisticsView: View {
                             .foregroundStyle(.secondary)
                     }
                 }
+                .allowsHitTesting(false)
+            }
+            .onChange(of: selectedAngle) { _, newValue in
+                guard let newValue else { return }
+                if let target = categoryData(atAngleValue: newValue)?.category {
+                    drillCategory = target
+                }
+                selectedAngle = nil
             }
 
-            VStack(spacing: 12) {
+            VStack(spacing: 0) {
                 ForEach(categoryBreakdown) { category in
-                    HStack(spacing: 12) {
-                        Circle()
-                            .fill(category.color)
-                            .frame(width: 10, height: 10)
-
-                        Image(systemName: category.iconName)
-                            .foregroundStyle(category.color)
-                            .frame(width: 18)
-
-                        Text(category.name)
-                            .font(.subheadline.weight(.medium))
-
-                        Spacer()
-
-                        Text(category.percentageText)
-                            .font(.subheadline.weight(.semibold))
-                            .foregroundStyle(.secondary)
-
-                        Text(category.amount.formatCurrency)
-                            .font(.subheadline.weight(.semibold))
+                    if let target = category.category {
+                        Button {
+                            drillCategory = target
+                        } label: {
+                            categoryLegendRow(category, isDrillable: true)
+                        }
+                        .buttonStyle(.plain)
+                    } else {
+                        categoryLegendRow(category, isDrillable: false)
                     }
                 }
             }
         }
+    }
+
+    private func categoryLegendRow(_ category: CategorySpendingData, isDrillable: Bool) -> some View {
+        HStack(spacing: 12) {
+            Circle()
+                .fill(category.color)
+                .frame(width: 10, height: 10)
+
+            Image(systemName: category.iconName)
+                .foregroundStyle(category.color)
+                .frame(width: 18)
+
+            Text(category.name)
+                .font(.subheadline.weight(.medium))
+
+            Spacer()
+
+            Text(category.percentageText)
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(.secondary)
+
+            Text(category.amount.formatCurrency)
+                .font(.subheadline.weight(.semibold))
+
+            Image(systemName: "chevron.right")
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(.tertiary)
+                .opacity(isDrillable ? 1 : 0)
+        }
+        .contentShape(Rectangle())
+        .padding(.vertical, 6)
     }
 
     private var dailyTrendCard: some View {
@@ -425,6 +469,9 @@ struct StatisticsView: View {
 }
 
 private struct CategorySpendingData: Identifiable {
+    /// The underlying category, or `nil` for the synthetic "Uncategorized" bucket
+    /// (which has no transactions view to drill into).
+    let category: TransactionCategory?
     let name: String
     let iconName: String
     let amount: Double
@@ -432,7 +479,7 @@ private struct CategorySpendingData: Identifiable {
     let color: Color
 
     var id: String {
-        name
+        category?.id.uuidString ?? "uncategorized"
     }
 
     var percentageText: String {
