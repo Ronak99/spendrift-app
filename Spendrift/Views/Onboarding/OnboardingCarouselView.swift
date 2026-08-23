@@ -91,7 +91,7 @@ struct OnboardingCarouselView: View {
                 if currentPage < totalPages - 1 {
                     withAnimation(.easeInOut(duration: 0.35)) { currentPage += 1 }
                 } else {
-                    completeOnboarding()
+                    finishOnboarding(method: .getStarted)
                 }
             } label: {
                 Text(isOnLastOnboardingPage ? "Get Started" : "Next")
@@ -107,13 +107,49 @@ struct OnboardingCarouselView: View {
             }
             .animation(.easeInOut(duration: 0.35), value: currentPage)
             .padding(.horizontal, 24)
+
+            // Skip lets intent-driven users jump straight to logging their first
+            // expense without stepping through every page. Hidden (but kept in the
+            // layout to avoid a jumping CTA) on the last page, where the primary
+            // "Get Started" button already finishes onboarding.
+            Button {
+                finishOnboarding(method: .skipped)
+            } label: {
+                Text("Skip")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(OnboardingTheme.textSecondary)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 4)
+            }
+            .opacity(isOnLastOnboardingPage ? 0 : 1)
+            .disabled(isOnLastOnboardingPage)
+            .animation(.easeInOut(duration: 0.35), value: currentPage)
+            .accessibilityLabel("Skip onboarding")
+            .accessibilityHint("Skips the introduction and takes you to log your first expense")
+            .padding(.horizontal, 24)
         }
         .padding(.bottom, 40)
     }
 
-    private func completeOnboarding() {
+    /// How the user left the onboarding carousel. Sent as the `method` property on
+    /// `onboarding_completed` so activation/retention can compare users who skip
+    /// against users who step through every page.
+    private enum OnboardingCompletionMethod: String {
+        case getStarted = "get_started"
+        case skipped = "skip"
+    }
+
+    /// Shared exit path for both the "Get Started" and "Skip" controls: record the
+    /// outcome, then persist the current version. Persisting flips `needsOnboarding`
+    /// to false (so the carousel is never re-shown) and drives RootContainerView to
+    /// dismiss the sheet, landing the user on the Transactions tab — whose empty
+    /// state is the "log your first expense" prompt (RON-78).
+    private func finishOnboarding(method: OnboardingCompletionMethod) {
         UINotificationFeedbackGenerator().notificationOccurred(.success)
-        Analytics.capture(.onboardingCompleted, [Analytics.Key.version: OnboardingCarouselView.currentVersion])
+        Analytics.capture(.onboardingCompleted, [
+            Analytics.Key.version: OnboardingCarouselView.currentVersion,
+            Analytics.Key.method: method.rawValue,
+        ])
         onboardingVersion = OnboardingCarouselView.currentVersion
     }
 
