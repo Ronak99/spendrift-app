@@ -26,6 +26,11 @@ final class ShareViewController: UIViewController {
     private let activityIndicator = UIActivityIndicatorView(style: .large)
     private let statusLabel = UILabel()
 
+    /// Guards `completeRequest` so it is sent exactly once even if a future code
+    /// path calls `complete()` twice; sending it twice is undefined behavior.
+    /// Only mutated on the main thread.
+    private var didComplete = false
+
     override func viewDidLoad() {
         super.viewDidLoad()
         configureLoadingUI()
@@ -71,19 +76,20 @@ final class ShareViewController: UIViewController {
             let didPersist = data.map { self.persist(imageData: $0, provider: provider) } ?? false
 
             DispatchQueue.main.async {
-                guard didPersist else {
-                    self.complete()
-                    return
+                if didPersist {
+                    self.openHostApp()
                 }
-                self.openHostApp { opened in
-                    if !opened {
-                        // The image is already saved in the App Group inbox, so it will
-                        // import the next time the user opens Spendrift manually.
-                        self.statusLabel.text = "Saved. Open Spendrift to finish importing."
-                        self.activityIndicator.stopAnimating()
-                    }
-                    self.complete()
-                }
+                // Complete synchronously, in the same runloop turn as the open call.
+                // Once the host app starts foregrounding, iOS suspends and often
+                // terminates this extension process, so completion handlers and
+                // delayed dispatch blocks scheduled here never run. If completeRequest
+                // has not been sent by then, the source app (e.g. Photos) is left
+                // frozen behind a share sheet that never dismisses. The open call is
+                // an out-of-process request to the system and proceeds independently
+                // of this extension's lifetime, so completing now does not cancel it.
+                // If the open fails anyway, the image is already saved in the App
+                // Group inbox and imports the next time Spendrift is launched.
+                self.complete()
             }
         }
     }
@@ -140,23 +146,23 @@ final class ShareViewController: UIViewController {
     /// returns `false`). Casting to `UIApplication` is allowed here because only
     /// `UIApplication.shared` is marked unavailable in extensions, not the instance method.
     ///
-    /// `completion` receives whether the open was dispatched successfully. Do not call
-    /// `completeRequest` until it fires, or the pending open may be cancelled.
-    private func openHostApp(completion: @escaping (Bool) -> Void) {
+    /// Fire-and-forget: no completion handler is passed because the extension is
+    /// suspended as soon as the host app foregrounds, so the handler would never
+    /// reliably run.
+    private func openHostApp() {
         var responder: UIResponder? = self
         while let current = responder {
             if let application = current as? UIApplication {
-                application.open(Inbox.openURL, options: [:]) { success in
-                    DispatchQueue.main.async { completion(success) }
-                }
+                application.open(Inbox.openURL, options: [:], completionHandler: nil)
                 return
             }
             responder = current.next
         }
-        completion(false)
     }
 
     private func complete() {
+        guard !didComplete else { return }
+        didComplete = true
         extensionContext?.completeRequest(returningItems: [], completionHandler: nil)
     }
 }

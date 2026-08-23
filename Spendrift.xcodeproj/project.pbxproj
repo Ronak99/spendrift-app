@@ -834,7 +834,7 @@
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = SpendriftShareExtension/SpendriftShareExtension.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 2;
 				DEVELOPMENT_TEAM = YAHK4G4F5A;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = SpendriftShareExtension/Info.plist;
@@ -864,7 +864,7 @@
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = SpendriftShareExtension/SpendriftShareExtension.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 2;
 				DEVELOPMENT_TEAM = YAHK4G4F5A;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = SpendriftShareExtension/Info.plist;
