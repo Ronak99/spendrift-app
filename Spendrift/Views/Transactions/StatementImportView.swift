@@ -57,7 +57,7 @@ struct StatementImportView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { dismiss() }
+                    SheetDismissToolbarButton()
                 }
                 if didFinishParsing && !importedRows.isEmpty {
                     ToolbarItem(placement: .confirmationAction) {
@@ -210,7 +210,7 @@ struct StatementImportView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") {
+                    SheetDismissToolbarButton {
                         showPasswordSheet = false
                     }
                 }

@@ -112,7 +112,7 @@ struct FeatureRequestView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { dismiss() }
+                    SheetDismissToolbarButton()
                 }
             }
             .sheet(isPresented: $showLibrary) {

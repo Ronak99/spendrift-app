@@ -225,7 +225,6 @@ private struct ShareSheet: UIViewControllerRepresentable {
 }
 
 struct SettingsView: View {
-    @Environment(\.dismiss) private var dismiss
     @Environment(\.openURL) private var openURL
 
     @AppStorage(Color.selectedThemeIndexKey) private var selectedThemeIndex = Color.defaultThemeIndex
@@ -399,14 +398,11 @@ struct SettingsView: View {
             }
             .background(SettingsTokens.screenBackground.ignoresSafeArea())
             .navigationTitle("Settings")
-            .navigationBarTitleDisplayMode(.large)
+            .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Done") {
-                        dismiss()
-                    }
-                    .font(.system(size: 17, weight: .semibold))
-                    .foregroundStyle(accent)
+                ToolbarItem(placement: .topBarLeading) {
+                    SheetDismissToolbarButton()
+                        .foregroundStyle(accent)
                 }
             }
         }

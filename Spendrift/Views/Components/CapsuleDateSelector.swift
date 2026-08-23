@@ -156,7 +156,7 @@ private struct WeekJumpSheet: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    Button("Cancel") { dismiss() }
+                    SheetDismissToolbarButton()
                 }
                 ToolbarItem(placement: .topBarTrailing) {
                     Button("Go") {

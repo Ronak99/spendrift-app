@@ -180,11 +180,7 @@ struct UpdateTransactionSheet: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button {
-                        dismiss()
-                    } label: {
-                        Image(systemName: "xmark")
-                    }
+                    SheetDismissToolbarButton()
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Save") {

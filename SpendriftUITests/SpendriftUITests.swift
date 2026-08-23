@@ -245,7 +245,7 @@ final class AccountIntegrationTests: SpendriftUITestBase {
         openNewAccountSheet()
         XCTAssertTrue(app.navigationBars["New Account"].waitForExistence(timeout: 3))
 
-        app.navigationBars.buttons["Cancel"].tap()
+        app.navigationBars.buttons["xmark"].tap()
         XCTAssertTrue(app.navigationBars["Accounts"].waitForExistence(timeout: 3))
     }
 
@@ -356,7 +356,7 @@ final class CategoryIntegrationTests: SpendriftUITestBase {
         openNewCategorySheet()
         XCTAssertTrue(app.navigationBars["New Category"].waitForExistence(timeout: 3))
 
-        app.navigationBars.buttons["Cancel"].tap()
+        app.navigationBars.buttons["xmark"].tap()
         XCTAssertTrue(app.navigationBars["Categories"].waitForExistence(timeout: 3))
     }
 

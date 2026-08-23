@@ -65,9 +65,7 @@ struct UpdateAccountSheet: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") {
-                        dismiss()
-                    }
+                    SheetDismissToolbarButton()
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Save") {
