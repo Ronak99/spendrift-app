@@ -47,6 +47,8 @@ struct SpendriftApp: App {
         }
     }
 
+    // Single window hosting the root container; the shared SwiftData
+    // container is injected here so every view in the tree can query it.
     var body: some Scene {
         WindowGroup {
             RootContainerView()
