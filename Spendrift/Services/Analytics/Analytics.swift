@@ -80,7 +80,19 @@ enum Analytics {
         config.personProfiles = .identifiedOnly
         config.captureApplicationLifecycleEvents = true
         config.captureScreenViews = false
-        config.sessionReplay = false
+
+        // Session replay: record how users move through and interact with the app
+        // so we can see where flows stall or break. This is a finance app, so we
+        // keep PostHog's privacy defaults on — text inputs, images, and sandboxed
+        // system views (photo/contact pickers) are masked on-device before any
+        // frame is sent. Replay honours the same opt-out as event capture below.
+        config.sessionReplay = true
+        config.sessionReplayConfig.maskAllTextInputs = true
+        config.sessionReplayConfig.maskAllImages = true
+        config.sessionReplayConfig.maskAllSandboxedViews = true
+        // SwiftUI view hierarchies don't serialise into PostHog's wireframe format,
+        // so capture screenshots instead; masking is still applied to each frame.
+        config.sessionReplayConfig.screenshotMode = true
         #if DEBUG
         config.debug = true
         config.flushAt = 1
