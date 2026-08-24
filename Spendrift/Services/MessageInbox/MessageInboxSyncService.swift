@@ -143,44 +143,36 @@ enum MessageInboxSyncService {
                     createdIDs.append(id)
                     createdCount += 1
                     inboxContext.delete(row)
-                    #if DEBUG
                     MessageInboxDebugLog.recordLedgerOutcome(
                         fingerprint: row.fingerprint,
                         capturedAt: row.capturedAt,
                         outcome: .imported,
                         transactionID: id
                     )
-                    #endif
                 case .skippedDuplicate:
                     skippedCount += 1
                     inboxContext.delete(row)
-                    #if DEBUG
                     MessageInboxDebugLog.recordLedgerOutcome(
                         fingerprint: row.fingerprint,
                         capturedAt: row.capturedAt,
                         outcome: .skippedDuplicate
                     )
-                    #endif
                 case .rejected:
                     rejectedCount += 1
                     inboxContext.delete(row)
-                    #if DEBUG
                     MessageInboxDebugLog.recordLedgerOutcome(
                         fingerprint: row.fingerprint,
                         capturedAt: row.capturedAt,
                         outcome: .rejected
                     )
-                    #endif
                 case .failed:
                     row.attemptCount += 1
                     row.lastAttemptAt = Date()
-                    #if DEBUG
                     MessageInboxDebugLog.recordLedgerOutcome(
                         fingerprint: row.fingerprint,
                         capturedAt: row.capturedAt,
                         outcome: .failed
                     )
-                    #endif
                 }
             }
 

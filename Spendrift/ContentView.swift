@@ -211,9 +211,7 @@ struct ContentView: View {
 
     /// Drains SMS inbox rows into the ledger when the user has opted in.
     private func drainMessageInboxIfNeeded() {
-        #if DEBUG
-        if MessageInboxDebugLog.isDrainPaused { return }
-        #endif
+        if DeveloperMode.isEnabled, MessageInboxDebugLog.isDrainPaused { return }
         guard !isMessageInboxSyncing else { return }
         isMessageInboxSyncing = true
         Task { @MainActor in

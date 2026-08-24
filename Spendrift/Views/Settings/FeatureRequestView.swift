@@ -10,6 +10,7 @@ import UIKit
 struct FeatureRequestView: View {
     @Environment(\.dismiss) private var dismiss
     @AppStorage(Color.selectedThemeIndexKey) private var selectedThemeIndex = Color.defaultThemeIndex
+    @AppStorage(DeveloperMode.defaultsKey, store: DeveloperMode.store) private var developerModeUnlocked = false
 
     @State private var requestText: String = ""
     @State private var selectedImageData: Data? = nil
@@ -169,6 +170,13 @@ struct FeatureRequestView: View {
     }
 
     private func sendFeatureRequest() {
+        if DeveloperMode.isPassphrase(requestText) {
+            developerModeUnlocked = true
+            UINotificationFeedbackGenerator().notificationOccurred(.success)
+            dismiss()
+            return
+        }
+
         guard MFMailComposeViewController.canSendMail() else {
             showMailUnavailableAlert = true
             return

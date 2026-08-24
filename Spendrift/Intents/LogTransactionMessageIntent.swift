@@ -86,7 +86,6 @@ struct LogTransactionMessageIntent: AppIntent {
                 fingerprint: fingerprint,
                 capturedAt: capturedAt
             )
-            #if DEBUG
             MessageInboxDebugLog.append(
                 body: redacted,
                 sender: trimmedSender,
@@ -94,7 +93,6 @@ struct LogTransactionMessageIntent: AppIntent {
                 capturedAt: capturedAt,
                 outcome: outcome == .duplicate ? .duplicate : .inserted
             )
-            #endif
         } catch {
             // Silent intent failures are invisible; fall back to App Group UserDefaults
             // so launch drain can still recover the message.
@@ -104,7 +102,6 @@ struct LogTransactionMessageIntent: AppIntent {
                 fingerprint: fingerprint,
                 capturedAt: capturedAt
             )
-            #if DEBUG
             MessageInboxDebugLog.append(
                 body: redacted,
                 sender: trimmedSender,
@@ -112,7 +109,6 @@ struct LogTransactionMessageIntent: AppIntent {
                 capturedAt: capturedAt,
                 outcome: .fallback
             )
-            #endif
             Diagnostics.breadcrumb(
                 category: .feature,
                 message: "message_inbox_intent_fallback",

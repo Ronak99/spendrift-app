@@ -233,6 +233,7 @@ struct SettingsView: View {
     @AppStorage(NotificationManager.Keys.dailyReminderHour) private var dailyReminderHour = NotificationManager.defaultHour
     @AppStorage(NotificationManager.Keys.dailyReminderMinute) private var dailyReminderMinute = NotificationManager.defaultMinute
     @AppStorage(NotificationManager.Keys.dailyReminderTimeInterval) private var reminderTimeInterval = NotificationManager.defaultReminderTimeInterval
+    @AppStorage(DeveloperMode.defaultsKey, store: DeveloperMode.store) private var developerModeUnlocked = false
 
     @State private var showFeatureRequest = false
     @State private var showReminderTimePicker = false
@@ -392,20 +393,33 @@ struct SettingsView: View {
                         }
                     }
 
-                    #if DEBUG
-                    SettingsSection(title: "Developer") {
-                        SettingsCard {
-                            SettingsRow(
-                                icon: "ladybug.fill",
-                                title: "Message inbox debug",
-                                accent: accent,
-                                accentSoft: accentSoft,
-                                accessory: .chevron,
-                                action: { showMessageInboxDebug = true }
-                            )
+                    if showsDeveloperTools {
+                        SettingsSection(title: "Developer") {
+                            SettingsCard {
+                                SettingsRow(
+                                    icon: "ladybug.fill",
+                                    title: "Message inbox debug",
+                                    accent: accent,
+                                    accentSoft: accentSoft,
+                                    accessory: .chevron,
+                                    action: { showMessageInboxDebug = true }
+                                )
+
+                                if developerModeUnlocked {
+                                    SettingsInsetDivider()
+
+                                    SettingsRow(
+                                        icon: "lock.fill",
+                                        title: "Turn off developer mode",
+                                        accent: accent,
+                                        accentSoft: accentSoft,
+                                        accessory: .chevron,
+                                        action: { developerModeUnlocked = false }
+                                    )
+                                }
+                            }
                         }
                     }
-                    #endif
 
                     Text(appVersionLabel)
                         .font(.system(size: 12, weight: .regular))
@@ -430,6 +444,7 @@ struct SettingsView: View {
         .tint(accent)
         .animation(.easeInOut(duration: 0.2), value: selectedThemeIndex)
         .animation(.easeInOut(duration: 0.2), value: dailyReminderEnabled)
+        .animation(.easeInOut(duration: 0.2), value: developerModeUnlocked)
         .task {
             migrateThemeIfNeeded()
             selectedThemeIndex = Color.normalizedThemeIndex(selectedThemeIndex)
@@ -452,11 +467,13 @@ struct SettingsView: View {
         .sheet(isPresented: $showInviteSheet) {
             ShareSheet(items: [AppShareContent.fullShareText])
         }
-        #if DEBUG
         .sheet(isPresented: $showMessageInboxDebug) {
             MessageInboxDebugView()
         }
-        #endif
+    }
+
+    private var showsDeveloperTools: Bool {
+        developerModeUnlocked || DeveloperMode.isEnabled
     }
 
     private var themeCard: some View {

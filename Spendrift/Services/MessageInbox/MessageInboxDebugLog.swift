@@ -2,7 +2,7 @@
 //  MessageInboxDebugLog.swift
 //  Spendrift
 //
-//  DEBUG capture history for Log Transaction Message.
+//  Capture history for Log Transaction Message.
 //  Survives inbox drain so you can confirm the intent stored a body.
 //
 
@@ -66,6 +66,7 @@ enum MessageInboxDebugLog {
         capturedAt: Date,
         outcome: Outcome
     ) {
+        guard DeveloperMode.isEnabled else { return }
         var items = all()
         items.insert(
             Entry(
@@ -103,6 +104,7 @@ enum MessageInboxDebugLog {
         outcome: LedgerOutcome,
         transactionID: UUID? = nil
     ) {
+        guard DeveloperMode.isEnabled else { return }
         var items = all()
         var changed = false
         for index in items.indices where items[index].fingerprint == fingerprint {
