@@ -80,9 +80,15 @@ enum Diagnostics {
         guard !cloudDSN.isEmpty, cloudDSN != placeholderDSN else { return }
         guard let tunnelURL = AppSecrets.sentryTunnelURL else { return }
 
+        SentryTunnelURLProtocol.tunnelURL = tunnelURL
+        var sessionConfig = URLSessionConfiguration.ephemeral
+        sessionConfig.protocolClasses = [SentryTunnelURLProtocol.self]
+            + (sessionConfig.protocolClasses ?? [])
+        let sentrySession = URLSession(configuration: sessionConfig)
+
         SentrySDK.start { options in
             options.dsn = cloudDSN
-            options.tunnel = tunnelURL.absoluteString
+            options.urlSession = sentrySession
             options.enableCaptureFailedRequests = false
             options.experimental.enableLogs = true
             if let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String,
