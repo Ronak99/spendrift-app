@@ -28,6 +28,18 @@ struct ExpenseAppShortcuts: AppShortcutsProvider {
             ],
             shortTitle: "Log Expense by Typing",
             systemImageName: "textformat.123"
+        ),
+        // Registered so Shortcuts / Automations can discover the action.
+        // Phrases are for indexing; the intended use is a Message automation binding Shortcut Input.
+        AppShortcut(
+            intent: LogTransactionMessageIntent(),
+            phrases: [
+                "Log transaction message in \(.applicationName)",
+                "Save bank message in \(.applicationName)",
+                "Capture SMS transaction with \(.applicationName)"
+            ],
+            shortTitle: "Log Transaction Message",
+            systemImageName: "message.fill"
         )
     ]
 }

@@ -31,7 +31,7 @@ struct DefaultCategorySeederTests {
 
         let categories = try context.fetch(FetchDescriptor<TransactionCategory>())
         #expect(categories.count == 10)
-        #expect(categories.allSatisfy(\.isDefault))
+        #expect(categories.allSatisfy { $0.isDefault })
         #expect(categories.contains { $0.name == "Groceries" && $0.type == .expense })
         #expect(categories.contains { $0.name == "Other Income" && $0.type == .income })
     }

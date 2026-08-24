@@ -23,7 +23,7 @@ final class Account {
     var transactions: [Transaction]?
     
     var currentBalance: Double {
-        let txns = transactions ?? []
+        let txns = (transactions ?? []).filter(\.isPersisted)
         let income = txns
             .filter { $0.transactionType == .income }
             .reduce(0) { $0 + $1.amount }

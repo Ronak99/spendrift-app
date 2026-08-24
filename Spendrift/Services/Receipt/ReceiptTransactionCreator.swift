@@ -103,7 +103,8 @@ enum ReceiptTransactionCreator {
             date: draft.date,
             transactionType: draft.transactionType,
             category: category,
-            account: account
+            account: account,
+            source: TransactionSource.receipt.rawValue
         )
         modelContext.insert(transaction)
         try? modelContext.save()

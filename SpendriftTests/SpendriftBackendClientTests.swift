@@ -35,7 +35,7 @@ struct SpendriftBackendClientTests {
         {
           "status": "ok",
           "version": "1.0.0",
-          "models": { "voice": "gpt-audio-mini", "statement": "gpt-4o" }
+          "models": { "voice": "gpt-audio-mini", "statement": "gpt-4o", "receipt": "gpt-4o", "message": "gpt-4o-mini" }
         }
         """
         let data = try #require(json.data(using: .utf8))
@@ -43,6 +43,8 @@ struct SpendriftBackendClientTests {
         #expect(health.status == "ok")
         #expect(health.models.voice == "gpt-audio-mini")
         #expect(health.models.statement == "gpt-4o")
+        #expect(health.models.receipt == "gpt-4o")
+        #expect(health.models.message == "gpt-4o-mini")
     }
 
     @Test

@@ -8,6 +8,17 @@
 import Foundation
 import SwiftData
 
+/// How a transaction entered the ledger. Stored as a plain string for CloudKit-friendly defaults.
+enum TransactionSource: String {
+    case manual
+    case voice
+    case pdf
+    case receipt
+    case shortcut
+    case widget
+    case sms
+}
+
 @Model
 final class Transaction {
     var id: UUID = UUID()
@@ -15,6 +26,8 @@ final class Transaction {
     var amount: Double = 0
     var date: Date = Date()
     var transactionType: TransactionType = TransactionType.none
+    /// Capture path: manual, voice, pdf, receipt, shortcut, widget, sms.
+    var source: String = TransactionSource.manual.rawValue
     
     @Relationship var category: TransactionCategory?
     @Relationship var account: Account?
@@ -26,7 +39,8 @@ final class Transaction {
         date: Date = Date(),
         transactionType: TransactionType,
         category: TransactionCategory? = nil,
-        account: Account? = nil
+        account: Account? = nil,
+        source: String = TransactionSource.manual.rawValue
     ) {
         self.id = id
         self.notes = notes
@@ -35,5 +49,6 @@ final class Transaction {
         self.transactionType = transactionType
         self.category = category
         self.account = account
+        self.source = source
     }
 }

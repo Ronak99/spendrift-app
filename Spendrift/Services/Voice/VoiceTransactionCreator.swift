@@ -129,7 +129,8 @@ enum VoiceTransactionCreator {
             date: draft.date,
             transactionType: draft.transactionType,
             category: draft.category,
-            account: draft.account
+            account: draft.account,
+            source: TransactionSource.voice.rawValue
         )
         modelContext.insert(transaction)
         try? modelContext.save()

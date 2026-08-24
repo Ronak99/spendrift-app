@@ -237,6 +237,8 @@ struct SettingsView: View {
     @State private var showFeatureRequest = false
     @State private var showReminderTimePicker = false
     @State private var showInviteSheet = false
+    @State private var showMessageAutomationGuide = false
+    @State private var showMessageInboxDebug = false
 
     private let helpFAQURL = URL(string: "https://spendrift.app/faq")
 
@@ -308,6 +310,10 @@ struct SettingsView: View {
 
                     SettingsSection(title: "Capture") {
                         captureCard
+                    }
+
+                    SettingsSection(title: "Messages") {
+                        messageInboxCard
                     }
 
                     SettingsSection(title: "Reminders") {
@@ -386,6 +392,21 @@ struct SettingsView: View {
                         }
                     }
 
+                    #if DEBUG
+                    SettingsSection(title: "Developer") {
+                        SettingsCard {
+                            SettingsRow(
+                                icon: "ladybug.fill",
+                                title: "Message inbox debug",
+                                accent: accent,
+                                accentSoft: accentSoft,
+                                accessory: .chevron,
+                                action: { showMessageInboxDebug = true }
+                            )
+                        }
+                    }
+                    #endif
+
                     Text(appVersionLabel)
                         .font(.system(size: 12, weight: .regular))
                         .foregroundStyle(SettingsTokens.textTertiary)
@@ -425,9 +446,17 @@ struct SettingsView: View {
             reminderTimePickerSheet
                 .presentationDetents([.height(320)])
         }
+        .sheet(isPresented: $showMessageAutomationGuide) {
+            messageAutomationGuideSheet
+        }
         .sheet(isPresented: $showInviteSheet) {
             ShareSheet(items: [AppShareContent.fullShareText])
         }
+        #if DEBUG
+        .sheet(isPresented: $showMessageInboxDebug) {
+            MessageInboxDebugView()
+        }
+        #endif
     }
 
     private var themeCard: some View {
@@ -463,6 +492,86 @@ struct SettingsView: View {
                     UIApplication.shared.open(url)
                 }
             }
+        }
+    }
+
+    private var lastMessageCapturedLabel: String {
+        guard let date = MessageInboxSettings.lastCapturedAt else {
+            return "Never"
+        }
+        return Self.messageCapturedFormatter.string(from: date)
+    }
+
+    private var messageInboxCard: some View {
+        SettingsCard {
+            SettingsRow(
+                icon: "clock.arrow.circlepath",
+                title: "Last message captured",
+                accent: accent,
+                accentSoft: accentSoft,
+                accessory: .value(lastMessageCapturedLabel),
+                action: nil
+            )
+
+            SettingsInsetDivider()
+
+            SettingsRow(
+                icon: "list.bullet.rectangle",
+                title: "Set up automations",
+                accent: accent,
+                accentSoft: accentSoft,
+                accessory: .chevron,
+                action: { showMessageAutomationGuide = true }
+            )
+        }
+    }
+
+    private var messageAutomationGuideSheet: some View {
+        NavigationStack {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 16) {
+                    Text("Spendrift can capture bank SMS while the app is closed, then turn them into transactions when you open the app. Setting up the automation is consent to capture and parse those messages.")
+                        .font(.body)
+                        .foregroundStyle(SettingsTokens.textSecondary)
+
+                    guideStep(number: 1, text: "Open the Shortcuts app and create a personal automation.")
+                    guideStep(number: 2, text: "Choose Message as the trigger. Set Message Contains to \"credited\".")
+                    guideStep(number: 3, text: "Turn on Run Immediately and turn off Notify When Run.")
+                    guideStep(number: 4, text: "Add the Spendrift action \"Log Transaction Message\" (search Spendrift if needed). Set Message to Shortcut Input.")
+                    guideStep(number: 5, text: "Duplicate the automation with Message Contains set to \"debited\".")
+                    guideStep(number: 6, text: "Messages are redacted on device before upload. Open Spendrift to import captured messages as transactions.")
+
+                    Text("Personal automations cannot be shared as a link. You need to create both triggers once on this iPhone.")
+                        .font(.footnote)
+                        .foregroundStyle(SettingsTokens.textTertiary)
+                }
+                .padding(20)
+            }
+            .background(SettingsTokens.screenBackground.ignoresSafeArea())
+            .navigationTitle("Message automations")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Done") {
+                        showMessageAutomationGuide = false
+                    }
+                    .foregroundStyle(accent)
+                }
+            }
+        }
+    }
+
+    private func guideStep(number: Int, text: String) -> some View {
+        HStack(alignment: .top, spacing: 12) {
+            Text("\(number)")
+                .font(.subheadline.weight(.bold))
+                .foregroundStyle(accent)
+                .frame(width: 24, height: 24)
+                .background(accentSoft, in: Circle())
+            Text(text)
+                .font(.body)
+                .foregroundStyle(SettingsTokens.textPrimary)
+                .fixedSize(horizontal: false, vertical: true)
         }
     }
 
@@ -586,6 +695,13 @@ struct SettingsView: View {
 
     private static let reminderFormatter: DateFormatter = {
         let formatter = DateFormatter()
+        formatter.timeStyle = .short
+        return formatter
+    }()
+
+    private static let messageCapturedFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateStyle = .medium
         formatter.timeStyle = .short
         return formatter
     }()

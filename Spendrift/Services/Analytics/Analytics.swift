@@ -34,6 +34,7 @@ enum Analytics {
         case notificationPermissionGranted = "notification_permission_granted"
         case notificationScheduled = "notification_scheduled"
         case notificationOpened = "notification_opened"
+        case messageInboxSynced = "message_inbox_synced"
     }
 
     /// Property keys. Keep flat and free of PII — never send transaction amounts or notes.

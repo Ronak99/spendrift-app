@@ -39,12 +39,12 @@ enum AppSecrets {
             .trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
-    /// Sentry envelopes are tunneled through the backend's `/sentry` route, so
-    /// the tunnel URL is derived from `backendBaseURL` rather than configured
-    /// separately. Returns nil when the backend URL is missing.
+    /// Production Sentry envelopes are tunneled through `/ingest` (same first-party
+    /// proxy as PostHog) so App Store builds never talk to ingest.sentry.io.
+    /// Returns nil when the backend URL is missing.
     static var sentryTunnelURL: URL? {
         guard let base = backendBaseURL else { return nil }
         let trimmed = base.absoluteString.trimmingCharacters(in: CharacterSet(charactersIn: "/"))
-        return URL(string: trimmed + "/sentry")
+        return URL(string: trimmed + "/ingest")
     }
 }

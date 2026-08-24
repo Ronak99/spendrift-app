@@ -331,7 +331,8 @@ struct UpdateTransactionSheet: View {
                 date: date,
                 transactionType: transactionType,
                 category: selectedCategory,
-                account: selectedAccount
+                account: selectedAccount,
+                source: TransactionSource.manual.rawValue
             )
             modelContext.insert(newTransaction)
             Analytics.captureTransactionCreated(method: "manual", type: transactionType.rawValue)

@@ -6,8 +6,16 @@
 //
 
 import Foundation
+import SwiftData
 
 extension Transaction {
+    /// False after SwiftData marks the row deleted.
+    /// Reading attributes such as `transactionType` on detached backing data crashes with
+    /// "backing data was detached from a context without resolving attribute faults".
+    var isPersisted: Bool {
+        !isDeleted
+    }
+
     var isExpense: Bool {
         transactionType == .expense
     }
@@ -23,7 +31,7 @@ extension Transaction {
 
 extension [Transaction] {
     var groupedByDate: [String: [Transaction]] {
-        Dictionary(grouping: self) { transaction in
+        Dictionary(grouping: filter(\.isPersisted)) { transaction in
             transaction.date.formatDate
         }
     }
@@ -31,7 +39,8 @@ extension [Transaction] {
     /// Calendar days in descending order (most recent first); within each day, transactions by date descending.
     var groupedByDateRecentFirst: [(dayStart: Date, title: String, transactions: [Transaction])] {
         let calendar = Calendar.current
-        let byDay = Dictionary(grouping: self) { calendar.startOfDay(for: $0.date) }
+        let persisted = filter(\.isPersisted)
+        let byDay = Dictionary(grouping: persisted) { calendar.startOfDay(for: $0.date) }
         return byDay.keys
             .sorted(by: >)
             .map { dayStart in
@@ -42,12 +51,12 @@ extension [Transaction] {
     }
     
     var totalExpenses: Double {
-        filter { $0.transactionType == .expense }
+        filter { $0.isPersisted && $0.transactionType == .expense }
             .reduce(0) { $0 + $1.amount }
     }
     
     var totalIncome: Double {
-        filter { $0.transactionType == .income }
+        filter { $0.isPersisted && $0.transactionType == .income }
             .reduce(0) { $0 + $1.amount }
     }
     

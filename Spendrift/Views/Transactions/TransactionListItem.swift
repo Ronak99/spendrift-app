@@ -11,6 +11,12 @@ struct TransactionListItem: View {
     let transaction: Transaction
     
     var body: some View {
+        if transaction.isPersisted {
+            rowContent
+        }
+    }
+
+    private var rowContent: some View {
         HStack(spacing: 12) {
             // Category icon
             ZStack {

@@ -130,6 +130,44 @@ struct SpendriftBackendClient {
         return try decode(ReceiptPayload.self, from: data)
     }
 
+    /// `POST /v1/messages/parse-transactions`
+    func parseTransactionMessages(
+        messages: [MessageParseRequestItem],
+        categories: [TransactionCategory],
+        clientTodayIso: String,
+        timezone: String
+    ) async throws -> MessageParsePayload {
+        let categoryInputs: [[String: String]] = categories.map { category in
+            ["name": category.name, "type": category.type.rawValue]
+        }
+        let bodyObject: [String: Any] = [
+            "messages": messages.map { item -> [String: Any] in
+                var dict: [String: Any] = [
+                    "id": item.id,
+                    "body": item.body,
+                ]
+                if let capturedAtIso = item.capturedAtIso {
+                    dict["capturedAtIso"] = capturedAtIso
+                }
+                return dict
+            },
+            "categories": categoryInputs,
+            "clientTodayIso": clientTodayIso,
+            "timezone": timezone,
+        ]
+        let bodyData = try JSONSerialization.data(withJSONObject: bodyObject)
+
+        let url = try endpoint(path: "/v1/messages/parse-transactions")
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        applyAuth(&request)
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.httpBody = bodyData
+
+        let data = try await perform(request: request, expectsAuth: true)
+        return try decode(MessageParsePayload.self, from: data)
+    }
+
     // MARK: - Request helpers
 
     private func endpoint(path: String) throws -> URL {

@@ -12,6 +12,8 @@ import SwiftUI
 struct ContentView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.scenePhase) private var scenePhase
+    @Query(sort: \Account.createdOn) private var accounts: [Account]
+    @Query(sort: \TransactionCategory.name) private var categories: [TransactionCategory]
     @AppStorage(Color.selectedThemeIndexKey) private var selectedThemeIndex = Color.defaultThemeIndex
     @AppStorage(Color.legacyThemeColorKey) private var legacyThemeColorName = "Blue"
     @AppStorage(NotificationManager.Keys.dailyReminderEnabled) private var dailyReminderEnabled = true
@@ -28,6 +30,8 @@ struct ContentView: View {
     @State private var useCompactVoiceCapture = false
     @State private var showSettingsSheet = false
     @State private var transactionPeriodViewModel = TransactionViewModel()
+    @State private var messageInboxBanner: MessageInboxImportBanner?
+    @State private var isMessageInboxSyncing = false
 
     private var accentColor: Color {
         Color.accentColor(forThemeIndex: selectedThemeIndex)
@@ -40,7 +44,8 @@ struct ContentView: View {
                 voiceCaptureTrigger: voiceCaptureTrigger,
                 useCompactVoiceCapture: useCompactVoiceCapture,
                 shortcutImportedAudio: shortcutImportedAudio,
-                receiptImport: receiptImport
+                receiptImport: receiptImport,
+                messageInboxBanner: $messageInboxBanner
             )
                 .tabItem {
                     Image(systemName: "list.bullet")
@@ -79,12 +84,14 @@ struct ContentView: View {
             ScreenshotDemoData.seedIfNeeded(modelContext: modelContext)
             handleVoiceIntentLaunchIfNeeded()
             handlePendingReceiptShareIfNeeded()
+            drainMessageInboxIfNeeded()
             Analytics.capture(.appOpened, [Analytics.Key.daysSinceInstall: Analytics.daysSinceInstall])
         }
         .onChange(of: scenePhase) { _, newPhase in
             guard newPhase == .active else { return }
             handleVoiceIntentLaunchIfNeeded()
             handlePendingReceiptShareIfNeeded()
+            drainMessageInboxIfNeeded()
             Analytics.capture(.appOpened, [Analytics.Key.daysSinceInstall: Analytics.daysSinceInstall])
         }
         .onChange(of: selectedTab) { _, newTab in
@@ -200,6 +207,26 @@ struct ContentView: View {
         useCompactVoiceCapture = false
         receiptImport = ReceiptSharePayload(id: UUID(), fileURL: url)
         Analytics.capture(.shortcutUsed, [Analytics.Key.kind: "receipt_share"])
+    }
+
+    /// Drains SMS inbox rows into the ledger when the user has opted in.
+    private func drainMessageInboxIfNeeded() {
+        #if DEBUG
+        if MessageInboxDebugLog.isDrainPaused { return }
+        #endif
+        guard !isMessageInboxSyncing else { return }
+        isMessageInboxSyncing = true
+        Task { @MainActor in
+            defer { isMessageInboxSyncing = false }
+            if let banner = await MessageInboxSyncService.syncIfNeeded(
+                ledgerContext: modelContext,
+                accounts: accounts,
+                categories: categories
+            ) {
+                messageInboxBanner = banner
+                selectedTab = 0
+            }
+        }
     }
 
     private func handleVoiceIntentLaunchIfNeeded() {

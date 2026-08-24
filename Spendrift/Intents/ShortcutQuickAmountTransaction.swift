@@ -35,7 +35,8 @@ enum ShortcutQuickAmountTransaction {
             date: Date(),
             transactionType: .expense,
             category: category,
-            account: primary
+            account: primary,
+            source: TransactionSource.shortcut.rawValue
         )
         modelContext.insert(transaction)
         try modelContext.save()

@@ -51,6 +51,33 @@ struct StatementTransactionData: Codable {
     let transactionType: String
 }
 
+// MARK: - Bank SMS Message Parsing
+
+struct MessageParsePayload: Codable {
+    let results: [MessageParseResultItem]
+}
+
+struct MessageParseResultItem: Codable {
+    let id: String
+    let status: String
+    let transaction: MessageTransactionData?
+    let reason: String?
+}
+
+struct MessageTransactionData: Codable {
+    let notes: String
+    let amount: Double
+    let date: String
+    let transactionType: String
+    let category: String?
+}
+
+struct MessageParseRequestItem: Encodable {
+    let id: String
+    let body: String
+    let capturedAtIso: String?
+}
+
 enum AIServiceError: LocalizedError, Equatable {
     case missingAPIKey
     case failedToBuildRequest

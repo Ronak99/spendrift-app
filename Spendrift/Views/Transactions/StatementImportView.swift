@@ -429,7 +429,8 @@ struct StatementImportView: View {
                 date: row.date,
                 transactionType: row.transactionType,
                 category: nil,
-                account: account
+                account: account,
+                source: TransactionSource.pdf.rawValue
             )
             modelContext.insert(transaction)
         }

@@ -24,7 +24,9 @@ struct StatisticsView: View {
 
     private var periodTransactions: [Transaction] {
         allTransactions.filter { transaction in
-            transaction.date >= periodViewModel.periodStart && transaction.date <= periodViewModel.periodEnd
+            transaction.isPersisted &&
+            transaction.date >= periodViewModel.periodStart &&
+            transaction.date <= periodViewModel.periodEnd
         }
     }
 

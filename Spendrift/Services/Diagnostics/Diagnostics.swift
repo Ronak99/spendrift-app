@@ -41,6 +41,7 @@ enum Diagnostics {
         case pdf
         case receipt
         case manual
+        case message
         case cloudkit
         case seeding
         case notifications
@@ -65,42 +66,37 @@ enum Diagnostics {
     }
 
     private static let optOutDefaultsKey = "diagnosticsOptOut"
-    private static let placeholderDSN = "https://REPLACE_ME@o0.ingest.sentry.io/0"
 
     // MARK: - Lifecycle
 
     static func bootstrap() {
         guard !isOptedOut else { return }
 
+        // Debug builds keep diagnostics local. Production posts envelopes through
+        // the backend `/ingest` tunnel so the device never talks to ingest.sentry.io.
+        #if !DEBUG
+        let placeholderDSN = "https://REPLACE_ME@o0.ingest.sentry.io/0"
         let cloudDSN = AppSecrets.sentryDSN
         guard !cloudDSN.isEmpty, cloudDSN != placeholderDSN else { return }
-        guard let backendBaseURL = AppSecrets.backendBaseURL else { return }
-        guard let clientDSN = Self.clientDSN(cloudDSN: cloudDSN, backendBaseURL: backendBaseURL) else {
-            return
-        }
+        guard let tunnelURL = AppSecrets.sentryTunnelURL else { return }
 
         SentrySDK.start { options in
-            // DSN host points at our backend; SDK POSTs to /api/{projectId}/envelope/
-            // and the backend forwards to Sentry cloud (no URLProtocol needed).
-            options.dsn = clientDSN
+            options.dsn = cloudDSN
+            options.tunnel = tunnelURL.absoluteString
             options.enableCaptureFailedRequests = false
+            options.experimental.enableLogs = true
             if let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String,
                let build = Bundle.main.infoDictionary?["CFBundleVersion"] as? String {
                 options.releaseName = "\(version) (\(build))"
             }
-            #if DEBUG
-            options.environment = "development"
-            options.debug = true
-            options.tracesSampleRate = 1.0
-            #else
             options.environment = "production"
             options.tracesSampleRate = 0.1
-            #endif
             options.beforeSend = { event in
                 scrubRequestHeaders(in: event)
                 return event
             }
         }
+        #endif
     }
 
     // MARK: - Breadcrumbs
@@ -177,35 +173,5 @@ enum Diagnostics {
     private static func scrubRequestHeaders(in event: Event) {
         event.request?.headers?.removeValue(forKey: "Authorization")
         event.request?.headers?.removeValue(forKey: "authorization")
-    }
-
-    /// Rewrites the cloud DSN host to the backend so the SDK sends envelopes to
-    /// `{backend}/api/{projectId}/envelope/` instead of Sentry directly.
-    private static func clientDSN(cloudDSN: String, backendBaseURL: URL) -> String? {
-        guard let cloud = URLComponents(string: cloudDSN.trimmingCharacters(in: .whitespacesAndNewlines)),
-              let publicKey = cloud.user,
-              !publicKey.isEmpty else {
-            return nil
-        }
-
-        let projectId = cloud.path.trimmingCharacters(in: CharacterSet(charactersIn: "/"))
-        guard !projectId.isEmpty else { return nil }
-
-        guard var components = URLComponents(url: backendBaseURL, resolvingAgainstBaseURL: false),
-              let host = components.host else {
-            return nil
-        }
-
-        let hostWithPort: String
-        if let port = components.port,
-           (components.scheme == "http" && port != 80)
-            || (components.scheme == "https" && port != 443) {
-            hostWithPort = "\(host):\(port)"
-        } else {
-            hostWithPort = host
-        }
-
-        let scheme = components.scheme ?? "https"
-        return "\(scheme)://\(publicKey)@\(hostWithPort)/\(projectId)"
     }
 }

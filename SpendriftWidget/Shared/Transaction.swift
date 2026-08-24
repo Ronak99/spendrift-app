@@ -15,6 +15,7 @@ final class Transaction {
     var amount: Double = 0
     var date: Date = Date()
     var transactionType: TransactionType = TransactionType.none
+    var source: String = "manual"
     
     @Relationship var category: TransactionCategory?
     @Relationship var account: Account?
@@ -26,7 +27,8 @@ final class Transaction {
         date: Date = Date(),
         transactionType: TransactionType,
         category: TransactionCategory? = nil,
-        account: Account? = nil
+        account: Account? = nil,
+        source: String = "manual"
     ) {
         self.id = id
         self.notes = notes
@@ -35,5 +37,6 @@ final class Transaction {
         self.transactionType = transactionType
         self.category = category
         self.account = account
+        self.source = source
     }
 }

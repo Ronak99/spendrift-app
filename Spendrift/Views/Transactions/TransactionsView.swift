@@ -45,24 +45,29 @@ struct TransactionsView: View {
     let useCompactVoiceCapture: Bool
     let shortcutImportedAudio: ShortcutImportedAudioPayload?
     let receiptImport: ReceiptSharePayload?
+    @Binding var messageInboxBanner: MessageInboxImportBanner?
 
     init(
         periodViewModel: TransactionViewModel,
         voiceCaptureTrigger: UUID? = nil,
         useCompactVoiceCapture: Bool = false,
         shortcutImportedAudio: ShortcutImportedAudioPayload? = nil,
-        receiptImport: ReceiptSharePayload? = nil
+        receiptImport: ReceiptSharePayload? = nil,
+        messageInboxBanner: Binding<MessageInboxImportBanner?> = .constant(nil)
     ) {
         self.periodViewModel = periodViewModel
         self.voiceCaptureTrigger = voiceCaptureTrigger
         self.useCompactVoiceCapture = useCompactVoiceCapture
         self.shortcutImportedAudio = shortcutImportedAudio
         self.receiptImport = receiptImport
+        self._messageInboxBanner = messageInboxBanner
     }
     
     private var transactions: [Transaction] {
         allTransactions.filter { transaction in
-            transaction.date >= periodViewModel.periodStart && transaction.date <= periodViewModel.periodEnd
+            transaction.isPersisted &&
+            transaction.date >= periodViewModel.periodStart &&
+            transaction.date <= periodViewModel.periodEnd
         }
     }
     
@@ -298,6 +303,27 @@ struct TransactionsView: View {
             }
             .overlay(alignment: .bottom) {
                 VStack(spacing: 8) {
+                    if let banner = messageInboxBanner {
+                        MessageInboxImportBannerView(
+                            count: banner.count,
+                            onUndo: {
+                                let ids = banner.transactionIDs
+                                withAnimation(.spring(response: 0.38, dampingFraction: 0.86)) {
+                                    messageInboxBanner = nil
+                                }
+                                MessageInboxSyncService.undoImport(
+                                    transactionIDs: ids,
+                                    modelContext: modelContext
+                                )
+                            },
+                            onDismiss: {
+                                withAnimation(.spring(response: 0.38, dampingFraction: 0.86)) {
+                                    messageInboxBanner = nil
+                                }
+                            }
+                        )
+                    }
+
                     ReceiptShareStatusBar(status: receiptShareStatus)
 
                     if receiptShare.isProcessing {

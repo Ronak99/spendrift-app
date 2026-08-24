@@ -20,6 +20,7 @@ struct AccountTransactionsView: View {
 
     private var transactions: [Transaction] {
         allTransactions.filter { transaction in
+            transaction.isPersisted &&
             transaction.account?.id == account.id &&
             transaction.date >= viewModel.periodStart &&
             transaction.date <= viewModel.periodEnd
