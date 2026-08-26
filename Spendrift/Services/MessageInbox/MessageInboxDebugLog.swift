@@ -30,7 +30,6 @@ enum MessageInboxDebugLog {
     struct Entry: Codable, Identifiable, Equatable {
         let id: UUID
         let body: String
-        let sender: String
         let fingerprint: String
         let capturedAt: Date
         let outcome: Outcome
@@ -42,7 +41,6 @@ enum MessageInboxDebugLog {
     struct PendingRow: Identifiable, Equatable {
         let id: UUID
         let body: String
-        let sender: String
         let capturedAt: Date
         let fingerprint: String
         let attemptCount: Int
@@ -61,7 +59,6 @@ enum MessageInboxDebugLog {
 
     static func append(
         body: String,
-        sender: String,
         fingerprint: String,
         capturedAt: Date,
         outcome: Outcome
@@ -72,7 +69,6 @@ enum MessageInboxDebugLog {
             Entry(
                 id: UUID(),
                 body: body,
-                sender: sender,
                 fingerprint: fingerprint,
                 capturedAt: capturedAt,
                 outcome: outcome,
@@ -136,7 +132,6 @@ enum MessageInboxDebugLog {
             PendingRow(
                 id: row.id,
                 body: row.body,
-                sender: row.sender,
                 capturedAt: row.capturedAt,
                 fingerprint: row.fingerprint,
                 attemptCount: row.attemptCount,

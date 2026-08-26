@@ -244,7 +244,6 @@ enum MessageInboxSyncService {
             for item in fallbackItems {
                 MessageInboxFallback.enqueue(
                     body: item.body,
-                    sender: item.sender,
                     fingerprint: item.fingerprint,
                     capturedAt: item.capturedAt
                 )
@@ -267,7 +266,6 @@ enum MessageInboxSyncService {
                 CapturedTransactionMessage(
                     id: item.id,
                     body: item.body,
-                    sender: item.sender,
                     capturedAt: item.capturedAt,
                     fingerprint: item.fingerprint
                 )

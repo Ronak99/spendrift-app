@@ -13,7 +13,6 @@ import SwiftData
 final class CapturedTransactionMessage {
     var id: UUID = UUID()
     var body: String = ""
-    var sender: String = ""
     var capturedAt: Date = Date()
     /// SHA-256 of the normalized body, used for short-window dedupe.
     var fingerprint: String = ""
@@ -23,7 +22,6 @@ final class CapturedTransactionMessage {
     init(
         id: UUID = UUID(),
         body: String,
-        sender: String = "",
         capturedAt: Date = Date(),
         fingerprint: String,
         attemptCount: Int = 0,
@@ -31,7 +29,6 @@ final class CapturedTransactionMessage {
     ) {
         self.id = id
         self.body = body
-        self.sender = sender
         self.capturedAt = capturedAt
         self.fingerprint = fingerprint
         self.attemptCount = attemptCount

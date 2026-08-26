@@ -129,7 +129,6 @@ struct MessageInboxDebugView: View {
                 ForEach(captureLog) { entry in
                     messageRow(
                         body: entry.body,
-                        sender: entry.sender,
                         capturedAt: entry.capturedAt,
                         fingerprint: entry.fingerprint,
                         badges: captureBadges(for: entry)
@@ -152,7 +151,6 @@ struct MessageInboxDebugView: View {
                 ForEach(pending) { row in
                     messageRow(
                         body: row.body,
-                        sender: row.sender,
                         capturedAt: row.capturedAt,
                         fingerprint: row.fingerprint,
                         badges: [DebugBadge(text: row.attemptCount > 0 ? "attempts \(row.attemptCount)" : "pending")]
@@ -183,7 +181,6 @@ struct MessageInboxDebugView: View {
                 ForEach(fallback, id: \.id) { item in
                     messageRow(
                         body: item.body,
-                        sender: item.sender,
                         capturedAt: item.capturedAt,
                         fingerprint: item.fingerprint,
                         badges: [DebugBadge(text: "fallback")]
@@ -199,7 +196,6 @@ struct MessageInboxDebugView: View {
 
     private func messageRow(
         body: String,
-        sender: String,
         capturedAt: Date,
         fingerprint: String,
         badges: [DebugBadge]
@@ -224,12 +220,6 @@ struct MessageInboxDebugView: View {
                             )
                     }
                 }
-            }
-
-            if !sender.isEmpty {
-                Text(sender)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
             }
 
             Text(body)
@@ -318,8 +308,7 @@ struct MessageInboxDebugView: View {
     @MainActor
     private func logTestMessage() async {
         let intent = LogTransactionMessageIntent(
-            message: "INR 250.00 debited from A/c XX1234 on 24-08-26 at TEST MERCHANT. Avl Bal INR 12,345.67",
-            sender: "VM-TESTBK"
+            message: "INR 250.00 debited from A/c XX1234 on 24-08-26 at TEST MERCHANT. Avl Bal INR 12,345.67"
         )
         try? await intent.perform()
         reload()

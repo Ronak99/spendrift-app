@@ -42,28 +42,17 @@ struct LogTransactionMessageIntent: AppIntent {
     )
     var message: String
 
-    @Parameter(
-        title: "Sender",
-        description: "Optional SMS sender / bank short code.",
-        default: ""
-    )
-    var sender: String
-
     static var parameterSummary: some ParameterSummary {
-        Summary("Log transaction message \(\.$message)") {
-            \.$sender
-        }
+        Summary("Log transaction message \(\.$message)")
     }
 
     /// Empty defaults so App Shortcuts can instantiate the intent for donation / discovery.
     init() {
         self.message = ""
-        self.sender = ""
     }
 
-    init(message: String, sender: String = "") {
+    init(message: String) {
         self.message = message
-        self.sender = sender
     }
 
     @MainActor
@@ -77,18 +66,14 @@ struct LogTransactionMessageIntent: AppIntent {
         let fingerprint = MessageFingerprint.fingerprint(for: redacted)
         let capturedAt = Date()
 
-        let trimmedSender = sender.trimmingCharacters(in: .whitespacesAndNewlines)
-
         do {
             let outcome = try Self.persist(
                 body: redacted,
-                sender: trimmedSender,
                 fingerprint: fingerprint,
                 capturedAt: capturedAt
             )
             MessageInboxDebugLog.append(
                 body: redacted,
-                sender: trimmedSender,
                 fingerprint: fingerprint,
                 capturedAt: capturedAt,
                 outcome: outcome == .duplicate ? .duplicate : .inserted
@@ -98,13 +83,11 @@ struct LogTransactionMessageIntent: AppIntent {
             // so launch drain can still recover the message.
             MessageInboxFallback.enqueue(
                 body: redacted,
-                sender: sender,
                 fingerprint: fingerprint,
                 capturedAt: capturedAt
             )
             MessageInboxDebugLog.append(
                 body: redacted,
-                sender: trimmedSender,
                 fingerprint: fingerprint,
                 capturedAt: capturedAt,
                 outcome: .fallback
@@ -128,7 +111,6 @@ struct LogTransactionMessageIntent: AppIntent {
     @MainActor
     private static func persist(
         body: String,
-        sender: String,
         fingerprint: String,
         capturedAt: Date
     ) throws -> PersistResult {
@@ -153,7 +135,6 @@ struct LogTransactionMessageIntent: AppIntent {
 
         let row = CapturedTransactionMessage(
             body: body,
-            sender: sender,
             capturedAt: capturedAt,
             fingerprint: fingerprint
         )

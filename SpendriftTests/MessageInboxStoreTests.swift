@@ -27,7 +27,6 @@ struct MessageInboxStoreTests {
         context.insert(
             CapturedTransactionMessage(
                 body: redacted,
-                sender: "HDFCBK",
                 capturedAt: capturedAt,
                 fingerprint: fingerprint
             )

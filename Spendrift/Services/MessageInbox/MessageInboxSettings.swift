@@ -42,7 +42,6 @@ enum MessageInboxFallback {
     struct Item: Codable {
         let id: UUID
         let body: String
-        let sender: String
         let fingerprint: String
         let capturedAt: Date
     }
@@ -53,7 +52,6 @@ enum MessageInboxFallback {
 
     static func enqueue(
         body: String,
-        sender: String,
         fingerprint: String,
         capturedAt: Date
     ) {
@@ -62,7 +60,6 @@ enum MessageInboxFallback {
             Item(
                 id: UUID(),
                 body: body,
-                sender: sender,
                 fingerprint: fingerprint,
                 capturedAt: capturedAt
             )
