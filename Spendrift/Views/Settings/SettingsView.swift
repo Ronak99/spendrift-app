@@ -7,6 +7,9 @@
 
 import SwiftUI
 import UIKit
+#if DEBUG
+import DebugSwift
+#endif
 
 private enum SettingsTokens {
     static let screenBackground = Color(uiColor: .systemGroupedBackground)
@@ -240,6 +243,7 @@ struct SettingsView: View {
     @State private var showInviteSheet = false
     @State private var showMessageAutomationGuide = false
     @State private var showMessageInboxDebug = false
+    @State private var showDebugSwift = false
 
     private let helpFAQURL = URL(string: "https://spendrift.app/faq")
 
@@ -396,6 +400,22 @@ struct SettingsView: View {
                     if showsDeveloperTools {
                         SettingsSection(title: "Developer") {
                             SettingsCard {
+                                #if DEBUG
+                                SettingsRow(
+                                    icon: "internaldrive.fill",
+                                    title: "SQLite debugger",
+                                    accent: accent,
+                                    accentSoft: accentSoft,
+                                    accessory: .chevron,
+                                    action: {
+                                        DebugSwift.debugViewControllerWillPresent()
+                                        showDebugSwift = true
+                                    }
+                                )
+
+                                SettingsInsetDivider()
+                                #endif
+
                                 SettingsRow(
                                     icon: "ladybug.fill",
                                     title: "Message inbox debug",
@@ -470,6 +490,14 @@ struct SettingsView: View {
         .sheet(isPresented: $showMessageInboxDebug) {
             MessageInboxDebugView()
         }
+        #if DEBUG
+        .fullScreenCover(isPresented: $showDebugSwift, onDismiss: {
+            DebugSwift.debugViewControllerDidDismiss()
+        }) {
+            DebugSwiftViewControllerRepresentable(onDismiss: { showDebugSwift = false })
+                .ignoresSafeArea()
+        }
+        #endif
     }
 
     private var showsDeveloperTools: Bool {

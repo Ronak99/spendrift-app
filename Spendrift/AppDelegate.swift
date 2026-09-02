@@ -7,13 +7,23 @@
 
 import UIKit
 import UserNotifications
+#if DEBUG
+import DebugSwift
+#endif
 
 class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDelegate {
+    #if DEBUG
+    let debugSwift = DebugSwift()
+    #endif
+
     func application(
         _ application: UIApplication,
         didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil
     ) -> Bool {
         UNUserNotificationCenter.current().delegate = self
+        #if DEBUG
+        DebugSwiftBootstrap.start(debugSwift)
+        #endif
         if let url = launchOptions?[.url] as? URL {
             handleIncomingURL(url)
         }

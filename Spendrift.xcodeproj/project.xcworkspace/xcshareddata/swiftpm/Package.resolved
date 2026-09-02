@@ -1,6 +1,15 @@
 {
-  "originHash" : "dcecd1d39777fd1dc63c6be77b3d689bf543a16cfedd4129b28e610ceb87bf39",
+  "originHash" : "e7fa47857844ba0e3aa54079f2bf174218c4d8696d290965a96bf96ac2c33ca2",
   "pins" : [
+    {
+      "identity" : "debugswift",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/DebugSwift/DebugSwift",
+      "state" : {
+        "revision" : "b85fd86581bc1b67710be82249d8aac2ef61b2f5",
+        "version" : "1.19.0"
+      }
+    },
     {
       "identity" : "posthog-ios",
       "kind" : "remoteSourceControl",
