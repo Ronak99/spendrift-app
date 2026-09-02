@@ -18,6 +18,8 @@ enum MessageInboxDebugLog {
         case inserted
         case duplicate
         case fallback
+        /// OTP / verification message: never stored, so never uploaded.
+        case skippedOTP
     }
 
     enum LedgerOutcome: String, Codable {

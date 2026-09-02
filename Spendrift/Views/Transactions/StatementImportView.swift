@@ -384,7 +384,7 @@ struct StatementImportView: View {
             } catch {
                 await MainActor.run {
                     let reason: String
-                    if case let SpendriftBackendError.apiError(code, _, _) = error {
+                    if case let SpendriftBackendError.apiError(_, code, _, _) = error {
                         reason = code
                     } else {
                         reason = String(describing: type(of: error))

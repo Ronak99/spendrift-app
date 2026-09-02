@@ -261,6 +261,7 @@ struct MessageInboxDebugView: View {
         case .inserted: "inbox saved"
         case .duplicate: "inbox duplicate"
         case .fallback: "inbox fallback"
+        case .skippedOTP: "inbox skipped (OTP)"
         }
     }
 

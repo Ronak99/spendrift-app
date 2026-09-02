@@ -207,6 +207,7 @@ struct SpendriftBackendClient {
     private func parseAPIError(statusCode: Int, data: Data) -> SpendriftBackendError {
         if let decoded = try? JSONDecoder().decode(SpendriftApiErrorResponse.self, from: data) {
             return .apiError(
+                statusCode: statusCode,
                 code: decoded.error.code,
                 message: decoded.error.message,
                 details: decoded.error.details
@@ -214,6 +215,7 @@ struct SpendriftBackendClient {
         }
         let body = String(data: data, encoding: .utf8) ?? ""
         return .apiError(
+            statusCode: statusCode,
             code: "http_\(statusCode)",
             message: "Request failed with status \(statusCode)",
             details: body.isEmpty ? nil : body

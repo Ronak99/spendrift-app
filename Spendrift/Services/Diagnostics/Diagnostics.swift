@@ -33,6 +33,7 @@ enum Diagnostics {
         static let errorDomain = "error_domain"
         static let errorCode = "error_code"
         static let tab = "tab"
+        static let count = "count"
     }
 
     /// Low-cardinality subsystem identifiers.

@@ -37,7 +37,7 @@ enum SpendriftBackendError: LocalizedError, Equatable {
     case invalidBaseURL
     case failedToBuildRequest
     case nonHTTPResponse
-    case apiError(code: String, message: String, details: String?)
+    case apiError(statusCode: Int, code: String, message: String, details: String?)
     case invalidResponseBody
     case decodingFailed
 
@@ -51,7 +51,7 @@ enum SpendriftBackendError: LocalizedError, Equatable {
             return "Could not build the backend request."
         case .nonHTTPResponse:
             return "Received a non-HTTP response from the Spendrift backend."
-        case .apiError(let code, let message, let details):
+        case .apiError(_, let code, let message, let details):
             if let details, !details.isEmpty {
                 return "Backend error (\(code)): \(message) — \(details)"
             }
@@ -60,6 +60,40 @@ enum SpendriftBackendError: LocalizedError, Equatable {
             return "The backend returned an empty or unreadable response."
         case .decodingFailed:
             return "The backend returned JSON that could not be decoded."
+        }
+    }
+
+    /// How a caller should react to this failure.
+    enum Disposition {
+        /// Worth retrying unchanged later: network trouble, throttling, upstream faults.
+        case transient
+        /// The request itself is unacceptable. Retrying it unchanged will fail again,
+        /// but a smaller or different payload may succeed.
+        case rejectedPayload
+        /// Nothing about this client's requests will succeed until config changes.
+        case notAuthorised
+    }
+
+    var disposition: Disposition {
+        switch self {
+        case .missingConfiguration, .invalidBaseURL:
+            return .notAuthorised
+        case .failedToBuildRequest:
+            return .rejectedPayload
+        case .nonHTTPResponse, .invalidResponseBody, .decodingFailed:
+            return .transient
+        case .apiError(let statusCode, _, _, _):
+            switch statusCode {
+            case 401, 403:
+                return .notAuthorised
+            // 429 is throttling, not a bad payload, so it stays retryable.
+            case 429:
+                return .transient
+            case 400...499:
+                return .rejectedPayload
+            default:
+                return .transient
+            }
         }
     }
 }

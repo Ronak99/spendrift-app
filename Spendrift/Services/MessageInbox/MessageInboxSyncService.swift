@@ -25,6 +25,84 @@ struct MessageInboxImportBanner: Identifiable, Equatable {
 enum MessageInboxSyncService {
     static let chunkSize = 40
 
+    /// Sends `rows` to the backend, merging any results into `resultsByID`.
+    ///
+    /// When the backend rejects the payload outright (a 4xx that is not throttling or
+    /// auth), the offending body cannot be identified from the response, so the batch
+    /// is split in half and each half retried. Validation runs before the model call,
+    /// so a rejected half costs no AI spend, and roughly log2(n) extra requests are
+    /// enough to isolate the bad row while every good message still gets parsed.
+    /// A single row that is still rejected on its own is handed back in `quarantined`.
+    ///
+    /// Returns false when the failure was transient or an auth problem -- those will
+    /// hit every later chunk too, so the caller should stop rather than retry.
+    @MainActor
+    private static func parse(
+        rows: [CapturedTransactionMessage],
+        client: SpendriftBackendClient,
+        categories: [TransactionCategory],
+        resultsByID: inout [String: MessageParseResultItem],
+        quarantined: inout [CapturedTransactionMessage]
+    ) async -> Bool {
+        guard !rows.isEmpty else { return true }
+
+        let requestItems = rows.map { row in
+            MessageParseRequestItem(
+                id: row.id.uuidString,
+                body: row.body,
+                capturedAtIso: fallbackISOFormatter.string(from: row.capturedAt)
+            )
+        }
+
+        do {
+            let payload = try await client.parseTransactionMessages(
+                messages: requestItems,
+                categories: categories,
+                clientTodayIso: SpendriftBackendClient.makeClientTodayIso(),
+                timezone: SpendriftBackendClient.makeTimezoneIdentifier()
+            )
+            for result in payload.results {
+                resultsByID[result.id] = result
+            }
+            return true
+        } catch {
+            let disposition = (error as? SpendriftBackendError)?.disposition ?? .transient
+            guard disposition == .rejectedPayload else {
+                // Network trouble, throttling, 5xx or bad credentials: keep the rows
+                // and let the next launch retry them untouched.
+                for row in rows {
+                    row.attemptCount += 1
+                    row.lastAttemptAt = Date()
+                }
+                return false
+            }
+
+            guard rows.count > 1 else {
+                rows[0].attemptCount += 1
+                rows[0].lastAttemptAt = Date()
+                quarantined.append(rows[0])
+                return true
+            }
+
+            let mid = rows.count / 2
+            let firstHalf = await parse(
+                rows: Array(rows[..<mid]),
+                client: client,
+                categories: categories,
+                resultsByID: &resultsByID,
+                quarantined: &quarantined
+            )
+            let secondHalf = await parse(
+                rows: Array(rows[mid...]),
+                client: client,
+                categories: categories,
+                resultsByID: &resultsByID,
+                quarantined: &quarantined
+            )
+            return firstHalf && secondHalf
+        }
+    }
+
     private static let fallbackISOFormatter: DateFormatter = {
         let formatter = DateFormatter()
         formatter.locale = Locale(identifier: "en_US_POSIX")
@@ -80,31 +158,47 @@ enum MessageInboxSyncService {
             Array(pending[$0..<min($0 + chunkSize, pending.count)])
         }
 
+        var abortDrain = false
+
         for chunk in chunks {
-            let requestItems = chunk.map { row in
-                MessageParseRequestItem(
-                    id: row.id.uuidString,
-                    body: String(row.body.prefix(1000)),
-                    capturedAtIso: fallbackISOFormatter.string(from: row.capturedAt)
+            var resultsByID: [String: MessageParseResultItem] = [:]
+            var quarantined: [CapturedTransactionMessage] = []
+
+            let completed = await parse(
+                rows: chunk,
+                client: client,
+                categories: categories,
+                resultsByID: &resultsByID,
+                quarantined: &quarantined
+            )
+
+            // Bodies the backend will never accept. Deleting them is what stops one
+            // bad row from blocking the queue on every future launch.
+            for row in quarantined {
+                MessageInboxDebugLog.recordLedgerOutcome(
+                    fingerprint: row.fingerprint,
+                    capturedAt: row.capturedAt,
+                    outcome: .rejected
+                )
+                inboxContext.delete(row)
+            }
+            if !quarantined.isEmpty {
+                rejectedCount += quarantined.count
+                Diagnostics.breadcrumb(
+                    category: .error,
+                    message: "message_inbox_body_quarantined",
+                    data: [
+                        Diagnostics.Tag.feature: Diagnostics.Feature.message.rawValue,
+                        Diagnostics.Tag.stage: Diagnostics.Stage.parse.rawValue,
+                        Diagnostics.Tag.count: String(quarantined.count),
+                    ]
                 )
             }
 
-            let payload: MessageParsePayload
-            do {
-                payload = try await client.parseTransactionMessages(
-                    messages: requestItems,
-                    categories: categories,
-                    clientTodayIso: SpendriftBackendClient.makeClientTodayIso(),
-                    timezone: SpendriftBackendClient.makeTimezoneIdentifier()
-                )
-            } catch {
-                // Keep every row. Inbox messages are only removed after HTTP 200
-                // so a failed parse can still be retried on the next launch.
-                for row in chunk {
-                    row.attemptCount += 1
-                    row.lastAttemptAt = Date()
-                }
-                try? inboxContext.save()
+            // A transient or auth failure means later chunks would fail too, so stop
+            // after banking whatever this chunk did return.
+            if !completed {
+                abortDrain = true
                 Diagnostics.breadcrumb(
                     category: .error,
                     message: "message_inbox_parse_failed",
@@ -113,12 +207,11 @@ enum MessageInboxSyncService {
                         Diagnostics.Tag.stage: Diagnostics.Stage.parse.rawValue,
                     ]
                 )
-                break
             }
 
-            let resultsByID = Dictionary(uniqueKeysWithValues: payload.results.map { ($0.id, $0) })
+            let liveRows = chunk.filter { !quarantined.contains($0) }
 
-            for row in chunk {
+            for row in liveRows {
                 let key = row.id.uuidString
                 guard let result = resultsByID[key] else {
                     row.attemptCount += 1
@@ -178,6 +271,8 @@ enum MessageInboxSyncService {
 
             try? inboxContext.save()
             try? ledgerContext.save()
+
+            if abortDrain { break }
         }
 
         if createdCount > 0 {

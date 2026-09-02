@@ -27,7 +27,7 @@ private enum LogTransactionMessageIntentError: Error, CustomLocalizedStringResou
 struct LogTransactionMessageIntent: AppIntent {
     static let title: LocalizedStringResource = "Log Transaction Message"
     static let description = IntentDescription(
-        "Stores a bank SMS body in Spendrift's local message inbox for parsing when you next open the app. Designed for Shortcuts Message automations. Does not open Spendrift."
+        "Stores a bank SMS body in Spendrift's local message inbox for parsing when you next open the app. OTP and verification messages are discarded instead of stored. Designed for Shortcuts Message automations. Does not open Spendrift."
     )
     static let openAppWhenRun: Bool = false
     /// Ensures the action appears when browsing Spendrift actions in Shortcuts.
@@ -65,6 +65,20 @@ struct LogTransactionMessageIntent: AppIntent {
         let redacted = MessageRedactor.redact(trimmed)
         let fingerprint = MessageFingerprint.fingerprint(for: redacted)
         let capturedAt = Date()
+
+        // OTP / verification messages are never transactions. Drop them here so we
+        // neither store nor upload a body that has been reduced to "[OTP redacted]",
+        // which would only burn backend parsing compute on a guaranteed rejection.
+        if MessageRedactor.isOTPOnlyMessage(trimmed) {
+            MessageInboxDebugLog.append(
+                body: redacted,
+                fingerprint: fingerprint,
+                capturedAt: capturedAt,
+                outcome: .skippedOTP
+            )
+            MessageInboxSettings.recordCapture(at: capturedAt)
+            return .result()
+        }
 
         do {
             let outcome = try Self.persist(

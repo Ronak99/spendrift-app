@@ -44,7 +44,7 @@ struct ReceiptTransactionService {
             return .failedToBuildRequest
         case .nonHTTPResponse:
             return .nonHTTPResponse
-        case .apiError(_, let message, let details):
+        case .apiError(_, _, let message, let details):
             let body = [message, details].compactMap { $0 }.joined(separator: " — ")
             return .badStatusCode(502, body)
         case .invalidResponseBody:
