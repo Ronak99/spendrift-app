@@ -133,7 +133,7 @@ struct TransactionsView: View {
     private var emptyStateAddMenu: EmptyStateAddTransactionMenu {
         if hasEverCreatedTransaction {
             return EmptyStateAddTransactionMenu(
-                onSpeak: { voiceInline.beginCapture() },
+                onSpeak: { startVoiceQuickAdd() },
                 onType: { createTransactionSheet = .standard },
                 onUploadDocument: { showStatementImport = true },
                 receiptScan: receiptScanActions,
@@ -141,7 +141,7 @@ struct TransactionsView: View {
             )
         }
         return EmptyStateAddTransactionMenu(
-            onSpeak: { voiceInline.beginCapture() },
+            onSpeak: { startVoiceQuickAdd() },
             onType: { createTransactionSheet = .quickStartFirst },
             onUploadDocument: { showStatementImport = true },
             voiceDisabled: voiceInline.blocksNewCapture,
@@ -249,6 +249,19 @@ struct TransactionsView: View {
                 }
                 ToolbarItem(placement: .navigationBarTrailing) {
                     HStack(spacing: 8) {
+                        // Persistent one-tap voice quick-add. Kept outside the add
+                        // menu (and outside the non-empty guard) so it is always
+                        // visible on the Transactions tab, in both empty and
+                        // populated states, and reachable in a single tap.
+                        Button {
+                            startVoiceQuickAdd()
+                        } label: {
+                            Image(systemName: "mic.fill")
+                        }
+                        .disabled(voiceInline.blocksNewCapture)
+                        .accessibilityLabel("Voice quick add")
+                        .accessibilityIdentifier("transactionsVoiceQuickAdd")
+
                         if !transactions.isEmpty {
                             Menu {
                                 Button {
@@ -258,7 +271,7 @@ struct TransactionsView: View {
                                 }
 
                                 Button {
-                                    voiceInline.beginCapture()
+                                    startVoiceQuickAdd()
                                 } label: {
                                     Label("Speak", systemImage: "mic")
                                 }
@@ -450,6 +463,19 @@ struct TransactionsView: View {
         }
     }
     
+    /// Starts an in-app voice quick-add and records the entry point. Fired for every
+    /// in-app voice affordance (persistent mic, add-menu "Speak", empty-state "Speak")
+    /// so voice-entry usage is tracked. The Siri/Shortcuts launch path fires its own
+    /// `shortcut_used` in `ContentView`, so it deliberately does not route through here
+    /// and is not double-counted; `source` distinguishes the in-app CTA from that path.
+    private func startVoiceQuickAdd() {
+        Analytics.capture(.shortcutUsed, [
+            Analytics.Key.kind: "voice",
+            Analytics.Key.source: "transactions_cta"
+        ])
+        voiceInline.beginCapture()
+    }
+
     private func deleteTransactions(at offsets: IndexSet, in transactionsForDay: [Transaction]) {
         for index in offsets {
             modelContext.delete(transactionsForDay[index])
