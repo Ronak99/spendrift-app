@@ -420,7 +420,7 @@ struct OnboardingFeatureRow: View {
     let color: Color
     let title: String
     let description: String
-    /// When set, the row opens this URL (e.g. iCloud shortcut link) in the system browser / Shortcuts.
+    /// When set, the row opens this URL (e.g. Apple Shortcuts share link) in the system browser / Shortcuts.
     var shortcutURL: URL? = nil
 
     @Environment(\.openURL) private var openURL

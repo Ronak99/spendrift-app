@@ -3,7 +3,7 @@
 //  Spendrift
 //
 //  Inbox row for bank SMS captured by Shortcuts while the app is closed.
-//  Lives in SpendriftMessages.sqlite (no CloudKit), not the main ledger.
+//  Lives in SpendriftMessages.sqlite, not the main ledger.
 //
 
 import Foundation

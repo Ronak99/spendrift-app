@@ -1,3 +1,4 @@
+> **Note (2026):** Spendrift no longer mirrors ledger data to iCloud CloudKit. The seeding flow described below was later simplified to local-only seeding when onboarding starts. CloudKit-specific wait/reconcile steps are historical.
 # When “Add Transaction” Shows Nothing: Fixing Default Data Seeding in Spendrift
 
 *How scattered SwiftData seeding, CloudKit sync timing, and SwiftUI lifecycle quirks combined into a first-run bug — and how we fixed it with one orchestrator.*
@@ -10,7 +11,7 @@
 
 A few things that matter for this story:
 
-- **Local-first, iCloud-backed.** Your data lives on-device in a shared SwiftData store (the main app, widgets, and Siri Shortcuts all read the same container). The app also mirrors data to your **private iCloud CloudKit** database, so a reinstall or a second device can restore your accounts, categories, and transactions.
+- **Local-first.** Your data lives on-device in a shared SwiftData store (the main app, widgets, and Siri Shortcuts all read the same App Group container).
 - **Onboarding for new users.** First-time users see a short three-page carousel (welcome, Siri & Shortcuts, get started). When they finish, they land on an empty Transactions tab with a prominent **“Add Transaction”** call to action.
 - **Starter data for brand-new users.** If someone has never used Spendrift before, we seed a default **“Savings”** account (balance ₹100) and a curated set of expense/income categories so they can log their first transaction immediately — no manual setup required.
 

@@ -27,8 +27,14 @@ struct SpendriftApp: App {
         }
 
         let isUITesting = ProcessInfo.processInfo.arguments.contains("-UITesting")
-        if let container = try? IntentSwiftData.makeModelContainer(cloudKitSyncEnabled: true) {
+        if let container = try? IntentSwiftData.makeModelContainer() {
             sharedContainer = container
+            #if DEBUG
+            DebugSwiftBootstrap.rememberStores(
+                ledger: container,
+                inbox: try? MessageInboxSwiftData.makeModelContainer()
+            )
+            #endif
         } else {
             // Last-resort fallback — should never be reached in production.
             Diagnostics.log(
@@ -105,14 +111,12 @@ private struct RootContainerView: View {
             .onChange(of: onboardingVersion) { _, _ in
                 resolveActiveSheet()
             }
-            // Seeding is unified here: the moment onboarding starts we silently sync
-            // CloudKit and seed the default account/categories if the store is empty.
-            // An unstructured Task is used so the work survives the onboarding sheet
-            // being dismissed before the cloud import settles.
+            // Seeding is unified here: the moment onboarding starts we seed the default
+            // account and categories if the local store is empty.
             .onChange(of: activeSheet) { _, sheet in
                 guard case .onboarding = sheet, !didStartSeeding else { return }
                 didStartSeeding = true
-                Task { await DefaultDataSeeder.seedIfNeeded(modelContext: modelContext) }
+                DefaultDataSeeder.seedIfNeeded(modelContext: modelContext)
             }
             .sheet(item: $activeSheet) { sheet in
                 switch sheet {

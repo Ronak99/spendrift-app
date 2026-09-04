@@ -3,7 +3,7 @@
 //  Spendrift
 //
 //  Separate SwiftData container for SMS capture inbox.
-//  Same App Group as the ledger, distinct file, CloudKit always off.
+//  Same App Group as the ledger, distinct sqlite file.
 //
 
 import Foundation

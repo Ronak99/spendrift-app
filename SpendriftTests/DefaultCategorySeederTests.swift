@@ -8,6 +8,7 @@ import SwiftData
 import Testing
 @testable import Spendrift
 
+@Suite(.serialized)
 struct DefaultCategorySeederTests {
     private func makeInMemoryContext() throws -> ModelContext {
         let config = ModelConfiguration(isStoredInMemoryOnly: true)
@@ -22,10 +23,6 @@ struct DefaultCategorySeederTests {
 
     @Test
     func seedsCuratedDefaultsOnEmptyStore() throws {
-        let cloudDefaults = NSUbiquitousKeyValueStore.default
-        cloudDefaults.removeObject(forKey: "hasSeededDefaultCategories")
-        cloudDefaults.synchronize()
-
         let context = try makeInMemoryContext()
         DefaultCategorySeeder.seedIfNeeded(modelContext: context)
 

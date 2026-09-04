@@ -11,6 +11,7 @@
 		C50000032E3F70000058CDE8 /* SpendriftShareExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = C10000012E3F70000058CDE8 /* SpendriftShareExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		FE00000C2E3F70000058CDE8 /* PostHog in Frameworks */ = {isa = PBXBuildFile; productRef = FE00000B2E3F70000058CDE8 /* PostHog */; };
 		FE00000E2E3F70000058CDE8 /* Sentry in Frameworks */ = {isa = PBXBuildFile; productRef = FE00000D2E3F70000058CDE8 /* Sentry */; };
+		FE0000122E3F70000058CDE8 /* DebugSwift in Frameworks */ = {isa = PBXBuildFile; productRef = FE0000112E3F70000058CDE8 /* DebugSwift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -135,6 +136,7 @@
 			files = (
 				FE00000C2E3F70000058CDE8 /* PostHog in Frameworks */,
 				FE00000E2E3F70000058CDE8 /* Sentry in Frameworks */,
+				FE0000122E3F70000058CDE8 /* DebugSwift in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -226,6 +228,7 @@
 			packageProductDependencies = (
 				FE00000B2E3F70000058CDE8 /* PostHog */,
 				FE00000D2E3F70000058CDE8 /* Sentry */,
+				FE0000112E3F70000058CDE8 /* DebugSwift */,
 			);
 			productName = Spendrift;
 			productReference = 65BB664B2E3F644F0058CDE8 /* Spendrift.app */;
@@ -362,6 +365,7 @@
 			packageReferences = (
 				FE00000A2E3F70000058CDE8 /* XCRemoteSwiftPackageReference "posthog-ios" */,
 				FE00000F2E3F70000058CDE8 /* XCRemoteSwiftPackageReference "sentry-cocoa" */,
+				FE0000102E3F70000058CDE8 /* XCRemoteSwiftPackageReference "DebugSwift" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 65BB664C2E3F644F0058CDE8 /* Products */;
@@ -623,7 +627,6 @@
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UIBackgroundModes_0 = audio;
-				INFOPLIST_KEY_UIBackgroundModes_1 = "remote-notification";
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UIStatusBarHidden = NO;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
@@ -670,7 +673,6 @@
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UIBackgroundModes_0 = audio;
-				INFOPLIST_KEY_UIBackgroundModes_1 = "remote-notification";
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UIStatusBarHidden = NO;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
@@ -965,6 +967,14 @@
 				minimumVersion = 8.40.0;
 			};
 		};
+		FE0000102E3F70000058CDE8 /* XCRemoteSwiftPackageReference "DebugSwift" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/DebugSwift/DebugSwift";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.19.0;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -977,6 +987,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = FE00000F2E3F70000058CDE8 /* XCRemoteSwiftPackageReference "sentry-cocoa" */;
 			productName = Sentry;
+		};
+		FE0000112E3F70000058CDE8 /* DebugSwift */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = FE0000102E3F70000058CDE8 /* XCRemoteSwiftPackageReference "DebugSwift" */;
+			productName = DebugSwift;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};
