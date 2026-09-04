@@ -31,6 +31,8 @@ struct TransactionsView: View {
     @State private var showReceiptCamera = false
     @State private var showReceiptLibrary = false
     @State private var voiceInline = VoiceInlineCaptureController()
+    /// Drives the hold-to-speak gesture on the `+` button and its nav-bar progress buildup.
+    @State private var holdToSpeak = HoldToSpeakController()
     @State private var receiptShare = ReceiptCaptureController()
     /// Drives the transient "Transaction added" confirmation after a shared receipt is created.
     @State private var showReceiptShareCreated = false
@@ -187,7 +189,11 @@ struct TransactionsView: View {
                         title: "No Transactions",
                         description: "Get started by adding your first transaction for \(periodViewModel.periodDescription)",
                         actionTitle: "Add Transaction",
-                        action: openCreateTransactionSheet
+                        action: openCreateTransactionSheet,
+                        actionHint: "Tap to add · Hold to speak",
+                        holdController: holdToSpeak,
+                        holdEnabled: !voiceInline.blocksNewCapture,
+                        onActionHold: startVoiceHoldCapture
                     )
                 } else {
                     List {
@@ -220,10 +226,16 @@ struct TransactionsView: View {
                 }
                 ToolbarItem(placement: .navigationBarTrailing) {
                     HStack(spacing: 8) {
-                        Button(action: openCreateTransactionSheet) {
+                        HoldToSpeakButton(
+                            controller: holdToSpeak,
+                            holdEnabled: !voiceInline.blocksNewCapture,
+                            onTap: openCreateTransactionSheet,
+                            onHoldComplete: startVoiceHoldCapture
+                        ) {
                             Image(systemName: "plus")
                         }
                         .accessibilityLabel("Add transaction")
+                        .accessibilityHint("Tap to add, hold to speak")
                         .accessibilityIdentifier("transactionsAddButton")
 
                         ProfileSettingsToolbarButton()
@@ -282,6 +294,11 @@ struct TransactionsView: View {
                     }
                 }
             }
+            .overlay(alignment: .top) {
+                // Left-to-right buildup along the bottom of the navigation bar while the
+                // `+` is held, so the user knows voice capture is about to start.
+                NavBarHoldProgressBar(progress: holdToSpeak.progress)
+            }
             .animation(.spring(response: 0.38, dampingFraction: 0.86), value: voiceInline.displayState)
             .animation(.spring(response: 0.38, dampingFraction: 0.86), value: receiptShare.isProcessing)
             .sheet(isPresented: $showStatementImport) {
@@ -308,9 +325,7 @@ struct TransactionsView: View {
             .sheet(item: $createTransactionSheet) { mode in
                 UpdateTransactionSheet(
                     transaction: nil,
-                    quickStartFirstTransaction: mode.quickStartFirstTransaction,
-                    onVoiceCreate: startVoiceQuickAdd,
-                    voiceCaptureDisabled: voiceInline.blocksNewCapture
+                    quickStartFirstTransaction: mode.quickStartFirstTransaction
                 )
             }
             .sheet(item: $selectedTransaction) { transaction in
@@ -382,15 +397,17 @@ struct TransactionsView: View {
         }
     }
     
-    /// Starts an in-app voice quick-add and records the entry point. Fired for every
-    /// in-app voice affordance (persistent mic, add-menu "Speak", empty-state "Speak")
-    /// so voice-entry usage is tracked. The Siri/Shortcuts launch path fires its own
-    /// `shortcut_used` in `ContentView`, so it deliberately does not route through here
-    /// and is not double-counted; `source` distinguishes the in-app CTA from that path.
-    private func startVoiceQuickAdd() {
+    /// Starts an in-app voice capture from holding the `+` (toolbar or empty-state) and
+    /// records the entry point. Dismisses any open create sheet first so voice never runs
+    /// through the transaction form. The Siri/Shortcuts launch path fires its own
+    /// `shortcut_used` in `ContentView`, so it deliberately does not route through here and
+    /// is not double-counted; `source` distinguishes the in-app hold from that path.
+    private func startVoiceHoldCapture() {
+        guard !voiceInline.blocksNewCapture else { return }
+        createTransactionSheet = nil
         Analytics.capture(.shortcutUsed, [
             Analytics.Key.kind: "voice",
-            Analytics.Key.source: "transactions_cta"
+            Analytics.Key.source: "transactions_hold"
         ])
         voiceInline.beginCapture()
     }

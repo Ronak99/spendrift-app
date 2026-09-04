@@ -22,9 +22,6 @@ struct UpdateTransactionSheet: View {
     /// Salary income category, the first available account, and auto-focuses the amount field so the
     /// user can type an amount and save immediately.
     let quickStartFirstTransaction: Bool
-    /// Called when the user chooses voice capture from the new-transaction sheet.
-    var onVoiceCreate: (() -> Void)? = nil
-    var voiceCaptureDisabled: Bool = false
 
     @FocusState private var amountFieldFocused: Bool
 
@@ -91,16 +88,12 @@ struct UpdateTransactionSheet: View {
         transaction: Transaction?,
         draft: VoiceTransactionDraft? = nil,
         voiceReviewHint: String? = nil,
-        quickStartFirstTransaction: Bool = false,
-        onVoiceCreate: (() -> Void)? = nil,
-        voiceCaptureDisabled: Bool = false
+        quickStartFirstTransaction: Bool = false
     ) {
         self.transaction = transaction
         self.draft = draft
         self.voiceReviewHint = voiceReviewHint
         self.quickStartFirstTransaction = quickStartFirstTransaction
-        self.onVoiceCreate = onVoiceCreate
-        self.voiceCaptureDisabled = voiceCaptureDisabled
     }
 
     var body: some View {
@@ -111,21 +104,6 @@ struct UpdateTransactionSheet: View {
                         Text(voiceReviewHint)
                             .font(.subheadline)
                             .foregroundStyle(.secondary)
-                    }
-                }
-
-                if transaction == nil, draft == nil, onVoiceCreate != nil {
-                    Section {
-                        Button {
-                            dismiss()
-                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
-                                onVoiceCreate?()
-                            }
-                        } label: {
-                            Label("Speak instead", systemImage: "mic.fill")
-                        }
-                        .disabled(voiceCaptureDisabled)
-                        .accessibilityIdentifier("transactionVoiceCreateCTA")
                     }
                 }
 

@@ -463,9 +463,26 @@ final class TransactionIntegrationTests: SpendriftUITestBase {
         XCTAssertTrue(app.buttons["Add Transaction"].exists)
     }
 
+    func testTransactionsEmptyState_hintsAtTapAndHoldGesture() {
+        navigateToTransactions()
+        XCTAssertTrue(app.staticTexts["No Transactions"].waitForExistence(timeout: 3))
+        XCTAssertTrue(app.staticTexts["Tap to add · Hold to speak"].exists)
+    }
+
     func testTransactionsEmptyState_addButtonOpensCreateSheet() {
         navigateToTransactions()
         app.buttons["Add Transaction"].tap()
+        XCTAssertTrue(app.navigationBars["New Transaction"].waitForExistence(timeout: 3))
+    }
+
+    func testTransactionsToolbarAddButton_tapOpensCreateSheet() {
+        // With hold-to-speak on the toolbar `+`, a plain tap must still open the manual sheet.
+        createAccount(name: "SBI", balance: "50000")
+        createTransaction(type: "Expense", accountName: "SBI", categoryName: "Food", amount: "120")
+        navigateToTransactions()
+        let addButton = app.buttons["transactionsAddButton"].firstMatch
+        XCTAssertTrue(addButton.waitForExistence(timeout: 3))
+        addButton.tap()
         XCTAssertTrue(app.navigationBars["New Transaction"].waitForExistence(timeout: 3))
     }
 
