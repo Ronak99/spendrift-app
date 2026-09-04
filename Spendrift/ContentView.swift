@@ -48,8 +48,8 @@ struct ContentView: View {
                 messageInboxBanner: $messageInboxBanner
             )
                 .tabItem {
-                    Image(systemName: "list.bullet")
-                    Text("Transactions")
+                    Image(systemName: "house.fill")
+                    Text("Home")
                 }
                 .tag(0)
             AccountsView()
