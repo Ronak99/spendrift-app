@@ -16,6 +16,8 @@ struct UpdateAccountSheet: View {
     var onCreated: ((Account) -> Void)? = nil
     
     @Query(sort: \Account.createdOn) private var allAccounts: [Account]
+    @FocusState private var nameFieldFocused: Bool
+
     @State private var name: String = ""
     @State private var balance: String = ""
     @State private var icon = AccountIcon.bankAccountOne
@@ -31,6 +33,7 @@ struct UpdateAccountSheet: View {
             Form {
                 Section("Account Name") {
                     TextField("Enter account name", text: $name)
+                        .focused($nameFieldFocused)
                 }
                 
                 Section("Initial Balance") {
@@ -82,11 +85,19 @@ struct UpdateAccountSheet: View {
                     isPrimary = account.isPrimary
                 } else {
                     isPrimary = allAccounts.isEmpty
+                    focusNameFieldSoon()
                 }
             }
         }
     }
     
+    /// Focuses the name field shortly after the sheet appears so the keyboard comes up immediately.
+    private func focusNameFieldSoon() {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+            nameFieldFocused = true
+        }
+    }
+
     private func saveAccount() {
         guard let balanceValue = Double(balance) else { return }
         

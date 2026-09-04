@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import SwiftData
 import UIKit
 #if DEBUG
 import DebugSwift
@@ -228,7 +229,10 @@ private struct ShareSheet: UIViewControllerRepresentable {
 }
 
 struct SettingsView: View {
+    @Environment(\.modelContext) private var modelContext
     @Environment(\.openURL) private var openURL
+    @Query(sort: \Account.createdOn) private var accounts: [Account]
+    @Query(sort: \TransactionCategory.name) private var categories: [TransactionCategory]
 
     @AppStorage(Color.selectedThemeIndexKey) private var selectedThemeIndex = Color.defaultThemeIndex
     @AppStorage(Color.legacyThemeColorKey) private var legacyThemeColorName = "Blue"
@@ -244,6 +248,11 @@ struct SettingsView: View {
     @State private var showMessageAutomationGuide = false
     @State private var showMessageInboxDebug = false
     @State private var showDebugSwift = false
+    @State private var showStatementImport = false
+    @State private var showReceiptCamera = false
+    @State private var showReceiptLibrary = false
+    @State private var showReceiptScanOptions = false
+    @State private var receiptShare = ReceiptCaptureController()
 
     private let helpFAQURL = URL(string: "https://spendrift.app/faq")
 
@@ -262,7 +271,25 @@ struct SettingsView: View {
             subtitle: "Add manually",
             url: OnboardingShortcutShareLinks.logExpenseAmount
         ),
+        CaptureShortcutItem(
+            id: "upload-document",
+            icon: "doc.text",
+            title: "Upload document",
+            subtitle: "Import a statement",
+            url: nil
+        ),
+        CaptureShortcutItem(
+            id: "scan-receipt",
+            icon: "doc.viewfinder",
+            title: "Scan receipt",
+            subtitle: "From photo or camera",
+            url: nil
+        ),
     ]
+
+    private var cameraAvailable: Bool {
+        UIImagePickerController.isSourceTypeAvailable(.camera)
+    }
 
     private var accent: Color {
         Color.accentColor(forThemeIndex: selectedThemeIndex)
@@ -474,6 +501,57 @@ struct SettingsView: View {
         .onChange(of: selectedThemeIndex) { _, newIndex in
             legacyThemeColorName = Color.legacyThemeName(forThemeIndex: Color.normalizedThemeIndex(newIndex))
         }
+        .sheet(isPresented: $showStatementImport) {
+            StatementImportView()
+        }
+        .fullScreenCover(isPresented: $showReceiptCamera) {
+            ReceiptCameraPicker { image in
+                showReceiptCamera = false
+                if let image {
+                    processReceiptImage(image)
+                }
+            }
+            .ignoresSafeArea()
+        }
+        .sheet(isPresented: $showReceiptLibrary) {
+            PhotoLibraryPicker { image in
+                showReceiptLibrary = false
+                if let image {
+                    processReceiptImage(image)
+                }
+            }
+            .ignoresSafeArea()
+        }
+        .sheet(item: $receiptShare.reviewPayload) { payload in
+            UpdateTransactionSheet(
+                transaction: nil,
+                draft: payload.draft,
+                voiceReviewHint: payload.hint
+            )
+        }
+        .confirmationDialog("Scan receipt", isPresented: $showReceiptScanOptions, titleVisibility: .visible) {
+            Button("Take Photo") {
+                showReceiptCamera = true
+            }
+            .disabled(!cameraAvailable || receiptShare.isProcessing)
+
+            Button("Choose from Library") {
+                showReceiptLibrary = true
+            }
+            .disabled(receiptShare.isProcessing)
+
+            Button("Cancel", role: .cancel) {}
+        }
+        .alert("Couldn't Scan Receipt", isPresented: Binding(
+            get: { if case .error = receiptShare.state { return true } else { return false } },
+            set: { if !$0 { receiptShare.dismissError() } }
+        )) {
+            Button("OK", role: .cancel) { receiptShare.dismissError() }
+        } message: {
+            if case .error(let message) = receiptShare.state {
+                Text(message)
+            }
+        }
         .sheet(isPresented: $showFeatureRequest) {
             FeatureRequestView()
         }
@@ -526,18 +604,41 @@ struct SettingsView: View {
     }
 
     private var captureCard: some View {
-        HStack(spacing: 12) {
+        LazyVGrid(
+            columns: [GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12)],
+            spacing: 12
+        ) {
             ForEach(captureShortcuts) { item in
                 CaptureOptionTile(
                     item: item,
                     accent: accent,
                     accentSoft: accentSoft
                 ) {
-                    guard let url = item.url else { return }
-                    UIApplication.shared.open(url)
+                    handleCaptureOptionTap(item)
                 }
             }
         }
+    }
+
+    private func handleCaptureOptionTap(_ item: CaptureShortcutItem) {
+        switch item.id {
+        case "upload-document":
+            showStatementImport = true
+        case "scan-receipt":
+            showReceiptScanOptions = true
+        default:
+            guard let url = item.url else { return }
+            UIApplication.shared.open(url)
+        }
+    }
+
+    private func processReceiptImage(_ image: UIImage) {
+        receiptShare.process(
+            image: image,
+            accounts: accounts,
+            categories: categories,
+            modelContext: modelContext
+        )
     }
 
     private var lastMessageCapturedLabel: String {
@@ -754,4 +855,5 @@ struct SettingsView: View {
 
 #Preview {
     SettingsView()
+        .modelContainer(for: [Transaction.self, Account.self, TransactionCategory.self], inMemory: true)
 }

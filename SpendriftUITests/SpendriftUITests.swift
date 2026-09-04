@@ -42,25 +42,18 @@ class SpendriftUITestBase: XCTestCase {
         app.buttons["openSettingsToolbar"].firstMatch.tap()
     }
 
-    /// Opens manual entry from the Transactions add menu (toolbar when the list has rows, empty-state menu otherwise).
+    /// Opens manual entry from the Transactions tab (toolbar **+** or empty-state **Add Transaction**).
     func openTransactionsManualEntryForm() {
-        let menuButton = app.descendants(matching: .any)
-            .matching(identifier: "transactionsAddMenu")
-            .element(boundBy: 0)
-        XCTAssertTrue(menuButton.waitForExistence(timeout: 3))
-        menuButton.tap()
-        let createExpenseButton = app.buttons["Create Expense"].firstMatch
-        if createExpenseButton.waitForExistence(timeout: 2) {
-            createExpenseButton.tap()
-            return
-        }
-        let typeButton = app.buttons["Type"].firstMatch
-        if typeButton.waitForExistence(timeout: 2) {
-            typeButton.tap()
+        if app.buttons["Add Transaction"].waitForExistence(timeout: 2) {
+            app.buttons["Add Transaction"].tap()
         } else {
-            let typeManually = app.buttons["Type manually"]
-            XCTAssertTrue(typeManually.waitForExistence(timeout: 3))
-            typeManually.tap()
+            let addButton = app.buttons["transactionsAddButton"].firstMatch
+            if addButton.waitForExistence(timeout: 2) {
+                addButton.tap()
+            } else {
+                XCTAssertTrue(app.navigationBars.buttons["plus"].waitForExistence(timeout: 3))
+                app.navigationBars.buttons["plus"].tap()
+            }
         }
     }
 
@@ -473,9 +466,6 @@ final class TransactionIntegrationTests: SpendriftUITestBase {
     func testTransactionsEmptyState_addButtonOpensCreateSheet() {
         navigateToTransactions()
         app.buttons["Add Transaction"].tap()
-        let createExpenseEntry = app.buttons["Create Expense"].firstMatch
-        XCTAssertTrue(createExpenseEntry.waitForExistence(timeout: 3))
-        createExpenseEntry.tap()
         XCTAssertTrue(app.navigationBars["New Transaction"].waitForExistence(timeout: 3))
     }
 

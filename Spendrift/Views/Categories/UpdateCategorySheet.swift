@@ -30,6 +30,8 @@ struct UpdateCategorySheet: View {
         self.eventSource = eventSource
     }
     
+    @FocusState private var nameFieldFocused: Bool
+
     @State private var name: String = ""
     @State private var type: TransactionType = .expense
     @State private var icon: CategoryIcon = .unknown
@@ -57,6 +59,7 @@ struct UpdateCategorySheet: View {
                     }
                     .pickerStyle(.segmented)
                     TextField("Enter category name", text: $name)
+                        .focused($nameFieldFocused)
                     IconGridPicker(icons: Array(CategoryIcon.allCases), selectedIcon: $icon)
                 }
             }
@@ -79,13 +82,23 @@ struct UpdateCategorySheet: View {
                     name = category.name
                     type = category.type
                     icon = category.icon
-                } else if let preset = defaultTypeWhenCreating, preset != .none {
-                    type = preset
+                } else {
+                    if let preset = defaultTypeWhenCreating, preset != .none {
+                        type = preset
+                    }
+                    focusNameFieldSoon()
                 }
             }
         }
     }
     
+    /// Focuses the name field shortly after the sheet appears so the keyboard comes up immediately.
+    private func focusNameFieldSoon() {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+            nameFieldFocused = true
+        }
+    }
+
     private func saveCategory() {
         if let category = category {
             // Update existing

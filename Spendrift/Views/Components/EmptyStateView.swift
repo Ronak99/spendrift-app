@@ -7,35 +7,12 @@
 
 import SwiftUI
 
-/// Take photo / choose from library actions for the Scan receipt submenu.
-struct ReceiptScanMenuActions {
-    let onTakePhoto: () -> Void
-    let onChooseFromLibrary: () -> Void
-    var cameraDisabled: Bool = false
-    var disabled: Bool = false
-}
-
-/// Actions for the transactions empty-state **Add Transaction** control when it should match the toolbar add menu.
-struct EmptyStateAddTransactionMenu {
-    let onSpeak: () -> Void
-    let onType: () -> Void
-    let onUploadDocument: () -> Void
-    var receiptScan: ReceiptScanMenuActions? = nil
-    var voiceDisabled: Bool = false
-    var typeLabel: String = "Type"
-    var speakLabel: String = "Speak"
-    /// When false, only Type and Speak are shown (first-transaction onboarding menu).
-    var showsUploadAndScan: Bool = true
-}
-
 struct EmptyStateView: View {
     let icon: String
     let title: String
     let description: String
     var actionTitle: String? = nil
     var action: (() -> Void)? = nil
-    /// When non-nil, `action` is ignored and the primary control becomes a menu (Speak / Type / Upload document).
-    var addTransactionMenu: EmptyStateAddTransactionMenu? = nil
 
     var body: some View {
         VStack(spacing: 16) {
@@ -53,115 +30,21 @@ struct EmptyStateView: View {
                 .multilineTextAlignment(.center)
                 .padding(.horizontal)
 
-            if let actionTitle {
-                if let menu = addTransactionMenu {
-                    Menu {
-                        addTransactionMenuItems(menu: menu)
-                    } label: {
-                        Text(actionTitle)
-                            .font(.headline)
-                            .foregroundColor(.white)
-                            .padding(.horizontal, 24)
-                            .padding(.vertical, 12)
-                            .background(Color.accentColor)
-                            .cornerRadius(10)
-                    }
-                    .padding(.top, 8)
-                    .menuOrder(.fixed)
-                    .accessibilityLabel("Add transaction")
-                    .accessibilityIdentifier("transactionsAddMenu")
-                } else if let action {
-                    Button(action: action) {
-                        Text(actionTitle)
-                            .font(.headline)
-                            .foregroundColor(.white)
-                            .padding(.horizontal, 24)
-                            .padding(.vertical, 12)
-                            .background(Color.accentColor)
-                            .cornerRadius(10)
-                    }
-                    .padding(.top, 8)
+            if let actionTitle, let action {
+                Button(action: action) {
+                    Text(actionTitle)
+                        .font(.headline)
+                        .foregroundColor(.white)
+                        .padding(.horizontal, 24)
+                        .padding(.vertical, 12)
+                        .background(Color.accentColor)
+                        .cornerRadius(10)
                 }
+                .padding(.top, 8)
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .padding()
-    }
-
-    @ViewBuilder
-    private func addTransactionMenuItems(menu: EmptyStateAddTransactionMenu) -> some View {
-        Button(action: menu.onType) {
-            Label(menu.typeLabel, systemImage: "keyboard")
-        }
-
-        Button(action: menu.onSpeak) {
-            Label(menu.speakLabel, systemImage: "mic")
-        }
-        .disabled(menu.voiceDisabled)
-
-        if menu.showsUploadAndScan {
-            Button(action: menu.onUploadDocument) {
-                Label("Upload document", systemImage: "doc.text")
-            }
-        }
-
-        if let scan = menu.receiptScan {
-            Menu {
-                Button(action: scan.onTakePhoto) {
-                    Label("Take Photo", systemImage: "camera")
-                }
-                .disabled(scan.cameraDisabled || scan.disabled)
-
-                Button(action: scan.onChooseFromLibrary) {
-                    Label("Choose from Library", systemImage: "photo.on.rectangle")
-                }
-                .disabled(scan.disabled)
-            } label: {
-                Label("Scan receipt", systemImage: "doc.viewfinder")
-            }
-        }
-    }
-}
-
-// MARK: - NeatPass-style Floating CTA for empty state
-
-struct EmptyStateFloatingCTA: View {
-    let onAdd: () -> Void
-    let onVoice: () -> Void
-    var voiceDisabled: Bool = false
-
-    var body: some View {
-        HStack(spacing: 12) {
-            Button(action: onAdd) {
-                Label("Add Transaction", systemImage: "plus")
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(.white)
-                    .padding(.horizontal, 18)
-                    .padding(.vertical, 12)
-                    .background(Capsule().fill(Color.accentColor))
-            }
-
-            Button(action: onVoice) {
-                Image(systemName: "mic.fill")
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(Color.accentColor)
-                    .padding(12)
-                    .background(
-                        Circle()
-                            .strokeBorder(Color.accentColor.opacity(0.5), lineWidth: 1.5)
-                            .background(Circle().fill(Color.accentColor.opacity(0.1)))
-                    )
-            }
-            .disabled(voiceDisabled)
-        }
-        .padding(.horizontal, 24)
-        .padding(.vertical, 14)
-        .background(
-            Capsule()
-                .fill(.ultraThinMaterial)
-                .shadow(color: .black.opacity(0.15), radius: 12, y: 4)
-        )
-        .padding(.horizontal, 32)
     }
 }
 
@@ -170,7 +53,7 @@ struct EmptyStateFloatingCTA: View {
         icon: "tray",
         title: "No Transactions",
         description: "Get started by adding your first transaction",
-        action: nil,
-        addTransactionMenu: EmptyStateAddTransactionMenu(onSpeak: {}, onType: {}, onUploadDocument: {})
+        actionTitle: "Add Transaction",
+        action: {}
     )
 }

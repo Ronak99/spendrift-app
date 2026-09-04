@@ -114,41 +114,12 @@ struct TransactionsView: View {
         return .hidden
     }
 
-    private var cameraAvailable: Bool {
-        UIImagePickerController.isSourceTypeAvailable(.camera)
-    }
-
-    private var receiptScanActions: ReceiptScanMenuActions {
-        ReceiptScanMenuActions(
-            onTakePhoto: { showReceiptCamera = true },
-            onChooseFromLibrary: { showReceiptLibrary = true },
-            cameraDisabled: !cameraAvailable,
-            disabled: receiptShare.isProcessing
-        )
-    }
-
-
-    /// Empty-state add menu. Before the user has ever created a transaction it shows a focused
-    /// two-option menu (Create Expense / Speak Expense); afterwards it mirrors the toolbar add menu.
-    private var emptyStateAddMenu: EmptyStateAddTransactionMenu {
+    private func openCreateTransactionSheet() {
         if hasEverCreatedTransaction {
-            return EmptyStateAddTransactionMenu(
-                onSpeak: { startVoiceQuickAdd() },
-                onType: { createTransactionSheet = .standard },
-                onUploadDocument: { showStatementImport = true },
-                receiptScan: receiptScanActions,
-                voiceDisabled: voiceInline.blocksNewCapture
-            )
+            createTransactionSheet = .standard
+        } else {
+            createTransactionSheet = .quickStartFirst
         }
-        return EmptyStateAddTransactionMenu(
-            onSpeak: { startVoiceQuickAdd() },
-            onType: { createTransactionSheet = .quickStartFirst },
-            onUploadDocument: { showStatementImport = true },
-            voiceDisabled: voiceInline.blocksNewCapture,
-            typeLabel: "Create Expense",
-            speakLabel: "Speak Expense",
-            showsUploadAndScan: false
-        )
     }
 
     var body: some View {
@@ -216,7 +187,7 @@ struct TransactionsView: View {
                         title: "No Transactions",
                         description: "Get started by adding your first transaction for \(periodViewModel.periodDescription)",
                         actionTitle: "Add Transaction",
-                        addTransactionMenu: emptyStateAddMenu
+                        action: openCreateTransactionSheet
                     )
                 } else {
                     List {
@@ -249,65 +220,11 @@ struct TransactionsView: View {
                 }
                 ToolbarItem(placement: .navigationBarTrailing) {
                     HStack(spacing: 8) {
-                        // Persistent one-tap voice quick-add. Kept outside the add
-                        // menu (and outside the non-empty guard) so it is always
-                        // visible on the Transactions tab, in both empty and
-                        // populated states, and reachable in a single tap.
-                        Button {
-                            startVoiceQuickAdd()
-                        } label: {
-                            Image(systemName: "mic.fill")
+                        Button(action: openCreateTransactionSheet) {
+                            Image(systemName: "plus")
                         }
-                        .disabled(voiceInline.blocksNewCapture)
-                        .accessibilityLabel("Voice quick add")
-                        .accessibilityIdentifier("transactionsVoiceQuickAdd")
-
-                        if !transactions.isEmpty {
-                            Menu {
-                                Button {
-                                    createTransactionSheet = .standard
-                                } label: {
-                                    Label("Type", systemImage: "keyboard")
-                                }
-
-                                Button {
-                                    startVoiceQuickAdd()
-                                } label: {
-                                    Label("Speak", systemImage: "mic")
-                                }
-                                .disabled(voiceInline.blocksNewCapture)
-
-
-                                Button {
-                                    showStatementImport = true
-                                } label: {
-                                    Label("Upload document", systemImage: "doc.text")
-                                }
-
-                                Menu {
-                                    Button {
-                                        showReceiptCamera = true
-                                    } label: {
-                                        Label("Take Photo", systemImage: "camera")
-                                    }
-                                    .disabled(!cameraAvailable || receiptShare.isProcessing)
-
-                                    Button {
-                                        showReceiptLibrary = true
-                                    } label: {
-                                        Label("Choose from Library", systemImage: "photo.on.rectangle")
-                                    }
-                                    .disabled(receiptShare.isProcessing)
-                                } label: {
-                                    Label("Scan receipt", systemImage: "doc.viewfinder")
-                                }
-                            } label: {
-                                Image(systemName: "plus")
-                            }
-                            .menuOrder(.fixed)
-                            .accessibilityLabel("Add transaction")
-                            .accessibilityIdentifier("transactionsAddMenu")
-                        }
+                        .accessibilityLabel("Add transaction")
+                        .accessibilityIdentifier("transactionsAddButton")
 
                         ProfileSettingsToolbarButton()
                     }
@@ -391,7 +308,9 @@ struct TransactionsView: View {
             .sheet(item: $createTransactionSheet) { mode in
                 UpdateTransactionSheet(
                     transaction: nil,
-                    quickStartFirstTransaction: mode.quickStartFirstTransaction
+                    quickStartFirstTransaction: mode.quickStartFirstTransaction,
+                    onVoiceCreate: startVoiceQuickAdd,
+                    voiceCaptureDisabled: voiceInline.blocksNewCapture
                 )
             }
             .sheet(item: $selectedTransaction) { transaction in
