@@ -11,6 +11,8 @@ import AppIntents
 
 // Add a run argument : -com.apple.CoreData.SQLDebug 1 to visualize the SQLite data
 
+/// The app's entry point: bootstraps analytics and diagnostics, wires up the
+/// shared SwiftData `ModelContainer`, and hosts the root scene.
 @main
 struct SpendriftApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
