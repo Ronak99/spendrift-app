@@ -240,7 +240,7 @@ struct TransactionsView: View {
                     .listStyle(.insetGrouped)
                 }
             }
-            .navigationTitle("Transactions")
+            .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 if !transactions.isEmpty {
                     ToolbarItem(placement: .navigationBarLeading) {

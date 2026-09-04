@@ -108,7 +108,7 @@ struct AccountsView: View {
                     
                 }
             }
-            .navigationTitle("Accounts")
+            .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     HStack(spacing: 8) {

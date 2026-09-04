@@ -79,7 +79,7 @@ struct CategoriesView: View {
                     .searchable(text: $searchText, prompt: "Search categories")
                 }
             }
-            .navigationTitle("Categories")
+            .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
                     if !allCategories.isEmpty && searchText.isEmpty {

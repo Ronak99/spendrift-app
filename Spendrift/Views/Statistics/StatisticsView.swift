@@ -200,7 +200,7 @@ struct StatisticsView: View {
                 .padding(.bottom, 24)
             }
             .background(Color(.systemGroupedBackground))
-            .navigationTitle("Analytics")
+            .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 if !periodTransactions.isEmpty {
                     ToolbarItem(placement: .navigationBarLeading) {
