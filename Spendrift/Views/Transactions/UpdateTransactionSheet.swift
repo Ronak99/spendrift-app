@@ -38,7 +38,11 @@ struct UpdateTransactionSheet: View {
     @State private var showCreateAccountSheet = false
     @State private var showCategoryPicker = false
     @State private var showCreateCategorySheet = false
-    
+    /// True only while `onAppear` is seeding state for an existing transaction. Setting
+    /// `transactionType` there fires the type-change handler on the next update, which would
+    /// otherwise substitute a default category and clobber a deliberately empty selection.
+    @State private var isLoadingExistingTransaction = false
+
     private var categoriesSortedByLastUsed: [TransactionCategory] {
         categories.sortedByLastUsage()
     }
@@ -65,7 +69,7 @@ struct UpdateTransactionSheet: View {
         if let category = selectedCategory, category.type == transactionType {
             return category.name
         }
-        return filteredCategories.first?.name ?? "Select Category"
+        return "Select Category"
     }
     
     private var accountText : String {
@@ -213,19 +217,30 @@ struct UpdateTransactionSheet: View {
                 }
             }
             .onAppear {
+                isLoadingExistingTransaction = true
                 if let transaction = transaction {
                     notes = transaction.notes
                     amount = transaction.amount.wholeAmountDisplayString
                     date = transaction.date
                     transactionType = transaction.transactionType
                     selectedAccount = transaction.account
-                    var category = transaction.category
-                    if category?.type != transactionType {
-                        category = categoriesSortedByLastUsed.first { $0.type == transactionType }
-                    }
-                    selectedCategory = category
-                    if let category, category.type == transactionType {
-                        categoryTracker[transactionType] = category
+                    // Only substitute a default category when the transaction already has one
+                    // whose type is inconsistent with its transaction type. An uncategorized
+                    // transaction stays unselected so the Category row reads "Select Category"
+                    // instead of implying that the last-used category is already chosen for it.
+                    if let existingCategory = transaction.category {
+                        if existingCategory.type == transactionType {
+                            selectedCategory = existingCategory
+                            categoryTracker[transactionType] = existingCategory
+                        } else {
+                            let fallback = categoriesSortedByLastUsed.first { $0.type == transactionType }
+                            selectedCategory = fallback
+                            if let fallback {
+                                categoryTracker[transactionType] = fallback
+                            }
+                        }
+                    } else {
+                        selectedCategory = nil
                     }
                 } else {
                     selectedAccount = draft?.account ?? accountsSortedByLastUsed.first ?? accounts.first
@@ -265,6 +280,12 @@ struct UpdateTransactionSheet: View {
                     }
                 }
                 seedCategoryTrackerDefaultsForKnownTypes()
+                // The transactionType assignment above triggers the type-change handler on the
+                // next runloop turn; defer clearing the flag so that handler is skipped for the
+                // initial load and can't overwrite the category we set here.
+                DispatchQueue.main.async {
+                    isLoadingExistingTransaction = false
+                }
             }
             .onChange(of: selectedCategory) { _, newValue in
                 if let newValue, newValue.type == transactionType {
@@ -273,6 +294,7 @@ struct UpdateTransactionSheet: View {
             }
             .onChange(of: transactionType) { oldType, newType in
                 guard newType != .none else { return }
+                guard !isLoadingExistingTransaction else { return }
                 if let current = selectedCategory, current.type == oldType {
                     categoryTracker[oldType] = current
                 }
