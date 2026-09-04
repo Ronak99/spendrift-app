@@ -9,7 +9,7 @@ This document reflects the **current codebase** (not git history): what the app 
 ### 1. App shell, navigation, and persistence
 
 1. **Tab bar** — Four tabs: Transactions, Accounts, Categories, Analytics (Statistics).
-2. **Shared SwiftData container + CloudKit mirror** — Single `ModelContainer` from `IntentSwiftData` so the main app, App Intents, and widgets read/write the same App Group store, while the app target mirrors accounts/categories/transactions to the user’s private iCloud CloudKit database.
+2. **Shared SwiftData container** — Single `ModelContainer` from `IntentSwiftData` so the main app, App Intents, and widgets read/write the same App Group store (local-only).
 3. **App launch** — `ExpenseAppShortcuts.updateAppShortcutParameters()` runs so Shortcuts see up-to-date intent parameters.
 4. **UITest mode** — `-UITesting` forces an in-memory store; onboarding is skipped when testing.
 5. **Root sheet priority** — Mandatory App Store update sheet > onboarding > optional update sheet.
@@ -18,7 +18,7 @@ This document reflects the **current codebase** (not git history): what the app 
 
 6. **Three-page dark-mode carousel** — Welcome, Siri & Shortcuts, Get Started; pill page indicator; haptic on completion.
 7. **Versioned onboarding** — `@AppStorage("spendriftOnboardingVersion")`; bump `OnboardingCarouselView.currentVersion` to show onboarding again after major updates.
-8. **Welcome copy** — Highlights multi-account tracking, voice capture, categories, and private storage (local + user iCloud CloudKit). AI calls still send feature-specific data off-device for voice/statement parsing.
+8. **Welcome copy** — Highlights multi-account tracking, voice capture, categories, and private on-device storage. AI calls still send feature-specific data off-device for voice/statement parsing.
 9. **Shortcuts page** — Deep links to two iCloud shortcut URLs (`OnboardingShortcutShareLinks`) for “Voice Record Expense” and “Log Expense Amount”; third bullet “Quick Access” has **no URL** (informational only).
 10. **Get Started** — Final CTA completes onboarding.
 
@@ -104,7 +104,7 @@ This document reflects the **current codebase** (not git history): what the app 
 
 ### 11. Categories
 
-67. **Default seed** — Unified in `DefaultDataSeeder`, triggered once when onboarding starts: it seeds the bundled categories instantly (so pickers are never empty), then waits for CloudKit's initial import and reconciles — if the import delivers real categories it deletes the just-seeded placeholders, otherwise it keeps the defaults. UI tests skip onboarding and instead seed categories synchronously via `DefaultCategorySeeder`.
+67. **Default seed** — Unified in `DefaultDataSeeder`, triggered once when onboarding starts: seeds the bundled categories and default account when the local store is empty. UI tests skip onboarding and instead seed categories synchronously via `DefaultCategorySeeder`.
 68. **CRUD** — List, create, edit categories; icons via icon grid picker flow (per existing views).
 69. **`lastUsedAt`** — Optional on model; updated on manual save, shortcut expense, and successful voice create.
 70. **MRU ordering** — `sortedByLastUsage()` used in transaction sheet, voice bar, and Shortcuts entity query.
@@ -112,7 +112,7 @@ This document reflects the **current codebase** (not git history): what the app 
 ### 12. Accounts
 
 71. **Primary account** — `isPrimary` flag; shortcuts and statement import assume a **primary** account for quick paths.
-71a. **Default account seed** — Unified in `DefaultDataSeeder` (same onboarding-start trigger as categories): it seeds a single primary "Savings" account (balance 100) instantly when no account exists locally, then waits for CloudKit's initial import and reconciles — if real accounts arrive it deletes the seeded placeholder, otherwise the default stays.
+71a. **Default account seed** — Unified in `DefaultDataSeeder` (same onboarding-start trigger as categories): seeds a single primary "Savings" account (balance 100) when no account exists locally.
 72. **Balance model** — `currentBalance` derived from opening balance plus income minus expenses on linked transactions.
 73. **Per-account transaction screen** — Filtered month view + same patterns as main transactions.
 
@@ -178,7 +178,7 @@ These are **strategies**, not recommendations to implement all at once.
 ### Tier D — Growth & retention
 
 9. **Themes** — Free: 2–3 accents; Pro: full palette + app icon.
-10. **Family / shared** — If implemented later, this means shared/household collaboration on top of the now-default personal iCloud sync.
+10. **Family / shared** — If implemented later, this would mean shared/household collaboration on top of a user account or export model (not built today).
 
 ### Tier E — Support & goodwill
 

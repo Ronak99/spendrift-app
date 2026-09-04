@@ -9,11 +9,8 @@ import Foundation
 import SwiftData
 
 enum DefaultCategorySeeder {
-    private static let hasSeededDefaultCategoriesKey = "hasSeededDefaultCategories"
-
-    /// Seeds default categories only once per iCloud account.
-    /// - Important: This uses iCloud KVS to prevent duplicate seeding after reinstall
-    ///   while CloudKit is still downloading existing categories.
+    /// Seeds default categories when the local store has no categories yet.
+    /// Used by UI tests that skip onboarding; production seeding uses `DefaultDataSeeder`.
     static func seedIfNeeded(modelContext: ModelContext) {
         DefaultCategoryMigration.backfillIsDefaultIfNeeded(modelContext: modelContext)
         DefaultCategoryMigration.backfillSortOrderIfNeeded(modelContext: modelContext)
@@ -21,8 +18,6 @@ enum DefaultCategorySeeder {
         let descriptor = FetchDescriptor<TransactionCategory>()
         let existingCategories = (try? modelContext.fetch(descriptor)) ?? []
 
-        // If categories already exist (legacy installs or CloudKit download completed),
-        // mark as seeded to avoid any future duplicate inserts.
         guard existingCategories.isEmpty else {
             return
         }
@@ -31,10 +26,6 @@ enum DefaultCategorySeeder {
             modelContext.insert(category)
         }
 
-        do {
-            try modelContext.save()
-        } catch {
-            // Save failures should not mark the seed flag.
-        }
+        try? modelContext.save()
     }
 }

@@ -138,7 +138,7 @@ private struct WelcomePage: View {
         ("folder.fill", Color(hex: "#F59E0B"), "Smart Categories",
          "Organise transactions into custom categories for instant insights."),
         ("lock.shield.fill", Color(hex: "#34C759"), "Private by Default",
-         "Your ledger stays on this device and in your private iCloud. Optional AI features only run when you choose them."),
+         "Your ledger stays on this device. Optional AI features only run when you choose them."),
     ]
 
     var body: some View {

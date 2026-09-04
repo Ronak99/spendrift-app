@@ -8,7 +8,7 @@
 import Foundation
 import SwiftData
 
-/// How a transaction entered the ledger. Stored as a plain string for CloudKit-friendly defaults.
+/// How a transaction entered the ledger. Stored as a plain string for stable persistence.
 enum TransactionSource: String {
     case manual
     case voice

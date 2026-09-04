@@ -2,7 +2,7 @@
 //  OnboardingShortcutShareLinks.swift
 //  Spendrift
 //
-//  iCloud links for shortcuts users can add during onboarding.
+//  Apple Shortcuts share URLs for shortcuts users can add during onboarding.
 //  In Shortcuts, open your shortcut → … → Share → Copy Link, then paste here.
 //
 

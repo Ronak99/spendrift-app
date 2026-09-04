@@ -10,9 +10,8 @@ import SwiftData
 
 enum IntentSwiftData {
     static let appGroupID = "group.com.ronakpunase.Spendrift"
-    static let cloudKitContainerID = "iCloud.com.ronakpunase.Spendrift"
 
-    static func makeModelContainer(cloudKitSyncEnabled: Bool = false) throws -> ModelContainer {
+    static func makeModelContainer() throws -> ModelContainer {
         let inMemory = ProcessInfo.processInfo.arguments.contains("-UITesting")
         let schema = Schema([Transaction.self, Account.self, TransactionCategory.self])
 
@@ -27,7 +26,7 @@ enum IntentSwiftData {
             let storeURL = groupURL.appendingPathComponent("Spendrift.sqlite")
             let config = ModelConfiguration(
                 url: storeURL,
-                cloudKitDatabase: cloudKitSyncEnabled ? .private(cloudKitContainerID) : .none
+                cloudKitDatabase: .none
             )
             return try ModelContainer(for: schema, configurations: [config])
         }
