@@ -73,7 +73,7 @@ struct ReceiptShareStatusBar: View {
 #if DEBUG
 #Preview("Created") {
     ZStack(alignment: .bottom) {
-        Color(.systemGroupedBackground).ignoresSafeArea()
+        AppTheme.listBackground.ignoresSafeArea()
         ReceiptShareStatusBar(status: .created)
     }
 }

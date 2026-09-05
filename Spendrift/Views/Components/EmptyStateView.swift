@@ -45,6 +45,7 @@ struct EmptyStateView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .padding()
+        .background(AppTheme.listBackground)
     }
 }
 

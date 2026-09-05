@@ -185,7 +185,7 @@ struct TransactionAnalyticsContent: View {
             .padding(.top, 8)
             .padding(.bottom, 24)
         }
-        .background(Color(.systemGroupedBackground))
+        .background(AppTheme.listBackground)
     }
 
     private var summaryGrid: some View {
@@ -388,7 +388,7 @@ struct TransactionAnalyticsContent: View {
         .padding(32)
         .background(
             RoundedRectangle(cornerRadius: 24, style: .continuous)
-                .fill(Color(.secondarySystemGroupedBackground))
+                .fill(AppTheme.listGroupBackground)
         )
         .padding(.horizontal)
         .padding(.top, 48)
@@ -412,7 +412,7 @@ struct TransactionAnalyticsContent: View {
         .padding(16)
         .background(
             RoundedRectangle(cornerRadius: 20, style: .continuous)
-                .fill(Color(.secondarySystemGroupedBackground))
+                .fill(AppTheme.listGroupBackground)
         )
     }
 
@@ -435,7 +435,7 @@ struct TransactionAnalyticsContent: View {
         .padding(20)
         .background(
             RoundedRectangle(cornerRadius: 24, style: .continuous)
-                .fill(Color(.secondarySystemGroupedBackground))
+                .fill(AppTheme.listGroupBackground)
         )
         .padding(.horizontal)
     }

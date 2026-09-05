@@ -180,7 +180,7 @@ struct TransactionsView: View {
                         .padding(.bottom, 8)
                     }
                 }
-                .background(showingAnalytics ? Color(.systemGroupedBackground) : Color(.systemBackground))
+                .background(AppTheme.listBackground)
 
                 if showingAnalytics {
                     TransactionAnalyticsContent(

@@ -74,7 +74,7 @@ struct CapsuleDateSelector: View {
             .padding(.vertical, 12)
             .background(
                 Capsule()
-                    .fill(Color(.systemGray6))
+                    .fill(Color(.systemBackground))
             )
 
             if showGestureHint {

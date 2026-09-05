@@ -9,8 +9,8 @@ import SwiftUI
 import UIKit
 
 enum SettingsTokens {
-    static let screenBackground = Color(uiColor: .systemGroupedBackground)
-    static let groupCard = Color(uiColor: .secondarySystemGroupedBackground)
+    static let screenBackground = AppTheme.listBackground
+    static let groupCard = AppTheme.listGroupBackground
     static let chevron = Color(uiColor: .tertiaryLabel)
     static let textPrimary = Color(uiColor: .label)
     static let textSecondary = Color(uiColor: .secondaryLabel)

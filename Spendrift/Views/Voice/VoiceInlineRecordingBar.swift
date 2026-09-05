@@ -269,7 +269,7 @@ private struct VoiceInlineRecordingBarPreviewHost: View {
 
     var body: some View {
         ZStack(alignment: .bottom) {
-            Color(.systemGroupedBackground)
+            AppTheme.listBackground
                 .ignoresSafeArea()
             VoiceInlineRecordingBar(
                 controller: controller,
@@ -311,7 +311,7 @@ private struct VoiceInlineRecordingBarPreviewHost: View {
         }
         .padding()
     }
-    .background(Color(.systemGroupedBackground))
+    .background(AppTheme.listBackground)
 }
 
 @MainActor
