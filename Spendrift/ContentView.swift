@@ -77,28 +77,28 @@ struct ContentView: View {
                     messageInboxBanner: $messageInboxBanner
                 )
             } label: {
-                Label("Home", systemImage: "house.fill")
+                Label("", systemImage: "house.fill")
             }
 
             Tab(value: 1) {
                 AccountsView()
                     .voiceCaptureBar(controller: voiceInline)
             } label: {
-                Label("Accounts", systemImage: "creditcard")
+                Label("", systemImage: "creditcard")
             }
 
             Tab(value: 2) {
                 CategoriesView()
                     .voiceCaptureBar(controller: voiceInline)
             } label: {
-                Label("Categories", systemImage: "folder")
+                Label("", systemImage: "folder")
             }
 
             Tab(value: 3) {
                 SettingsView()
                     .voiceCaptureBar(controller: voiceInline)
             } label: {
-                Label("Settings", systemImage: "gearshape.fill")
+                Label("", systemImage: "gearshape.fill")
             }
 
             // `role: .search` is the only public API that lifts a tab item out of the tab bar
