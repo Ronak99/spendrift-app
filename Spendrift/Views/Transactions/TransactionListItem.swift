@@ -10,10 +10,23 @@ import SwiftUI
 struct TransactionListItem: View {
     let transaction: Transaction
 
+    @AppStorage(ColoredCategories.defaultsKey) private var coloredCategoriesEnabled = false
+
     var body: some View {
         if transaction.isPersisted {
             rowContent
         }
+    }
+
+    private var isUnknownCategory: Bool {
+        transaction.category?.icon.rawValue == "unknown"
+    }
+
+    private var categoryTint: Color {
+        if coloredCategoriesEnabled, let color = ColoredCategories.color(for: transaction.category) {
+            return color
+        }
+        return isUnknownCategory ? .gray : .accentColor
     }
 
     private var rowContent: some View {
@@ -21,12 +34,12 @@ struct TransactionListItem: View {
             // Category icon
             ZStack {
                 Circle()
-                    .fill(transaction.category?.icon.rawValue == "unknown" ? Color.gray.opacity(0.2) : Color.accentColor.opacity(0.2))
+                    .fill(categoryTint.opacity(0.2))
                     .frame(width: 44, height: 44)
                 
                 Image(systemName: transaction.category?.icon.systemImageName ?? CategoryIcon.unknown.systemImageName)
                     .font(.system(size: 20))
-                    .foregroundColor(transaction.category?.icon.rawValue == "unknown" ? .gray : .accentColor)
+                    .foregroundColor(categoryTint)
             }
             
             // Transaction details

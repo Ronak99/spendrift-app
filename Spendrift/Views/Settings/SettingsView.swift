@@ -24,6 +24,7 @@ struct SettingsView: View {
         "Blue"
     @AppStorage(DeveloperMode.defaultsKey, store: DeveloperMode.store) private
         var developerModeUnlocked = false
+    @AppStorage(ColoredCategories.defaultsKey) private var coloredCategoriesEnabled = false
 
     @State private var showMessageInboxDebug = false
     @State private var showDebugSwift = false
@@ -72,6 +73,7 @@ struct SettingsView: View {
         .tint(accent)
         .animation(.easeInOut(duration: 0.2), value: selectedThemeIndex)
         .animation(.easeInOut(duration: 0.2), value: developerModeUnlocked)
+        .animation(.easeInOut(duration: 0.2), value: coloredCategoriesEnabled)
         .task {
             migrateThemeIfNeeded()
             selectedThemeIndex = Color.normalizedThemeIndex(selectedThemeIndex)
@@ -208,7 +210,7 @@ struct SettingsView: View {
     }
 
     private var developerRowCount: Int {
-        var count = 1
+        var count = 2
         #if DEBUG
             count += 1
         #endif
@@ -219,6 +221,15 @@ struct SettingsView: View {
     @ViewBuilder
     private var developerSection: some View {
         Section("Developer") {
+            SettingsListItem(
+                icon: "paintpalette.fill",
+                title: "Colored Categories",
+                accent: accent,
+                accentSoft: accentSoft,
+                accessory: .toggle($coloredCategoriesEnabled)
+            )
+            .listItemPositioned(index: 0, count: developerRowCount)
+
             #if DEBUG
                 Button {
                     DebugSwift.debugViewControllerWillPresent()
@@ -231,7 +242,7 @@ struct SettingsView: View {
                         accentSoft: accentSoft,
                         accessory: .chevron
                     )
-                    .listItemPositioned(index: 0, count: developerRowCount)
+                    .listItemPositioned(index: 1, count: developerRowCount)
                 }
                 .buttonStyle(.plain)
             #endif
@@ -246,7 +257,7 @@ struct SettingsView: View {
                     accentSoft: accentSoft,
                     accessory: .chevron
                 )
-                .listItemPositioned(index: debugDeveloperOffset, count: developerRowCount)
+                .listItemPositioned(index: messageInboxDeveloperOffset, count: developerRowCount)
             }
             .buttonStyle(.plain)
 
@@ -267,11 +278,11 @@ struct SettingsView: View {
         }
     }
 
-    private var debugDeveloperOffset: Int {
+    private var messageInboxDeveloperOffset: Int {
         #if DEBUG
-            1
+            2
         #else
-            0
+            1
         #endif
     }
 

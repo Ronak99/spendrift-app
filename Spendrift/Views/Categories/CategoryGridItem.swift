@@ -11,18 +11,26 @@ import SwiftUI
 struct CategoryGridItem: View {
     let category: TransactionCategory
 
+    @AppStorage(ColoredCategories.defaultsKey) private var coloredCategoriesEnabled = false
+
     private let circleSize: CGFloat = 52
+
+    private var tint: Color {
+        coloredCategoriesEnabled
+            ? ColoredCategories.color(forName: category.name)
+            : .accentColor
+    }
 
     var body: some View {
         VStack(spacing: 8) {
             ZStack {
                 Circle()
-                    .fill(category.icon.tint.opacity(0.18))
+                    .fill(tint.opacity(0.18))
                     .frame(width: circleSize, height: circleSize)
 
                 Image(systemName: category.icon.systemImageName)
                     .font(.system(size: 20, weight: .semibold))
-                    .foregroundStyle(category.icon.tint)
+                    .foregroundStyle(tint)
             }
 
             Text(category.name)
