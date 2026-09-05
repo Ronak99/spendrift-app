@@ -16,68 +16,52 @@ struct CategoriesView: View {
     ])
     private var allCategories: [TransactionCategory]
 
-    private var incomeCategories: [TransactionCategory] {
-        allCategories.filter { $0.type == .income }
-    }
-
-    private var expenseCategories: [TransactionCategory] {
-        allCategories.filter { $0.type == .expense }
-    }
-
+    @State private var selectedType: TransactionType = .expense
     @State private var showCreateSheet = false
-    @State private var searchText = ""
-    @State private var selection = Set<UUID>()
-    @State private var showBulkDeleteConfirmation = false
+    @State private var categoryToDelete: TransactionCategory?
 
-    private var filteredIncomeCategories: [TransactionCategory] {
-        if searchText.isEmpty { return incomeCategories }
-        return incomeCategories.filter { $0.name.localizedCaseInsensitiveContains(searchText) }
-    }
+    private let columns = Array(repeating: GridItem(.flexible(), spacing: 12), count: 4)
 
-    private var filteredExpenseCategories: [TransactionCategory] {
-        if searchText.isEmpty { return expenseCategories }
-        return expenseCategories.filter { $0.name.localizedCaseInsensitiveContains(searchText) }
-    }
-
-    private var hasSearchResults: Bool {
-        !filteredIncomeCategories.isEmpty || !filteredExpenseCategories.isEmpty
+    private var visibleCategories: [TransactionCategory] {
+        allCategories.filter { $0.type == selectedType }
     }
 
     var body: some View {
         NavigationStack {
-            Group {
-                if allCategories.isEmpty {
-                    EmptyStateView(
-                        icon: "folder",
-                        title: "No Categories",
-                        description: "Create categories to organize your transactions",
-                        actionTitle: "Add Category",
-                        action: { showCreateSheet = true }
-                    )
-                } else {
-                    List(selection: $selection) {
-                        if !filteredIncomeCategories.isEmpty {
-                            Section("Income") {
-                                categoryRows(for: filteredIncomeCategories, movable: incomeCategories)
-                            }
-                        }
+            ScrollView {
+                VStack(spacing: 28) {
+                    Picker("Category type", selection: $selectedType) {
+                        Text("Expense").tag(TransactionType.expense)
+                        Text("Income").tag(TransactionType.income)
+                    }
+                    .pickerStyle(.segmented)
 
-                        if !filteredExpenseCategories.isEmpty {
-                            Section("Expense") {
-                                categoryRows(for: filteredExpenseCategories, movable: expenseCategories)
+                    LazyVGrid(columns: columns, spacing: 20) {
+                        ForEach(visibleCategories) { category in
+                            NavigationLink {
+                                CategoryTransactionsView(category: category)
+                            } label: {
+                                CategoryGridItem(category: category)
+                            }
+                            .buttonStyle(.plain)
+                            .contextMenu {
+                                // Bundled defaults are permanent; only user-created categories can go.
+                                if !category.isDefault {
+                                    Button("Delete", systemImage: "trash", role: .destructive) {
+                                        categoryToDelete = category
+                                    }
+                                }
                             }
                         }
                     }
-                    .listStyle(.insetGrouped)
-                    .overlay {
-                        if !searchText.isEmpty && !hasSearchResults {
-                            ContentUnavailableView.search(text: searchText)
-                        }
-                    }
-                    .searchable(text: $searchText, prompt: "Search categories")
+                    .animation(.default, value: selectedType)
                 }
+                .padding(.horizontal, 20)
+                .padding(.top, 8)
+                .padding(.bottom, 24)
             }
             .navigationTitle("Categories")
+            .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button(action: { showCreateSheet = true }) {
@@ -86,75 +70,37 @@ struct CategoriesView: View {
                 }
             }
             .sheet(isPresented: $showCreateSheet) {
-                UpdateCategorySheet(category: nil)
+                UpdateCategorySheet(category: nil, defaultTypeWhenCreating: selectedType)
             }
             .confirmationDialog(
-                "Delete \(selection.count) categories?",
-                isPresented: $showBulkDeleteConfirmation,
-                titleVisibility: .visible
-            ) {
-                Button("Delete Categories and Their Transactions", role: .destructive) {
-                    deleteSelectedCategories()
+                "Delete \"\(categoryToDelete?.name ?? "")\"?",
+                isPresented: Binding(
+                    get: { categoryToDelete != nil },
+                    set: { if !$0 { categoryToDelete = nil } }
+                ),
+                titleVisibility: .visible,
+                presenting: categoryToDelete
+            ) { category in
+                Button("Delete Category and Its Transactions", role: .destructive) {
+                    delete(category)
                 }
                 Button("Cancel", role: .cancel) {}
-            } message: {
+            } message: { _ in
                 Text("Deleting a category also deletes all transactions assigned to it.")
             }
         }
     }
 
-    @ViewBuilder
-    private func categoryRows(
-        for displayed: [TransactionCategory],
-        movable: [TransactionCategory]
-    ) -> some View {
-        ForEach(displayed) { category in
-            NavigationLink {
-                CategoryTransactionsView(category: category)
-            } label: {
-                CategoryListItem(category: category)
-            }
-        }
-        .onDelete { indexSet in
-            deleteCategories(at: indexSet, from: displayed, source: .manual)
-        }
-    }
-
-    private func deleteCategories(
-        at offsets: IndexSet,
-        from categories: [TransactionCategory],
-        source: CategoryEventSource
-    ) {
-        for index in offsets {
-            let category = categories[index]
-            Analytics.capture(.categoryDeleted, [
-                Analytics.Key.name: category.name,
-                Analytics.Key.isDefault: category.isDefault,
-                Analytics.Key.source: source.rawValue
-            ])
-            modelContext.delete(category)
-        }
+    private func delete(_ category: TransactionCategory) {
+        guard !category.isDefault else { return }
+        Analytics.capture(.categoryDeleted, [
+            Analytics.Key.name: category.name,
+            Analytics.Key.isDefault: false,
+            Analytics.Key.source: CategoryEventSource.manual.rawValue
+        ])
+        modelContext.delete(category)
         try? modelContext.save()
-    }
-
-    private func deleteSelectedCategories() {
-        let selected = allCategories.filter { selection.contains($0.id) }
-        for category in selected {
-            Analytics.capture(.categoryDeleted, [
-                Analytics.Key.name: category.name,
-                Analytics.Key.isDefault: category.isDefault,
-                Analytics.Key.source: CategoryEventSource.bulkEdit.rawValue
-            ])
-            modelContext.delete(category)
-        }
-        if selected.count > 1 {
-            Analytics.capture(.categoryDeleted, [
-                Analytics.Key.count: selected.count,
-                Analytics.Key.source: CategoryEventSource.bulkEdit.rawValue
-            ])
-        }
-        try? modelContext.save()
-        selection.removeAll()
+        categoryToDelete = nil
     }
 }
 

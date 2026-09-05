@@ -51,16 +51,6 @@ extension TransactionCategory {
         universalCore() + localeAdditions(for: Locale.current)
     }
 
-    /// Ultra-minimal set for "start fresh" onboarding (RON-83).
-    static func minimalCore() -> [TransactionCategory] {
-        [
-            TransactionCategory(name: "Salary", type: .income, icon: .salary, isDefault: true, sortOrder: 0),
-            TransactionCategory(name: "Food", type: .expense, icon: .food, isDefault: true, sortOrder: 0),
-            TransactionCategory(name: "Transport", type: .expense, icon: .transportation, isDefault: true, sortOrder: 1),
-            TransactionCategory(name: "Miscellaneous", type: .expense, icon: .miscellaneous, isDefault: true, sortOrder: 2)
-        ]
-    }
-
     /// Compact set of categories that apply regardless of region.
     private static func universalCore() -> [TransactionCategory] {
         [

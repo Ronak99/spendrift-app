@@ -114,21 +114,6 @@ struct UpdateTransactionSheet: View {
                     }
                 }
 
-                if transaction == nil, draft == nil, onVoiceCreate != nil {
-                    Section {
-                        Button {
-                            dismiss()
-                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
-                                onVoiceCreate?()
-                            }
-                        } label: {
-                            Label("Speak instead", systemImage: "mic.fill")
-                        }
-                        .disabled(voiceCaptureDisabled)
-                        .accessibilityIdentifier("transactionVoiceCreateCTA")
-                    }
-                }
-
                 Picker("Type", selection: $transactionType) {
                     ForEach(
                         TransactionType.allCases.filter { $0 != .none

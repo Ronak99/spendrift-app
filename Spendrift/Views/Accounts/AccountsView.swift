@@ -46,7 +46,6 @@ struct AccountsView: View {
     var body: some View {
         NavigationStack {
             Group {
-                List {
                     if accounts.isEmpty {
                         EmptyStateView(
                             icon: "creditcard",
@@ -55,60 +54,23 @@ struct AccountsView: View {
                             actionTitle: "Add Account",
                             action: { showCreateSheet = true }
                         )
-                        .padding(.top, 150)
-                        .listRowBackground(Color.clear)
-                        .listRowSeparator(.hidden)
                     } else {
-                        
-                        Section {
-                            VStack(alignment: .leading, spacing: 16) {
-                                HStack {
-                                    Text("All accounts")
-                                        .font(.headline)
-                                    Spacer()
-                                    Text(formattedTotalBalance)
-                                        .font(.title3.weight(.semibold))
-                                        .foregroundStyle(.primary)
-                                }
-                                
-                                HStack(spacing: 20) {
-                                    VStack(alignment: .leading, spacing: 4) {
-                                        Text("Expense so far")
-                                            .font(.caption)
-                                            .foregroundStyle(.secondary)
-                                        Text(formattedExpenseSoFar)
-                                            .font(.headline)
-                                            .foregroundStyle(.red)
-                                    }
-                                    
-                                    Spacer()
-                                    
-                                    VStack(alignment: .trailing, spacing: 4) {
-                                        Text("Income so far")
-                                            .font(.caption)
-                                            .foregroundStyle(.secondary)
-                                        Text(formattedIncomeSoFar)
-                                            .font(.headline)
-                                            .foregroundStyle(.green)
-                                    }
+                        List {
+                            ForEach(accounts) { account in
+                                NavigationLink {
+                                    AccountTransactionsView(account: account)
+                                } label: {
+                                    AccountListItem(account: account)
                                 }
                             }
-                        }
-                        ForEach(accounts) { account in
-                            NavigationLink {
-                                AccountTransactionsView(account: account)
-                            } label: {
-                                AccountListItem(account: account)
+                            .onDelete { indexSet in
+                                deleteAccounts(at: indexSet)
                             }
                         }
-                        .onDelete { indexSet in
-                            deleteAccounts(at: indexSet)
-                        }
-                    }
-                    
                 }
             }
             .navigationTitle("Accounts")
+            .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     if !accounts.isEmpty {
@@ -159,9 +121,23 @@ struct AccountsView: View {
 }
 
 #Preview {
-    AccountsView()
-        .modelContainer(
-            for: [Transaction.self, Account.self, TransactionCategory.self],
-            inMemory: true
-        )
+    let container = try! ModelContainer(
+        for: Transaction.self, Account.self, TransactionCategory.self,
+        configurations: ModelConfiguration(isStoredInMemoryOnly: true)
+    )
+    let context = container.mainContext
+    let sampleAccounts = [
+        Account(name: "SBI Savings", balance: 85420.50, icon: .bankAccountOne, isPrimary: true),
+        Account(name: "HDFC Salary", balance: 142_300, icon: .bankAccountFour),
+        Account(name: "ICICI Credit Card", balance: -12_450.75, icon: .mastercard),
+        Account(name: "Cash", balance: 3_200, icon: .cash),
+        Account(name: "PhonePe Wallet", balance: 850, icon: .wallet),
+        Account(name: "Fixed Deposit", balance: 250_000, icon: .savings),
+    ]
+    for account in sampleAccounts {
+        context.insert(account)
+    }
+
+    return AccountsView()
+        .modelContainer(container)
 }

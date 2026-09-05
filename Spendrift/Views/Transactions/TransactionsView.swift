@@ -214,10 +214,10 @@ struct TransactionsView: View {
                             }
                         }
                     }
-                    .listStyle(.insetGrouped)
                 }
             }
             .navigationTitle(showingAnalytics ? "Analytics" : "Transactions")
+            .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button(action: openCreateTransactionSheet) {

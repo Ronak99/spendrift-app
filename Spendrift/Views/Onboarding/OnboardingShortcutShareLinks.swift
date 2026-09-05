@@ -19,6 +19,13 @@ enum OnboardingShortcutShareLinks {
         url(from: "https://www.icloud.com/shortcuts/014f0af207a04b359a50857c6e30fc6e")
     }
 
+    /// Log Transaction Message (matches `LogTransactionMessageIntent`), the shortcut
+    /// users attach to a Messages automation. Paste the iCloud share link here to
+    /// surface the row in Settings › Capture › Automate; it stays hidden while empty.
+    static var logTransactionMessage: URL? {
+        url(from: "")
+    }
+
     private static func url(from string: String) -> URL? {
         let trimmed = string.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return nil }

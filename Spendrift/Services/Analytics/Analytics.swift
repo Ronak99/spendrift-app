@@ -27,7 +27,6 @@ enum Analytics {
         case widgetTapped = "widget_tapped"
         case categoryCreated = "category_created"
         case categoryDeleted = "category_deleted"
-        case categoriesConfigured = "categories_configured"
         case accountCreated = "account_created"
         case accountDeleted = "account_deleted"
         case notificationPermissionRequested = "notification_permission_requested"

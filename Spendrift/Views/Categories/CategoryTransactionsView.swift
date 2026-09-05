@@ -16,7 +16,6 @@ struct CategoryTransactionsView: View {
 
     @State private var viewModel: TransactionViewModel
     @State private var selectedTransaction: Transaction?
-    @State private var showEditCategorySheet = false
 
     /// `initialDate` seeds the period window so drill-downs (e.g. from Analytics)
     /// open on the same range the caller was viewing. The period granularity is
@@ -87,18 +86,8 @@ struct CategoryTransactionsView: View {
         }
         .navigationTitle(category.name)
         .navigationBarTitleDisplayMode(.inline)
-        .toolbar {
-            ToolbarItem(placement: .navigationBarTrailing) {
-                Button("Edit") {
-                    showEditCategorySheet = true
-                }
-            }
-        }
         .sheet(item: $selectedTransaction) { transaction in
             UpdateTransactionSheet(transaction: transaction)
-        }
-        .sheet(isPresented: $showEditCategorySheet) {
-            UpdateCategorySheet(category: category)
         }
     }
 

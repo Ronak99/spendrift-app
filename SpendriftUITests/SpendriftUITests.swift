@@ -66,14 +66,18 @@ class SpendriftUITestBase: XCTestCase {
         }
     }
 
-    /// Opens New Category from the Categories tab (toolbar **+** when categories exist, otherwise empty-state **Add Category**).
+    /// Opens New Category from the Categories tab via the toolbar **+**.
+    /// Defaults are always seeded, so the screen never shows an empty state.
     func openNewCategorySheet() {
-        if app.buttons["Add Category"].waitForExistence(timeout: 2) {
-            app.buttons["Add Category"].tap()
-        } else {
-            XCTAssertTrue(app.navigationBars.buttons["plus"].waitForExistence(timeout: 3))
-            app.navigationBars.buttons["plus"].tap()
-        }
+        XCTAssertTrue(app.navigationBars.buttons["plus"].waitForExistence(timeout: 3))
+        app.navigationBars.buttons["plus"].tap()
+    }
+
+    /// Switches the Categories grid to the given segment ("Expense" or "Income").
+    func selectCategorySegment(_ type: String) {
+        let segment = app.segmentedControls.firstMatch.buttons[type]
+        XCTAssertTrue(segment.waitForExistence(timeout: 3))
+        segment.tap()
     }
 
     // MARK: - Account Helpers
@@ -108,11 +112,9 @@ class SpendriftUITestBase: XCTestCase {
     @discardableResult
     func createCategory(name: String, type: String = "Expense", iconIndex: Int? = nil) -> Self {
         navigateToCategories()
+        // The New Category sheet inherits the selected segment, so switch before opening it.
+        selectCategorySegment(type)
         openNewCategorySheet()
-
-        if type == "Income" {
-            app.buttons["Income"].tap()
-        }
 
         let nameField = app.textFields["Enter category name"]
         XCTAssertTrue(nameField.waitForExistence(timeout: 3))
@@ -299,38 +301,43 @@ final class CategoryIntegrationTests: SpendriftUITestBase {
 
     func testCategoriesTab_seedsDefaultCategories_onFirstLaunch() {
         navigateToCategories()
-        // Default categories include Salary (income) and Food (expense)
-        XCTAssertTrue(app.staticTexts["Salary"].waitForExistence(timeout: 5))
-        XCTAssertTrue(app.staticTexts["Food"].exists)
+        // Expense is the default segment; Food is a seeded expense default.
+        XCTAssertTrue(app.staticTexts["Food"].waitForExistence(timeout: 5))
+
+        selectCategorySegment("Income")
+        XCTAssertTrue(app.staticTexts["Salary"].waitForExistence(timeout: 3))
     }
 
-    func testCategoriesTab_showsIncomeSectionWithDefaults() {
+    func testCategoriesTab_incomeSegment_showsDefaults() {
         navigateToCategories()
-        XCTAssertTrue(app.staticTexts["Income"].waitForExistence(timeout: 5))
-        XCTAssertTrue(app.staticTexts["Other Income"].exists)
+        selectCategorySegment("Income")
+        XCTAssertTrue(app.staticTexts["Other Income"].waitForExistence(timeout: 5))
         XCTAssertTrue(app.staticTexts["Salary"].exists)
+        XCTAssertFalse(app.staticTexts["Food"].exists)
     }
 
-    func testCategoriesTab_showsExpenseSectionWithDefaults() {
+    func testCategoriesTab_expenseSegment_showsDefaults() {
         navigateToCategories()
-        XCTAssertTrue(app.staticTexts["Expense"].waitForExistence(timeout: 5))
-        XCTAssertTrue(app.staticTexts["Bills & Utilities"].exists)
+        selectCategorySegment("Expense")
+        XCTAssertTrue(app.staticTexts["Bills & Utilities"].waitForExistence(timeout: 5))
         XCTAssertTrue(app.staticTexts["Shopping"].exists)
+        XCTAssertFalse(app.staticTexts["Salary"].exists)
     }
 
     // MARK: Create
 
-    func testCreateCategory_expense_appearsInExpenseSection() {
+    func testCreateCategory_expense_appearsInExpenseSegment() {
         createCategory(name: "Custom Expense", type: "Expense")
 
         navigateToCategories()
         XCTAssertTrue(app.staticTexts["Custom Expense"].waitForExistence(timeout: 3))
     }
 
-    func testCreateCategory_income_appearsInIncomeSection() {
+    func testCreateCategory_income_appearsInIncomeSegment() {
         createCategory(name: "Custom Income", type: "Income")
 
         navigateToCategories()
+        selectCategorySegment("Income")
         XCTAssertTrue(app.staticTexts["Custom Income"].waitForExistence(timeout: 3))
     }
 
@@ -352,101 +359,36 @@ final class CategoryIntegrationTests: SpendriftUITestBase {
         XCTAssertTrue(app.navigationBars["Categories"].waitForExistence(timeout: 3))
     }
 
-    // MARK: Edit
-
-    func testEditCategory_updatesName() {
-        navigateToCategories()
-
-        let salaryCell = app.staticTexts["Salary"]
-        XCTAssertTrue(salaryCell.waitForExistence(timeout: 5))
-        salaryCell.tap()
-
-        XCTAssertTrue(app.navigationBars["Edit Category"].waitForExistence(timeout: 3))
-
-        let nameField = app.textFields["Enter category name"]
-        nameField.tap()
-        nameField.clearAndTypeText("Monthly Salary")
-
-        app.navigationBars.buttons["Save"].tap()
-
-        XCTAssertTrue(app.staticTexts["Monthly Salary"].waitForExistence(timeout: 3))
-    }
-
     // MARK: Delete
 
-    func testDeleteCategory_removesFromList() {
+    func testDeleteCategory_customCategory_removesFromGrid() {
+        createCategory(name: "Temporary", type: "Expense")
+
         navigateToCategories()
+        let tile = app.staticTexts["Temporary"]
+        XCTAssertTrue(tile.waitForExistence(timeout: 5))
+        tile.press(forDuration: 1.0)
 
-        let salaryCell = app.cells.containing(.staticText, identifier: "Salary").element
-        XCTAssertTrue(salaryCell.waitForExistence(timeout: 5))
-        salaryCell.swipeLeft()
+        let deleteAction = app.buttons["Delete"]
+        XCTAssertTrue(deleteAction.waitForExistence(timeout: 3))
+        deleteAction.tap()
 
-        let deleteButton = app.buttons["Delete"]
-        if deleteButton.waitForExistence(timeout: 2) {
-            deleteButton.tap()
-        }
+        let confirm = app.buttons["Delete Category and Its Transactions"]
+        XCTAssertTrue(confirm.waitForExistence(timeout: 3))
+        confirm.tap()
 
-        sleep(1)
-        XCTAssertFalse(app.staticTexts["Salary"].exists)
+        XCTAssertFalse(app.staticTexts["Temporary"].waitForExistence(timeout: 2))
     }
 
-    // MARK: Search
-
-    func testSearch_findsMatchingCategory() {
+    func testDeleteCategory_defaultCategory_hasNoDeleteAction() {
         navigateToCategories()
-        XCTAssertTrue(app.staticTexts["Salary"].waitForExistence(timeout: 5))
 
-        let searchField = app.searchFields["Search categories"]
-        XCTAssertTrue(searchField.waitForExistence(timeout: 3))
-        searchField.tap()
-        searchField.typeText("Sal")
+        let tile = app.staticTexts["Food"]
+        XCTAssertTrue(tile.waitForExistence(timeout: 5))
+        tile.press(forDuration: 1.0)
 
-        XCTAssertTrue(app.staticTexts["Salary"].waitForExistence(timeout: 3))
-        XCTAssertFalse(app.staticTexts["Food"].exists)
-    }
-
-    func testSearch_showsNoResultsForUnmatchedQuery() {
-        navigateToCategories()
-        XCTAssertTrue(app.staticTexts["Salary"].waitForExistence(timeout: 5))
-
-        let searchField = app.searchFields["Search categories"]
-        XCTAssertTrue(searchField.waitForExistence(timeout: 3))
-        searchField.tap()
-        searchField.typeText("ZZZZZ")
-
-        XCTAssertTrue(app.staticTexts["No Results"].waitForExistence(timeout: 3))
-    }
-
-    func testSearch_isCaseInsensitive() {
-        navigateToCategories()
-        XCTAssertTrue(app.staticTexts["Salary"].waitForExistence(timeout: 5))
-
-        let searchField = app.searchFields["Search categories"]
-        searchField.tap()
-        searchField.typeText("salary")
-
-        XCTAssertTrue(app.staticTexts["Salary"].waitForExistence(timeout: 3))
-    }
-
-    func testSearch_clearingReturnsAllCategories() {
-        navigateToCategories()
-        XCTAssertTrue(app.staticTexts["Salary"].waitForExistence(timeout: 5))
-
-        let searchField = app.searchFields["Search categories"]
-        searchField.tap()
-        searchField.typeText("Salary")
-        XCTAssertFalse(app.staticTexts["Food"].exists)
-
-        // Clear search
-        if let clearButton = app.buttons.allElementsBoundByIndex.first(where: { $0.label == "Clear text" }) {
-            clearButton.tap()
-        } else {
-            searchField.clearAndTypeText("")
-        }
-        app.buttons["Cancel"].tap()
-
-        XCTAssertTrue(app.staticTexts["Food"].waitForExistence(timeout: 3))
-        XCTAssertTrue(app.staticTexts["Salary"].exists)
+        XCTAssertFalse(app.buttons["Delete"].waitForExistence(timeout: 2))
+        XCTAssertTrue(app.staticTexts["Food"].exists)
     }
 }
 
@@ -797,23 +739,27 @@ final class CrossFeatureIntegrationTests: SpendriftUITestBase {
     // MARK: Category-Transaction Relationship
 
     func testDeletingCategory_removesAssociatedTransactions() {
+        // Defaults are permanent, so the cascade can only be exercised through a custom category.
+        createCategory(name: "Hobby", type: "Expense")
         createAccount(name: "SBI", balance: "50000")
         createTransaction(
             type: "Expense",
             accountName: "SBI",
-            categoryName: "Food",
+            categoryName: "Hobby",
             amount: "1000"
         )
 
-        // Delete the Food category
+        // Delete the custom category from its grid tile's context menu
         navigateToCategories()
-        let categoryCell = app.cells.containing(.staticText, identifier: "Food").element
-        XCTAssertTrue(categoryCell.waitForExistence(timeout: 5))
-        categoryCell.swipeLeft()
-        let deleteButton = app.buttons["Delete"]
-        if deleteButton.waitForExistence(timeout: 2) {
-            deleteButton.tap()
-        }
+        let tile = app.staticTexts["Hobby"]
+        XCTAssertTrue(tile.waitForExistence(timeout: 5))
+        tile.press(forDuration: 1.0)
+        let deleteAction = app.buttons["Delete"]
+        XCTAssertTrue(deleteAction.waitForExistence(timeout: 3))
+        deleteAction.tap()
+        let confirm = app.buttons["Delete Category and Its Transactions"]
+        XCTAssertTrue(confirm.waitForExistence(timeout: 3))
+        confirm.tap()
 
         // Transaction linked to Food should also be removed (cascade)
         navigateToTransactions()
