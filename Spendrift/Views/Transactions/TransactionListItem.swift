@@ -9,7 +9,7 @@ import SwiftUI
 
 struct TransactionListItem: View {
     let transaction: Transaction
-    
+
     var body: some View {
         if transaction.isPersisted {
             rowContent
@@ -17,7 +17,7 @@ struct TransactionListItem: View {
     }
 
     private var rowContent: some View {
-        HStack(spacing: 12) {
+        HStack(spacing: 16) {
             // Category icon
             ZStack {
                 Circle()
@@ -30,7 +30,7 @@ struct TransactionListItem: View {
             }
             
             // Transaction details
-            VStack(alignment: .leading, spacing: 4) {
+            VStack(alignment: .leading, spacing: 6) {
                 Text(transaction.category?.name ?? "Uncategorized")
                     .font(.headline)
                     .foregroundColor(.primary)
@@ -45,7 +45,7 @@ struct TransactionListItem: View {
             Spacer()
             
             // Amount
-            VStack(alignment: .trailing, spacing: 4) {
+            VStack(alignment: .trailing, spacing: 6) {
                 Text(transaction.formattedAmount)
                     .font(.headline)
                     .foregroundColor(transaction.transactionType == .expense ? .red : .green)
@@ -55,7 +55,7 @@ struct TransactionListItem: View {
                     .foregroundColor(.secondary)
             }
         }
-        .padding(.vertical, 4)
+        .padding(.horizontal, 8)
     }
 }
 
@@ -66,5 +66,6 @@ struct TransactionListItem: View {
             amount: 1000,
             transactionType: .expense
         ))
+        .listItemPositioned(.only)
     }
 }

@@ -11,7 +11,7 @@ struct AccountListItem: View {
     let account: Account
     
     var body: some View {
-        HStack(spacing: 12) {
+        HStack(spacing: 16) {
             // Account icon
             ZStack {
                 Circle()
@@ -24,7 +24,7 @@ struct AccountListItem: View {
             }
             
             // Account details
-            VStack(alignment: .leading, spacing: 4) {
+            VStack(alignment: .leading, spacing: 6) {
                 HStack(spacing: 8) {
                     Text(account.name)
                         .font(.headline)
@@ -46,7 +46,7 @@ struct AccountListItem: View {
             
             Spacer()
         }
-        .padding(.vertical, 4)
+        .padding(.horizontal, 8)
     }
 }
 
@@ -57,5 +57,6 @@ struct AccountListItem: View {
             balance: 50000,
             icon: .bankAccountOne
         ))
+        .listItemPositioned(.only)
     }
 }

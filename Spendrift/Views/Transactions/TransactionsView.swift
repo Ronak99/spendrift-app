@@ -199,12 +199,13 @@ struct TransactionsView: View {
                     List {
                         ForEach(transactions.groupedByDateRecentFirst, id: \.dayStart) { section in
                             Section {
-                                ForEach(section.transactions, id: \.id) { transaction in
+                                ForEach(Array(section.transactions.enumerated()), id: \.element.id) { index, transaction in
                                     TransactionListItem(transaction: transaction)
-                                        .contentShape(Rectangle())
-                                        .onTapGesture {
-                                            selectedTransaction = transaction
-                                        }
+                                        .listItemPositioned(index: index, count: section.transactions.count)
+                                    .contentShape(Rectangle())
+                                    .onTapGesture {
+                                        selectedTransaction = transaction
+                                    }
                                 }
                                 .onDelete { indexSet in
                                     deleteTransactions(at: indexSet, in: section.transactions)

@@ -57,13 +57,15 @@ struct AccountTransactionsView: View {
             } else {
                 List {
                     ForEach(groupedTransactions.keys.sorted(by: >), id: \.self) { dateKey in
+                        let items = groupedTransactions[dateKey] ?? []
                         Section {
-                            ForEach(groupedTransactions[dateKey] ?? [], id: \.id) { transaction in
+                            ForEach(Array(items.enumerated()), id: \.element.id) { index, transaction in
                                 TransactionListItem(transaction: transaction)
-                                    .contentShape(Rectangle())
-                                    .onTapGesture {
-                                        selectedTransaction = transaction
-                                    }
+                                    .listItemPositioned(index: index, count: items.count)
+                                .contentShape(Rectangle())
+                                .onTapGesture {
+                                    selectedTransaction = transaction
+                                }
                             }
                             .onDelete { indexSet in
                                 deleteTransactions(at: indexSet, for: dateKey)

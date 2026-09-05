@@ -56,11 +56,12 @@ struct AccountsView: View {
                         )
                     } else {
                         List {
-                            ForEach(accounts) { account in
+                            ForEach(Array(accounts.enumerated()), id: \.element.id) { index, account in
                                 NavigationLink {
                                     AccountTransactionsView(account: account)
                                 } label: {
                                     AccountListItem(account: account)
+                                        .listItemPositioned(index: index, count: accounts.count)
                                 }
                             }
                             .onDelete { indexSet in
