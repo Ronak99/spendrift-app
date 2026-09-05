@@ -29,14 +29,14 @@ struct CategoriesView: View {
     var body: some View {
         NavigationStack {
             ScrollView {
-                VStack(spacing: 28) {
+                VStack(spacing: 24) {
                     Picker("Category type", selection: $selectedType) {
                         Text("Expense").tag(TransactionType.expense)
                         Text("Income").tag(TransactionType.income)
                     }
                     .pickerStyle(.segmented)
 
-                    LazyVGrid(columns: columns, spacing: 20) {
+                    LazyVGrid(columns: columns, spacing: 8) {
                         ForEach(visibleCategories) { category in
                             NavigationLink {
                                 CategoryTransactionsView(category: category)
@@ -107,6 +107,14 @@ struct CategoriesView: View {
 }
 
 #Preview {
-    CategoriesView()
-        .modelContainer(for: [TransactionCategory.self], inMemory: true)
+    let container = try! ModelContainer(
+        for: TransactionCategory.self,
+        configurations: ModelConfiguration(isStoredInMemoryOnly: true)
+    )
+    for category in TransactionCategory.defaultCategories() {
+        container.mainContext.insert(category)
+    }
+
+    return CategoriesView()
+        .modelContainer(container)
 }

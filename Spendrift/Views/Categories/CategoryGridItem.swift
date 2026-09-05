@@ -11,27 +11,27 @@ import SwiftUI
 struct CategoryGridItem: View {
     let category: TransactionCategory
 
-    private let circleSize: CGFloat = 64
+    private let circleSize: CGFloat = 52
 
     var body: some View {
-        VStack(spacing: 10) {
+        VStack(spacing: 8) {
             ZStack {
                 Circle()
                     .fill(category.icon.tint.opacity(0.18))
                     .frame(width: circleSize, height: circleSize)
 
                 Image(systemName: category.icon.systemImageName)
-                    .font(.system(size: 24, weight: .semibold))
+                    .font(.system(size: 20, weight: .semibold))
                     .foregroundStyle(category.icon.tint)
             }
 
             Text(category.name)
-                .font(.subheadline.weight(.medium))
+                .font(.system(size: 12, weight: .medium))
                 .foregroundStyle(.primary)
                 .multilineTextAlignment(.center)
                 .lineLimit(2)
                 .minimumScaleFactor(0.85)
-                .frame(height: 36, alignment: .top)
+                .frame(height: 28, alignment: .top)
         }
         .frame(maxWidth: .infinity)
         .contentShape(Rectangle())
