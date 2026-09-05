@@ -45,7 +45,7 @@ extension CategoryIcon {
         case .groceries: return "basket"
         case .rent: return "house.fill"
         case .miscellaneous: return "questionmark.circle.fill"
-        case .unknown: return "circle"
+        case .unknown: return "questionmark.circle"
         }
     }
 }
