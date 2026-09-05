@@ -160,7 +160,7 @@ struct StatisticsView: View {
             ScrollView {
                 VStack(spacing: 20) {
                     CapsuleDateSelector(
-                        period: periodViewModel.periodGranularity,
+                        period: $periodViewModel.periodGranularity,
                         title: periodViewModel.capsuleTitle,
                         date: periodViewModel.selectedDate,
                         isCurrentPeriod: periodViewModel.isCurrentPeriod,
@@ -201,13 +201,6 @@ struct StatisticsView: View {
             }
             .background(Color(.systemGroupedBackground))
             .navigationTitle("Analytics")
-            .toolbar {
-                if !periodTransactions.isEmpty {
-                    ToolbarItem(placement: .navigationBarLeading) {
-                        TransactionPeriodToolbarMenu(period: $periodViewModel.periodGranularity)
-                    }
-                }
-            }
             .navigationDestination(item: $drillCategory) { category in
                 CategoryTransactionsView(
                     category: category,

@@ -130,7 +130,7 @@ struct TransactionsView: View {
                 // Header with date selector
                 VStack(spacing: 16) {
                     CapsuleDateSelector(
-                        period: periodViewModel.periodGranularity,
+                        period: $periodViewModel.periodGranularity,
                         title: periodViewModel.capsuleTitle,
                         date: periodViewModel.selectedDate,
                         isCurrentPeriod: periodViewModel.isCurrentPeriod,
@@ -213,11 +213,6 @@ struct TransactionsView: View {
             }
             .navigationTitle("Transactions")
             .toolbar {
-                if !transactions.isEmpty {
-                    ToolbarItem(placement: .navigationBarLeading) {
-                        TransactionPeriodToolbarMenu(period: $periodViewModel.periodGranularity)
-                    }
-                }
                 ToolbarItem(placement: .navigationBarTrailing) {
                     HStack(spacing: 8) {
                         Button(action: openCreateTransactionSheet) {
@@ -228,7 +223,6 @@ struct TransactionsView: View {
 
                         ProfileSettingsToolbarButton()
                     }
-                    .padding(.horizontal, transactions.isEmpty ? 0 : 8)
                 }
             }
             .overlay(alignment: .bottom) {

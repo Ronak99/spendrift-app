@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct CapsuleDateSelector: View {
-    let period: TransactionPeriod
+    @Binding var period: TransactionPeriod
     let title: String
     let date: Date
     let isCurrentPeriod: Bool
@@ -24,14 +24,16 @@ struct CapsuleDateSelector: View {
 
     var body: some View {
         VStack(spacing: 8) {
-            HStack {
+            HStack(spacing: 12) {
+                periodMenuButton
+
                 Button(action: onPrevious) {
                     Image(systemName: "chevron.left")
                         .font(.headline)
                         .foregroundColor(.primary)
                 }
 
-                Spacer()
+                Spacer(minLength: 0)
 
                 Text(title)
                     .font(.headline)
@@ -53,7 +55,7 @@ struct CapsuleDateSelector: View {
                         showJumpSheet = true
                     })
 
-                Spacer()
+                Spacer(minLength: 0)
 
                 Button(action: onNext) {
                     Image(systemName: "chevron.right")
@@ -61,7 +63,8 @@ struct CapsuleDateSelector: View {
                         .foregroundColor(.primary)
                 }
             }
-            .padding(.horizontal, 20)
+            .padding(.leading, 14)
+            .padding(.trailing, 20)
             .padding(.vertical, 12)
             .background(
                 Capsule()
@@ -95,6 +98,29 @@ struct CapsuleDateSelector: View {
         .sheet(isPresented: $showJumpSheet) {
             jumpSheetContent
         }
+    }
+
+    private var periodMenuButton: some View {
+        Menu {
+            ForEach(TransactionPeriod.allCases) { option in
+                Button {
+                    period = option
+                } label: {
+                    HStack {
+                        Text(option.label)
+                        Spacer(minLength: 12)
+                        if period == option {
+                            Image(systemName: "checkmark")
+                        }
+                    }
+                }
+            }
+        } label: {
+            Image(systemName: "line.3.horizontal.decrease.circle")
+                .font(.headline)
+                .foregroundColor(.primary)
+        }
+        .accessibilityLabel("Time range")
     }
 
     @ViewBuilder
@@ -416,8 +442,10 @@ private struct GestureHintTooltip: View {
 }
 
 #Preview {
+    @Previewable @State var period = TransactionPeriod.month
+
     CapsuleDateSelector(
-        period: .month,
+        period: $period,
         title: "April 2026",
         date: Date(),
         isCurrentPeriod: true,
