@@ -65,13 +65,6 @@ struct ContentView: View {
                     Text("Categories")
                 }
                 .tag(2)
-
-            StatisticsView(periodViewModel: transactionPeriodViewModel)
-                .tabItem {
-                    Image(systemName: "chart.pie")
-                    Text("Analytics")
-                }
-                .tag(3)
         }
         .tint(accentColor)
         .environment(\.openSettings) {
@@ -137,7 +130,6 @@ struct ContentView: View {
         case 0: "transactions"
         case 1: "accounts"
         case 2: "categories"
-        case 3: "analytics"
         default: "unknown"
         }
     }

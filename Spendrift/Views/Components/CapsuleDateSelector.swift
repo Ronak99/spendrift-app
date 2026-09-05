@@ -16,6 +16,8 @@ struct CapsuleDateSelector: View {
     let onNext: () -> Void
     var onToday: (() -> Void)? = nil
     var onJumpToDate: ((Date) -> Void)? = nil
+    var isShowingAnalytics: Bool = false
+    var onAnalyticsToggle: (() -> Void)? = nil
 
     @AppStorage("hasSeenCapsuleGestureHint") private var hasSeenHint = false
     @State private var showJumpSheet = false
@@ -62,9 +64,13 @@ struct CapsuleDateSelector: View {
                         .font(.headline)
                         .foregroundColor(.primary)
                 }
+
+                if let onAnalyticsToggle {
+                    analyticsToggleButton(action: onAnalyticsToggle)
+                }
             }
             .padding(.leading, 14)
-            .padding(.trailing, 20)
+            .padding(.trailing, onAnalyticsToggle == nil ? 20 : 14)
             .padding(.vertical, 12)
             .background(
                 Capsule()
@@ -121,6 +127,16 @@ struct CapsuleDateSelector: View {
                 .foregroundColor(.primary)
         }
         .accessibilityLabel("Time range")
+    }
+
+    private func analyticsToggleButton(action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Image(systemName: isShowingAnalytics ? "list.bullet.rectangle" : "chart.pie")
+                .font(.headline)
+                .foregroundColor(isShowingAnalytics ? .blue : .primary)
+        }
+        .accessibilityLabel(isShowingAnalytics ? "Show transactions" : "Show analytics")
+        .accessibilityIdentifier("capsuleAnalyticsToggle")
     }
 
     @ViewBuilder

@@ -35,6 +35,8 @@ struct TransactionsView: View {
     /// Drives the transient "Transaction added" confirmation after a shared receipt is created.
     @State private var showReceiptShareCreated = false
     @State private var selectedTransaction: Transaction?
+    @State private var showingAnalytics = false
+    @State private var drillCategory: TransactionCategory?
     /// Ids of the trigger payloads already handled, so a `.task(id:)` that restarts on
     /// tab reappearance does not reprocess the same (already-consumed) file and resurrect
     /// a previously dismissed error.
@@ -137,51 +139,62 @@ struct TransactionsView: View {
                         onPrevious: { periodViewModel.decrementPeriod() },
                         onNext: { periodViewModel.incrementPeriod() },
                         onToday: { periodViewModel.goToCurrentPeriod() },
-                        onJumpToDate: { periodViewModel.goToDate($0) }
+                        onJumpToDate: { periodViewModel.goToDate($0) },
+                        isShowingAnalytics: showingAnalytics,
+                        onAnalyticsToggle: {
+                            withAnimation(.easeInOut(duration: 0.2)) {
+                                showingAnalytics.toggle()
+                            }
+                        }
                     )
                     .padding(.horizontal)
                     .padding(.top, 8)
-                    
-                    // Statistics bar
-                    HStack(spacing: 20) {
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text("Expenses")
-                                .font(.caption)
-                                .foregroundColor(.secondary)
-                            Text(formattedExpenses)
-                                .font(.headline)
-                                .foregroundColor(.red)
+
+                    if !showingAnalytics {
+                        HStack(spacing: 20) {
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text("Expenses")
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
+                                Text(formattedExpenses)
+                                    .font(.headline)
+                                    .foregroundColor(.red)
+                            }
+
+                            Spacer()
+
+                            VStack(alignment: .center, spacing: 4) {
+                                Text("Income")
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
+                                Text(formattedIncome)
+                                    .font(.headline)
+                                    .foregroundColor(.green)
+                            }
+
+                            Spacer()
+
+                            VStack(alignment: .trailing, spacing: 4) {
+                                Text("Savings")
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
+                                Text(formattedSavings)
+                                    .font(.headline)
+                                    .foregroundColor(savings >= 0 ? .green : .red)
+                            }
                         }
-                        
-                        Spacer()
-                        
-                        VStack(alignment: .center, spacing: 4) {
-                            Text("Income")
-                                .font(.caption)
-                                .foregroundColor(.secondary)
-                            Text(formattedIncome)
-                                .font(.headline)
-                                .foregroundColor(.green)
-                        }
-                        
-                        Spacer()
-                        
-                        VStack(alignment: .trailing, spacing: 4) {
-                            Text("Savings")
-                                .font(.caption)
-                                .foregroundColor(.secondary)
-                            Text(formattedSavings)
-                                .font(.headline)
-                                .foregroundColor(savings >= 0 ? .green : .red)
-                        }
+                        .padding(.horizontal)
+                        .padding(.bottom, 8)
                     }
-                    .padding(.horizontal)
-                    .padding(.bottom, 8)
                 }
-                .background(Color(.systemBackground))
-                
-                // Transaction list
-                if transactions.isEmpty {
+                .background(showingAnalytics ? Color(.systemGroupedBackground) : Color(.systemBackground))
+
+                if showingAnalytics {
+                    TransactionAnalyticsContent(
+                        periodViewModel: periodViewModel,
+                        drillCategory: $drillCategory
+                    )
+                } else if transactions.isEmpty {
                     EmptyStateView(
                         icon: "tray",
                         title: "No Transactions",
@@ -211,19 +224,25 @@ struct TransactionsView: View {
                     .listStyle(.insetGrouped)
                 }
             }
-            .navigationTitle("Transactions")
+            .navigationTitle(showingAnalytics ? "Analytics" : "Transactions")
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     HStack(spacing: 8) {
-                        Button(action: openCreateTransactionSheet) {
-                            Image(systemName: "plus")
-                        }
-                        .accessibilityLabel("Add transaction")
-                        .accessibilityIdentifier("transactionsAddButton")
+                            Button(action: openCreateTransactionSheet) {
+                                Image(systemName: "plus")
+                            }
+                            .accessibilityLabel("Add transaction")
+                            .accessibilityIdentifier("transactionsAddButton")
 
-                        ProfileSettingsToolbarButton()
-                    }
+                            ProfileSettingsToolbarButton()
+                        }
                 }
+            }
+            .navigationDestination(item: $drillCategory) { category in
+                CategoryTransactionsView(
+                    category: category,
+                    initialDate: periodViewModel.selectedDate
+                )
             }
             .overlay(alignment: .bottom) {
                 VStack(spacing: 8) {
