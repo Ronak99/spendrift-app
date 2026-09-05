@@ -26,7 +26,7 @@ struct CapsuleDateSelector: View {
 
     var body: some View {
         VStack(spacing: 8) {
-            HStack(spacing: 12) {
+            HStack(spacing: 16) {
                 periodMenuButton
 
                 Button(action: onPrevious) {
@@ -69,9 +69,8 @@ struct CapsuleDateSelector: View {
                     analyticsToggleButton(action: onAnalyticsToggle)
                 }
             }
-            .padding(.leading, 14)
-            .padding(.trailing, onAnalyticsToggle == nil ? 20 : 14)
-            .padding(.vertical, 12)
+            .padding(.vertical, 16)
+            .padding(.horizontal, 20)
             .background(
                 Capsule()
                     .fill(AppTheme.listGroupBackground)
@@ -131,7 +130,7 @@ struct CapsuleDateSelector: View {
 
     private func analyticsToggleButton(action: @escaping () -> Void) -> some View {
         Button(action: action) {
-            Image(systemName: isShowingAnalytics ? "list.bullet.rectangle" : "chart.pie")
+            Image(systemName: "chart.pie")
                 .font(.headline)
                 .foregroundColor(isShowingAnalytics ? .blue : .primary)
         }
