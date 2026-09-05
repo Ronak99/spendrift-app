@@ -21,7 +21,8 @@ enum OnboardingShortcutShareLinks {
 
     /// Log Transaction Message (matches `LogTransactionMessageIntent`), the shortcut
     /// users attach to a Messages automation. Paste the iCloud share link here to
-    /// surface the row in Settings › Capture › Automate; it stays hidden while empty.
+    /// open it from Settings › Explore › Automation; the row still drills into
+    /// Bank SMS setup while this URL is empty.
     static var logTransactionMessage: URL? {
         url(from: "")
     }

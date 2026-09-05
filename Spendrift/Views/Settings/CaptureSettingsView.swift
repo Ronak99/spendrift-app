@@ -2,8 +2,8 @@
 //  CaptureSettingsView.swift
 //  Spendrift
 //
-//  Drill-in listing every way a transaction can get into Spendrift:
-//  the four manual entry points plus the SMS automation shortcut.
+//  Drill-in listing every way a transaction can get into Spendrift
+//  by hand: speak, type, scan a receipt, or import a statement.
 //
 
 import SwiftUI
@@ -31,65 +31,53 @@ struct CaptureSettingsView: View {
     }
 
     var body: some View {
-        ScrollView(showsIndicators: false) {
-            VStack(alignment: .leading, spacing: 26) {
-                SettingsSection(title: "Add a transaction") {
-                    SettingsCard {
-                        SettingsRow(
-                            icon: "mic.fill",
-                            title: "Speak",
-                            subtitle: "Add by voice · Siri Shortcut",
-                            accent: accent,
-                            accentSoft: accentSoft,
-                            action: { open(OnboardingShortcutShareLinks.voiceRecordExpense) }
-                        )
+        SettingsScreen(title: "Capture") {
+            SettingsSection(title: "Add a transaction") {
+                SettingsCard {
+                    SettingsRow(
+                        icon: "mic.fill",
+                        title: "Speak",
+                        subtitle: "Add by voice · Siri Shortcut",
+                        accent: accent,
+                        accentSoft: accentSoft,
+                        action: { open(OnboardingShortcutShareLinks.voiceRecordExpense) }
+                    )
 
-                        SettingsInsetDivider()
+                    SettingsInsetDivider()
 
-                        SettingsRow(
-                            icon: "keyboard",
-                            title: "Type",
-                            subtitle: "Add manually · Siri Shortcut",
-                            accent: accent,
-                            accentSoft: accentSoft,
-                            action: { open(OnboardingShortcutShareLinks.logExpenseAmount) }
-                        )
+                    SettingsRow(
+                        icon: "keyboard",
+                        title: "Type",
+                        subtitle: "Add manually · Siri Shortcut",
+                        accent: accent,
+                        accentSoft: accentSoft,
+                        action: { open(OnboardingShortcutShareLinks.logExpenseAmount) }
+                    )
 
-                        SettingsInsetDivider()
+                    SettingsInsetDivider()
 
-                        SettingsRow(
-                            icon: "doc.viewfinder",
-                            title: "Scan receipt",
-                            subtitle: "From photo or camera",
-                            accent: accent,
-                            accentSoft: accentSoft,
-                            action: { showReceiptScanOptions = true }
-                        )
+                    SettingsRow(
+                        icon: "doc.viewfinder",
+                        title: "Scan receipt",
+                        subtitle: "From photo or camera",
+                        accent: accent,
+                        accentSoft: accentSoft,
+                        action: { showReceiptScanOptions = true }
+                    )
 
-                        SettingsInsetDivider()
+                    SettingsInsetDivider()
 
-                        SettingsRow(
-                            icon: "doc.text",
-                            title: "Import statement",
-                            subtitle: "Upload a bank statement",
-                            accent: accent,
-                            accentSoft: accentSoft,
-                            action: { showStatementImport = true }
-                        )
-                    }
-                }
-
-                if let logMessageURL = OnboardingShortcutShareLinks.logTransactionMessage {
-                    automateSection(shortcutURL: logMessageURL)
+                    SettingsRow(
+                        icon: "doc.text",
+                        title: "Import statement",
+                        subtitle: "Upload a bank statement",
+                        accent: accent,
+                        accentSoft: accentSoft,
+                        action: { showStatementImport = true }
+                    )
                 }
             }
-            .padding(.horizontal, SettingsTokens.screenInset)
-            .padding(.top, 12)
-            .padding(.bottom, 28)
         }
-        .background(SettingsTokens.screenBackground.ignoresSafeArea())
-        .navigationTitle("Capture")
-        .navigationBarTitleDisplayMode(.inline)
         .tint(accent)
         .sheet(isPresented: $showStatementImport) {
             StatementImportView()
@@ -140,38 +128,6 @@ struct CaptureSettingsView: View {
         } message: {
             if case .error(let message) = receiptShare.state {
                 Text(message)
-            }
-        }
-    }
-
-    private func automateSection(shortcutURL: URL) -> some View {
-        SettingsSection(title: "Automate") {
-            VStack(alignment: .leading, spacing: 8) {
-                SettingsCard {
-                    SettingsRow(
-                        icon: "message.fill",
-                        title: "Log message",
-                        subtitle: "Send the latest SMS to Spendrift",
-                        accent: accent,
-                        accentSoft: accentSoft,
-                        action: { open(shortcutURL) }
-                    )
-                }
-
-                VStack(alignment: .leading, spacing: 3) {
-                    Text("Add this shortcut to a Messages automation and bank SMS get logged on arrival.")
-                        .foregroundStyle(SettingsTokens.textSecondary)
-
-                    NavigationLink {
-                        BankSMSSettingsView()
-                    } label: {
-                        Text("See setup steps")
-                            .foregroundStyle(accent)
-                    }
-                    .buttonStyle(.plain)
-                }
-                .font(.system(size: 13))
-                .padding(.horizontal, SettingsTokens.rowLeading)
             }
         }
     }

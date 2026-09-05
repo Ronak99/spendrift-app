@@ -14,11 +14,10 @@ final class SettingsRedesignScreenshotTests: SpendriftUITestBase {
         sleep(1)
         capture("01-settings-main")
 
-        // Theme strip dragged open.
-        let card = app.scrollViews.firstMatch
-        card.swipeLeft()
+        app.staticTexts["Explore"].tap()
+        XCTAssertTrue(app.navigationBars["Explore"].waitForExistence(timeout: 5))
         sleep(1)
-        capture("02-theme-strip-open")
+        capture("02-explore")
 
         app.staticTexts["Capture & shortcuts"].tap()
         XCTAssertTrue(app.navigationBars["Capture"].waitForExistence(timeout: 5))
@@ -26,11 +25,21 @@ final class SettingsRedesignScreenshotTests: SpendriftUITestBase {
         capture("03-capture")
 
         app.navigationBars["Capture"].buttons.firstMatch.tap()
-        XCTAssertTrue(app.navigationBars["Settings"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.navigationBars["Explore"].waitForExistence(timeout: 5))
 
-        app.staticTexts["Bank SMS"].tap()
+        app.staticTexts["See setup steps"].tap()
         XCTAssertTrue(app.navigationBars["Bank SMS"].waitForExistence(timeout: 5))
         sleep(1)
         capture("04-bank-sms")
+
+        app.navigationBars["Bank SMS"].buttons.firstMatch.tap()
+        app.navigationBars["Explore"].buttons.firstMatch.tap()
+        XCTAssertTrue(app.navigationBars["Settings"].waitForExistence(timeout: 5))
+
+        app.staticTexts["Preferences"].tap()
+        XCTAssertTrue(app.navigationBars["Preferences"].waitForExistence(timeout: 5))
+        app.scrollViews.firstMatch.swipeLeft()
+        sleep(1)
+        capture("05-preferences")
     }
 }

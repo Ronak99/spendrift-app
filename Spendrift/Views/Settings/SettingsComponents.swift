@@ -34,11 +34,10 @@ struct SettingsIconTile: View {
     let accent: Color
     let accentSoft: Color
     var size: CGFloat = SettingsTokens.iconSize
-    var cornerRadius: CGFloat = 8
     var symbolSize: CGFloat = 16
 
     var body: some View {
-        RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+        Circle()
             .fill(accentSoft)
             .frame(width: size, height: size)
             .overlay {
@@ -184,6 +183,30 @@ struct SettingsCard<Content: View>: View {
         }
         .background(SettingsTokens.groupCard)
         .clipShape(RoundedRectangle(cornerRadius: SettingsTokens.cardRadius, style: .continuous))
+    }
+}
+
+struct SettingsScreen<Content: View>: View {
+    let title: String
+    let content: Content
+
+    init(title: String, @ViewBuilder content: () -> Content) {
+        self.title = title
+        self.content = content()
+    }
+
+    var body: some View {
+        ScrollView(showsIndicators: false) {
+            VStack(alignment: .leading, spacing: 26) {
+                content
+            }
+            .padding(.horizontal, SettingsTokens.screenInset)
+            .padding(.top, 12)
+            .padding(.bottom, 28)
+        }
+        .background(SettingsTokens.screenBackground.ignoresSafeArea())
+        .navigationTitle(title)
+        .navigationBarTitleDisplayMode(.inline)
     }
 }
 
