@@ -44,7 +44,7 @@ struct CategoryTransactionsView: View {
     var body: some View {
         VStack(spacing: 0) {
             CapsuleDateSelector(
-                period: viewModel.periodGranularity,
+                period: $viewModel.periodGranularity,
                 title: viewModel.capsuleTitle,
                 date: viewModel.selectedDate,
                 isCurrentPeriod: viewModel.isCurrentPeriod,

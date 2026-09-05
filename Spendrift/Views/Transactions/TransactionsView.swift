@@ -26,39 +26,35 @@ struct TransactionsView: View {
     @Query(sort: \Account.createdOn) private var accounts: [Account]
     @Query(sort: \TransactionCategory.name) private var categories: [TransactionCategory]
     var periodViewModel: TransactionViewModel
+    /// Shared with `ContentView` so the capture started from the tab bar CTA is the same one
+    /// this screen drives and renders.
+    var voiceInline: VoiceInlineCaptureController
     @State private var createTransactionSheet: CreateTransactionSheetMode?
     @State private var showStatementImport = false
     @State private var showReceiptCamera = false
     @State private var showReceiptLibrary = false
-    @State private var voiceInline = VoiceInlineCaptureController()
     @State private var receiptShare = ReceiptCaptureController()
     /// Drives the transient "Transaction added" confirmation after a shared receipt is created.
     @State private var showReceiptShareCreated = false
     @State private var selectedTransaction: Transaction?
+    @State private var showingAnalytics = false
+    @State private var drillCategory: TransactionCategory?
     /// Ids of the trigger payloads already handled, so a `.task(id:)` that restarts on
     /// tab reappearance does not reprocess the same (already-consumed) file and resurrect
     /// a previously dismissed error.
     @State private var lastProcessedReceiptImportID: UUID?
-    @State private var lastProcessedShortcutAudioID: UUID?
     @AppStorage("didFireFirstTransactionCreated") private var hasEverCreatedTransaction = false
-    let voiceCaptureTrigger: UUID?
-    let useCompactVoiceCapture: Bool
-    let shortcutImportedAudio: ShortcutImportedAudioPayload?
     let receiptImport: ReceiptSharePayload?
     @Binding var messageInboxBanner: MessageInboxImportBanner?
 
     init(
         periodViewModel: TransactionViewModel,
-        voiceCaptureTrigger: UUID? = nil,
-        useCompactVoiceCapture: Bool = false,
-        shortcutImportedAudio: ShortcutImportedAudioPayload? = nil,
+        voiceInline: VoiceInlineCaptureController,
         receiptImport: ReceiptSharePayload? = nil,
         messageInboxBanner: Binding<MessageInboxImportBanner?> = .constant(nil)
     ) {
         self.periodViewModel = periodViewModel
-        self.voiceCaptureTrigger = voiceCaptureTrigger
-        self.useCompactVoiceCapture = useCompactVoiceCapture
-        self.shortcutImportedAudio = shortcutImportedAudio
+        self.voiceInline = voiceInline
         self.receiptImport = receiptImport
         self._messageInboxBanner = messageInboxBanner
     }
@@ -123,65 +119,75 @@ struct TransactionsView: View {
     }
 
     var body: some View {
-        @Bindable var voice = voiceInline
         @Bindable var periodViewModel = periodViewModel
-        NavigationStack {
+        return NavigationStack {
             VStack(spacing: 0) {
                 // Header with date selector
                 VStack(spacing: 16) {
                     CapsuleDateSelector(
-                        period: periodViewModel.periodGranularity,
+                        period: $periodViewModel.periodGranularity,
                         title: periodViewModel.capsuleTitle,
                         date: periodViewModel.selectedDate,
                         isCurrentPeriod: periodViewModel.isCurrentPeriod,
                         onPrevious: { periodViewModel.decrementPeriod() },
                         onNext: { periodViewModel.incrementPeriod() },
                         onToday: { periodViewModel.goToCurrentPeriod() },
-                        onJumpToDate: { periodViewModel.goToDate($0) }
+                        onJumpToDate: { periodViewModel.goToDate($0) },
+                        isShowingAnalytics: showingAnalytics,
+                        onAnalyticsToggle: {
+                            withAnimation(.easeInOut(duration: 0.2)) {
+                                showingAnalytics.toggle()
+                            }
+                        }
                     )
                     .padding(.horizontal)
                     .padding(.top, 8)
-                    
-                    // Statistics bar
-                    HStack(spacing: 20) {
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text("Expenses")
-                                .font(.caption)
-                                .foregroundColor(.secondary)
-                            Text(formattedExpenses)
-                                .font(.headline)
-                                .foregroundColor(.red)
+
+                    if !showingAnalytics {
+                        HStack(spacing: 20) {
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text("Expenses")
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
+                                Text(formattedExpenses)
+                                    .font(.headline)
+                                    .foregroundColor(.red)
+                            }
+
+                            Spacer()
+
+                            VStack(alignment: .center, spacing: 4) {
+                                Text("Income")
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
+                                Text(formattedIncome)
+                                    .font(.headline)
+                                    .foregroundColor(.green)
+                            }
+
+                            Spacer()
+
+                            VStack(alignment: .trailing, spacing: 4) {
+                                Text("Savings")
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
+                                Text(formattedSavings)
+                                    .font(.headline)
+                                    .foregroundColor(savings >= 0 ? .green : .red)
+                            }
                         }
-                        
-                        Spacer()
-                        
-                        VStack(alignment: .center, spacing: 4) {
-                            Text("Income")
-                                .font(.caption)
-                                .foregroundColor(.secondary)
-                            Text(formattedIncome)
-                                .font(.headline)
-                                .foregroundColor(.green)
-                        }
-                        
-                        Spacer()
-                        
-                        VStack(alignment: .trailing, spacing: 4) {
-                            Text("Savings")
-                                .font(.caption)
-                                .foregroundColor(.secondary)
-                            Text(formattedSavings)
-                                .font(.headline)
-                                .foregroundColor(savings >= 0 ? .green : .red)
-                        }
+                        .padding(.horizontal)
+                        .padding(.bottom, 8)
                     }
-                    .padding(.horizontal)
-                    .padding(.bottom, 8)
                 }
-                .background(Color(.systemBackground))
-                
-                // Transaction list
-                if transactions.isEmpty {
+                .background(showingAnalytics ? Color(.systemGroupedBackground) : Color(.systemBackground))
+
+                if showingAnalytics {
+                    TransactionAnalyticsContent(
+                        periodViewModel: periodViewModel,
+                        drillCategory: $drillCategory
+                    )
+                } else if transactions.isEmpty {
                     EmptyStateView(
                         icon: "tray",
                         title: "No Transactions",
@@ -211,25 +217,21 @@ struct TransactionsView: View {
                     .listStyle(.insetGrouped)
                 }
             }
-            .navigationTitle("Transactions")
+            .navigationTitle(showingAnalytics ? "Analytics" : "Transactions")
             .toolbar {
-                if !transactions.isEmpty {
-                    ToolbarItem(placement: .navigationBarLeading) {
-                        TransactionPeriodToolbarMenu(period: $periodViewModel.periodGranularity)
-                    }
-                }
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    HStack(spacing: 8) {
-                        Button(action: openCreateTransactionSheet) {
-                            Image(systemName: "plus")
-                        }
-                        .accessibilityLabel("Add transaction")
-                        .accessibilityIdentifier("transactionsAddButton")
-
-                        ProfileSettingsToolbarButton()
+                    Button(action: openCreateTransactionSheet) {
+                        Image(systemName: "plus")
                     }
-                    .padding(.horizontal, transactions.isEmpty ? 0 : 8)
+                    .accessibilityLabel("Add transaction")
+                    .accessibilityIdentifier("transactionsAddButton")
                 }
+            }
+            .navigationDestination(item: $drillCategory) { category in
+                CategoryTransactionsView(
+                    category: category,
+                    initialDate: periodViewModel.selectedDate
+                )
             }
             .overlay(alignment: .bottom) {
                 VStack(spacing: 8) {
@@ -316,13 +318,6 @@ struct TransactionsView: View {
             .sheet(item: $selectedTransaction) { transaction in
                 UpdateTransactionSheet(transaction: transaction)
             }
-            .sheet(item: $voice.manualSheetPayload) { payload in
-                UpdateTransactionSheet(
-                    transaction: nil,
-                    draft: payload.draft,
-                    voiceReviewHint: payload.hint
-                )
-            }
             .sheet(item: $receiptShare.reviewPayload) { payload in
                 UpdateTransactionSheet(
                     transaction: nil,
@@ -362,22 +357,11 @@ struct TransactionsView: View {
                     showReceiptShareCreated = false
                 }
             }
-            .onChange(of: voiceCaptureTrigger) { _, trigger in
-                guard trigger != nil else { return }
+            // A capture can now be started from the tab bar CTA or a shortcut while this sheet
+            // is open; close it so the recording bar is not hidden behind it.
+            .onChange(of: voiceInline.displayState) { _, state in
+                guard state == .recording || state == .processing else { return }
                 createTransactionSheet = nil
-                voiceInline.beginCapture()
-            }
-            .task(id: shortcutImportedAudio?.id) {
-                guard let payload = shortcutImportedAudio else { return }
-                guard lastProcessedShortcutAudioID != payload.id else { return }
-                lastProcessedShortcutAudioID = payload.id
-                createTransactionSheet = nil
-                voiceInline.processImportedAudio(
-                    fileURL: payload.fileURL,
-                    modelContext: modelContext,
-                    accounts: accounts,
-                    categories: categories
-                )
             }
         }
     }
@@ -413,6 +397,9 @@ struct TransactionsView: View {
 }
 
 #Preview {
-    TransactionsView(periodViewModel: TransactionViewModel())
-        .modelContainer(for: [Transaction.self, Account.self, TransactionCategory.self], inMemory: true)
+    TransactionsView(
+        periodViewModel: TransactionViewModel(),
+        voiceInline: VoiceInlineCaptureController()
+    )
+    .modelContainer(for: [Transaction.self, Account.self, TransactionCategory.self], inMemory: true)
 }

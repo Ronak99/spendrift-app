@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct CapsuleDateSelector: View {
-    let period: TransactionPeriod
+    @Binding var period: TransactionPeriod
     let title: String
     let date: Date
     let isCurrentPeriod: Bool
@@ -16,6 +16,8 @@ struct CapsuleDateSelector: View {
     let onNext: () -> Void
     var onToday: (() -> Void)? = nil
     var onJumpToDate: ((Date) -> Void)? = nil
+    var isShowingAnalytics: Bool = false
+    var onAnalyticsToggle: (() -> Void)? = nil
 
     @AppStorage("hasSeenCapsuleGestureHint") private var hasSeenHint = false
     @State private var showJumpSheet = false
@@ -24,14 +26,16 @@ struct CapsuleDateSelector: View {
 
     var body: some View {
         VStack(spacing: 8) {
-            HStack {
+            HStack(spacing: 12) {
+                periodMenuButton
+
                 Button(action: onPrevious) {
                     Image(systemName: "chevron.left")
                         .font(.headline)
                         .foregroundColor(.primary)
                 }
 
-                Spacer()
+                Spacer(minLength: 0)
 
                 Text(title)
                     .font(.headline)
@@ -53,15 +57,20 @@ struct CapsuleDateSelector: View {
                         showJumpSheet = true
                     })
 
-                Spacer()
+                Spacer(minLength: 0)
 
                 Button(action: onNext) {
                     Image(systemName: "chevron.right")
                         .font(.headline)
                         .foregroundColor(.primary)
                 }
+
+                if let onAnalyticsToggle {
+                    analyticsToggleButton(action: onAnalyticsToggle)
+                }
             }
-            .padding(.horizontal, 20)
+            .padding(.leading, 14)
+            .padding(.trailing, onAnalyticsToggle == nil ? 20 : 14)
             .padding(.vertical, 12)
             .background(
                 Capsule()
@@ -95,6 +104,39 @@ struct CapsuleDateSelector: View {
         .sheet(isPresented: $showJumpSheet) {
             jumpSheetContent
         }
+    }
+
+    private var periodMenuButton: some View {
+        Menu {
+            ForEach(TransactionPeriod.allCases) { option in
+                Button {
+                    period = option
+                } label: {
+                    HStack {
+                        Text(option.label)
+                        Spacer(minLength: 12)
+                        if period == option {
+                            Image(systemName: "checkmark")
+                        }
+                    }
+                }
+            }
+        } label: {
+            Image(systemName: "line.3.horizontal.decrease.circle")
+                .font(.headline)
+                .foregroundColor(.primary)
+        }
+        .accessibilityLabel("Time range")
+    }
+
+    private func analyticsToggleButton(action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Image(systemName: isShowingAnalytics ? "list.bullet.rectangle" : "chart.pie")
+                .font(.headline)
+                .foregroundColor(isShowingAnalytics ? .blue : .primary)
+        }
+        .accessibilityLabel(isShowingAnalytics ? "Show transactions" : "Show analytics")
+        .accessibilityIdentifier("capsuleAnalyticsToggle")
     }
 
     @ViewBuilder
@@ -416,8 +458,10 @@ private struct GestureHintTooltip: View {
 }
 
 #Preview {
+    @Previewable @State var period = TransactionPeriod.month
+
     CapsuleDateSelector(
-        period: .month,
+        period: $period,
         title: "April 2026",
         date: Date(),
         isCurrentPeriod: true,

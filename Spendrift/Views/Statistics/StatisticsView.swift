@@ -9,12 +9,11 @@ import Charts
 import SwiftData
 import SwiftUI
 
-struct StatisticsView: View {
+struct TransactionAnalyticsContent: View {
     @Query(sort: \Transaction.date, order: .reverse) private var allTransactions: [Transaction]
     var periodViewModel: TransactionViewModel
+    @Binding var drillCategory: TransactionCategory?
 
-    /// Category the user tapped in the breakdown; drives navigation to its filtered transactions.
-    @State private var drillCategory: TransactionCategory?
     /// Cumulative angle value reported by tapping a pie slice; mapped back to a category.
     @State private var selectedAngle: Double?
 
@@ -22,8 +21,9 @@ struct StatisticsView: View {
         .blue, .purple, .pink, .orange, .teal, .green, .indigo, .cyan, .mint, .yellow, .brown
     ]
 
-    init(periodViewModel: TransactionViewModel) {
+    init(periodViewModel: TransactionViewModel, drillCategory: Binding<TransactionCategory?>) {
         self.periodViewModel = periodViewModel
+        self._drillCategory = drillCategory
         _allTransactions = Query(sort: \Transaction.date, order: .reverse)
     }
 
@@ -155,66 +155,37 @@ struct StatisticsView: View {
     }
 
     var body: some View {
-        @Bindable var periodViewModel = periodViewModel
-        NavigationStack {
-            ScrollView {
-                VStack(spacing: 20) {
-                    CapsuleDateSelector(
-                        period: periodViewModel.periodGranularity,
-                        title: periodViewModel.capsuleTitle,
-                        date: periodViewModel.selectedDate,
-                        isCurrentPeriod: periodViewModel.isCurrentPeriod,
-                        onPrevious: { periodViewModel.decrementPeriod() },
-                        onNext: { periodViewModel.incrementPeriod() },
-                        onToday: { periodViewModel.goToCurrentPeriod() },
-                        onJumpToDate: { periodViewModel.goToDate($0) }
-                    )
-                    .padding(.horizontal)
-                    .padding(.top, 8)
+        ScrollView {
+            VStack(spacing: 20) {
+                if periodTransactions.isEmpty {
+                    emptyMonthState
+                } else {
+                    summaryGrid
 
-                    if periodTransactions.isEmpty {
-                        emptyMonthState
-                    } else {
-                        summaryGrid
-
-                        if expenseTransactions.isEmpty {
-                            analyticsCard(
-                                title: "No Spending Yet",
-                                subtitle: "This period has transactions, but none of them are expenses."
-                            ) {
-                                ContentUnavailableView(
-                                    "No expense data for \(periodViewModel.periodDescription)",
-                                    systemImage: "chart.pie",
-                                    description: Text("Add an expense transaction to unlock category and trend charts.")
-                                )
-                                .frame(maxWidth: .infinity)
-                                .padding(.vertical, 8)
-                            }
-                        } else {
-                            spendingBreakdownCard
-                            dailyTrendCard
-                            weekdayPatternCard
+                    if expenseTransactions.isEmpty {
+                        analyticsCard(
+                            title: "No Spending Yet",
+                            subtitle: "This period has transactions, but none of them are expenses."
+                        ) {
+                            ContentUnavailableView(
+                                "No expense data for \(periodViewModel.periodDescription)",
+                                systemImage: "chart.pie",
+                                description: Text("Add an expense transaction to unlock category and trend charts.")
+                            )
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 8)
                         }
-                    }
-                }
-                .padding(.bottom, 24)
-            }
-            .background(Color(.systemGroupedBackground))
-            .navigationTitle("Analytics")
-            .toolbar {
-                if !periodTransactions.isEmpty {
-                    ToolbarItem(placement: .navigationBarLeading) {
-                        TransactionPeriodToolbarMenu(period: $periodViewModel.periodGranularity)
+                    } else {
+                        spendingBreakdownCard
+                        dailyTrendCard
+                        weekdayPatternCard
                     }
                 }
             }
-            .navigationDestination(item: $drillCategory) { category in
-                CategoryTransactionsView(
-                    category: category,
-                    initialDate: periodViewModel.selectedDate
-                )
-            }
+            .padding(.top, 8)
+            .padding(.bottom, 24)
         }
+        .background(Color(.systemGroupedBackground))
     }
 
     private var summaryGrid: some View {
@@ -508,6 +479,9 @@ private struct WeekdaySpendingData: Identifiable {
 }
 
 #Preview {
-    StatisticsView(periodViewModel: TransactionViewModel())
-        .modelContainer(for: [Transaction.self, Account.self, TransactionCategory.self], inMemory: true)
+    TransactionAnalyticsContent(
+        periodViewModel: TransactionViewModel(),
+        drillCategory: .constant(nil)
+    )
+    .modelContainer(for: [Transaction.self, Account.self, TransactionCategory.self], inMemory: true)
 }

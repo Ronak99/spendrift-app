@@ -35,7 +35,7 @@ struct AccountTransactionsView: View {
         @Bindable var viewModel = viewModel
         VStack(spacing: 0) {
             CapsuleDateSelector(
-                period: viewModel.periodGranularity,
+                period: $viewModel.periodGranularity,
                 title: viewModel.capsuleTitle,
                 date: viewModel.selectedDate,
                 isCurrentPeriod: viewModel.isCurrentPeriod,
@@ -79,9 +79,6 @@ struct AccountTransactionsView: View {
         .navigationTitle(account.name)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
-            ToolbarItem(placement: .navigationBarLeading) {
-                TransactionPeriodToolbarMenu(period: $viewModel.periodGranularity)
-            }
             ToolbarItem(placement: .navigationBarTrailing) {
                 Button("Edit") {
                     showEditAccountSheet = true
