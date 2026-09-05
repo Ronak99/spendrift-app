@@ -8,10 +8,12 @@
 import Combine
 import SwiftData
 import SwiftUI
+import UIKit
 
 struct ContentView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.scenePhase) private var scenePhase
+    @Environment(\.colorScheme) private var colorScheme
     @Query(sort: \Account.createdOn) private var accounts: [Account]
     @Query(sort: \TransactionCategory.name) private var categories: [TransactionCategory]
     @AppStorage(Color.selectedThemeIndexKey) private var selectedThemeIndex = Color.defaultThemeIndex
@@ -24,53 +26,96 @@ struct ContentView: View {
     @State private var selectedTab = 0
     @State private var showCreateTransaction = false
     @State private var showStatementImport = false
-    @State private var voiceCaptureTrigger: UUID?
-    @State private var shortcutImportedAudio: ShortcutImportedAudioPayload?
     @State private var receiptImport: ReceiptSharePayload?
-    @State private var useCompactVoiceCapture = false
     @State private var transactionPeriodViewModel = TransactionViewModel()
     @State private var messageInboxBanner: MessageInboxImportBanner?
     @State private var isMessageInboxSyncing = false
+    /// Owned here rather than by `TransactionsView` so voice capture can be started from - and
+    /// stay visible on top of - any tab.
+    @State private var voiceInline = VoiceInlineCaptureController()
+
+    /// Sentinel selection value for the voice CTA. It is never committed to `selectedTab`.
+    private static let voiceTabTag = 99
 
     private var accentColor: Color {
         Color.accentColor(forThemeIndex: selectedThemeIndex)
     }
 
+    /// Turns the voice tab into an action: the setter starts capture and drops the tag on the
+    /// floor, so the current tab stays selected and its content is never swapped out.
+    private var tabSelection: Binding<Int> {
+        Binding {
+            selectedTab
+        } set: { newValue in
+            guard newValue != Self.voiceTabTag else {
+                startVoiceCaptureFromTabBar()
+                return
+            }
+            selectedTab = newValue
+        }
+    }
+
+    /// The Liquid Glass tab bar ignores SwiftUI foreground styles on tab labels, so the mic is
+    /// pre-tinted as an `.alwaysOriginal` image to keep its muted red CTA colour.
+    private var voiceTabIcon: UIImage {
+        let tint: UIColor = colorScheme == .dark
+            ? UIColor(red: 0.96, green: 0.47, blue: 0.45, alpha: 1)
+            : UIColor(red: 0.76, green: 0.24, blue: 0.23, alpha: 1)
+        return UIImage(systemName: "mic.fill")?
+            .withTintColor(tint, renderingMode: .alwaysOriginal) ?? UIImage()
+    }
+
     var body: some View {
-        TabView(selection: $selectedTab) {
-            TransactionsView(
-                periodViewModel: transactionPeriodViewModel,
-                voiceCaptureTrigger: voiceCaptureTrigger,
-                useCompactVoiceCapture: useCompactVoiceCapture,
-                shortcutImportedAudio: shortcutImportedAudio,
-                receiptImport: receiptImport,
-                messageInboxBanner: $messageInboxBanner
-            )
-                .tabItem {
-                    Image(systemName: "house.fill")
-                    Text("Home")
-                }
-                .tag(0)
-            AccountsView()
-                .tabItem {
-                    Image(systemName: "creditcard")
-                    Text("Accounts")
-                }
-                .tag(1)
+        @Bindable var voice = voiceInline
 
-            CategoriesView()
-                .tabItem {
-                    Image(systemName: "folder")
-                    Text("Categories")
-                }
-                .tag(2)
+        return TabView(selection: tabSelection) {
+            Tab(value: 0) {
+                TransactionsView(
+                    periodViewModel: transactionPeriodViewModel,
+                    voiceInline: voiceInline,
+                    receiptImport: receiptImport,
+                    messageInboxBanner: $messageInboxBanner
+                )
+            } label: {
+                Label("Home", systemImage: "house.fill")
+            }
 
-            SettingsView()
-                .tabItem {
-                    Image(systemName: "gearshape.fill")
-                    Text("Settings")
+            Tab(value: 1) {
+                AccountsView()
+                    .voiceCaptureBar(controller: voiceInline)
+            } label: {
+                Label("Accounts", systemImage: "creditcard")
+            }
+
+            Tab(value: 2) {
+                CategoriesView()
+                    .voiceCaptureBar(controller: voiceInline)
+            } label: {
+                Label("Categories", systemImage: "folder")
+            }
+
+            Tab(value: 3) {
+                SettingsView()
+                    .voiceCaptureBar(controller: voiceInline)
+            } label: {
+                Label("Settings", systemImage: "gearshape.fill")
+            }
+
+            // `role: .search` is the only public API that lifts a tab item out of the tab bar
+            // into its own circular Liquid Glass button, which is the shape this CTA needs.
+            // Selection is intercepted in `tabSelection`, so the placeholder content below is
+            // never actually presented.
+            Tab(value: Self.voiceTabTag, role: .search) {
+                Color.clear
+            } label: {
+                Label {
+                    Text("Speak")
+                } icon: {
+                    Image(uiImage: voiceTabIcon)
                 }
-                .tag(3)
+                .accessibilityLabel("Speak a transaction")
+                .accessibilityHint("Records a voice note and turns it into a transaction")
+            }
         }
         .tint(accentColor)
         .environment(\.openSettings) {
@@ -126,7 +171,29 @@ struct ContentView: View {
         .sheet(isPresented: $showStatementImport) {
             StatementImportView()
         }
+        // Presented here rather than per-tab so a voice capture started from any tab can hand
+        // off to manual review.
+        .sheet(item: $voice.manualSheetPayload) { payload in
+            UpdateTransactionSheet(
+                transaction: nil,
+                draft: payload.draft,
+                voiceReviewHint: payload.hint
+            )
+        }
     }
+
+    /// Entry point for the tab bar voice CTA. No-ops while a capture is already in flight so a
+    /// stray tap cannot interrupt an in-progress recording.
+    private func startVoiceCaptureFromTabBar() {
+        guard !voiceInline.blocksNewCapture else { return }
+        UIImpactFeedbackGenerator(style: .light).impactOccurred()
+        Analytics.capture(.shortcutUsed, [
+            Analytics.Key.kind: "voice",
+            Analytics.Key.source: "tab_bar_cta"
+        ])
+        voiceInline.beginCapture()
+    }
+
     
     private static func tabName(for index: Int) -> String {
         switch index {
@@ -176,19 +243,15 @@ struct ContentView: View {
         case "createTransaction":
             showCreateTransaction = true
             selectedTab = 0
-            useCompactVoiceCapture = false
         case "voiceExpense":
             showCreateTransaction = false
             selectedTab = 0
-            useCompactVoiceCapture = true
-            voiceCaptureTrigger = UUID()
+            voiceInline.beginCapture()
         case "importStatement":
             showCreateTransaction = false
-            useCompactVoiceCapture = false
             selectedTab = 0
             showStatementImport = true
         default:
-            useCompactVoiceCapture = false
             break
         }
     }
@@ -200,7 +263,6 @@ struct ContentView: View {
         guard let url = ReceiptShareInbox.consumePendingImageURL() else { return }
         showCreateTransaction = false
         selectedTab = 0
-        useCompactVoiceCapture = false
         receiptImport = ReceiptSharePayload(id: UUID(), fileURL: url)
         Analytics.capture(.shortcutUsed, [Analytics.Key.kind: "receipt_share"])
     }
@@ -232,8 +294,12 @@ struct ContentView: View {
             guard FileManager.default.fileExists(atPath: path) else { return }
             showCreateTransaction = false
             selectedTab = 0
-            useCompactVoiceCapture = true
-            shortcutImportedAudio = ShortcutImportedAudioPayload(id: UUID(), fileURL: url)
+            voiceInline.processImportedAudio(
+                fileURL: url,
+                modelContext: modelContext,
+                accounts: accounts,
+                categories: categories
+            )
             Analytics.capture(.shortcutUsed, [Analytics.Key.kind: "voice_import"])
             return
         }
@@ -245,8 +311,7 @@ struct ContentView: View {
         defaults.removeObject(forKey: VoiceExpenseIntent.launchTriggerKey)
         showCreateTransaction = false
         selectedTab = 0
-        useCompactVoiceCapture = true
-        voiceCaptureTrigger = UUID()
+        voiceInline.beginCapture()
         Analytics.capture(.shortcutUsed, [Analytics.Key.kind: "voice"])
     }
 

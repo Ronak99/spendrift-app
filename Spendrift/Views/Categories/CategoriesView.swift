@@ -26,7 +26,6 @@ struct CategoriesView: View {
 
     @State private var showCreateSheet = false
     @State private var searchText = ""
-    @State private var isEditing = false
     @State private var selection = Set<UUID>()
     @State private var showBulkDeleteConfirmation = false
 
@@ -70,7 +69,6 @@ struct CategoriesView: View {
                         }
                     }
                     .listStyle(.insetGrouped)
-                    .environment(\.editMode, .constant(isEditing && searchText.isEmpty ? .active : .inactive))
                     .overlay {
                         if !searchText.isEmpty && !hasSearchResults {
                             ContentUnavailableView.search(text: searchText)
@@ -81,29 +79,10 @@ struct CategoriesView: View {
             }
             .navigationTitle("Categories")
             .toolbar {
-                ToolbarItem(placement: .navigationBarLeading) {
-                    if !allCategories.isEmpty && searchText.isEmpty {
-                        Button(isEditing ? "Done" : "Edit") {
-                            isEditing.toggle()
-                            if !isEditing {
-                                selection.removeAll()
-                            }
-                        }
-                    }
-                }
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    HStack(spacing: 8) {
-                        if isEditing && !selection.isEmpty {
-                            Button("Delete", role: .destructive) {
-                                showBulkDeleteConfirmation = true
-                            }
-                        } else {
-                            Button(action: { showCreateSheet = true }) {
-                                Image(systemName: "plus")
-                            }
-                        }
+                    Button(action: { showCreateSheet = true }) {
+                        Image(systemName: "plus")
                     }
-                    .padding(.horizontal, allCategories.isEmpty ? 0 : 8)
                 }
             }
             .sheet(isPresented: $showCreateSheet) {
@@ -130,15 +109,10 @@ struct CategoriesView: View {
         movable: [TransactionCategory]
     ) -> some View {
         ForEach(displayed) { category in
-            if isEditing {
+            NavigationLink {
+                CategoryTransactionsView(category: category)
+            } label: {
                 CategoryListItem(category: category)
-                    .tag(category.id)
-            } else {
-                NavigationLink {
-                    CategoryTransactionsView(category: category)
-                } label: {
-                    CategoryListItem(category: category)
-                }
             }
         }
         .onDelete { indexSet in
@@ -181,7 +155,6 @@ struct CategoriesView: View {
         }
         try? modelContext.save()
         selection.removeAll()
-        isEditing = false
     }
 }
 
