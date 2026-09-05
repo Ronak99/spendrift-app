@@ -5,7 +5,7 @@
 
 import SwiftUI
 
-struct HelpSettingsView: View {
+struct HelpSettingsCard: View {
     @Environment(\.openURL) private var openURL
     @AppStorage(Color.selectedThemeIndexKey) private var selectedThemeIndex = Color.defaultThemeIndex
 
@@ -19,60 +19,58 @@ struct HelpSettingsView: View {
     private var accentSoft: Color { accent.opacity(0.16) }
 
     var body: some View {
-        SettingsScreen(title: "Help, Privacy & Contact") {
-            SettingsCard {
-                SettingsRow(
-                    icon: "questionmark.circle.fill",
-                    title: "Help & FAQ",
-                    accent: accent,
-                    accentSoft: accentSoft,
-                    accessory: .externalLink,
-                    action: { open(helpFAQURL) }
-                )
+        SettingsCard {
+            SettingsRow(
+                icon: "questionmark.circle.fill",
+                title: "Help & FAQ",
+                accent: accent,
+                accentSoft: accentSoft,
+                accessory: .externalLink,
+                action: { open(helpFAQURL) }
+            )
 
-                SettingsInsetDivider()
+            SettingsInsetDivider()
 
-                SettingsRow(
-                    icon: "hand.raised.fill",
-                    title: "Privacy Policy",
-                    accent: accent,
-                    accentSoft: accentSoft,
-                    accessory: .externalLink,
-                    action: { open(privacyPolicyURL) }
-                )
+            SettingsRow(
+                icon: "hand.raised.fill",
+                title: "Privacy Policy",
+                accent: accent,
+                accentSoft: accentSoft,
+                accessory: .externalLink,
+                action: { open(privacyPolicyURL) }
+            )
 
-                SettingsInsetDivider()
+            SettingsInsetDivider()
 
-                SettingsRow(
-                    icon: "lightbulb.fill",
-                    title: "Request a feature",
-                    accent: accent,
-                    accentSoft: accentSoft,
-                    action: { showFeatureRequest = true }
-                )
+            SettingsRow(
+                icon: "lightbulb.fill",
+                title: "Request a feature",
+                accent: accent,
+                accentSoft: accentSoft,
+                action: { showFeatureRequest = true }
+            )
 
-                SettingsInsetDivider()
+            SettingsInsetDivider()
 
-                SettingsRow(
-                    icon: "square.and.arrow.up.fill",
-                    title: "Invite friends",
-                    accent: accent,
-                    accentSoft: accentSoft,
-                    action: { showInviteSheet = true }
-                )
+            SettingsRow(
+                icon: "square.and.arrow.up.fill",
+                title: "Invite friends",
+                accent: accent,
+                accentSoft: accentSoft,
+                action: { showInviteSheet = true }
+            )
 
-                SettingsInsetDivider()
+            SettingsInsetDivider()
 
-                SettingsRow(
-                    icon: "star.fill",
-                    title: "Rate Spendrift",
-                    accent: accent,
-                    accentSoft: accentSoft,
-                    action: {
-                        AppStoreReviewRequest.requestIfFirstTime(forKey: AppStoreReviewRequest.Keys.settingsRateTap)
-                    }
-                )
-            }
+            SettingsRow(
+                icon: "star.fill",
+                title: "Rate Spendrift",
+                accent: accent,
+                accentSoft: accentSoft,
+                action: {
+                    AppStoreReviewRequest.requestIfFirstTime(forKey: AppStoreReviewRequest.Keys.settingsRateTap)
+                }
+            )
         }
         .tint(accent)
         .sheet(isPresented: $showFeatureRequest) {
@@ -86,6 +84,14 @@ struct HelpSettingsView: View {
     private func open(_ url: URL?) {
         guard let url else { return }
         openURL(url)
+    }
+}
+
+struct HelpSettingsView: View {
+    var body: some View {
+        SettingsScreen(title: "Help, Privacy & Contact") {
+            HelpSettingsCard()
+        }
     }
 }
 

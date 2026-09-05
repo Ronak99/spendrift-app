@@ -14,6 +14,10 @@ import UIKit
 #endif
 
 struct SettingsView: View {
+    @Environment(\.modelContext) private var modelContext
+    @Query(sort: \Account.createdOn) private var accounts: [Account]
+    @Query(sort: \TransactionCategory.name) private var categories: [TransactionCategory]
+
     @AppStorage(Color.selectedThemeIndexKey) private var selectedThemeIndex =
         Color.defaultThemeIndex
     @AppStorage(Color.legacyThemeColorKey) private var legacyThemeColorName =
@@ -24,6 +28,11 @@ struct SettingsView: View {
     @State private var showMessageInboxDebug = false
     @State private var showDebugSwift = false
     @State private var versionTapCount = 0
+    @State private var showReceiptScanOptions = false
+    @State private var showStatementImport = false
+    @State private var showReceiptCamera = false
+    @State private var showReceiptLibrary = false
+    @State private var receiptShare = ReceiptCaptureController()
 
     /// Taps on the version footer needed to reveal the developer tools.
     private static let developerRevealTapCount = 5
@@ -43,10 +52,15 @@ struct SettingsView: View {
         return "Spendrift · v\(version)"
     }
 
+    private var cameraAvailable: Bool {
+        UIImagePickerController.isSourceTypeAvailable(.camera)
+    }
+
     var body: some View {
         NavigationStack {
             SettingsScreen(title: "Settings") {
                 hubCard
+                supportSection
 
                 if showsDeveloperTools {
                     developerSection
@@ -64,6 +78,57 @@ struct SettingsView: View {
         }
         .sheet(isPresented: $showMessageInboxDebug) {
             MessageInboxDebugView()
+        }
+        .sheet(isPresented: $showStatementImport) {
+            StatementImportView()
+        }
+        .fullScreenCover(isPresented: $showReceiptCamera) {
+            ReceiptCameraPicker { image in
+                showReceiptCamera = false
+                if let image {
+                    processReceiptImage(image)
+                }
+            }
+            .ignoresSafeArea()
+        }
+        .sheet(isPresented: $showReceiptLibrary) {
+            PhotoLibraryPicker { image in
+                showReceiptLibrary = false
+                if let image {
+                    processReceiptImage(image)
+                }
+            }
+            .ignoresSafeArea()
+        }
+        .sheet(item: $receiptShare.reviewPayload) { payload in
+            UpdateTransactionSheet(
+                transaction: nil,
+                draft: payload.draft,
+                voiceReviewHint: payload.hint
+            )
+        }
+        .confirmationDialog("Scan receipt", isPresented: $showReceiptScanOptions, titleVisibility: .visible) {
+            Button("Take Photo") {
+                showReceiptCamera = true
+            }
+            .disabled(!cameraAvailable || receiptShare.isProcessing)
+
+            Button("Choose from Library") {
+                showReceiptLibrary = true
+            }
+            .disabled(receiptShare.isProcessing)
+
+            Button("Cancel", role: .cancel) {}
+        }
+        .alert("Couldn't Scan Receipt", isPresented: Binding(
+            get: { if case .error = receiptShare.state { return true } else { return false } },
+            set: { if !$0 { receiptShare.dismissError() } }
+        )) {
+            Button("OK", role: .cancel) { receiptShare.dismissError() }
+        } message: {
+            if case .error(let message) = receiptShare.state {
+                Text(message)
+            }
         }
         #if DEBUG
             .fullScreenCover(
@@ -107,33 +172,31 @@ struct SettingsView: View {
 
             SettingsInsetDivider()
 
-            NavigationLink {
-                NotificationsSettingsView()
-            } label: {
-                SettingsRow(
-                    icon: "bell.fill",
-                    title: "Notifications",
-                    accent: accent,
-                    accentSoft: accentSoft
-                )
-                .content
-            }
-            .buttonStyle(SettingsPressStyle())
+            SettingsRow(
+                icon: "doc.viewfinder",
+                title: "Scan receipt",
+                subtitle: "From photo or camera",
+                accent: accent,
+                accentSoft: accentSoft,
+                action: { showReceiptScanOptions = true }
+            )
 
             SettingsInsetDivider()
 
-            NavigationLink {
-                HelpSettingsView()
-            } label: {
-                SettingsRow(
-                    icon: "doc.text.fill",
-                    title: "Help, Privacy & Contact",
-                    accent: accent,
-                    accentSoft: accentSoft
-                )
-                .content
-            }
-            .buttonStyle(SettingsPressStyle())
+            SettingsRow(
+                icon: "doc.text",
+                title: "Import bank statement",
+                subtitle: "Upload a bank statement",
+                accent: accent,
+                accentSoft: accentSoft,
+                action: { showStatementImport = true }
+            )
+        }
+    }
+
+    private var supportSection: some View {
+        SettingsSection(title: "Support") {
+            HelpSettingsCard()
         }
     }
 
@@ -206,6 +269,15 @@ struct SettingsView: View {
     }
 
     // MARK: - Theme
+
+    private func processReceiptImage(_ image: UIImage) {
+        receiptShare.process(
+            image: image,
+            accounts: accounts,
+            categories: categories,
+            modelContext: modelContext
+        )
+    }
 
     private func migrateThemeIfNeeded() {
         let defaults = UserDefaults.standard
