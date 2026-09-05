@@ -15,15 +15,20 @@ enum SettingsTokens {
     static let textPrimary = Color(uiColor: .label)
     static let textSecondary = Color(uiColor: .secondaryLabel)
     static let textTertiary = Color(uiColor: .tertiaryLabel)
-    static let divider = Color(uiColor: .separator).opacity(0.35)
+    static let divider = Color(uiColor: .separator).opacity(0.65)
     static let rowPressHighlight = Color(uiColor: .quaternarySystemFill)
 
     static let screenInset: CGFloat = 16
-    static let cardRadius: CGFloat = 22
-    static let rowHeight: CGFloat = 52
+    static let cardRadius: CGFloat = 26
+    static let sectionSpacing: CGFloat = 28
+    static let sectionHeaderSpacing: CGFloat = 8
+    /// Single-line rows: ~60pt total height in the reference settings UI.
+    static let rowHeight: CGFloat = 60
+    /// Title + subtitle rows need a little more vertical room.
+    static let rowHeightWithSubtitle: CGFloat = 76
     static let rowLeading: CGFloat = 16
     static let rowTrailing: CGFloat = 16
-    static let iconSize: CGFloat = 30
+    static let iconSize: CGFloat = 36
     static let iconGap: CGFloat = 12
     /// Where a divider starts: card inset + icon tile + gap.
     static let dividerInset: CGFloat = rowLeading + iconSize + iconGap
@@ -34,7 +39,7 @@ struct SettingsIconTile: View {
     let accent: Color
     let accentSoft: Color
     var size: CGFloat = SettingsTokens.iconSize
-    var symbolSize: CGFloat = 16
+    var symbolSize: CGFloat = 18
 
     var body: some View {
         Circle()
@@ -92,7 +97,7 @@ struct SettingsRow: View {
             }
 
             HStack(spacing: 8) {
-                VStack(alignment: .leading, spacing: 1) {
+                VStack(alignment: .leading, spacing: 2) {
                     Text(title)
                         .font(.system(size: 17))
                         .foregroundStyle(SettingsTokens.textPrimary)
@@ -107,9 +112,10 @@ struct SettingsRow: View {
 
                 accessoryView
             }
-            .padding(.vertical, subtitle == nil ? 0 : 8)
             .padding(.trailing, SettingsTokens.rowTrailing)
-            .frame(minHeight: SettingsTokens.rowHeight)
+            .frame(minHeight: subtitle == nil
+                ? SettingsTokens.rowHeight
+                : SettingsTokens.rowHeightWithSubtitle)
         }
         .padding(.leading, SettingsTokens.rowLeading)
         .contentShape(Rectangle())
@@ -159,7 +165,7 @@ struct SettingsSection<Content: View>: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: SettingsTokens.sectionHeaderSpacing) {
             Text(title.uppercased())
                 .font(.system(size: 13))
                 .kerning(0.2)
@@ -181,6 +187,8 @@ struct SettingsCard<Content: View>: View {
         VStack(spacing: 0) {
             content
         }
+        .padding(.horizontal, 8)
+        .padding(.vertical, 12)
         .background(SettingsTokens.groupCard)
         .clipShape(RoundedRectangle(cornerRadius: SettingsTokens.cardRadius, style: .continuous))
     }
@@ -197,7 +205,7 @@ struct SettingsScreen<Content: View>: View {
 
     var body: some View {
         ScrollView(showsIndicators: false) {
-            VStack(alignment: .leading, spacing: 26) {
+            VStack(alignment: .leading, spacing: SettingsTokens.sectionSpacing) {
                 content
             }
             .padding(.horizontal, SettingsTokens.screenInset)

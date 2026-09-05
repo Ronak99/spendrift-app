@@ -43,7 +43,7 @@ struct BankSMSSettingsView: View {
 
     var body: some View {
         ScrollView(showsIndicators: false) {
-            VStack(alignment: .leading, spacing: 26) {
+            VStack(alignment: .leading, spacing: SettingsTokens.sectionSpacing) {
                 statusCard
 
                 SettingsSection(title: "Set up in Shortcuts") {
@@ -132,7 +132,7 @@ struct BankSMSSettingsView: View {
                 .fixedSize(horizontal: false, vertical: true)
                 .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .padding(.vertical, 12)
+        .padding(.vertical, 14)
         .padding(.horizontal, 16)
     }
 
