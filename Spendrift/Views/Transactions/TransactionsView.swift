@@ -121,8 +121,44 @@ struct TransactionsView: View {
     var body: some View {
         @Bindable var periodViewModel = periodViewModel
         return NavigationStack {
-            VStack(spacing: 0) {
-                // Header with date selector
+            Group {
+                if showingAnalytics {
+                    TransactionAnalyticsContent(
+                        periodViewModel: periodViewModel,
+                        drillCategory: $drillCategory
+                    )
+                } else if transactions.isEmpty {
+                    EmptyStateView(
+                        icon: "tray",
+                        title: "No Transactions",
+                        description: "Get started by adding your first transaction for \(periodViewModel.periodDescription)",
+                        actionTitle: "Add Transaction",
+                        action: openCreateTransactionSheet
+                    )
+                } else {
+                    List {
+                        ForEach(transactions.groupedByDateRecentFirst, id: \.dayStart) { section in
+                            Section {
+                                ForEach(Array(section.transactions.enumerated()), id: \.element.id) { index, transaction in
+                                    TransactionListItem(transaction: transaction)
+                                        .listItemPositioned(index: index, count: section.transactions.count)
+                                    .contentShape(Rectangle())
+                                    .onTapGesture {
+                                        selectedTransaction = transaction
+                                    }
+                                }
+                                .onDelete { indexSet in
+                                    deleteTransactions(at: indexSet, in: section.transactions)
+                                }
+                            } header: {
+                                Text(section.title)
+                            }
+                        }
+                    }
+                    .softScrollEdge()
+                }
+            }
+            .scrollingHeaderBar {
                 VStack(spacing: 16) {
                     CapsuleDateSelector(
                         period: $periodViewModel.periodGranularity,
@@ -178,42 +214,6 @@ struct TransactionsView: View {
                         }
                         .padding(.horizontal)
                         .padding(.bottom, 8)
-                    }
-                }
-                .background(AppTheme.listBackground)
-
-                if showingAnalytics {
-                    TransactionAnalyticsContent(
-                        periodViewModel: periodViewModel,
-                        drillCategory: $drillCategory
-                    )
-                } else if transactions.isEmpty {
-                    EmptyStateView(
-                        icon: "tray",
-                        title: "No Transactions",
-                        description: "Get started by adding your first transaction for \(periodViewModel.periodDescription)",
-                        actionTitle: "Add Transaction",
-                        action: openCreateTransactionSheet
-                    )
-                } else {
-                    List {
-                        ForEach(transactions.groupedByDateRecentFirst, id: \.dayStart) { section in
-                            Section {
-                                ForEach(Array(section.transactions.enumerated()), id: \.element.id) { index, transaction in
-                                    TransactionListItem(transaction: transaction)
-                                        .listItemPositioned(index: index, count: section.transactions.count)
-                                    .contentShape(Rectangle())
-                                    .onTapGesture {
-                                        selectedTransaction = transaction
-                                    }
-                                }
-                                .onDelete { indexSet in
-                                    deleteTransactions(at: indexSet, in: section.transactions)
-                                }
-                            } header: {
-                                Text(section.title)
-                            }
-                        }
                     }
                 }
             }

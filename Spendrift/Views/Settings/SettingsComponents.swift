@@ -212,6 +212,7 @@ struct SettingsScreen<Content: View>: View {
             .padding(.top, 12)
             .padding(.bottom, 28)
         }
+        .softScrollEdge()
         .background(SettingsTokens.screenBackground.ignoresSafeArea())
         .navigationTitle(title)
         .navigationBarTitleDisplayMode(.inline)

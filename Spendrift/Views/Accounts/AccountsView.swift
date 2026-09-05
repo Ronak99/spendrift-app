@@ -68,6 +68,7 @@ struct AccountsView: View {
                                 deleteAccounts(at: indexSet)
                             }
                         }
+                        .softScrollEdge()
                 }
             }
             .navigationTitle("Accounts")

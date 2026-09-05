@@ -174,8 +174,7 @@ struct SettingsView: View {
 
             SettingsRow(
                 icon: "doc.viewfinder",
-                title: "Scan receipt",
-                subtitle: "From photo or camera",
+                title: "Scan Receipts",
                 accent: accent,
                 accentSoft: accentSoft,
                 action: { showReceiptScanOptions = true }
@@ -185,8 +184,7 @@ struct SettingsView: View {
 
             SettingsRow(
                 icon: "doc.text",
-                title: "Import bank statement",
-                subtitle: "Upload a bank statement",
+                title: "Bank Statements",
                 accent: accent,
                 accentSoft: accentSoft,
                 action: { showStatementImport = true }
