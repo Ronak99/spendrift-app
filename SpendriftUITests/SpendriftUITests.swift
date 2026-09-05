@@ -38,8 +38,7 @@ class SpendriftUITestBase: XCTestCase {
     }
 
     func navigateToSettings() {
-        navigateToTransactions()
-        app.buttons["openSettingsToolbar"].firstMatch.tap()
+        app.tabBars.buttons["Settings"].tap()
     }
 
     /// Opens manual entry from the Transactions tab (toolbar **+** or empty-state **Add Transaction**).

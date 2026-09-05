@@ -101,7 +101,6 @@ struct CategoriesView: View {
                             Button(action: { showCreateSheet = true }) {
                                 Image(systemName: "plus")
                             }
-                            ProfileSettingsToolbarButton()
                         }
                     }
                     .padding(.horizontal, allCategories.isEmpty ? 0 : 8)

@@ -227,15 +227,11 @@ struct TransactionsView: View {
             .navigationTitle(showingAnalytics ? "Analytics" : "Transactions")
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    HStack(spacing: 8) {
-                            Button(action: openCreateTransactionSheet) {
-                                Image(systemName: "plus")
-                            }
-                            .accessibilityLabel("Add transaction")
-                            .accessibilityIdentifier("transactionsAddButton")
-
-                            ProfileSettingsToolbarButton()
-                        }
+                    Button(action: openCreateTransactionSheet) {
+                        Image(systemName: "plus")
+                    }
+                    .accessibilityLabel("Add transaction")
+                    .accessibilityIdentifier("transactionsAddButton")
                 }
             }
             .navigationDestination(item: $drillCategory) { category in

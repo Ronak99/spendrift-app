@@ -16,7 +16,7 @@ extension EnvironmentValues {
     }
 }
 
-/// Opens app settings from the navigation bar (see `ContentView` sheet).
+/// Switches to the Settings tab (see `ContentView`).
 struct ProfileSettingsToolbarButton: View {
     @Environment(\.openSettings) private var openSettings
 

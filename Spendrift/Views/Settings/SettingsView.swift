@@ -481,12 +481,6 @@ struct SettingsView: View {
             .background(SettingsTokens.screenBackground.ignoresSafeArea())
             .navigationTitle("Settings")
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
-                    SheetDismissToolbarButton()
-                        .foregroundStyle(accent)
-                }
-            }
         }
         .tint(accent)
         .animation(.easeInOut(duration: 0.2), value: selectedThemeIndex)

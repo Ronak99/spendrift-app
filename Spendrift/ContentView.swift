@@ -28,7 +28,6 @@ struct ContentView: View {
     @State private var shortcutImportedAudio: ShortcutImportedAudioPayload?
     @State private var receiptImport: ReceiptSharePayload?
     @State private var useCompactVoiceCapture = false
-    @State private var showSettingsSheet = false
     @State private var transactionPeriodViewModel = TransactionViewModel()
     @State private var messageInboxBanner: MessageInboxImportBanner?
     @State private var isMessageInboxSyncing = false
@@ -65,10 +64,17 @@ struct ContentView: View {
                     Text("Categories")
                 }
                 .tag(2)
+
+            SettingsView()
+                .tabItem {
+                    Image(systemName: "gearshape.fill")
+                    Text("Settings")
+                }
+                .tag(3)
         }
         .tint(accentColor)
         .environment(\.openSettings) {
-            showSettingsSheet = true
+            selectedTab = 3
         }
         .onAppear {
             migrateThemeIfNeeded()
@@ -120,9 +126,6 @@ struct ContentView: View {
         .sheet(isPresented: $showStatementImport) {
             StatementImportView()
         }
-        .sheet(isPresented: $showSettingsSheet) {
-            SettingsView()
-        }
     }
     
     private static func tabName(for index: Int) -> String {
@@ -130,6 +133,7 @@ struct ContentView: View {
         case 0: "transactions"
         case 1: "accounts"
         case 2: "categories"
+        case 3: "settings"
         default: "unknown"
         }
     }

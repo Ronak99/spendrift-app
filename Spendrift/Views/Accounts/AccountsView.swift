@@ -111,15 +111,11 @@ struct AccountsView: View {
             .navigationTitle("Accounts")
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    HStack(spacing: 8) {
-                        if !accounts.isEmpty {
-                            Button(action: { showCreateSheet = true }) {
-                                Image(systemName: "plus")
-                            }
+                    if !accounts.isEmpty {
+                        Button(action: { showCreateSheet = true }) {
+                            Image(systemName: "plus")
                         }
-                        ProfileSettingsToolbarButton()
                     }
-                    .padding(.horizontal, accounts.isEmpty ? 0 : 8)
                 }
             }
             .sheet(isPresented: $showCreateSheet) {
