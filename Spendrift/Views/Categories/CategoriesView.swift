@@ -60,6 +60,7 @@ struct CategoriesView: View {
                 .padding(.top, 8)
                 .padding(.bottom, 24)
             }
+            .background(AppTheme.listBackground.ignoresSafeArea())
             .navigationTitle("Categories")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
