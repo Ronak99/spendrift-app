@@ -7,39 +7,54 @@
 
 import SwiftUI
 
-struct CategoryListItem: View {
+/// Colored tile shown in the Categories grid (RON-173). Each card carries the
+/// category's own hue — a filled icon badge over a soft tinted background — so
+/// the grid reads as a bright, distinct palette rather than a flat list.
+struct CategoryGridCard: View {
     let category: TransactionCategory
-    
+
     var body: some View {
-        HStack(spacing: 12) {
-            // Category icon
+        VStack(alignment: .leading, spacing: 12) {
             ZStack {
-                Circle()
-                    .fill(Color.accentColor.opacity(0.2))
-                    .frame(width: 44, height: 44)
-                
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .fill(category.color)
+                    .frame(width: 46, height: 46)
+
                 Image(systemName: category.icon.systemImageName)
-                    .font(.system(size: 20))
-                    .foregroundColor(.accentColor)
+                    .font(.system(size: 20, weight: .semibold))
+                    .foregroundStyle(.white)
             }
-            
-            // Category name
+
             Text(category.name)
-                .font(.headline)
-                .foregroundColor(.primary)
-            
-            Spacer()
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(.primary)
+                .lineLimit(2)
+                .multilineTextAlignment(.leading)
+                .fixedSize(horizontal: false, vertical: true)
+
+            Spacer(minLength: 0)
         }
-        .padding(.vertical, 4)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(16)
+        .frame(height: 118)
+        .background(
+            RoundedRectangle(cornerRadius: 20, style: .continuous)
+                .fill(category.color.opacity(0.12))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 20, style: .continuous)
+                .strokeBorder(category.color.opacity(0.20), lineWidth: 1)
+        )
     }
 }
 
 #Preview {
-    List {
-        CategoryListItem(category: TransactionCategory(
-            name: "Food",
-            type: .expense,
-            icon: .food
-        ))
+    let columns = [GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12)]
+    return LazyVGrid(columns: columns, spacing: 12) {
+        CategoryGridCard(category: TransactionCategory(name: "Food", type: .expense, icon: .food))
+        CategoryGridCard(category: TransactionCategory(name: "Transport", type: .expense, icon: .transportation))
+        CategoryGridCard(category: TransactionCategory(name: "Bills & Utilities", type: .expense, icon: .bills))
+        CategoryGridCard(category: TransactionCategory(name: "Salary", type: .income, icon: .salary))
     }
+    .padding()
 }

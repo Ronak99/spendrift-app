@@ -75,3 +75,50 @@ extension Color {
         )
     }
 }
+
+// MARK: - Category colors (RON-173)
+
+extension CategoryIcon {
+    /// Stable, semantic accent color for each category icon. Drives the colored
+    /// grid on the Categories tab so every category reads as its own hue,
+    /// consistent across launches (the mapping is by icon, not by list position).
+    var color: Color {
+        switch self {
+        // Income
+        case .salary: return Color(hex: "#22C55E")      // green
+        case .dividend: return Color(hex: "#10B981")    // emerald
+        case .sale: return Color(hex: "#14B8A6")        // teal
+        case .friends: return Color(hex: "#8B5CF6")     // violet
+        case .coupons: return Color(hex: "#F43F5E")     // rose
+        case .refunds: return Color(hex: "#06B6D4")     // cyan
+        // Expense
+        case .food: return Color(hex: "#F97316")        // orange
+        case .groceries: return Color(hex: "#84CC16")   // lime
+        case .transportation: return Color(hex: "#3B82F6") // blue
+        case .bills: return Color(hex: "#F59E0B")       // amber
+        case .rent: return Color(hex: "#6366F1")        // indigo
+        case .shopping: return Color(hex: "#EC4899")    // pink
+        case .health: return Color(hex: "#EF4444")      // red
+        case .education: return Color(hex: "#A855F7")   // purple
+        case .entertainment: return Color(hex: "#D946EF") // fuchsia
+        case .home: return Color(hex: "#0EA5E9")        // sky
+        case .investments: return Color(hex: "#0D9488") // deep teal
+        case .sport: return Color(hex: "#EAB308")       // yellow
+        case .baby: return Color(hex: "#F472B6")        // light pink
+        case .beauty: return Color(hex: "#DB2777")      // magenta
+        case .clothing: return Color(hex: "#7C3AED")    // deep violet
+        case .tax: return Color(hex: "#64748B")         // slate
+        case .electronics: return Color(hex: "#0284C7") // deep blue
+        case .insurance: return Color(hex: "#059669")   // deep green
+        case .miscellaneous: return Color(hex: "#6B7280") // gray
+        case .unknown: return Color(hex: "#9CA3AF")     // muted gray
+        }
+    }
+}
+
+extension TransactionCategory {
+    /// Convenience accessor for the category's display color (see `CategoryIcon.color`).
+    var color: Color {
+        icon.color
+    }
+}
