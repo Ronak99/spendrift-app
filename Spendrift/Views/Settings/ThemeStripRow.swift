@@ -37,8 +37,7 @@ struct ThemeStripRow: View {
     /// Fallback if the label has not reported its frame yet: icon tile, then "Theme".
     private var resolvedThemeStopX: CGFloat {
         if themeStopX > 0 { return themeStopX }
-        return SettingsTokens.rowLeading
-            + SettingsTokens.iconSize
+        return SettingsTokens.iconSize
             + SettingsTokens.iconGap
             + 52
             + Self.themeClearance
@@ -62,7 +61,7 @@ struct ThemeStripRow: View {
             label
             strip
         }
-        .frame(height: SettingsTokens.rowHeight)
+        .frame(height: SettingsTokens.iconSize)
         .coordinateSpace(name: Self.rowSpace)
         .background {
             GeometryReader { proxy in
@@ -71,14 +70,15 @@ struct ThemeStripRow: View {
                     .onChange(of: proxy.size.width) { _, width in rowWidth = width }
             }
         }
+        .padding(.horizontal, 8)
     }
 
     private var label: some View {
         HStack(spacing: SettingsTokens.iconGap) {
             SettingsIconTile(systemName: "paintpalette.fill", accent: accent, accentSoft: accentSoft)
             Text("Theme")
-                .font(.system(size: 17))
-                .foregroundStyle(SettingsTokens.textPrimary)
+                .font(.headline)
+                .foregroundColor(.primary)
                 .background(alignment: .leading) {
                     GeometryReader { proxy in
                         let stop = proxy.frame(in: .named(Self.rowSpace)).maxX + Self.themeClearance
@@ -89,7 +89,6 @@ struct ThemeStripRow: View {
                 }
             Spacer(minLength: 0)
         }
-        .padding(.leading, SettingsTokens.rowLeading)
     }
 
     private var strip: some View {
@@ -97,7 +96,7 @@ struct ThemeStripRow: View {
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 0) {
                     Color.clear
-                        .frame(width: collapsedSpacerWidth, height: SettingsTokens.rowHeight)
+                        .frame(width: collapsedSpacerWidth, height: SettingsTokens.iconSize)
                         .id(Self.startAnchor)
 
                     HStack(spacing: 0) {
@@ -107,7 +106,7 @@ struct ThemeStripRow: View {
                     }
                     .padding(.leading, 5)
                     .frame(width: expandedStripWidth, alignment: .leading)
-                    .frame(height: SettingsTokens.rowHeight)
+                    .frame(height: SettingsTokens.iconSize)
                     .background(SettingsTokens.groupCard)
                 }
             }
@@ -162,7 +161,7 @@ struct ThemeStripRow: View {
                         .frame(width: Self.swatchDiameter + 5.5, height: Self.swatchDiameter + 5.5)
                 }
             }
-            .frame(width: Self.swatchCell, height: SettingsTokens.rowHeight)
+            .frame(width: Self.swatchCell, height: SettingsTokens.iconSize)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)

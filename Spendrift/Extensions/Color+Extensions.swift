@@ -20,7 +20,6 @@ extension Color {
         Color(hex: "#EF4444"), // red
         Color(hex: "#F59E0B"), // orange
         Color(hex: "#22C55E"), // green
-        Color(hex: "#14B8A6"), // teal
     ]
 
     private static let legacyThemeNames = [
@@ -31,7 +30,6 @@ extension Color {
         "Red",
         "Orange",
         "Green",
-        "Teal",
     ]
 
     static func accentColor(forThemeIndex index: Int) -> Color {

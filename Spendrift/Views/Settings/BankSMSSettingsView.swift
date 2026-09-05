@@ -42,83 +42,74 @@ struct BankSMSSettingsView: View {
     }
 
     var body: some View {
-        ScrollView(showsIndicators: false) {
-            VStack(alignment: .leading, spacing: SettingsTokens.sectionSpacing) {
-                statusCard
+        List {
+            Section {
+                statusRow
+                    .listItemPositioned(.first)
 
-                SettingsSection(title: "Set up in Shortcuts") {
-                    SettingsCard {
-                        VStack(alignment: .leading, spacing: 0) {
-                            ForEach(Array(Self.setupSteps.enumerated()), id: \.offset) { index, step in
-                                stepRow(number: index + 1, text: step)
-                            }
-                        }
-                        .padding(.vertical, 4)
-                    }
-                }
+                SettingsListItem(
+                    icon: nil,
+                    title: "Last message captured",
+                    accent: accent,
+                    accentSoft: accentSoft,
+                    accessory: .value(lastCapturedLabel)
+                )
+                .listItemPositioned(.last)
+            }
 
-                VStack(spacing: 14) {
-                    openShortcutsButton
-
-                    VStack(spacing: 4) {
-                        Text("Both automations run without opening Spendrift.")
-                            .foregroundStyle(SettingsTokens.textSecondary)
-                        Text("Messages are redacted on device before upload. Creating the automation is your consent to capture and parse them.")
-                            .foregroundStyle(SettingsTokens.textTertiary)
-                    }
-                    .font(.system(size: 13))
-                    .multilineTextAlignment(.center)
+            Section("Set up in Shortcuts") {
+                ForEach(Array(Self.setupSteps.enumerated()), id: \.offset) { index, step in
+                    stepRow(number: index + 1, text: step)
+                        .listItemPositioned(index: index, count: Self.setupSteps.count)
                 }
             }
-            .padding(.horizontal, SettingsTokens.screenInset)
-            .padding(.top, 12)
-            .padding(.bottom, 28)
+
+            Section {
+                openShortcutsButton
+                    .listRowBackground(Color.clear)
+                    .listRowSeparator(.hidden)
+                    .listItemPositioned(.only)
+            } footer: {
+                VStack(spacing: 4) {
+                    Text("Both automations run without opening Spendrift.")
+                        .foregroundStyle(SettingsTokens.textSecondary)
+                    Text("Messages are redacted on device before upload. Creating the automation is your consent to capture and parse them.")
+                        .foregroundStyle(SettingsTokens.textTertiary)
+                }
+                .font(.system(size: 13))
+                .multilineTextAlignment(.center)
+                .frame(maxWidth: .infinity)
+            }
         }
-        .background(SettingsTokens.screenBackground.ignoresSafeArea())
+        .listStyle(.insetGrouped)
+        .softScrollEdge()
         .navigationTitle("Bank SMS")
         .navigationBarTitleDisplayMode(.inline)
         .tint(accent)
         .onAppear { lastCapturedAt = MessageInboxSettings.lastCapturedAt }
     }
 
-    private var statusCard: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            HStack(spacing: 10) {
-                Circle()
-                    .fill(isActive ? Color.green : SettingsTokens.textTertiary)
-                    .frame(width: 10, height: 10)
-                    .overlay {
-                        Circle()
-                            .stroke((isActive ? Color.green : SettingsTokens.textTertiary).opacity(0.18), lineWidth: 4)
-                    }
+    private var statusRow: some View {
+        HStack(spacing: 10) {
+            Circle()
+                .fill(isActive ? Color.green : SettingsTokens.textTertiary)
+                .frame(width: 10, height: 10)
+                .overlay {
+                    Circle()
+                        .stroke((isActive ? Color.green : SettingsTokens.textTertiary).opacity(0.18), lineWidth: 4)
+                }
 
-                Text(Self.statusLabel(lastCapturedAt: lastCapturedAt))
-                    .font(.system(size: 22, weight: .semibold))
-                    .foregroundStyle(SettingsTokens.textPrimary)
-            }
+            Text(Self.statusLabel(lastCapturedAt: lastCapturedAt))
+                .font(.headline)
+                .foregroundColor(.primary)
 
-            Divider()
-                .overlay(SettingsTokens.divider)
-                .padding(.vertical, 14)
-
-            HStack {
-                Text("Last message captured")
-                    .foregroundStyle(SettingsTokens.textSecondary)
-                Spacer(minLength: 12)
-                Text(lastCapturedLabel)
-                    .foregroundStyle(SettingsTokens.textPrimary)
-            }
-            .font(.system(size: 15))
+            Spacer(minLength: 0)
         }
-        .padding(.vertical, 18)
-        .padding(.horizontal, 16)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(SettingsTokens.groupCard)
-        .clipShape(RoundedRectangle(cornerRadius: SettingsTokens.cardRadius, style: .continuous))
+        .padding(.horizontal, 8)
     }
 
     private func stepRow(number: Int, text: LocalizedStringKey) -> some View {
-        HStack(alignment: .top, spacing: 14) {
+        HStack(alignment: .top, spacing: 16) {
             Text("\(number)")
                 .font(.system(size: 13, weight: .semibold))
                 .foregroundStyle(accent)
@@ -126,14 +117,12 @@ struct BankSMSSettingsView: View {
                 .background(accentSoft, in: Circle())
 
             Text(text)
-                .font(.system(size: 15))
-                .lineSpacing(4)
-                .foregroundStyle(SettingsTokens.textPrimary)
+                .font(.headline)
+                .foregroundColor(.primary)
                 .fixedSize(horizontal: false, vertical: true)
                 .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .padding(.vertical, 14)
-        .padding(.horizontal, 16)
+        .padding(.horizontal, 8)
     }
 
     private var openShortcutsButton: some View {

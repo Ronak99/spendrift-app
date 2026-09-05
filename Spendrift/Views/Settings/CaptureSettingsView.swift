@@ -30,52 +30,72 @@ struct CaptureSettingsView: View {
         UIImagePickerController.isSourceTypeAvailable(.camera)
     }
 
+    private static let rowCount = 4
+
     var body: some View {
         SettingsScreen(title: "Capture") {
-            SettingsSection(title: "Add a transaction") {
-                SettingsCard {
-                    SettingsRow(
+            Section {
+                Button {
+                    open(OnboardingShortcutShareLinks.voiceRecordExpense)
+                } label: {
+                    SettingsListItem(
                         icon: "mic.fill",
                         title: "Speak",
                         subtitle: "Add by voice · Siri Shortcut",
                         accent: accent,
                         accentSoft: accentSoft,
-                        action: { open(OnboardingShortcutShareLinks.voiceRecordExpense) }
+                        accessory: .chevron
                     )
+                    .listItemPositioned(index: 0, count: Self.rowCount)
+                }
+                .buttonStyle(.plain)
 
-                    SettingsInsetDivider()
-
-                    SettingsRow(
+                Button {
+                    open(OnboardingShortcutShareLinks.logExpenseAmount)
+                } label: {
+                    SettingsListItem(
                         icon: "keyboard",
                         title: "Type",
                         subtitle: "Add manually · Siri Shortcut",
                         accent: accent,
                         accentSoft: accentSoft,
-                        action: { open(OnboardingShortcutShareLinks.logExpenseAmount) }
+                        accessory: .chevron
                     )
+                    .listItemPositioned(index: 1, count: Self.rowCount)
+                }
+                .buttonStyle(.plain)
 
-                    SettingsInsetDivider()
-
-                    SettingsRow(
+                Button {
+                    showReceiptScanOptions = true
+                } label: {
+                    SettingsListItem(
                         icon: "doc.viewfinder",
                         title: "Scan receipt",
                         subtitle: "From photo or camera",
                         accent: accent,
                         accentSoft: accentSoft,
-                        action: { showReceiptScanOptions = true }
+                        accessory: .chevron
                     )
+                    .listItemPositioned(index: 2, count: Self.rowCount)
+                }
+                .buttonStyle(.plain)
 
-                    SettingsInsetDivider()
-
-                    SettingsRow(
+                Button {
+                    showStatementImport = true
+                } label: {
+                    SettingsListItem(
                         icon: "doc.text",
                         title: "Import statement",
                         subtitle: "Upload a bank statement",
                         accent: accent,
                         accentSoft: accentSoft,
-                        action: { showStatementImport = true }
+                        accessory: .chevron
                     )
+                    .listItemPositioned(index: 3, count: Self.rowCount)
                 }
+                .buttonStyle(.plain)
+            } header: {
+                Text("Add a transaction")
             }
         }
         .tint(accent)

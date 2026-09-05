@@ -47,26 +47,30 @@ struct NotificationsSettingsView: View {
 
     var body: some View {
         SettingsScreen(title: "Notifications") {
-            SettingsCard {
-                SettingsRow(
+            Section {
+                SettingsListItem(
                     icon: "bell.fill",
                     title: "Daily reminder",
                     accent: accent,
                     accentSoft: accentSoft,
                     accessory: .toggle(reminderEnabledBinding)
                 )
+                .listItemPositioned(dailyReminderEnabled ? .first : .only)
 
                 if dailyReminderEnabled {
-                    SettingsInsetDivider()
-
-                    SettingsRow(
-                        icon: nil,
-                        title: "Time",
-                        accent: accent,
-                        accentSoft: accentSoft,
-                        accessory: .valueChevron(reminderDisplayValue),
-                        action: { showReminderTimePicker = true }
-                    )
+                    Button {
+                        showReminderTimePicker = true
+                    } label: {
+                        SettingsListItem(
+                            icon: nil,
+                            title: "Time",
+                            accent: accent,
+                            accentSoft: accentSoft,
+                            accessory: .valueChevron(reminderDisplayValue)
+                        )
+                        .listItemPositioned(.last)
+                    }
+                    .buttonStyle(.plain)
                 }
             }
         }
@@ -97,7 +101,7 @@ struct NotificationsSettingsView: View {
 
                 Spacer(minLength: 0)
             }
-            .background(SettingsTokens.screenBackground.ignoresSafeArea())
+            .background(AppTheme.listBackground.ignoresSafeArea())
             .navigationTitle("Time")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

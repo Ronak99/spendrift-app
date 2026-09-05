@@ -59,14 +59,14 @@ struct SettingsView: View {
     var body: some View {
         NavigationStack {
             SettingsScreen(title: "Settings") {
-                hubCard
+                hubSection
                 supportSection
 
                 if showsDeveloperTools {
                     developerSection
                 }
 
-                versionFooter
+                versionSection
             }
         }
         .tint(accent)
@@ -147,108 +147,147 @@ struct SettingsView: View {
 
     // MARK: - Hub
 
-    private var hubCard: some View {
-        SettingsCard {
+    private var hubRowCount: Int { 4 }
+
+    @ViewBuilder
+    private var hubSection: some View {
+        Section {
             ThemeStripRow(
                 selectedIndex: $selectedThemeIndex,
                 accent: accent,
                 accentSoft: accentSoft
             )
-
-            SettingsInsetDivider()
+            .listItemPositioned(index: 0, count: hubRowCount)
 
             NavigationLink {
                 ExploreSettingsView()
             } label: {
-                SettingsRow(
+                SettingsListItem(
                     icon: "sparkles",
                     title: "Explore",
                     accent: accent,
                     accentSoft: accentSoft
                 )
-                .content
+                .listItemPositioned(index: 1, count: hubRowCount)
             }
-            .buttonStyle(SettingsPressStyle())
 
-            SettingsInsetDivider()
+            Button {
+                showReceiptScanOptions = true
+            } label: {
+                SettingsListItem(
+                    icon: "doc.viewfinder",
+                    title: "Scan Receipts",
+                    accent: accent,
+                    accentSoft: accentSoft,
+                    accessory: .chevron
+                )
+                .listItemPositioned(index: 2, count: hubRowCount)
+            }
+            .buttonStyle(.plain)
 
-            SettingsRow(
-                icon: "doc.viewfinder",
-                title: "Scan Receipts",
-                accent: accent,
-                accentSoft: accentSoft,
-                action: { showReceiptScanOptions = true }
-            )
-
-            SettingsInsetDivider()
-
-            SettingsRow(
-                icon: "doc.text",
-                title: "Bank Statements",
-                accent: accent,
-                accentSoft: accentSoft,
-                action: { showStatementImport = true }
-            )
+            Button {
+                showStatementImport = true
+            } label: {
+                SettingsListItem(
+                    icon: "doc.text",
+                    title: "Bank Statements",
+                    accent: accent,
+                    accentSoft: accentSoft,
+                    accessory: .chevron
+                )
+                .listItemPositioned(index: 3, count: hubRowCount)
+            }
+            .buttonStyle(.plain)
         }
     }
 
     private var supportSection: some View {
-        SettingsSection(title: "Support") {
-            HelpSettingsCard()
+        Section("Support") {
+            HelpSettingsRows()
         }
     }
 
+    private var developerRowCount: Int {
+        var count = 1
+        #if DEBUG
+            count += 1
+        #endif
+        if developerModeUnlocked { count += 1 }
+        return count
+    }
+
+    @ViewBuilder
     private var developerSection: some View {
-        SettingsSection(title: "Developer") {
-            SettingsCard {
-                #if DEBUG
-                    SettingsRow(
+        Section("Developer") {
+            #if DEBUG
+                Button {
+                    DebugSwift.debugViewControllerWillPresent()
+                    showDebugSwift = true
+                } label: {
+                    SettingsListItem(
                         icon: "internaldrive.fill",
                         title: "SQLite debugger",
                         accent: accent,
                         accentSoft: accentSoft,
-                        action: {
-                            DebugSwift.debugViewControllerWillPresent()
-                            showDebugSwift = true
-                        }
+                        accessory: .chevron
                     )
+                    .listItemPositioned(index: 0, count: developerRowCount)
+                }
+                .buttonStyle(.plain)
+            #endif
 
-                    SettingsInsetDivider()
-                #endif
-
-                SettingsRow(
+            Button {
+                showMessageInboxDebug = true
+            } label: {
+                SettingsListItem(
                     icon: "ladybug.fill",
                     title: "Message inbox debug",
                     accent: accent,
                     accentSoft: accentSoft,
-                    action: { showMessageInboxDebug = true }
+                    accessory: .chevron
                 )
+                .listItemPositioned(index: debugDeveloperOffset, count: developerRowCount)
+            }
+            .buttonStyle(.plain)
 
-                if developerModeUnlocked {
-                    SettingsInsetDivider()
-
-                    SettingsRow(
+            if developerModeUnlocked {
+                Button {
+                    developerModeUnlocked = false
+                } label: {
+                    SettingsListItem(
                         icon: "lock.fill",
                         title: "Turn off developer mode",
                         accent: accent,
-                        accentSoft: accentSoft,
-                        action: { developerModeUnlocked = false }
+                        accentSoft: accentSoft
                     )
+                    .listItemPositioned(.last)
                 }
+                .buttonStyle(.plain)
             }
         }
     }
 
-    private var versionFooter: some View {
-        Text(appVersionLabel)
-            .font(.system(size: 12))
-            .foregroundStyle(SettingsTokens.textTertiary)
-            .frame(maxWidth: .infinity, alignment: .center)
-            .padding(.top, 24)
-            .contentShape(Rectangle())
-            .onTapGesture { registerVersionTap() }
-            .accessibilityAddTraits(.isButton)
-            .accessibilityHint("Tap five times to reveal developer tools")
+    private var debugDeveloperOffset: Int {
+        #if DEBUG
+            1
+        #else
+            0
+        #endif
+    }
+
+    private var versionSection: some View {
+        Section {
+            Text(appVersionLabel)
+                .font(.system(size: 12))
+                .foregroundStyle(SettingsTokens.textTertiary)
+                .frame(maxWidth: .infinity, alignment: .center)
+                .listRowBackground(Color.clear)
+                .listRowSeparator(.hidden)
+                .contentShape(Rectangle())
+                .onTapGesture { registerVersionTap() }
+                .accessibilityAddTraits(.isButton)
+                .accessibilityHint("Tap five times to reveal developer tools")
+        }
     }
 
     private var showsDeveloperTools: Bool {

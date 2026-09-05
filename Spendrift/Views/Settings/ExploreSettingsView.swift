@@ -17,20 +17,19 @@ struct ExploreSettingsView: View {
 
     var body: some View {
         SettingsScreen(title: "Explore") {
-            SettingsCard {
+            Section {
                 NavigationLink {
                     CaptureSettingsView()
                 } label: {
-                    SettingsRow(
+                    SettingsListItem(
                         icon: "plus.circle.fill",
                         title: "Capture & shortcuts",
                         subtitle: "Speak, type, scan, import",
                         accent: accent,
                         accentSoft: accentSoft
                     )
-                    .content
+                    .listItemPositioned(.only)
                 }
-                .buttonStyle(SettingsPressStyle())
             }
 
             automationSection
@@ -39,49 +38,48 @@ struct ExploreSettingsView: View {
     }
 
     private var automationSection: some View {
-        SettingsSection(title: "Automation") {
-            VStack(alignment: .leading, spacing: 8) {
-                SettingsCard {
-                    if let shortcutURL = OnboardingShortcutShareLinks.logTransactionMessage {
-                        SettingsRow(
-                            icon: "message.fill",
-                            title: "Log message",
-                            subtitle: "Send the latest SMS to Spendrift",
-                            accent: accent,
-                            accentSoft: accentSoft,
-                            action: { UIApplication.shared.open(shortcutURL) }
-                        )
-                    } else {
-                        NavigationLink {
-                            BankSMSSettingsView()
-                        } label: {
-                            SettingsRow(
-                                icon: "message.fill",
-                                title: "Log message",
-                                subtitle: "Send the latest SMS to Spendrift",
-                                accent: accent,
-                                accentSoft: accentSoft
-                            )
-                            .content
-                        }
-                        .buttonStyle(SettingsPressStyle())
-                    }
+        Section {
+            if let shortcutURL = OnboardingShortcutShareLinks.logTransactionMessage {
+                Button {
+                    UIApplication.shared.open(shortcutURL)
+                } label: {
+                    SettingsListItem(
+                        icon: "message.fill",
+                        title: "Log message",
+                        subtitle: "Send the latest SMS to Spendrift",
+                        accent: accent,
+                        accentSoft: accentSoft,
+                        accessory: .chevron
+                    )
+                    .listItemPositioned(.only)
                 }
-
-                VStack(alignment: .leading, spacing: 3) {
-                    Text("Add this shortcut to a Messages automation and bank SMS get logged on arrival.")
-                        .foregroundStyle(SettingsTokens.textSecondary)
-
-                    NavigationLink {
-                        BankSMSSettingsView()
-                    } label: {
-                        Text("See setup steps")
-                            .foregroundStyle(accent)
-                    }
-                    .buttonStyle(.plain)
+                .buttonStyle(.plain)
+            } else {
+                NavigationLink {
+                    BankSMSSettingsView()
+                } label: {
+                    SettingsListItem(
+                        icon: "message.fill",
+                        title: "Log message",
+                        subtitle: "Send the latest SMS to Spendrift",
+                        accent: accent,
+                        accentSoft: accentSoft
+                    )
+                    .listItemPositioned(.only)
                 }
-                .font(.system(size: 13))
-                .padding(.horizontal, SettingsTokens.rowLeading)
+            }
+        } header: {
+            Text("Automation")
+        } footer: {
+            VStack(alignment: .leading, spacing: 3) {
+                Text("Add this shortcut to a Messages automation and bank SMS get logged on arrival.")
+
+                NavigationLink {
+                    BankSMSSettingsView()
+                } label: {
+                    Text("See setup steps")
+                        .foregroundStyle(accent)
+                }
             }
         }
     }
