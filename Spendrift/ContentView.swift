@@ -51,6 +51,11 @@ struct ContentView: View {
                 startVoiceCaptureFromTabBar()
                 return
             }
+            // Re-tapping the already-selected Home tab collapses its analytics view back to
+            // the transactions list; TransactionsView listens for this and no-ops otherwise.
+            if newValue == 0, selectedTab == 0 {
+                NotificationCenter.default.post(name: .homeTabReselected, object: nil)
+            }
             selectedTab = newValue
         }
     }

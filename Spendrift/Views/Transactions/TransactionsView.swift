@@ -364,6 +364,14 @@ struct TransactionsView: View {
                 guard state == .recording || state == .processing else { return }
                 createTransactionSheet = nil
             }
+            // Tapping the Home tab again while the analytics view is showing returns to the
+            // transactions list, matching the tab-bar's "tap to go back" affordance.
+            .onReceive(NotificationCenter.default.publisher(for: .homeTabReselected)) { _ in
+                guard showingAnalytics else { return }
+                withAnimation(.easeInOut(duration: 0.2)) {
+                    showingAnalytics = false
+                }
+            }
         }
     }
     
