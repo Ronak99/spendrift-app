@@ -156,33 +156,32 @@ struct TransactionAnalyticsContent: View {
 
     var body: some View {
         ScrollView {
-            VStack(spacing: 20) {
+            VStack(spacing: 24) {
                 if periodTransactions.isEmpty {
                     emptyMonthState
-                } else {
+                } else if expenseTransactions.isEmpty {
                     summaryGrid
 
-                    if expenseTransactions.isEmpty {
-                        analyticsCard(
-                            title: "No Spending Yet",
-                            subtitle: "This period has transactions, but none of them are expenses."
-                        ) {
-                            ContentUnavailableView(
-                                "No expense data for \(periodViewModel.periodDescription)",
-                                systemImage: "chart.pie",
-                                description: Text("Add an expense transaction to unlock category and trend charts.")
-                            )
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 8)
-                        }
-                    } else {
-                        spendingBreakdownCard
-                        dailyTrendCard
-                        weekdayPatternCard
+                    analyticsCard(
+                        title: "No Spending Yet",
+                        subtitle: "This period has transactions, but none of them are expenses."
+                    ) {
+                        ContentUnavailableView(
+                            "No expense data for \(periodViewModel.periodDescription)",
+                            systemImage: "chart.pie",
+                            description: Text("Add an expense transaction to unlock category and trend charts.")
+                        )
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 8)
                     }
+                } else {
+                    spendingBreakdownCard
+                    summaryGrid
+                    dailyTrendCard
+                    weekdayPatternCard
                 }
             }
-            .padding(.top, 8)
+            .padding(.top, 20)
             .padding(.bottom, 24)
         }
         .softScrollEdge()
@@ -190,7 +189,7 @@ struct TransactionAnalyticsContent: View {
     }
 
     private var summaryGrid: some View {
-        LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
+        LazyVGrid(columns: [GridItem(.flexible(), spacing: 16), GridItem(.flexible(), spacing: 16)], spacing: 16) {
             summaryCard(
                 title: "Spent",
                 value: totalSpent.formatCurrency,
