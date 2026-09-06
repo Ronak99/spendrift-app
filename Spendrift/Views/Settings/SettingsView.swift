@@ -109,19 +109,6 @@ struct SettingsView: View {
                 voiceReviewHint: payload.hint
             )
         }
-        .confirmationDialog("Scan receipt", isPresented: $showReceiptScanOptions, titleVisibility: .visible) {
-            Button("Take Photo") {
-                showReceiptCamera = true
-            }
-            .disabled(!cameraAvailable || receiptShare.isProcessing)
-
-            Button("Choose from Library") {
-                showReceiptLibrary = true
-            }
-            .disabled(receiptShare.isProcessing)
-
-            Button("Cancel", role: .cancel) {}
-        }
         .alert("Couldn't Scan Receipt", isPresented: Binding(
             get: { if case .error = receiptShare.state { return true } else { return false } },
             set: { if !$0 { receiptShare.dismissError() } }
@@ -186,6 +173,19 @@ struct SettingsView: View {
                 .listItemPositioned(index: 2, count: hubRowCount)
             }
             .buttonStyle(.plain)
+            .confirmationDialog("Scan receipt", isPresented: $showReceiptScanOptions, titleVisibility: .visible) {
+                Button("Take Photo") {
+                    showReceiptCamera = true
+                }
+                .disabled(!cameraAvailable || receiptShare.isProcessing)
+
+                Button("Choose from Library") {
+                    showReceiptLibrary = true
+                }
+                .disabled(receiptShare.isProcessing)
+
+                Button("Cancel", role: .cancel) {}
+            }
 
             Button {
                 showStatementImport = true
