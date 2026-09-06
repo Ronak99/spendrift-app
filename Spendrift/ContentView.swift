@@ -33,7 +33,6 @@ struct ContentView: View {
     /// Owned here rather than by `TransactionsView` so voice capture can be started from - and
     /// stay visible on top of - any tab.
     @State private var voiceInline = VoiceInlineCaptureController()
-
     /// Sentinel selection value for the voice CTA. It is never committed to `selectedTab`.
     private static let voiceTabTag = 99
 
@@ -62,10 +61,13 @@ struct ContentView: View {
 
     /// The Liquid Glass tab bar ignores SwiftUI foreground styles on tab labels, so the mic is
     /// pre-tinted as an `.alwaysOriginal` image to keep its muted red CTA colour.
-    private var voiceTabIcon: UIImage {
-        let tint: UIColor = colorScheme == .dark
+    private func voiceTabIcon(disabled: Bool) -> UIImage {
+        let activeTint: UIColor = colorScheme == .dark
             ? UIColor(red: 0.96, green: 0.47, blue: 0.45, alpha: 1)
             : UIColor(red: 0.76, green: 0.24, blue: 0.23, alpha: 1)
+        let tint = disabled
+            ? UIColor.tertiaryLabel
+            : activeTint
         return UIImage(systemName: "mic.fill")?
             .withTintColor(tint, renderingMode: .alwaysOriginal) ?? UIImage()
     }
@@ -116,11 +118,22 @@ struct ContentView: View {
                 Label {
                     Text("Speak")
                 } icon: {
-                    Image(uiImage: voiceTabIcon)
+                    Image(uiImage: voiceTabIcon(disabled: voice.blocksNewCapture))
                 }
                 .accessibilityLabel("Speak a transaction")
-                .accessibilityHint("Records a voice note and turns it into a transaction")
+                .accessibilityHint(
+                    voice.blocksNewCapture
+                        ? "Unavailable while a voice note is being recorded or processed"
+                        : "Records a voice note and turns it into a transaction"
+                )
             }
+            // Must sit on the `Tab`, not on the `Label` inside it: disabling the label only
+            // dims the icon and leaves the tab item tappable, and a tap that lands while a
+            // capture is in flight commits `TabView` to this tab. `selectedTab` never takes
+            // the sentinel, so the binding reports no change, SwiftUI reasserts nothing, and
+            // the empty placeholder above stays on screen as a blank black screen until the
+            // user picks another tab by hand.
+            .disabled(voice.blocksNewCapture)
         }
         .tint(accentColor)
         .environment(\.openSettings) {
