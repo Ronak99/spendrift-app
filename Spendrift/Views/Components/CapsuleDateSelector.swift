@@ -132,7 +132,7 @@ struct CapsuleDateSelector: View {
         Button(action: action) {
             Image(systemName: "chart.pie")
                 .font(.headline)
-                .foregroundColor(isShowingAnalytics ? .blue : .primary)
+                .foregroundColor(isShowingAnalytics ? .accentColor : .primary)
         }
         .accessibilityLabel(isShowingAnalytics ? "Show transactions" : "Show analytics")
         .accessibilityIdentifier("capsuleAnalyticsToggle")
