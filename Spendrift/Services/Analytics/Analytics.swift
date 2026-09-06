@@ -34,6 +34,17 @@ enum Analytics {
         case notificationScheduled = "notification_scheduled"
         case notificationOpened = "notification_opened"
         case messageInboxSynced = "message_inbox_synced"
+
+        // Spendrift Pro
+        case paywallViewed = "paywall_viewed"
+        case paywallDismissed = "paywall_dismissed"
+        case purchaseStarted = "purchase_started"
+        case trialStarted = "trial_started"
+        case purchaseCompleted = "purchase_completed"
+        case purchaseFailed = "purchase_failed"
+        case restoreCompleted = "restore_completed"
+        case quotaExhausted = "quota_exhausted"
+        case proFeatureBlocked = "pro_feature_blocked"
     }
 
     /// Property keys. Keep flat and free of PII — never send transaction amounts or notes.
@@ -56,6 +67,10 @@ enum Analytics {
         static let granted = "granted"
         static let removedCount = "removed_count"
         static let keptCount = "kept_count"
+        static let feature = "feature"
+        static let context = "context"
+        static let plan = "plan"
+        static let remaining = "remaining"
     }
 
     private static let optOutDefaultsKey = "analyticsOptOut"
@@ -132,6 +147,15 @@ enum Analytics {
         // Surface the contextual notification opt-in prompt (after first transaction,
         // never at cold start). UI lives in the view layer, so just broadcast.
         NotificationCenter.default.post(name: .firstTransactionCreated, object: nil)
+    }
+
+    /// Captures a Spendrift Pro event with `days_since_install` attached, so paywall
+    /// funnels can be split by cohort without every call site remembering to add it.
+    /// Never pass amounts or notes — the no-PII rule above applies here too.
+    static func capturePro(_ event: Event, _ properties: [String: Any] = [:]) {
+        var enriched = properties
+        enriched[Key.daysSinceInstall] = daysSinceInstall
+        capture(event, enriched)
     }
 
     // MARK: - Opt-out

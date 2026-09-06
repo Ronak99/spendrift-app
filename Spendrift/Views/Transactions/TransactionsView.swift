@@ -31,6 +31,7 @@ struct TransactionsView: View {
     var voiceInline: VoiceInlineCaptureController
     @State private var createTransactionSheet: CreateTransactionSheetMode?
     @State private var showStatementImport = false
+    @State private var paywallContext: PaywallContext?
     @State private var showReceiptCamera = false
     @State private var showReceiptLibrary = false
     @State private var receiptShare = ReceiptCaptureController()
@@ -239,6 +240,7 @@ struct TransactionsView: View {
                     if let banner = messageInboxBanner {
                         MessageInboxImportBannerView(
                             count: banner.count,
+                            blockedCount: banner.blockedCount,
                             onUndo: {
                                 let ids = banner.transactionIDs
                                 withAnimation(.spring(response: 0.38, dampingFraction: 0.86)) {
@@ -253,6 +255,12 @@ struct TransactionsView: View {
                                 withAnimation(.spring(response: 0.38, dampingFraction: 0.86)) {
                                     messageInboxBanner = nil
                                 }
+                            },
+                            onUpgrade: {
+                                withAnimation(.spring(response: 0.38, dampingFraction: 0.86)) {
+                                    messageInboxBanner = nil
+                                }
+                                paywallContext = .quotaExhausted(.messageImport)
                             }
                         )
                     }
@@ -294,7 +302,9 @@ struct TransactionsView: View {
                 ReceiptCameraPicker { image in
                     showReceiptCamera = false
                     if let image {
-                        processReceiptImage(image)
+                        ProAccess.attempt(.receiptScan, paywall: $paywallContext) {
+                            processReceiptImage(image)
+                        }
                     }
                 }
                 .ignoresSafeArea()
@@ -303,7 +313,9 @@ struct TransactionsView: View {
                 PhotoLibraryPicker { image in
                     showReceiptLibrary = false
                     if let image {
-                        processReceiptImage(image)
+                        ProAccess.attempt(.receiptScan, paywall: $paywallContext) {
+                            processReceiptImage(image)
+                        }
                     }
                 }
                 .ignoresSafeArea()
@@ -366,6 +378,7 @@ struct TransactionsView: View {
             }
             // Tapping the Home tab again while the analytics view is showing returns to the
             // transactions list, matching the tab-bar's "tap to go back" affordance.
+            .proPaywall($paywallContext)
             .onReceive(NotificationCenter.default.publisher(for: .homeTabReselected)) { _ in
                 guard showingAnalytics else { return }
                 withAnimation(.easeInOut(duration: 0.2)) {
@@ -381,11 +394,15 @@ struct TransactionsView: View {
     /// `shortcut_used` in `ContentView`, so it deliberately does not route through here
     /// and is not double-counted; `source` distinguishes the in-app CTA from that path.
     private func startVoiceQuickAdd() {
-        Analytics.capture(.shortcutUsed, [
-            Analytics.Key.kind: "voice",
-            Analytics.Key.source: "transactions_cta"
-        ])
-        voiceInline.beginCapture()
+        // Checked before the mic opens: starting a recording that the service layer
+        // will refuse would waste the user's breath.
+        ProAccess.attempt(.voice, paywall: $paywallContext) {
+            Analytics.capture(.shortcutUsed, [
+                Analytics.Key.kind: "voice",
+                Analytics.Key.source: "transactions_cta"
+            ])
+            voiceInline.beginCapture()
+        }
     }
 
     private func deleteTransactions(at offsets: IndexSet, in transactionsForDay: [Transaction]) {

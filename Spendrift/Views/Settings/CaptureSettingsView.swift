@@ -18,6 +18,7 @@ struct CaptureSettingsView: View {
     @AppStorage(Color.selectedThemeIndexKey) private var selectedThemeIndex = Color.defaultThemeIndex
 
     @State private var showStatementImport = false
+    @State private var paywallContext: PaywallContext?
     @State private var showReceiptScanOptions = false
     @State private var showReceiptCamera = false
     @State private var showReceiptLibrary = false
@@ -81,12 +82,16 @@ struct CaptureSettingsView: View {
                 .buttonStyle(.plain)
                 .confirmationDialog("Scan receipt", isPresented: $showReceiptScanOptions, titleVisibility: .visible) {
                     Button("Take Photo") {
-                        showReceiptCamera = true
+                        ProAccess.attempt(.receiptScan, paywall: $paywallContext) {
+                            showReceiptCamera = true
+                        }
                     }
                     .disabled(!cameraAvailable || receiptShare.isProcessing)
 
                     Button("Choose from Library") {
-                        showReceiptLibrary = true
+                        ProAccess.attempt(.receiptScan, paywall: $paywallContext) {
+                            showReceiptLibrary = true
+                        }
                     }
                     .disabled(receiptShare.isProcessing)
 
@@ -94,7 +99,9 @@ struct CaptureSettingsView: View {
                 }
 
                 Button {
-                    showStatementImport = true
+                    ProAccess.attempt(.statementImport, paywall: $paywallContext) {
+                        showStatementImport = true
+                    }
                 } label: {
                     SettingsListItem(
                         icon: "doc.text",
@@ -112,6 +119,7 @@ struct CaptureSettingsView: View {
             }
         }
         .tint(accent)
+        .proPaywall($paywallContext)
         .sheet(isPresented: $showStatementImport) {
             StatementImportView()
         }

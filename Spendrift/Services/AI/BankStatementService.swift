@@ -27,12 +27,20 @@ struct BankStatementService {
             throw AIServiceError.missingAPIKey
         }
 
+        guard ProGate.isAllowed(.statementImport) else {
+            ProGate.reportBlocked(.statementImport)
+            throw AIServiceError.quotaExhausted(.statementImport)
+        }
+
         let payload: StatementPayload
         do {
             payload = try await backend.parseStatement(pdfData: pdfData, filename: filename)
         } catch let error as SpendriftBackendError {
             throw mapBackendError(error)
         }
+        // A statement is one backend call however many rows come back, so it costs
+        // exactly one credit.
+        ProGate.recordUsage(.statementImport)
 
         return payload.transactions.compactMap { mapToRow($0) }
     }

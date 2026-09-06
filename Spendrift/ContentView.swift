@@ -26,6 +26,7 @@ struct ContentView: View {
     @State private var selectedTab = 0
     @State private var showCreateTransaction = false
     @State private var showStatementImport = false
+    @State private var paywallContext: PaywallContext?
     @State private var receiptImport: ReceiptSharePayload?
     @State private var transactionPeriodViewModel = TransactionViewModel()
     @State private var messageInboxBanner: MessageInboxImportBanner?
@@ -177,12 +178,21 @@ struct ContentView: View {
         .onOpenURL { url in
             handleQuickAction(url: url)
         }
+        // The Pro paywall queues behind this alert; without the broadcast a sheet
+        // presented at the same moment would swallow it.
+        .onChange(of: showReminderOptIn) { _, isVisible in
+            NotificationCenter.default.post(
+                name: isVisible ? .reminderOptInShown : .reminderOptInDismissed,
+                object: nil
+            )
+        }
         .alert("Stay on top of your spending?", isPresented: $showReminderOptIn) {
             Button("Enable reminders") { enableDailyReminders() }
             Button("Not now", role: .cancel) {}
         } message: {
             Text("Get a daily nudge to log your spending and keep your budget accurate.")
         }
+        .proPaywall($paywallContext)
         .sheet(isPresented: $showCreateTransaction) {
             UpdateTransactionSheet(transaction: nil)
         }
@@ -204,12 +214,14 @@ struct ContentView: View {
     /// stray tap cannot interrupt an in-progress recording.
     private func startVoiceCaptureFromTabBar() {
         guard !voiceInline.blocksNewCapture else { return }
-        UIImpactFeedbackGenerator(style: .light).impactOccurred()
-        Analytics.capture(.shortcutUsed, [
-            Analytics.Key.kind: "voice",
-            Analytics.Key.source: "tab_bar_cta"
-        ])
-        voiceInline.beginCapture()
+        ProAccess.attempt(.voice, paywall: $paywallContext) {
+            UIImpactFeedbackGenerator(style: .light).impactOccurred()
+            Analytics.capture(.shortcutUsed, [
+                Analytics.Key.kind: "voice",
+                Analytics.Key.source: "tab_bar_cta"
+            ])
+            voiceInline.beginCapture()
+        }
     }
 
     
@@ -264,11 +276,15 @@ struct ContentView: View {
         case "voiceExpense":
             showCreateTransaction = false
             selectedTab = 0
-            voiceInline.beginCapture()
+            ProAccess.attempt(.voice, paywall: $paywallContext) {
+                voiceInline.beginCapture()
+            }
         case "importStatement":
             showCreateTransaction = false
             selectedTab = 0
-            showStatementImport = true
+            ProAccess.attempt(.statementImport, paywall: $paywallContext) {
+                showStatementImport = true
+            }
         default:
             break
         }
@@ -329,8 +345,12 @@ struct ContentView: View {
         defaults.removeObject(forKey: VoiceExpenseIntent.launchTriggerKey)
         showCreateTransaction = false
         selectedTab = 0
-        voiceInline.beginCapture()
-        Analytics.capture(.shortcutUsed, [Analytics.Key.kind: "voice"])
+        // A Siri/Shortcuts launch lands here with no capture started yet, so the gate
+        // still gets a chance to show the paywall rather than a mid-flow error.
+        ProAccess.attempt(.voice, paywall: $paywallContext) {
+            voiceInline.beginCapture()
+            Analytics.capture(.shortcutUsed, [Analytics.Key.kind: "voice"])
+        }
     }
 
     private var shouldSeedCategoriesOnLaunch: Bool {

@@ -109,6 +109,7 @@ enum ReceiptTransactionCreator {
         modelContext.insert(transaction)
         try? modelContext.save()
         Analytics.captureTransactionCreated(method: "receipt", type: draft.transactionType.rawValue)
+        ProGate.announceMomentIfNeeded(.receiptScan)
         return .created(transaction)
     }
 

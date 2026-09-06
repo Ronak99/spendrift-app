@@ -436,6 +436,9 @@ struct StatementImportView: View {
             try modelContext.save()
             Analytics.captureTransactionCreated(method: "pdf", type: "mixed", count: importedRows.count)
             AppStoreReviewRequest.requestIfFirstTime(forKey: AppStoreReviewRequest.Keys.firstStatementImport)
+            // Pitched on save rather than on parse, so the paywall lands after the
+            // user has seen their rows in the list — not over the preview.
+            ProGate.announceMomentIfNeeded(.statementImport)
             dismiss()
         } catch {
             errorMessage = "Could not save transactions. \(error.localizedDescription)"

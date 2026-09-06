@@ -85,6 +85,8 @@ enum AIServiceError: LocalizedError, Equatable {
     case badStatusCode(Int, String)
     case missingJSONText
     case invalidJSON(String)
+    /// The free monthly allowance for this feature is spent and the user is not on Pro.
+    case quotaExhausted(ProFeature)
 
     var errorDescription: String? {
         switch self {
@@ -100,6 +102,8 @@ enum AIServiceError: LocalizedError, Equatable {
             return "The AI service did not return a usable response."
         case .invalidJSON(let raw):
             return "The AI service returned invalid JSON: \(raw)"
+        case .quotaExhausted(let feature):
+            return "You've used all your free \(feature.unitLabel(count: 2)) this month. Spendrift Pro removes the limit."
         }
     }
 }
