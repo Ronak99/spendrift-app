@@ -26,7 +26,13 @@ struct UpdateTransactionSheet: View {
     var onVoiceCreate: (() -> Void)? = nil
     var voiceCaptureDisabled: Bool = false
 
+    /// Amounts must stay strictly below this ceiling. At or above it, Save is blocked and the
+    /// stress-test alert is shown instead of writing the transaction.
+    private let maxTransactionAmount: Double = 10_000_000
+
     @FocusState private var amountFieldFocused: Bool
+
+    @State private var showAmountLimitAlert = false
 
     @State private var notes: String = ""
     @State private var amount: String = ""
@@ -196,10 +202,20 @@ struct UpdateTransactionSheet: View {
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Save") {
+                        if let amountValue = Double(amount), amountValue >= maxTransactionAmount {
+                            showAmountLimitAlert = true
+                            return
+                        }
                         saveTransaction()
                     }
                     .disabled(!isValid)
                 }
+            }
+            .alert(
+                "Thank you for stress testing this app, please report if anything has bugged you so far",
+                isPresented: $showAmountLimitAlert
+            ) {
+                Button("OK", role: .cancel) {}
             }
             .sheet(isPresented: $showAccountPicker) {
                 AccountPickerSheet(
