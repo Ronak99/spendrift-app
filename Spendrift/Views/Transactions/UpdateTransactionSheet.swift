@@ -212,7 +212,7 @@ struct UpdateTransactionSheet: View {
                 }
             }
             .alert(
-                "Thank you for stress testing this app, please report if anything has bugged you so far",
+                "Thank you for stress testing this app, please report if anything has bugged you so far.",
                 isPresented: $showAmountLimitAlert
             ) {
                 Button("OK", role: .cancel) {}
