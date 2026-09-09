@@ -18,6 +18,21 @@ enum SettingsTokens {
     static let iconGap: CGFloat = 16
 }
 
+/// Trailing value chip for settings rows (status, quota, time, etc.).
+struct SettingsValueLabel: View {
+    let text: String
+
+    var body: some View {
+        Text(text)
+            .font(.subheadline.weight(.medium))
+            .foregroundStyle(SettingsTokens.textSecondary)
+            .lineLimit(1)
+            .padding(.horizontal, 10)
+            .padding(.vertical, 5)
+            .background(Color(uiColor: .tertiarySystemFill), in: Capsule())
+    }
+}
+
 struct SettingsIconTile: View {
     let systemName: String
     let accent: Color

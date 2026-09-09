@@ -12,6 +12,10 @@ enum ListItemPosition {
     case middle
     case last
     case only
+    /// Header half of an expandable row; detail sits flush underneath.
+    case expandedHeader
+    /// Detail half of an expandable row; sits flush under its header.
+    case expandedBody
 
     static func from(index: Int, count: Int) -> Self {
         if count <= 1 { return .only }
@@ -23,14 +27,16 @@ enum ListItemPosition {
     var topPadding: CGFloat {
         switch self {
         case .first, .only: 12
-        case .middle, .last: 6
+        case .middle, .last, .expandedHeader: 6
+        case .expandedBody: 0
         }
     }
 
     var bottomPadding: CGFloat {
         switch self {
         case .last, .only: 12
-        case .first, .middle: 6
+        case .first, .middle, .expandedBody: 6
+        case .expandedHeader: 0
         }
     }
 }

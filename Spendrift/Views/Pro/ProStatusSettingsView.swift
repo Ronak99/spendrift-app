@@ -3,11 +3,14 @@
 //  Spendrift
 //
 //  Settings rows for Spendrift Pro: current plan or trial countdown when subscribed,
-//  and the remaining free allowance per AI feature when not.
+//  and a single "Pro Stats" row when not, opening into this month's remaining free
+//  allowance for all four AI features at once.
 //
 //  Showing the free tier's remaining credits here is deliberate. A quota the user
 //  cannot see is indistinguishable from a bug the first time it stops them, and
-//  App Review expects a visible Restore Purchases path besides.
+//  App Review expects a visible Restore Purchases path besides. They are folded into
+//  one expandable row so four near-identical counters do not outweigh the rest of
+//  the section.
 //
 
 import SwiftUI
@@ -20,6 +23,7 @@ struct ProSettingsRows: View {
 
     @State private var entitlement = ProEntitlement.shared
     @State private var showManageSubscriptions = false
+    @State private var isStatsExpanded = false
     @State private var restoreMessage: String?
 
     private var accent: Color { Color.accentColor(forThemeIndex: selectedThemeIndex) }
@@ -106,16 +110,14 @@ struct ProSettingsRows: View {
             }
             .buttonStyle(.plain)
 
-            ForEach(Array(ProFeature.allCases.enumerated()), id: \.element.id) { index, feature in
-                SettingsListItem(
-                    icon: feature.symbolName,
-                    title: feature.displayName,
-                    subtitle: "Refills \(AIQuotaStore.nextResetDate().formatted(.dateTime.day().month(.abbreviated)))",
-                    accent: accent,
-                    accentSoft: accentSoft,
-                    accessory: .value(remainingLabel(for: feature))
-                )
-                .listItemPositioned(index: index + 1, count: rowCount)
+            statsRowHeader
+                .listItemPositioned(isStatsExpanded ? .expandedHeader : .middle)
+                .listRowSeparator(isStatsExpanded ? .hidden : .visible, edges: .bottom)
+
+            if isStatsExpanded {
+                ProStatsRingsView()
+                    .listItemPositioned(.expandedBody)
+                    .listRowSeparator(.hidden, edges: .top)
             }
 
             Button {
@@ -134,18 +136,36 @@ struct ProSettingsRows: View {
         }
     }
 
-    /// Pro row + one row per feature + restore.
-    private var rowCount: Int { ProFeature.allCases.count + 2 }
+    /// Pro + Pro Stats (+ rings when open) + Restore.
+    private var rowCount: Int { isStatsExpanded ? 4 : 3 }
+
+    private var statsRowHeader: some View {
+        Button {
+            withAnimation(.spring(response: 0.42, dampingFraction: 0.86)) {
+                isStatsExpanded.toggle()
+            }
+        } label: {
+            SettingsListItem(
+                icon: "circle.dotted.circle",
+                title: "Pro Stats",
+                subtitle: "Refills \(AIQuotaStore.nextResetDate().formatted(.dateTime.day().month(.abbreviated)))",
+                accent: accent,
+                accentSoft: accentSoft,
+                accessory: .valueDisclosure(usedPercentLabel, isExpanded: isStatsExpanded)
+            )
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+    }
+
+    private var usedPercentLabel: String {
+        "\(ProStat.averageUsedPercent(ProStat.currentMonth()))% used"
+    }
 
     private var upgradeSubtitle: String {
         entitlement.status == .lapsed
             ? "Your subscription has ended"
             : (entitlement.isEligibleForTrial ? "7 days free, then unlimited" : "Unlimited AI capture")
-    }
-
-    private func remainingLabel(for feature: ProFeature) -> String {
-        let remaining = AIQuotaStore.remaining(feature)
-        return "\(remaining) of \(feature.monthlyFreeQuota) left"
     }
 
     private func restore() async {

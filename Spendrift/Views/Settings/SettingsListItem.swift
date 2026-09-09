@@ -13,6 +13,8 @@ struct SettingsListItem: View {
         case toggle(Binding<Bool>)
         case value(String)
         case valueChevron(String)
+        /// Value plus a chevron that rotates to point down while the row is open.
+        case valueDisclosure(String, isExpanded: Bool)
         case chevron
         case externalLink
     }
@@ -70,14 +72,21 @@ struct SettingsListItem: View {
                 .labelsHidden()
                 .tint(accent)
         case let .value(value):
-            Text(value)
-                .font(.headline)
-                .foregroundColor(.secondary)
+            SettingsValueLabel(text: value)
         case let .valueChevron(value):
-            Text(value)
-                .font(.headline)
-                .foregroundColor(.secondary)
-            chevronGlyph
+            HStack(spacing: 4) {
+                SettingsValueLabel(text: value)
+                chevronGlyph
+                    .frame(width: 20, height: 20)
+            }
+        case let .valueDisclosure(value, isExpanded):
+            HStack(spacing: 4) {
+                SettingsValueLabel(text: value)
+                chevronGlyph
+                    .frame(width: 20, height: 20)
+                    .rotationEffect(.degrees(isExpanded ? 90 : 0))
+                    .animation(.spring(response: 0.42, dampingFraction: 0.86), value: isExpanded)
+            }
         case .chevron:
             chevronGlyph
         case .externalLink:
