@@ -114,3 +114,29 @@ shape; Pro would read a second, much larger ceiling.
 - [Airbridge — Subscription App Pricing by Category: 2026 Benchmarks](https://www.airbridge.io/en/blog/subscription-app-pricing-by-category-2026-benchmark)
 - [MoneyCoach pricing](https://www.xpay.sh/saas-pricing/moneycoach/) · [Spendee pricing](https://www.spendee.com/pricing) · [Wallet by BudgetBakers Premium](https://support.budgetbakers.com/hc/en-us/articles/7151349344018-Everything-about-Premium)
 - [Mirava — Apple App Store Price Tiers 2026](https://www.mirava.io/blog/apple-app-store-price-tiers-how-they-work-2026)
+
+
+----
+
+First thing, and it's the one that bites
+
+Generate the App Store Connect In-App Purchase Key (.p8). ASC → Users and Access → Integrations → In-App Purchase → generate key. Download it (Apple lets you download it exactly once), then upload it to RevenueCat along with the Key ID and your Issuer ID.
+
+Do this first because SDK v5 runs on StoreKit 2 by default, and without that key RevenueCat cannot validate a StoreKit 2 purchase at all — Apple charges the user and Pro never gets granted. It's also the single riskiest item in §8's risk table.
+
+TODOs
+
+1. Confirm the two plans are in App Store Connect, not just RevenueCat — your message is ambiguous on this. They must match Products.storekit verbatim or the paywall breaks:
+   - com.ronakpunase.Spendrift.pro.yearly — ₹999, 1 year
+   - com.ronakpunase.Spendrift.pro.monthly — ₹149, 1 month
+   - both in one subscription group ("Spendrift Pro"), each with a 7-day free introductory offer
+   - each product at least Ready to Submit — a product stuck in Missing Metadata (no localization, price, or review screenshot) won't import cleanly into RevenueCat.
+2. Create the RevenueCat project + iOS app for bundle com.ronakpunase.Spendrift, and copy the public Apple API key (appl_…). "Account set up" isn't the same as project + app configured, so check this exists.
+3. Wire up the entitlement model in RevenueCat: import both products → create entitlement with identifier exactly pro → attach both products → create offering default with packages $rc_annual (yearly) and $rc_monthly (monthly) → mark it current. The identifiers matter; the code will look them up by these exact strings.
+4. App Store Server Notifications: paste RevenueCat's URL into ASC as Version 2, for both Production and Sandbox. Nothing is configured there today, so there's no conflict to resolve.
+5. Upload the StoreKit testing certificate (exported from Xcode) to RevenueCat, so simulator runs against Products.storekit validate.
+6. Leave restore behaviour at the default, "Transfer to new App User ID" — with anonymous user IDs that's what reunites a reinstalled device with its purchases.
+7. Have a sandbox tester account and a physical device ready. Phases 1, 2 and 4 all end in manual on-device purchase tests; the simulator can't cover pending payments or real trial expiry.
+8. Add SPENDRIFT_REVENUECAT_API_KEY to DevSecrets.xcconfig, ProdSecrets.xcconfig, and Xcode Cloud's environment variables. The xcconfigs are gitignored, so either paste the key in yourself or hand it to me. Xcode Cloud especially — if it's missing, the first CI build of the branch fails.
+
+Phase 0 is done when RevenueCat shows both products under the pro entitlement in a current offering, the IAP key and StoreKit certificate are both accepted, and the two notification URLs are saved in ASC.
