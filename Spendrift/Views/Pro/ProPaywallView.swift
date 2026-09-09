@@ -62,7 +62,7 @@ struct ProPaywallView: View {
     @State private var showPendingNotice = false
 
     private let accent = OnboardingTheme.accent
-    private let privacyPolicyURL = URL(string: "https://spendrift.app/privacy_policy")!
+    private let privacyPolicyURL = URL(string: "https://spendrift.ronakpunase.dev/privacy_policy")!
     // Apple's standard EULA — the default terms for an app with no custom agreement.
     private let termsURL = URL(string: "https://www.apple.com/legal/internet-services/itunes/dev/stdeula/")!
 
@@ -187,8 +187,9 @@ struct ProPaywallView: View {
     /// The feature the user just experienced leads the list — the paywall should
     /// open on the thing they already know works.
     private var orderedFeatures: [ProFeature] {
-        guard let highlighted = context.feature else { return ProFeature.allCases }
-        return [highlighted] + ProFeature.allCases.filter { $0 != highlighted }
+        return [ProFeature.voice, ProFeature.messageImport]
+//        guard let highlighted = context.feature else { return ProFeature.allCases }
+//        return [highlighted] + ProFeature.allCases.filter { $0 != highlighted }
     }
 
     // MARK: - Plans
@@ -368,8 +369,7 @@ struct ProPaywallView: View {
             "Your free \(feature.displayName.lowercased()) refills on \(resetDateText). "
                 + "Pro removes the limit entirely."
         case .settings:
-            "Unlimited voice capture, SMS auto-import, statement import and receipt scan. "
-                + "Everything else in Spendrift stays free."
+            "Unlimited voice capture, SMS auto-import."
         case .winback:
             "Your Pro features are paused. Resubscribe to pick up where you left off."
         }

@@ -41,7 +41,7 @@ enum ProFeature: String, CaseIterable, Identifiable, Sendable {
     /// Short line used in the paywall's feature list.
     var summary: String {
         switch self {
-        case .voice:           "Say it, and it's logged — amount, category, account."
+        case .voice:           "Say it, and it's logged: amount, category, account."
         case .messageImport:   "Bank SMS turn into transactions automatically."
         case .statementImport: "Drop in a PDF statement, get every row back."
         case .receiptScan:     "Photograph a receipt and skip the typing."
