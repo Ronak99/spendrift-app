@@ -14,10 +14,11 @@ import SwiftUI
 import StoreKit
 
 struct ProSettingsRows: View {
+    @Binding var paywallContext: PaywallContext?
+
     @AppStorage(Color.selectedThemeIndexKey) private var selectedThemeIndex = Color.defaultThemeIndex
 
     @State private var entitlement = ProEntitlement.shared
-    @State private var paywallContext: PaywallContext?
     @State private var showManageSubscriptions = false
     @State private var restoreMessage: String?
 
@@ -32,7 +33,6 @@ struct ProSettingsRows: View {
                 freeTierRows
             }
         }
-        .proPaywall($paywallContext)
         .manageSubscriptionsSheet(isPresented: $showManageSubscriptions)
         .alert("Restore purchases", isPresented: Binding(
             get: { restoreMessage != nil },

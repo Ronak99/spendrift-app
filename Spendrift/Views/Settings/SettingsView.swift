@@ -214,7 +214,7 @@ struct SettingsView: View {
 
     private var proSection: some View {
         Section("Spendrift Pro") {
-            ProSettingsRows()
+            ProSettingsRows(paywallContext: $paywallContext)
         }
     }
 
