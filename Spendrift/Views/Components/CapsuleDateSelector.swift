@@ -26,8 +26,10 @@ struct CapsuleDateSelector: View {
 
     var body: some View {
         VStack(spacing: 8) {
-            HStack(spacing: 16) {
+            HStack {
                 periodMenuButton
+                
+                Spacer().frame(width: 16)
 
                 Button(action: onPrevious) {
                     Image(systemName: "chevron.left")
@@ -64,6 +66,8 @@ struct CapsuleDateSelector: View {
                         .font(.headline)
                         .foregroundColor(.primary)
                 }
+                
+                Spacer().frame(width: 16)
 
                 if let onAnalyticsToggle {
                     analyticsToggleButton(action: onAnalyticsToggle)
@@ -124,6 +128,7 @@ struct CapsuleDateSelector: View {
             Image(systemName: "line.3.horizontal.decrease.circle")
                 .font(.headline)
                 .foregroundColor(.primary)
+                .opacity(0.5)
         }
         .accessibilityLabel("Time range")
     }
@@ -133,6 +138,7 @@ struct CapsuleDateSelector: View {
             Image(systemName: "chart.pie")
                 .font(.headline)
                 .foregroundColor(isShowingAnalytics ? .accentColor : .primary)
+                .opacity(isShowingAnalytics ? 1 : 0.5)
         }
         .accessibilityLabel(isShowingAnalytics ? "Show transactions" : "Show analytics")
         .accessibilityIdentifier("capsuleAnalyticsToggle")

@@ -42,6 +42,9 @@ struct ListItemPositionedModifier: ViewModifier {
         content
             .padding(.top, position.topPadding)
             .padding(.bottom, position.bottomPadding)
+            // Rows are HStacks with a Spacer, so without an explicit shape a
+            // .plain Button only reacts on its icon and text, not the gap.
+            .contentShape(Rectangle())
     }
 }
 

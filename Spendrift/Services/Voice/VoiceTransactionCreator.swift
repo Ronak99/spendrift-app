@@ -135,6 +135,7 @@ enum VoiceTransactionCreator {
         modelContext.insert(transaction)
         try? modelContext.save()
         Analytics.captureTransactionCreated(method: "voice", type: draft.transactionType.rawValue, isRetry: isRetry)
+        ProGate.announceMomentIfNeeded(.voice)
         return .created(transaction)
     }
 

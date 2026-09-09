@@ -22,8 +22,15 @@ struct ReceiptTransactionService {
             throw AIServiceError.missingAPIKey
         }
 
+        // Also reachable from the Share Extension handoff, which never passes
+        // through the in-app gate.
+        guard ProGate.isAllowed(.receiptScan) else {
+            ProGate.reportBlocked(.receiptScan)
+            throw AIServiceError.quotaExhausted(.receiptScan)
+        }
+
         do {
-            return try await backend.parseReceipt(
+            let payload = try await backend.parseReceipt(
                 imageData: imageData,
                 mimeType: mimeType,
                 filename: filename,
@@ -31,6 +38,8 @@ struct ReceiptTransactionService {
                 clientTodayIso: SpendriftBackendClient.makeClientTodayIso(),
                 timezone: SpendriftBackendClient.makeTimezoneIdentifier()
             )
+            ProGate.recordUsage(.receiptScan)
+            return payload
         } catch let error as SpendriftBackendError {
             throw mapBackendError(error)
         }

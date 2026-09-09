@@ -14,11 +14,15 @@ struct MessageInboxImportBanner: Identifiable, Equatable {
     let id: UUID
     let transactionIDs: [UUID]
     let count: Int
+    /// Messages left unparsed because the free monthly allowance ran out. The drain
+    /// happens with no app on screen, so this is the only way the user finds out.
+    let blockedCount: Int
 
-    init(transactionIDs: [UUID]) {
+    init(transactionIDs: [UUID], blockedCount: Int = 0) {
         self.id = UUID()
         self.transactionIDs = transactionIDs
         self.count = transactionIDs.count
+        self.blockedCount = blockedCount
     }
 }
 
@@ -138,7 +142,7 @@ enum MessageInboxSyncService {
         let descriptor = FetchDescriptor<CapturedTransactionMessage>(
             sortBy: [SortDescriptor(\.capturedAt, order: .forward)]
         )
-        let pending: [CapturedTransactionMessage]
+        var pending: [CapturedTransactionMessage]
         do {
             pending = try inboxContext.fetch(descriptor)
         } catch {
@@ -146,11 +150,30 @@ enum MessageInboxSyncService {
         }
         guard !pending.isEmpty else { return nil }
 
+        // Free tier: spend only as many backend calls as the monthly allowance covers.
+        // Anything over stays in the inbox untouched, so it drains next month or the
+        // moment the user subscribes — nothing is thrown away.
+        var blockedCount = 0
+        if !ProEntitlementCache.isPro {
+            let allowance = AIQuotaStore.remaining(.messageImport)
+            if pending.count > allowance {
+                blockedCount = pending.count - allowance
+                pending = Array(pending.prefix(allowance))
+            }
+            if pending.isEmpty {
+                // No modal here: this runs headless from a Shortcuts automation, so the
+                // banner reports it on next open instead of ambushing the user.
+                ProGate.reportBlocked(.messageImport, announce: false)
+                return MessageInboxImportBanner(transactionIDs: [], blockedCount: blockedCount)
+            }
+        }
+
         let existingDescriptor = FetchDescriptor<Transaction>()
         let existing = (try? ledgerContext.fetch(existingDescriptor)) ?? []
 
         var createdIDs: [UUID] = []
         var createdCount = 0
+        var parsedMessageCount = 0
         var rejectedCount = 0
         var skippedCount = 0
 
@@ -208,6 +231,10 @@ enum MessageInboxSyncService {
                     ]
                 )
             }
+
+            // Credits track what the backend answered, not what became a transaction:
+            // an SMS correctly identified as "not a transaction" still cost a call.
+            parsedMessageCount += resultsByID.count
 
             let liveRows = chunk.filter { !quarantined.contains($0) }
 
@@ -275,6 +302,8 @@ enum MessageInboxSyncService {
             if abortDrain { break }
         }
 
+        ProGate.recordUsage(.messageImport, count: parsedMessageCount)
+
         if createdCount > 0 {
             Analytics.captureTransactionCreated(
                 method: "sms",
@@ -291,8 +320,8 @@ enum MessageInboxSyncService {
             ]
         )
 
-        guard !createdIDs.isEmpty else { return nil }
-        return MessageInboxImportBanner(transactionIDs: createdIDs)
+        guard !createdIDs.isEmpty || blockedCount > 0 else { return nil }
+        return MessageInboxImportBanner(transactionIDs: createdIDs, blockedCount: blockedCount)
     }
 
     @MainActor

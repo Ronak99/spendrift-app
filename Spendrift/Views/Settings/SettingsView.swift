@@ -31,6 +31,7 @@ struct SettingsView: View {
     @State private var versionTapCount = 0
     @State private var showReceiptScanOptions = false
     @State private var showStatementImport = false
+    @State private var paywallContext: PaywallContext?
     @State private var showReceiptCamera = false
     @State private var showReceiptLibrary = false
     @State private var receiptShare = ReceiptCaptureController()
@@ -61,6 +62,7 @@ struct SettingsView: View {
         NavigationStack {
             SettingsScreen(title: "Settings") {
                 hubSection
+                proSection
                 supportSection
 
                 if showsDeveloperTools {
@@ -81,6 +83,7 @@ struct SettingsView: View {
         .sheet(isPresented: $showMessageInboxDebug) {
             MessageInboxDebugView()
         }
+        .proPaywall($paywallContext)
         .sheet(isPresented: $showStatementImport) {
             StatementImportView()
         }
@@ -108,19 +111,6 @@ struct SettingsView: View {
                 draft: payload.draft,
                 voiceReviewHint: payload.hint
             )
-        }
-        .confirmationDialog("Scan receipt", isPresented: $showReceiptScanOptions, titleVisibility: .visible) {
-            Button("Take Photo") {
-                showReceiptCamera = true
-            }
-            .disabled(!cameraAvailable || receiptShare.isProcessing)
-
-            Button("Choose from Library") {
-                showReceiptLibrary = true
-            }
-            .disabled(receiptShare.isProcessing)
-
-            Button("Cancel", role: .cancel) {}
         }
         .alert("Couldn't Scan Receipt", isPresented: Binding(
             get: { if case .error = receiptShare.state { return true } else { return false } },
@@ -186,9 +176,28 @@ struct SettingsView: View {
                 .listItemPositioned(index: 2, count: hubRowCount)
             }
             .buttonStyle(.plain)
+            .confirmationDialog("Scan receipt", isPresented: $showReceiptScanOptions, titleVisibility: .visible) {
+                Button("Take Photo") {
+                    ProAccess.attempt(.receiptScan, paywall: $paywallContext) {
+                        showReceiptCamera = true
+                    }
+                }
+                .disabled(!cameraAvailable || receiptShare.isProcessing)
+
+                Button("Choose from Library") {
+                    ProAccess.attempt(.receiptScan, paywall: $paywallContext) {
+                        showReceiptLibrary = true
+                    }
+                }
+                .disabled(receiptShare.isProcessing)
+
+                Button("Cancel", role: .cancel) {}
+            }
 
             Button {
-                showStatementImport = true
+                ProAccess.attempt(.statementImport, paywall: $paywallContext) {
+                    showStatementImport = true
+                }
             } label: {
                 SettingsListItem(
                     icon: "doc.text",
@@ -200,6 +209,12 @@ struct SettingsView: View {
                 .listItemPositioned(index: 3, count: hubRowCount)
             }
             .buttonStyle(.plain)
+        }
+    }
+
+    private var proSection: some View {
+        Section("Spendrift Pro") {
+            ProSettingsRows(paywallContext: $paywallContext)
         }
     }
 

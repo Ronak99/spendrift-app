@@ -111,9 +111,7 @@ struct StatementImportView: View {
                         Text("Privacy notice")
                             .font(.subheadline.weight(.semibold))
                         Text(
-                            "Bank statements can include sensitive details such as account information, balances, and who you paid or received money from. "
-                            + "The PDF you select is sent to a third-party AI service so it can read the document and suggest transactions. "
-                            + "Only use this import if you are comfortable with that data leaving your device and being processed by the AI provider."
+                            "Your statement contains sensitive financial information. The PDF is securely sent to our AI provider to identify and suggest transactions. Only import it if you’re comfortable sharing this data."
                         )
                         .font(.footnote)
                         .foregroundStyle(.secondary)
@@ -438,6 +436,9 @@ struct StatementImportView: View {
             try modelContext.save()
             Analytics.captureTransactionCreated(method: "pdf", type: "mixed", count: importedRows.count)
             AppStoreReviewRequest.requestIfFirstTime(forKey: AppStoreReviewRequest.Keys.firstStatementImport)
+            // Pitched on save rather than on parse, so the paywall lands after the
+            // user has seen their rows in the list — not over the preview.
+            ProGate.announceMomentIfNeeded(.statementImport)
             dismiss()
         } catch {
             errorMessage = "Could not save transactions. \(error.localizedDescription)"

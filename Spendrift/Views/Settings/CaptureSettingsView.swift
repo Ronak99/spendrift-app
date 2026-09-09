@@ -18,6 +18,7 @@ struct CaptureSettingsView: View {
     @AppStorage(Color.selectedThemeIndexKey) private var selectedThemeIndex = Color.defaultThemeIndex
 
     @State private var showStatementImport = false
+    @State private var paywallContext: PaywallContext?
     @State private var showReceiptScanOptions = false
     @State private var showReceiptCamera = false
     @State private var showReceiptLibrary = false
@@ -79,9 +80,28 @@ struct CaptureSettingsView: View {
                     .listItemPositioned(index: 2, count: Self.rowCount)
                 }
                 .buttonStyle(.plain)
+                .confirmationDialog("Scan receipt", isPresented: $showReceiptScanOptions, titleVisibility: .visible) {
+                    Button("Take Photo") {
+                        ProAccess.attempt(.receiptScan, paywall: $paywallContext) {
+                            showReceiptCamera = true
+                        }
+                    }
+                    .disabled(!cameraAvailable || receiptShare.isProcessing)
+
+                    Button("Choose from Library") {
+                        ProAccess.attempt(.receiptScan, paywall: $paywallContext) {
+                            showReceiptLibrary = true
+                        }
+                    }
+                    .disabled(receiptShare.isProcessing)
+
+                    Button("Cancel", role: .cancel) {}
+                }
 
                 Button {
-                    showStatementImport = true
+                    ProAccess.attempt(.statementImport, paywall: $paywallContext) {
+                        showStatementImport = true
+                    }
                 } label: {
                     SettingsListItem(
                         icon: "doc.text",
@@ -99,6 +119,7 @@ struct CaptureSettingsView: View {
             }
         }
         .tint(accent)
+        .proPaywall($paywallContext)
         .sheet(isPresented: $showStatementImport) {
             StatementImportView()
         }
@@ -126,19 +147,6 @@ struct CaptureSettingsView: View {
                 draft: payload.draft,
                 voiceReviewHint: payload.hint
             )
-        }
-        .confirmationDialog("Scan receipt", isPresented: $showReceiptScanOptions, titleVisibility: .visible) {
-            Button("Take Photo") {
-                showReceiptCamera = true
-            }
-            .disabled(!cameraAvailable || receiptShare.isProcessing)
-
-            Button("Choose from Library") {
-                showReceiptLibrary = true
-            }
-            .disabled(receiptShare.isProcessing)
-
-            Button("Cancel", role: .cancel) {}
         }
         .alert("Couldn't Scan Receipt", isPresented: Binding(
             get: { if case .error = receiptShare.state { return true } else { return false } },

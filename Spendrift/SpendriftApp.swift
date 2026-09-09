@@ -27,6 +27,11 @@ struct SpendriftApp: App {
         }
 
         let isUITesting = ProcessInfo.processInfo.arguments.contains("-UITesting")
+        if isUITesting {
+            // UI tests drive the AI flows directly; a paywall or a spent quota would
+            // make them fail for reasons unrelated to what they assert.
+            ProEntitlementCache.update(isPro: true, expiresAt: nil)
+        }
         if let container = try? IntentSwiftData.makeModelContainer() {
             sharedContainer = container
             #if DEBUG
@@ -68,12 +73,14 @@ private enum RootSheet: Identifiable, Equatable {
     case mandatoryUpdate(version: String?, storeURL: URL?)
     case onboarding
     case optionalUpdate(version: String?, storeURL: URL?)
+    case paywall(PaywallContext)
 
     var id: String {
         switch self {
         case .mandatoryUpdate: "mandatoryUpdate"
         case .onboarding:      "onboarding"
         case .optionalUpdate:  "optionalUpdate"
+        case .paywall(let context): "paywall.\(context.id)"
         }
     }
 }
@@ -88,9 +95,19 @@ private struct RootContainerView: View {
     @AppStorage("spendriftOnboardingVersion") private var onboardingVersion = 0
 
     @State private var checker = AppUpdateChecker()
+    @State private var entitlement = ProEntitlement.shared
     @State private var activeSheet: RootSheet?
     /// Guards against starting the background seed more than once per launch.
     @State private var didStartSeeding = false
+
+    /// A Pro moment that has been earned but not yet shown. Held rather than presented
+    /// immediately so it can queue behind the notification opt-in alert and behind the
+    /// success animation of whichever feature just ran.
+    @State private var pendingPaywall: PaywallContext?
+    @State private var isReminderAlertVisible = false
+    /// One paywall per launch. Four celebrations plus quota walls could otherwise
+    /// stack up in a single session and read as nagging.
+    @State private var didPresentPaywallThisSession = false
 
     private var isUITesting: Bool {
         ProcessInfo.processInfo.arguments.contains("-UITesting")
@@ -103,6 +120,7 @@ private struct RootContainerView: View {
     var body: some View {
         ContentView()
             .task {
+                entitlement.start()
                 await checker.check()
                 resolveActiveSheet()
             }
@@ -118,6 +136,31 @@ private struct RootContainerView: View {
                 didStartSeeding = true
                 DefaultDataSeeder.seedIfNeeded(modelContext: modelContext)
             }
+            // A feature just delivered its first win. Offer the trial on the payoff.
+            .onReceive(NotificationCenter.default.publisher(for: .proMomentReached)) { note in
+                guard let raw = note.userInfo?[ProGate.featureUserInfoKey] as? String,
+                      let feature = ProFeature(rawValue: raw) else { return }
+                queuePaywall(.celebration(feature))
+            }
+            // The user hit a wall rather than a win.
+            .onReceive(NotificationCenter.default.publisher(for: .proQuotaExhausted)) { note in
+                guard let raw = note.userInfo?[ProGate.featureUserInfoKey] as? String,
+                      let feature = ProFeature(rawValue: raw) else { return }
+                queuePaywall(.quotaExhausted(feature))
+            }
+            // The notification opt-in is a plain alert on ContentView. Presenting a
+            // sheet over it would swallow the alert, so the paywall waits its turn.
+            .onReceive(NotificationCenter.default.publisher(for: .reminderOptInShown)) { _ in
+                isReminderAlertVisible = true
+            }
+            .onReceive(NotificationCenter.default.publisher(for: .reminderOptInDismissed)) { _ in
+                isReminderAlertVisible = false
+                resolveActiveSheet()
+            }
+            .onChange(of: entitlement.status) { _, _ in
+                refreshTrialReminder()
+                resolveActiveSheet()
+            }
             .sheet(item: $activeSheet) { sheet in
                 switch sheet {
                 case .mandatoryUpdate(let version, let url):
@@ -131,12 +174,63 @@ private struct RootContainerView: View {
 
                 case .optionalUpdate(let version, let url):
                     AppUpdateSheet(kind: .optional, latestVersion: version, storeURL: url)
+
+                case .paywall(let context):
+                    ProPaywallView(context: context)
+                        .onDisappear {
+                            pendingPaywall = nil
+                            resolveActiveSheet()
+                        }
                 }
             }
     }
 
+    // MARK: - Paywall queueing
+
+    /// Records a paywall to show and tries to surface it. Voice, receipts and imports
+    /// all end with an on-screen success state; a short delay lets the user register
+    /// the result they just got before being asked to pay for more of it.
+    private func queuePaywall(_ context: PaywallContext) {
+        guard !entitlement.isPro, !didPresentPaywallThisSession else { return }
+        pendingPaywall = context
+        Task {
+            try? await Task.sleep(for: .milliseconds(1_200))
+            resolveActiveSheet()
+        }
+    }
+
+    private var canPresentPaywall: Bool {
+        pendingPaywall != nil
+            && !isReminderAlertVisible
+            && !didPresentPaywallThisSession
+            && !entitlement.isPro
+            && !isUITesting
+    }
+
+    // MARK: - Trial reminder
+
+    /// Re-stamps the day-5 trial reminder with a live count of what Pro has actually
+    /// done, so the notification recaps value instead of just warning about a charge.
+    private func refreshTrialReminder() {
+        guard let trialEndsAt = entitlement.trialEndsAt else {
+            ProTrialReminder.cancel()
+            return
+        }
+        ProTrialReminder.refresh(
+            trialEndsAt: trialEndsAt,
+            aiTransactionCount: aiTransactionCount()
+        )
+    }
+
+    private func aiTransactionCount() -> Int {
+        let aiSources = Set(ProFeature.allCases.map(\.rawValue))
+        let descriptor = FetchDescriptor<Transaction>()
+        guard let all = try? modelContext.fetch(descriptor) else { return 0 }
+        return all.filter { aiSources.contains($0.source) }.count
+    }
+
     /// Determines which sheet to surface based on priority:
-    /// mandatory update > onboarding > optional update.
+    /// mandatory update > onboarding > optional update > paywall.
     private func resolveActiveSheet() {
         if case .mandatoryUpdate = activeSheet { return }
 
@@ -152,6 +246,9 @@ private struct RootContainerView: View {
                 version: checker.latestVersion,
                 storeURL: checker.storeURL
             )
+        } else if let pendingPaywall, canPresentPaywall {
+            didPresentPaywallThisSession = true
+            activeSheet = .paywall(pendingPaywall)
         } else {
             activeSheet = nil
         }

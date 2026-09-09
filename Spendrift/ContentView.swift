@@ -26,6 +26,7 @@ struct ContentView: View {
     @State private var selectedTab = 0
     @State private var showCreateTransaction = false
     @State private var showStatementImport = false
+    @State private var paywallContext: PaywallContext?
     @State private var receiptImport: ReceiptSharePayload?
     @State private var transactionPeriodViewModel = TransactionViewModel()
     @State private var messageInboxBanner: MessageInboxImportBanner?
@@ -33,7 +34,6 @@ struct ContentView: View {
     /// Owned here rather than by `TransactionsView` so voice capture can be started from - and
     /// stay visible on top of - any tab.
     @State private var voiceInline = VoiceInlineCaptureController()
-
     /// Sentinel selection value for the voice CTA. It is never committed to `selectedTab`.
     private static let voiceTabTag = 99
 
@@ -62,10 +62,13 @@ struct ContentView: View {
 
     /// The Liquid Glass tab bar ignores SwiftUI foreground styles on tab labels, so the mic is
     /// pre-tinted as an `.alwaysOriginal` image to keep its muted red CTA colour.
-    private var voiceTabIcon: UIImage {
-        let tint: UIColor = colorScheme == .dark
+    private func voiceTabIcon(disabled: Bool) -> UIImage {
+        let activeTint: UIColor = colorScheme == .dark
             ? UIColor(red: 0.96, green: 0.47, blue: 0.45, alpha: 1)
             : UIColor(red: 0.76, green: 0.24, blue: 0.23, alpha: 1)
+        let tint = disabled
+            ? UIColor.tertiaryLabel
+            : activeTint
         return UIImage(systemName: "mic.fill")?
             .withTintColor(tint, renderingMode: .alwaysOriginal) ?? UIImage()
     }
@@ -116,11 +119,22 @@ struct ContentView: View {
                 Label {
                     Text("Speak")
                 } icon: {
-                    Image(uiImage: voiceTabIcon)
+                    Image(uiImage: voiceTabIcon(disabled: voice.blocksNewCapture))
                 }
                 .accessibilityLabel("Speak a transaction")
-                .accessibilityHint("Records a voice note and turns it into a transaction")
+                .accessibilityHint(
+                    voice.blocksNewCapture
+                        ? "Unavailable while a voice note is being recorded or processed"
+                        : "Records a voice note and turns it into a transaction"
+                )
             }
+            // Must sit on the `Tab`, not on the `Label` inside it: disabling the label only
+            // dims the icon and leaves the tab item tappable, and a tap that lands while a
+            // capture is in flight commits `TabView` to this tab. `selectedTab` never takes
+            // the sentinel, so the binding reports no change, SwiftUI reasserts nothing, and
+            // the empty placeholder above stays on screen as a blank black screen until the
+            // user picks another tab by hand.
+            .disabled(voice.blocksNewCapture)
         }
         .tint(accentColor)
         .environment(\.openSettings) {
@@ -164,12 +178,21 @@ struct ContentView: View {
         .onOpenURL { url in
             handleQuickAction(url: url)
         }
+        // The Pro paywall queues behind this alert; without the broadcast a sheet
+        // presented at the same moment would swallow it.
+        .onChange(of: showReminderOptIn) { _, isVisible in
+            NotificationCenter.default.post(
+                name: isVisible ? .reminderOptInShown : .reminderOptInDismissed,
+                object: nil
+            )
+        }
         .alert("Stay on top of your spending?", isPresented: $showReminderOptIn) {
             Button("Enable reminders") { enableDailyReminders() }
             Button("Not now", role: .cancel) {}
         } message: {
             Text("Get a daily nudge to log your spending and keep your budget accurate.")
         }
+        .proPaywall($paywallContext)
         .sheet(isPresented: $showCreateTransaction) {
             UpdateTransactionSheet(transaction: nil)
         }
@@ -191,12 +214,14 @@ struct ContentView: View {
     /// stray tap cannot interrupt an in-progress recording.
     private func startVoiceCaptureFromTabBar() {
         guard !voiceInline.blocksNewCapture else { return }
-        UIImpactFeedbackGenerator(style: .light).impactOccurred()
-        Analytics.capture(.shortcutUsed, [
-            Analytics.Key.kind: "voice",
-            Analytics.Key.source: "tab_bar_cta"
-        ])
-        voiceInline.beginCapture()
+        ProAccess.attempt(.voice, paywall: $paywallContext) {
+            UIImpactFeedbackGenerator(style: .light).impactOccurred()
+            Analytics.capture(.shortcutUsed, [
+                Analytics.Key.kind: "voice",
+                Analytics.Key.source: "tab_bar_cta"
+            ])
+            voiceInline.beginCapture()
+        }
     }
 
     
@@ -251,11 +276,15 @@ struct ContentView: View {
         case "voiceExpense":
             showCreateTransaction = false
             selectedTab = 0
-            voiceInline.beginCapture()
+            ProAccess.attempt(.voice, paywall: $paywallContext) {
+                voiceInline.beginCapture()
+            }
         case "importStatement":
             showCreateTransaction = false
             selectedTab = 0
-            showStatementImport = true
+            ProAccess.attempt(.statementImport, paywall: $paywallContext) {
+                showStatementImport = true
+            }
         default:
             break
         }
@@ -316,8 +345,12 @@ struct ContentView: View {
         defaults.removeObject(forKey: VoiceExpenseIntent.launchTriggerKey)
         showCreateTransaction = false
         selectedTab = 0
-        voiceInline.beginCapture()
-        Analytics.capture(.shortcutUsed, [Analytics.Key.kind: "voice"])
+        // A Siri/Shortcuts launch lands here with no capture started yet, so the gate
+        // still gets a chance to show the paywall rather than a mid-flow error.
+        ProAccess.attempt(.voice, paywall: $paywallContext) {
+            voiceInline.beginCapture()
+            Analytics.capture(.shortcutUsed, [Analytics.Key.kind: "voice"])
+        }
     }
 
     private var shouldSeedCategoriesOnLaunch: Bool {

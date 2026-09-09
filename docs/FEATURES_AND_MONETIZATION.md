@@ -184,11 +184,27 @@ These are **strategies**, not recommendations to implement all at once.
 
 11. **Feature requests** — Keep free; optionally “Pro priority” badge in feedback email metadata.
 
-### Packaging
+### Packaging — **shipped** (September 6, 2026)
 
-- **Single “Spendrift Pro” subscription** — Bundle AI voice + statement import + widgets + export + advanced charts.
-- **Consumables** — “AI statement packs” for users who rarely import (one-time purchase).
-- **Free trial** — 7 days Pro to habituate voice + import, then gate.
+The brainstorm above is historical. What actually shipped is the narrowest version of it:
+
+- **Single "Spendrift Pro" subscription** — one subscription group, 7-day free trial on
+  every plan. Product IDs `com.ronakpunase.Spendrift.pro.yearly` and `...pro.monthly`.
+  Prices: **₹999/yr or ₹149/mo** (India), **$29.99/yr or $4.99/mo** (US), **€35.99/yr or
+  €5.99/mo** (Europe). Derivation in `docs/PRO_PRICING.md`.
+- **Gated:** Tier A only — voice capture, SMS auto-import, PDF statement import, receipt
+  scan. These are the four calls that cost money on the backend AI proxy.
+- **Not gated:** everything in Tier B and D. Widgets, export, analytics, themes and
+  Shortcuts stay free, so a non-payer keeps a fully useful app and can still leave a review.
+- **Free allowance instead of a hard wall** — 10 voice parses, 30 SMS messages, 5 receipts
+  and 1 statement per calendar month (`ProFeature.monthlyFreeQuota`). Credits are spent
+  only when the backend actually answers, so failures are free.
+- **Trial placement** — offered contextually, right after the *first successful* use of
+  each AI feature, not at install. See `docs/PRO_TRIAL_PLACEMENT.md` for the benchmark
+  data behind that choice.
+- **Consumables** — "AI statement packs" were not built. Deferred.
+- **Entitlement** — StoreKit 2, verified client-side (`Services/Pro/ProEntitlement.swift`).
+  No backend receipt validation; the backend remains stateless.
 
 ---
 

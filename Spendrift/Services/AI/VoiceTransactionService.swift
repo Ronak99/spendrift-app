@@ -22,13 +22,23 @@ struct VoiceTransactionService {
             throw AIServiceError.missingAPIKey
         }
 
+        // Last line of defence. The UI gates before recording so the user sees a
+        // paywall rather than an error, but voice also starts from App Intents and
+        // Shortcuts, which bypass that check entirely.
+        guard ProGate.isAllowed(.voice) else {
+            ProGate.reportBlocked(.voice)
+            throw AIServiceError.quotaExhausted(.voice)
+        }
+
         do {
-            return try await backend.parseVoiceTransaction(
+            let payload = try await backend.parseVoiceTransaction(
                 audioData: audioData,
                 categories: categories,
                 clientTodayIso: SpendriftBackendClient.makeClientTodayIso(),
                 timezone: SpendriftBackendClient.makeTimezoneIdentifier()
             )
+            ProGate.recordUsage(.voice)
+            return payload
         } catch let error as SpendriftBackendError {
             throw mapBackendError(error)
         }

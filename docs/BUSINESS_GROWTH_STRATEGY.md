@@ -3,8 +3,32 @@
 > **Linear:** [RON-138 - Business](https://linear.app/ronaksprojects/issue/RON-138/business)
 > **Immediate goal:** at least one genuine paid download this week.
 > **App Store:** https://apps.apple.com/us/app/spendrift/id6761763507
-> **Price:** ₹99 / $0.99 (lowest tier, one time, no subscription).
-> **Last updated:** July 6, 2026.
+> **Price:** Free to download. **Spendrift Pro** subscription, 7-day free trial —
+> ₹999/yr or ₹149/mo (IN), $29.99/yr or $4.99/mo (US), €35.99/yr or €5.99/mo (EU).
+> **Last updated:** September 6, 2026.
+
+---
+
+## 0. Superseded: the paid-upfront model
+
+This document was written when Spendrift was priced at ₹99 / $0.99 one-time, with
+"no subscription" pitched as a differentiator. **That is no longer the model.**
+
+Spendrift is now free to download with a Pro subscription gating the four AI features
+(voice capture, SMS auto-import, statement import, receipt scan). Manual tracking,
+accounts, categories, charts, widgets and Shortcuts are free forever, with a monthly
+free allowance on each AI feature before the gate applies. The trial is offered
+contextually — immediately after a user's first successful voice note, SMS import,
+statement import or receipt scan — rather than at install.
+
+The reasoning and the benchmark data behind the placement are in
+`docs/PRO_TRIAL_PLACEMENT.md`; the regional price derivation is in `docs/PRO_PRICING.md`.
+
+Two consequences for this document: the App Store price **must** be set to Free in
+App Store Connect, and section 1's argument against paid-upfront is now the reason for
+the change rather than a caveat to it. Everything below about YouTube as the proven
+channel, Reddit as a secondary trust layer, and promo codes not seeding reviews still
+holds — only the price model changed.
 
 ---
 
