@@ -12,9 +12,9 @@ import Observation
 // MARK: - Update kind
 
 enum UpdateKind {
-    /// Minor version bump (1.0.0 → 1.x.0) — show a dismissible sheet.
+    /// Same major, higher minor (e.g. 2.0.0 → 2.1.0) — show a dismissible sheet.
     case optional
-    /// Major version bump (1.0.0 → x.0.0) — show a blocking, indismissible sheet.
+    /// Higher major (e.g. 1.4.1 → 2.0.0) — show a blocking, indismissible sheet.
     case mandatory
 }
 
@@ -89,16 +89,17 @@ final class AppUpdateChecker {
     }
 
     private func classify(current: SemanticVersion, latest: SemanticVersion) -> UpdateKind? {
+        guard latest > current else { return nil }
         if latest.major > current.major { return .mandatory }
-        if latest.minor > current.minor { return .optional }
-        // patch bump → ignorable
+        if latest.major == current.major, latest.minor > current.minor { return .optional }
+        // Same major.minor, patch-only bump → ignorable.
         return nil
     }
 }
 
 // MARK: - Semantic version
 
-struct SemanticVersion {
+struct SemanticVersion: Comparable {
     let major: Int
     let minor: Int
     let patch: Int
@@ -112,5 +113,11 @@ struct SemanticVersion {
         minor = parts.count > 1 ? parts[1] : 0
         patch = parts.count > 2 ? parts[2] : 0
         raw = trimmed
+    }
+
+    static func < (lhs: SemanticVersion, rhs: SemanticVersion) -> Bool {
+        if lhs.major != rhs.major { return lhs.major < rhs.major }
+        if lhs.minor != rhs.minor { return lhs.minor < rhs.minor }
+        return lhs.patch < rhs.patch
     }
 }
