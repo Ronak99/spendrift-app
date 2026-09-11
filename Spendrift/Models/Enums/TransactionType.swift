@@ -10,5 +10,4 @@ import Foundation
 enum TransactionType: String, Codable, CaseIterable {
     case expense
     case income
-    case none // For imported transactions with unknown type
 }

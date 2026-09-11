@@ -34,6 +34,9 @@ struct SpendriftApp: App {
         }
         if let container = try? IntentSwiftData.makeModelContainer() {
             sharedContainer = container
+            TransactionTypeMigration.normalizeNoneTypesIfNeeded(
+                modelContext: ModelContext(container)
+            )
             #if DEBUG
             DebugSwiftBootstrap.rememberStores(
                 ledger: container,

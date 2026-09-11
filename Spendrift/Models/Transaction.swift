@@ -25,7 +25,7 @@ final class Transaction {
     var notes: String = ""
     var amount: Double = 0
     var date: Date = Date()
-    var transactionType: TransactionType = TransactionType.none
+    var transactionType: TransactionType = TransactionType.expense
     /// Capture path: manual, voice, pdf, receipt, shortcut, widget, sms.
     var source: String = TransactionSource.manual.rawValue
     

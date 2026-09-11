@@ -25,21 +25,17 @@ enum CategoryPalette {
 
     static let defaultExpenseHex = "#8BD17C"
     static let defaultIncomeHex = "#4FC3A1"
-    static let defaultNoneHex = "#8E9AA8"
-
-    static func defaultHex(for type: TransactionType) -> String {
+    static func defaultHex(for type: CategoryType) -> String {
         switch type {
         case .expense: return defaultExpenseHex
         case .income: return defaultIncomeHex
-        case .none: return defaultNoneHex
         }
     }
 
-    static func defaultIcon(for type: TransactionType) -> CategoryIcon {
+    static func defaultIcon(for type: CategoryType) -> CategoryIcon {
         switch type {
         case .expense: return .groceries
         case .income: return .salary
-        case .none: return .miscellaneous
         }
     }
 

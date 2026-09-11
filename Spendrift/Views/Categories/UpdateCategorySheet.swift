@@ -17,14 +17,14 @@ struct UpdateCategorySheet: View {
     @Query(sort: \TransactionCategory.name) private var allCategories: [TransactionCategory]
 
     let category: TransactionCategory?
-    /// When creating a category, pre-select this transaction type (for example from the transaction form).
-    let defaultTypeWhenCreating: TransactionType?
+    /// When creating a category, pre-select this category type (for example from the transaction form).
+    let defaultTypeWhenCreating: CategoryType?
     var onCreated: ((TransactionCategory) -> Void)?
     private let eventSource: CategoryEventSource
 
     init(
         category: TransactionCategory?,
-        defaultTypeWhenCreating: TransactionType? = nil,
+        defaultTypeWhenCreating: CategoryType? = nil,
         onCreated: ((TransactionCategory) -> Void)? = nil,
         eventSource: CategoryEventSource = .manual
     ) {
@@ -33,9 +33,7 @@ struct UpdateCategorySheet: View {
         self.onCreated = onCreated
         self.eventSource = eventSource
 
-        let initialType = category?.type
-            ?? (defaultTypeWhenCreating == .none ? .expense : defaultTypeWhenCreating)
-            ?? .expense
+        let initialType = category?.type ?? defaultTypeWhenCreating ?? .expense
         _name = State(initialValue: category?.name ?? "")
         _type = State(initialValue: initialType)
         _icon = State(initialValue: category?.icon ?? CategoryPalette.defaultIcon(for: initialType))
@@ -51,7 +49,7 @@ struct UpdateCategorySheet: View {
     @FocusState private var nameFieldFocused: Bool
 
     @State private var name: String
-    @State private var type: TransactionType
+    @State private var type: CategoryType
     @State private var icon: CategoryIcon
     @State private var selectedHex: String
     @State private var didManuallyPickIcon: Bool
@@ -222,7 +220,7 @@ struct UpdateCategorySheet: View {
 
     private var typePicker: some View {
         HStack(spacing: 3) {
-            ForEach(TransactionType.allCases, id: \.self) { option in
+            ForEach(CategoryType.allCases, id: \.self) { option in
                 let isOn = type == option
                 Button {
                     type = option

@@ -34,7 +34,7 @@ enum CategoryResolver {
         type: TransactionType,
         categories: [TransactionCategory]
     ) -> TransactionCategory? {
-        let filtered = categories.filter { $0.type == type }
+        let filtered = categories.filter { $0.type == CategoryType(transactionType: type) }
         guard !filtered.isEmpty else { return nil }
 
         if let exact = matchExact(name: categoryName, in: filtered) {
@@ -48,7 +48,9 @@ enum CategoryResolver {
 
         let intent = TransactionIntentParser.parse(notes)
         let match = CategoryMatcher.match(intent: intent, categories: categories)
-        if let category = match.category, category.type == type, match.confidence >= 0.7 {
+        if let category = match.category,
+           category.type == CategoryType(transactionType: type),
+           match.confidence >= 0.7 {
             return category
         }
 

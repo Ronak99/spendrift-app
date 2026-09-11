@@ -457,7 +457,7 @@ private struct ImportRowView: View {
                 Circle()
                     .fill(Color.gray.opacity(0.15))
                     .frame(width: 44, height: 44)
-                Image(systemName: row.transactionType == .expense ? "arrow.up.right" : row.transactionType == .income ? "arrow.down.left" : "questionmark")
+                Image(systemName: row.transactionType == .expense ? "arrow.up.right" : "arrow.down.left")
                     .font(.system(size: 18))
                     .foregroundStyle(.secondary)
             }
@@ -475,7 +475,7 @@ private struct ImportRowView: View {
 
             Text(row.amount.formatCurrency)
                 .font(.headline)
-                .foregroundStyle(row.transactionType == .expense ? .red : row.transactionType == .income ? .green : .primary)
+                .foregroundStyle(row.transactionType == .expense ? .red : .green)
         }
         .padding(.vertical, 4)
     }

@@ -32,6 +32,7 @@ enum DefaultDataSeeder {
 
         // Bring legacy rows up to date regardless of whether we seed (idempotent,
         // guarded by their own UserDefaults flags).
+        TransactionTypeMigration.normalizeNoneTypesIfNeeded(modelContext: modelContext)
         DefaultCategoryMigration.backfillIsDefaultIfNeeded(modelContext: modelContext)
         DefaultCategoryMigration.backfillSortOrderIfNeeded(modelContext: modelContext)
 
