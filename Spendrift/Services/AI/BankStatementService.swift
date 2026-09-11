@@ -48,7 +48,7 @@ struct BankStatementService {
     private func mapToRow(_ tx: StatementTransactionData) -> StatementImportRow? {
         guard tx.amount > 0 else { return nil }
 
-        let txType = TransactionType(rawValue: tx.transactionType) ?? .none
+        let txType = TransactionType.resolved(from: tx.transactionType)
         let date = Self.parseDate(tx.date) ?? Date()
 
         return StatementImportRow(

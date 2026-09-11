@@ -113,7 +113,7 @@ enum VoiceTransactionCreator {
             return .needsManualEntry(draft, failure: .noPrimaryAccount)
         }
         let requiredType: TransactionType = draft.transactionType == .expense ? .expense : .income
-        let typeCategories = categories.filter { $0.type == requiredType }
+        let typeCategories = categories.filter { $0.type == CategoryType(transactionType: requiredType) }
         guard !typeCategories.isEmpty else {
             return .needsManualEntry(draft, failure: .noCategoriesForType)
         }

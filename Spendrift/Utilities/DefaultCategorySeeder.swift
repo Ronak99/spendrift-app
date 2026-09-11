@@ -12,6 +12,7 @@ enum DefaultCategorySeeder {
     /// Seeds default categories when the local store has no categories yet.
     /// Used by UI tests that skip onboarding; production seeding uses `DefaultDataSeeder`.
     static func seedIfNeeded(modelContext: ModelContext) {
+        TransactionTypeMigration.normalizeNoneTypesIfNeeded(modelContext: modelContext)
         DefaultCategoryMigration.backfillIsDefaultIfNeeded(modelContext: modelContext)
         DefaultCategoryMigration.backfillSortOrderIfNeeded(modelContext: modelContext)
 

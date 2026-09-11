@@ -60,14 +60,18 @@ struct UpdateTransactionSheet: View {
         accounts.sortedByLastUsage()
     }
 
+    private var selectedCategoryType: CategoryType {
+        CategoryType(transactionType: transactionType)
+    }
+
     private var filteredCategories: [TransactionCategory] {
-        categoriesSortedByLastUsed.filter { $0.type.rawValue == transactionType.rawValue }
+        categoriesSortedByLastUsed.filter { $0.type == selectedCategoryType }
     }
     
     private var isValid: Bool {
         guard let amountValue = Double(amount), amountValue > 0 else { return false }
         guard selectedAccount != nil else { return false }
-        guard let category = selectedCategory, category.type == transactionType else { return false }
+        guard let category = selectedCategory, category.type == selectedCategoryType else { return false }
         return true
     }
     
@@ -75,7 +79,7 @@ struct UpdateTransactionSheet: View {
         if filteredCategories.isEmpty {
             return "Create Category"
         }
-        if let category = selectedCategory, category.type == transactionType {
+        if let category = selectedCategory, category.type == selectedCategoryType {
             return category.name
         }
         return "Select Category"
@@ -121,12 +125,9 @@ struct UpdateTransactionSheet: View {
                 }
 
                 Picker("Type", selection: $transactionType) {
-                    ForEach(
-                        TransactionType.allCases.filter { $0 != .none
-                        },
-                        id: \.self) { type in
-                            Text(type.rawValue.capitalized).tag(type)
-                        }
+                    ForEach(TransactionType.allCases, id: \.self) { type in
+                        Text(type.rawValue.capitalized).tag(type)
+                    }
                 }
                 .pickerStyle(.palette)
                 
@@ -232,11 +233,11 @@ struct UpdateTransactionSheet: View {
                 CategoryPickerSheet(
                     selectedCategory: $selectedCategory,
                     categories: filteredCategories,
-                    defaultTypeForNewCategory: transactionType
+                    defaultTypeForNewCategory: selectedCategoryType
                 )
             }
             .sheet(isPresented: $showCreateCategorySheet) {
-                UpdateCategorySheet(category: nil, defaultTypeWhenCreating: transactionType) { newCategory in
+                UpdateCategorySheet(category: nil, defaultTypeWhenCreating: selectedCategoryType) { newCategory in
                     selectedCategory = newCategory
                 }
             }
@@ -253,11 +254,11 @@ struct UpdateTransactionSheet: View {
                     // transaction stays unselected so the Category row reads "Select Category"
                     // instead of implying that the last-used category is already chosen for it.
                     if let existingCategory = transaction.category {
-                        if existingCategory.type == transactionType {
+                        if existingCategory.type == selectedCategoryType {
                             selectedCategory = existingCategory
                             categoryTracker[transactionType] = existingCategory
                         } else {
-                            let fallback = categoriesSortedByLastUsed.first { $0.type == transactionType }
+                            let fallback = categoriesSortedByLastUsed.first { $0.type == selectedCategoryType }
                             selectedCategory = fallback
                             if let fallback {
                                 categoryTracker[transactionType] = fallback
@@ -283,13 +284,13 @@ struct UpdateTransactionSheet: View {
                         category = categoriesSortedByLastUsed.first { $0.type == .income && $0.name == "Salary" }
                     }
                     if category == nil {
-                        category = categoriesSortedByLastUsed.first { $0.type == transactionType }
+                        category = categoriesSortedByLastUsed.first { $0.type == selectedCategoryType }
                     }
-                    if category?.type != transactionType {
-                        category = categoriesSortedByLastUsed.first { $0.type == transactionType }
+                    if category?.type != selectedCategoryType {
+                        category = categoriesSortedByLastUsed.first { $0.type == selectedCategoryType }
                     }
                     selectedCategory = category
-                    if let category, category.type == transactionType {
+                    if let category, category.type == selectedCategoryType {
                         // Pin the tracker so the type-change handler can't override the quick-start pick.
                         categoryTracker[transactionType] = category
                     }
@@ -312,14 +313,13 @@ struct UpdateTransactionSheet: View {
                 }
             }
             .onChange(of: selectedCategory) { _, newValue in
-                if let newValue, newValue.type == transactionType {
+                if let newValue, newValue.type == selectedCategoryType {
                     categoryTracker[transactionType] = newValue
                 }
             }
             .onChange(of: transactionType) { oldType, newType in
-                guard newType != .none else { return }
                 guard !isLoadingExistingTransaction else { return }
-                if let current = selectedCategory, current.type == oldType {
+                if let current = selectedCategory, current.type == CategoryType(transactionType: oldType) {
                     categoryTracker[oldType] = current
                 }
                 applyCategoryForTransactionType(newType)
@@ -337,16 +337,18 @@ struct UpdateTransactionSheet: View {
 
     /// Pre-fill tracker with first category per type so the first type switch has sensible defaults.
     private func seedCategoryTrackerDefaultsForKnownTypes() {
-        for type in [TransactionType.expense, .income] {
+        for type in TransactionType.allCases {
+            let categoryType = CategoryType(transactionType: type)
             if categoryTracker[type] == nil,
-               let first = categoriesSortedByLastUsed.first(where: { $0.type == type }) {
+               let first = categoriesSortedByLastUsed.first(where: { $0.type == categoryType }) {
                 categoryTracker[type] = first
             }
         }
     }
 
     private func applyCategoryForTransactionType(_ type: TransactionType) {
-        let list = categoriesSortedByLastUsed.filter { $0.type == type }
+        let categoryType = CategoryType(transactionType: type)
+        let list = categoriesSortedByLastUsed.filter { $0.type == categoryType }
         if let remembered = categoryTracker[type], list.contains(where: { $0.id == remembered.id }) {
             selectedCategory = remembered
         } else {
@@ -359,7 +361,7 @@ struct UpdateTransactionSheet: View {
 
     private func saveTransaction() {
         guard let amountValue = Double(amount) else { return }
-        guard selectedCategory == nil || selectedCategory?.type == transactionType else { return }
+        guard selectedCategory == nil || selectedCategory?.type == selectedCategoryType else { return }
 
         if let transaction = transaction {
             // Update existing
@@ -443,7 +445,7 @@ struct CategoryPickerSheet: View {
     @Environment(\.dismiss) private var dismiss
     @Binding var selectedCategory: TransactionCategory?
     let categories: [TransactionCategory]
-    let defaultTypeForNewCategory: TransactionType
+    let defaultTypeForNewCategory: CategoryType
     
     @State private var showCreateCategorySheet = false
     @State private var searchText = ""

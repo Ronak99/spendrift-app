@@ -12,7 +12,7 @@ import SwiftData
 final class TransactionCategory {
     var id: UUID = UUID()
     var name: String = ""
-    var type: TransactionType = TransactionType.expense
+    var type: CategoryType = CategoryType.expense
     var createdOn: Date = Date()
     var icon: CategoryIcon = CategoryIcon.unknown
     var isDefault: Bool = false
@@ -28,7 +28,7 @@ final class TransactionCategory {
     init(
         id: UUID = UUID(),
         name: String,
-        type: TransactionType,
+        type: CategoryType,
         createdOn: Date = Date(),
         icon: CategoryIcon = .unknown,
         isDefault: Bool = false,

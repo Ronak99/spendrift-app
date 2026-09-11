@@ -34,7 +34,7 @@ enum MessageTransactionCreator {
             return .failed
         }
 
-        let transactionType = TransactionType(rawValue: data.transactionType) ?? .none
+        let transactionType = TransactionType.resolved(from: data.transactionType)
         let date = capturedAt
 
         if isNearDuplicate(
@@ -47,11 +47,10 @@ enum MessageTransactionCreator {
             return .skippedDuplicate
         }
 
-        let requiredType: TransactionType = transactionType == .income ? .income : .expense
         let category = CategoryResolver.resolve(
             categoryName: data.category,
             notes: data.notes,
-            type: requiredType,
+            type: transactionType,
             categories: categories
         )
 
@@ -62,7 +61,7 @@ enum MessageTransactionCreator {
             notes: data.notes,
             amount: data.amount,
             date: date,
-            transactionType: transactionType == .none ? .expense : transactionType,
+            transactionType: transactionType,
             category: category,
             account: account,
             source: TransactionSource.sms.rawValue
@@ -81,7 +80,7 @@ enum MessageTransactionCreator {
         let calendar = Calendar.current
         return existing.contains { txn in
             guard txn.account?.id == account.id else { return false }
-            guard txn.transactionType == type || (type == .none && txn.transactionType == .expense) else {
+            guard txn.transactionType == type else {
                 return false
             }
             guard abs(txn.amount - amount) < 0.000_1 else { return false }

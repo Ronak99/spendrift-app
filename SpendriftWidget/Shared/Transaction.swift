@@ -14,7 +14,7 @@ final class Transaction {
     var notes: String = ""
     var amount: Double = 0
     var date: Date = Date()
-    var transactionType: TransactionType = TransactionType.none
+    var transactionType: TransactionType = TransactionType.expense
     var source: String = "manual"
     
     @Relationship var category: TransactionCategory?

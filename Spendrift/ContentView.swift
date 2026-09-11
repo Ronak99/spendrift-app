@@ -142,6 +142,7 @@ struct ContentView: View {
         }
         .onAppear {
             migrateThemeIfNeeded()
+            TransactionTypeMigration.normalizeNoneTypesIfNeeded(modelContext: modelContext)
             QuickActionsManager.setupQuickActions()
             seedDefaultCategoriesIfNeeded()
             ScreenshotDemoData.seedIfNeeded(modelContext: modelContext)

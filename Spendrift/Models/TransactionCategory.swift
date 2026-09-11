@@ -12,7 +12,7 @@ import SwiftData
 final class TransactionCategory {
     var id: UUID = UUID()
     var name: String = ""
-    var type: TransactionType = TransactionType.expense
+    var type: CategoryType = CategoryType.expense
     var createdOn: Date = Date()
     var icon: CategoryIcon = CategoryIcon.unknown
     /// True for categories seeded from the bundled catalog (defaults or migration).
@@ -30,7 +30,7 @@ final class TransactionCategory {
     init(
         id: UUID = UUID(),
         name: String,
-        type: TransactionType,
+        type: CategoryType,
         createdOn: Date = Date(),
         icon: CategoryIcon = .unknown,
         isDefault: Bool = false,
@@ -89,7 +89,7 @@ extension TransactionCategory {
         Self.signature(name: name, type: type)
     }
 
-    static func signature(name: String, type: TransactionType) -> String {
+    static func signature(name: String, type: CategoryType) -> String {
         "\(type.rawValue):\(name.lowercased())"
     }
 

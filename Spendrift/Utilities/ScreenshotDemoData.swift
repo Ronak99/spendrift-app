@@ -30,7 +30,8 @@ enum ScreenshotDemoData {
         let year = Calendar.current.component(.year, from: Date())
 
         for spec in transactionSpecs {
-            guard let category = categoryByName[spec.categoryName], category.type == spec.type else {
+            guard let category = categoryByName[spec.categoryName],
+                  category.type == CategoryType(transactionType: spec.type) else {
                 continue
             }
             let account = accounts[min(max(spec.accountIndex, 0), accounts.count - 1)]

@@ -16,7 +16,7 @@ struct CategoriesView: View {
     ])
     private var allCategories: [TransactionCategory]
 
-    @State private var selectedType: TransactionType = .expense
+    @State private var selectedType: CategoryType = .expense
     @State private var showCreateSheet = false
     @State private var categoryToDelete: TransactionCategory?
     @State private var categoryToEdit: TransactionCategory?
@@ -32,8 +32,8 @@ struct CategoriesView: View {
             ScrollView {
                 VStack(spacing: 24) {
                     Picker("Category type", selection: $selectedType) {
-                        Text("Expense").tag(TransactionType.expense)
-                        Text("Income").tag(TransactionType.income)
+                        Text("Expense").tag(CategoryType.expense)
+                        Text("Income").tag(CategoryType.income)
                     }
                     .pickerStyle(.segmented)
 
