@@ -16,9 +16,7 @@ struct CategoryGridItem: View {
     private let circleSize: CGFloat = 52
 
     private var tint: Color {
-        coloredCategoriesEnabled
-            ? ColoredCategories.color(forName: category.name)
-            : .accentColor
+        ColoredCategories.tint(for: category, coloredCategoriesEnabled: coloredCategoriesEnabled)
     }
 
     var body: some View {

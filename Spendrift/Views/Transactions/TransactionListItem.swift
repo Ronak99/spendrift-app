@@ -23,10 +23,11 @@ struct TransactionListItem: View {
     }
 
     private var categoryTint: Color {
-        if coloredCategoriesEnabled, let color = ColoredCategories.color(for: transaction.category) {
-            return color
-        }
-        return isUnknownCategory ? .gray : .accentColor
+        ColoredCategories.tint(
+            for: transaction.category,
+            coloredCategoriesEnabled: coloredCategoriesEnabled,
+            unknownFallback: isUnknownCategory ? .gray : .accentColor
+        )
     }
 
     private var rowContent: some View {

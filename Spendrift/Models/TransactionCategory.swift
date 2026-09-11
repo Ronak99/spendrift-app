@@ -21,6 +21,8 @@ final class TransactionCategory {
     var sortOrder: Int = 0
     /// Updated whenever a transaction is saved with this category (manual or shortcut).
     var lastUsedAt: Date?
+    /// User-picked display colour as `#RRGGBB`. Nil means fall back to the name-based map.
+    var colorHex: String? = nil
 
     @Relationship(deleteRule: .cascade, inverse: \Transaction.category)
     var transactions: [Transaction]?
@@ -32,7 +34,8 @@ final class TransactionCategory {
         createdOn: Date = Date(),
         icon: CategoryIcon = .unknown,
         isDefault: Bool = false,
-        sortOrder: Int = 0
+        sortOrder: Int = 0,
+        colorHex: String? = nil
     ) {
         self.id = id
         self.name = name
@@ -41,6 +44,7 @@ final class TransactionCategory {
         self.icon = icon
         self.isDefault = isDefault
         self.sortOrder = sortOrder
+        self.colorHex = colorHex
         self.transactions = []
     }
 }
@@ -87,6 +91,20 @@ extension TransactionCategory {
 
     static func signature(name: String, type: TransactionType) -> String {
         "\(type.rawValue):\(name.lowercased())"
+    }
+
+    /// True when another category already uses this name, ignoring case and surrounding space.
+    static func nameExists(
+        _ name: String,
+        in categories: [TransactionCategory],
+        excluding id: UUID? = nil
+    ) -> Bool {
+        let key = name.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        guard !key.isEmpty else { return false }
+        return categories.contains { category in
+            if let id, category.id == id { return false }
+            return category.name.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() == key
+        }
     }
 
     /// Pre-RON-82 default catalog for `isDefault` backfill on existing installs.

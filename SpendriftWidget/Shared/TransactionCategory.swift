@@ -19,6 +19,8 @@ final class TransactionCategory {
     var sortOrder: Int = 0
     /// Updated whenever a transaction is saved with this category (manual or shortcut).
     var lastUsedAt: Date?
+    /// User-picked display colour as `#RRGGBB`. Nil means fall back to the name-based map.
+    var colorHex: String? = nil
 
     @Relationship(deleteRule: .cascade, inverse: \Transaction.category)
     var transactions: [Transaction]?
@@ -30,7 +32,8 @@ final class TransactionCategory {
         createdOn: Date = Date(),
         icon: CategoryIcon = .unknown,
         isDefault: Bool = false,
-        sortOrder: Int = 0
+        sortOrder: Int = 0,
+        colorHex: String? = nil
     ) {
         self.id = id
         self.name = name
@@ -39,6 +42,7 @@ final class TransactionCategory {
         self.icon = icon
         self.isDefault = isDefault
         self.sortOrder = sortOrder
+        self.colorHex = colorHex
         self.transactions = []
     }
 }

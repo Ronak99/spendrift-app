@@ -19,6 +19,7 @@ struct CategoriesView: View {
     @State private var selectedType: TransactionType = .expense
     @State private var showCreateSheet = false
     @State private var categoryToDelete: TransactionCategory?
+    @State private var categoryToEdit: TransactionCategory?
 
     private let columns = Array(repeating: GridItem(.flexible(), spacing: 12), count: 4)
 
@@ -45,6 +46,9 @@ struct CategoriesView: View {
                             }
                             .buttonStyle(.plain)
                             .contextMenu {
+                                Button("Edit", systemImage: "pencil") {
+                                    categoryToEdit = category
+                                }
                                 // Bundled defaults are permanent; only user-created categories can go.
                                 if !category.isDefault {
                                     Button("Delete", systemImage: "trash", role: .destructive) {
@@ -73,6 +77,16 @@ struct CategoriesView: View {
             }
             .sheet(isPresented: $showCreateSheet) {
                 UpdateCategorySheet(category: nil, defaultTypeWhenCreating: selectedType)
+            }
+            .sheet(
+                isPresented: Binding(
+                    get: { categoryToEdit != nil },
+                    set: { if !$0 { categoryToEdit = nil } }
+                )
+            ) {
+                if let categoryToEdit {
+                    UpdateCategorySheet(category: categoryToEdit)
+                }
             }
             .confirmationDialog(
                 "Delete \"\(categoryToDelete?.name ?? "")\"?",
