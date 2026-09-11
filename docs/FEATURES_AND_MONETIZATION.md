@@ -189,7 +189,7 @@ These are **strategies**, not recommendations to implement all at once.
 The brainstorm above is historical. What actually shipped is the narrowest version of it:
 
 - **Single "Spendrift Pro" subscription** — one subscription group, 7-day free trial on
-  every plan. Product IDs `com.ronakpunase.Spendrift.pro.yearly` and `...pro.monthly`.
+  every plan. Product IDs `spendrift_pro_yearly` and `spendrift_pro_monthly`.
   Prices: **₹999/yr or ₹149/mo** (India), **$29.99/yr or $4.99/mo** (US), **€35.99/yr or
   €5.99/mo** (Europe). Derivation in `docs/PRO_PRICING.md`.
 - **Gated:** Tier A only — voice capture, SMS auto-import, PDF statement import, receipt

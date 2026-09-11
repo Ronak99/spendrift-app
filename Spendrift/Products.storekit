@@ -33,7 +33,7 @@
               "locale" : "en_US"
             }
           ],
-          "productID" : "com.ronakpunase.Spendrift.pro.yearly",
+          "productID" : "spendrift_pro_yearly",
           "recurringSubscriptionPeriod" : "P1Y",
           "referenceName" : "Spendrift Pro Yearly",
           "subscriptionGroupID" : "21561001",
@@ -58,7 +58,7 @@
               "locale" : "en_US"
             }
           ],
-          "productID" : "com.ronakpunase.Spendrift.pro.monthly",
+          "productID" : "spendrift_pro_monthly",
           "recurringSubscriptionPeriod" : "P1M",
           "referenceName" : "Spendrift Pro Monthly",
           "subscriptionGroupID" : "21561001",

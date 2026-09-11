@@ -66,8 +66,8 @@ enum ProEntitlementCache {
 @Observable
 final class ProEntitlement {
     enum Plan: String, CaseIterable, Identifiable {
-        case yearly = "com.ronakpunase.Spendrift.pro.yearly"
-        case monthly = "com.ronakpunase.Spendrift.pro.monthly"
+        case yearly = "spendrift_pro_yearly"
+        case monthly = "spendrift_pro_monthly"
 
         var id: String { rawValue }
     }

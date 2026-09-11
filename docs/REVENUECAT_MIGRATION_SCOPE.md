@@ -80,7 +80,7 @@ Everything below lives under `Spendrift/Spendrift/` unless stated otherwise.
 
 | Item | Today | After |
 |---|---|---|
-| `Spendrift/Products.storekit` | Local StoreKit configuration: subscription group `21561001` "Spendrift Pro", products `com.ronakpunase.Spendrift.pro.yearly` (₹999, P1Y) and `com.ronakpunase.Spendrift.pro.monthly` (₹149, P1M), each with a free P1W introductory offer, storefront IND. | Kept for local Xcode runs. Its StoreKit testing certificate is uploaded to RevenueCat so sandbox receipts from the simulator validate. |
+| `Spendrift/Products.storekit` | Local StoreKit configuration: subscription group `21561001` "Spendrift Pro", products `spendrift_pro_yearly` (₹999, P1Y) and `spendrift_pro_monthly` (₹149, P1M), each with a free P1W introductory offer, storefront IND. | Kept for local Xcode runs. Its StoreKit testing certificate is uploaded to RevenueCat so sandbox receipts from the simulator validate. |
 | `Spendrift.xcodeproj/xcshareddata/xcschemes/MyMoney.xcscheme` | References `Products.storekit` in the launch action. | Unchanged. |
 | `project.pbxproj` SPM packages | posthog-ios 3.60.0, sentry-cocoa 8.58.3, DebugSwift 1.19.0. | Adds `https://github.com/RevenueCat/purchases-ios-spm.git`, product `RevenueCat`, linked to the **Spendrift** app target only. Not the widget, not the share extension, not the test targets. |
 | `Configuration/DevSecrets.xcconfig`, `Configuration/ProdSecrets.xcconfig` (gitignored) | Backend URL, backend client token, PostHog key, Sentry DSN. | Adds `SPENDRIFT_REVENUECAT_API_KEY`. The RevenueCat public Apple API key is designed to ship in the binary, but it still follows the same xcconfig path as the PostHog key so Debug and Release can point at different RevenueCat projects if wanted. |
@@ -107,7 +107,7 @@ Everything below lives under `Spendrift/Spendrift/` unless stated otherwise.
 | RevenueCat concept | Value | Maps to |
 |---|---|---|
 | Project / iOS app | Spendrift, bundle `com.ronakpunase.Spendrift` | one project, one Apple app |
-| Products | `com.ronakpunase.Spendrift.pro.yearly`, `com.ronakpunase.Spendrift.pro.monthly` | the existing App Store Connect products; IDs never change |
+| Products | `spendrift_pro_yearly`, `spendrift_pro_monthly` | the existing App Store Connect products; must match ASC exactly |
 | Entitlement | `pro` | `ProEntitlement.isPro` |
 | Offering | `default` (marked current) | the paywall's plan list |
 | Packages | `$rc_annual` -> yearly product, `$rc_monthly` -> monthly product | `ProEntitlement.Plan.yearly` / `.monthly` |

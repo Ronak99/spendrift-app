@@ -103,7 +103,7 @@ shape; Pro would read a second, much larger ceiling.
   **override** the EUR storefronts to €5.99/€35.99 and India to ₹149/₹999 rather than letting
   Apple auto-convert from the US price. Pick the nearest available tier if €35.99 is not
   offered; Apple has 900 price points, but the increments widen above €10.
-- Product IDs: `com.ronakpunase.Spendrift.pro.yearly`, `com.ronakpunase.Spendrift.pro.monthly`,
+- Product IDs: `spendrift_pro_yearly`, `spendrift_pro_monthly`,
   both in the single subscription group "Spendrift Pro".
 
 ## Sources
@@ -127,8 +127,8 @@ Do this first because SDK v5 runs on StoreKit 2 by default, and without that key
 TODOs
 
 1. Confirm the two plans are in App Store Connect, not just RevenueCat — your message is ambiguous on this. They must match Products.storekit verbatim or the paywall breaks:
-   - com.ronakpunase.Spendrift.pro.yearly — ₹999, 1 year
-   - com.ronakpunase.Spendrift.pro.monthly — ₹149, 1 month
+   - spendrift_pro_yearly — ₹999, 1 year
+   - spendrift_pro_monthly — ₹149, 1 month
    - both in one subscription group ("Spendrift Pro"), each with a 7-day free introductory offer
    - each product at least Ready to Submit — a product stuck in Missing Metadata (no localization, price, or review screenshot) won't import cleanly into RevenueCat.
 2. Create the RevenueCat project + iOS app for bundle com.ronakpunase.Spendrift, and copy the public Apple API key (appl_…). "Account set up" isn't the same as project + app configured, so check this exists.
