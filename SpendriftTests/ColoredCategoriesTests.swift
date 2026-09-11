@@ -43,4 +43,48 @@ struct ColoredCategoriesTests {
         #expect(first == second)
         #expect(first != .gray)
     }
+
+    @Test
+    func storedHexWinsOverNameMap() {
+        let category = TransactionCategory(
+            name: "Food",
+            type: .expense,
+            icon: .food,
+            colorHex: "#6C8CFF"
+        )
+        #expect(CategoryPalette.normalizedHex(category.colorHex) == "#6C8CFF")
+        #expect(ColoredCategories.swatch(forName: category.name) == .orange)
+    }
+}
+
+struct CategoryEditorLogicTests {
+    @Test
+    func nameExistsIsCaseInsensitiveAndIgnoresSelf() {
+        let food = TransactionCategory(name: "Food", type: .expense, icon: .food)
+        let groceries = TransactionCategory(name: "Groceries", type: .expense, icon: .groceries)
+
+        #expect(TransactionCategory.nameExists("food", in: [food, groceries]))
+        #expect(TransactionCategory.nameExists("  FOOD  ", in: [food, groceries]))
+        #expect(!TransactionCategory.nameExists("Coffee", in: [food, groceries]))
+        #expect(!TransactionCategory.nameExists("Food", in: [food, groceries], excluding: food.id))
+        #expect(!TransactionCategory.nameExists("   ", in: [food, groceries]))
+    }
+
+    @Test
+    func suggestionsMatchCommonNames() {
+        #expect(CategoryNameSuggestion.match(name: "Groceries")?.icon == .groceries)
+        #expect(CategoryNameSuggestion.match(name: "rent")?.icon == .rent)
+        #expect(CategoryNameSuggestion.match(name: "fuel")?.hex == "#FF9F6B")
+        #expect(CategoryNameSuggestion.match(name: "x") == nil)
+        #expect(CategoryNameSuggestion.match(name: "") == nil)
+    }
+
+    @Test
+    func paletteNormalizesHex() {
+        #expect(CategoryPalette.normalizedHex("#8bd17c") == "#8BD17C")
+        #expect(CategoryPalette.normalizedHex("8BD17C") == "#8BD17C")
+        #expect(CategoryPalette.normalizedHex("  ") == nil)
+        #expect(CategoryPalette.contains("#8BD17C"))
+        #expect(!CategoryPalette.contains("#FFFFFF"))
+    }
 }

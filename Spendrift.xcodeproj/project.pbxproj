@@ -619,7 +619,7 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Spendrift/Info.plist;
-				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.finance";
 				INFOPLIST_KEY_LSApplicationQueriesSchemes_0 = shortcuts;
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Spendrift uses microphone to record voice transactions.";
 				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "Spendrift uses speech recognition to convert voice to transactions.";
@@ -665,7 +665,7 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Spendrift/Info.plist;
-				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.finance";
 				INFOPLIST_KEY_LSApplicationQueriesSchemes_0 = shortcuts;
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Spendrift uses microphone to record voice transactions.";
 				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "Spendrift uses speech recognition to convert voice to transactions.";

@@ -86,8 +86,30 @@ enum ColoredCategories {
     }
 
     static func color(for category: TransactionCategory?) -> Color? {
-        guard let name = category?.name, !name.isEmpty else { return nil }
-        return color(forName: name)
+        guard let category else { return nil }
+        if let hex = CategoryPalette.normalizedHex(category.colorHex) {
+            return Color(hex: hex)
+        }
+        guard !category.name.isEmpty else { return nil }
+        return color(forName: category.name)
+    }
+
+    /// Tint used in lists and the category grid.
+    /// An explicit `colorHex` always wins. Otherwise the name map is used when the
+    /// Colored Categories experiment is on.
+    static func tint(
+        for category: TransactionCategory?,
+        coloredCategoriesEnabled: Bool,
+        unknownFallback: Color = .accentColor
+    ) -> Color {
+        guard let category else { return unknownFallback }
+        if let hex = CategoryPalette.normalizedHex(category.colorHex) {
+            return Color(hex: hex)
+        }
+        if coloredCategoriesEnabled {
+            return color(forName: category.name)
+        }
+        return category.icon == .unknown ? .gray : unknownFallback
     }
 
     private static func normalize(_ name: String) -> String {
