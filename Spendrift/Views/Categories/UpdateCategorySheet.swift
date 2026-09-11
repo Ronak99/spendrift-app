@@ -165,7 +165,7 @@ struct UpdateCategorySheet: View {
         .padding(.bottom, 26)
         .background(alignment: .top) {
             ZStack(alignment: .topTrailing) {
-                CategoryWashBackground(color: selectedColor, isDark: isDark)
+                ColorWashBackground(color: selectedColor, isDark: isDark)
                 Image(systemName: icon.systemImageName)
                     .font(.system(size: 160, weight: .ultraLight))
                     .foregroundStyle(heroPrimary.opacity(0.08))
@@ -175,7 +175,6 @@ struct UpdateCategorySheet: View {
             }
             .padding(.top, -120)
         }
-        .animation(.easeInOut(duration: 0.35), value: selectedHex)
     }
 
     private var iconTile: some View {
@@ -204,6 +203,7 @@ struct UpdateCategorySheet: View {
         }
         .frame(width: 70, height: 70)
         .accessibilityHidden(true)
+        .transaction { $0.animation = nil }
     }
 
     private var metaLine: some View {
@@ -485,45 +485,6 @@ struct UpdateCategorySheet: View {
 
         try? modelContext.save()
         dismiss()
-    }
-}
-
-private struct CategoryWashBackground: View {
-    let color: Color
-    let isDark: Bool
-
-    var body: some View {
-        UnevenRoundedRectangle(
-            bottomLeadingRadius: 32,
-            bottomTrailingRadius: 32,
-            style: .continuous
-        )
-        .fill(
-            LinearGradient(
-                colors: [
-                    color.opacity(isDark ? 0.30 : 0.22),
-                    color.opacity(isDark ? 0.10 : 0.08),
-                    (isDark ? Color(hex: "#0A0A0B") : AppTheme.listBackground).opacity(0.96)
-                ],
-                startPoint: .top,
-                endPoint: .bottom
-            )
-        )
-        .overlay {
-            RadialGradient(
-                colors: [color.opacity(isDark ? 0.42 : 0.28), .clear],
-                center: UnitPoint(x: 0.85, y: 0.0),
-                startRadius: 8,
-                endRadius: 260
-            )
-            .clipShape(
-                UnevenRoundedRectangle(
-                    bottomLeadingRadius: 32,
-                    bottomTrailingRadius: 32,
-                    style: .continuous
-                )
-            )
-        }
     }
 }
 

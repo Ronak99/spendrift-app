@@ -54,6 +54,12 @@ class SpendriftUITestBase: XCTestCase {
                 app.navigationBars.buttons["plus"].tap()
             }
         }
+        waitForTransactionEditor()
+    }
+
+    func waitForTransactionEditor() {
+        XCTAssertTrue(app.textFields["0"].waitForExistence(timeout: 3))
+        XCTAssertTrue(app.navigationBars.buttons["Save"].waitForExistence(timeout: 3))
     }
 
     /// Opens New Account from the Accounts tab (toolbar **+** when accounts exist, otherwise empty-state **Add Account**).
@@ -144,9 +150,6 @@ class SpendriftUITestBase: XCTestCase {
     ) -> Self {
         navigateToTransactions()
         openTransactionsManualEntryForm()
-
-        let sheet = app.navigationBars["New Transaction"]
-        XCTAssertTrue(sheet.waitForExistence(timeout: 3))
 
         if type == "Income" {
             app.buttons["Income"].tap()
@@ -407,7 +410,7 @@ final class TransactionIntegrationTests: SpendriftUITestBase {
     func testTransactionsEmptyState_addButtonOpensCreateSheet() {
         navigateToTransactions()
         app.buttons["Add Transaction"].tap()
-        XCTAssertTrue(app.navigationBars["New Transaction"].waitForExistence(timeout: 3))
+        waitForTransactionEditor()
     }
 
     // MARK: Create
@@ -443,7 +446,7 @@ final class TransactionIntegrationTests: SpendriftUITestBase {
     func testCreateTransaction_saveDisabled_withoutAccount() {
         navigateToTransactions()
         openTransactionsManualEntryForm()
-        XCTAssertTrue(app.navigationBars["New Transaction"].waitForExistence(timeout: 3))
+        waitForTransactionEditor()
 
         let saveButton = app.navigationBars.buttons["Save"]
         XCTAssertFalse(saveButton.isEnabled)
@@ -452,9 +455,11 @@ final class TransactionIntegrationTests: SpendriftUITestBase {
     func testCreateTransaction_cancelDismissesSheet() {
         navigateToTransactions()
         openTransactionsManualEntryForm()
-        XCTAssertTrue(app.navigationBars["New Transaction"].waitForExistence(timeout: 3))
+        waitForTransactionEditor()
 
-        app.buttons["xmark"].tap()
+        let start = app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.12))
+        let end = app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.92))
+        start.press(forDuration: 0.05, thenDragTo: end)
         XCTAssertTrue(app.navigationBars["Transactions"].waitForExistence(timeout: 3))
     }
 
@@ -474,7 +479,7 @@ final class TransactionIntegrationTests: SpendriftUITestBase {
         XCTAssertTrue(foodCell.waitForExistence(timeout: 3))
         foodCell.tap()
 
-        XCTAssertTrue(app.navigationBars["Edit Transaction"].waitForExistence(timeout: 3))
+        waitForTransactionEditor()
 
         let amountField = app.textFields.element(boundBy: 0)
         amountField.tap()
@@ -520,7 +525,7 @@ final class TransactionIntegrationTests: SpendriftUITestBase {
 
         navigateToTransactions()
         openTransactionsManualEntryForm()
-        XCTAssertTrue(app.navigationBars["New Transaction"].waitForExistence(timeout: 3))
+        waitForTransactionEditor()
 
         app.buttons["Account"].tap()
         XCTAssertTrue(app.staticTexts["SBI Savings"].waitForExistence(timeout: 3))
@@ -532,7 +537,7 @@ final class TransactionIntegrationTests: SpendriftUITestBase {
     func testCategoryPicker_showsFilteredCategories_forExpense() {
         navigateToTransactions()
         openTransactionsManualEntryForm()
-        XCTAssertTrue(app.navigationBars["New Transaction"].waitForExistence(timeout: 3))
+        waitForTransactionEditor()
 
         // Default is Expense
         app.buttons["Category"].tap()
@@ -545,7 +550,7 @@ final class TransactionIntegrationTests: SpendriftUITestBase {
     func testCategoryPicker_showsFilteredCategories_forIncome() {
         navigateToTransactions()
         openTransactionsManualEntryForm()
-        XCTAssertTrue(app.navigationBars["New Transaction"].waitForExistence(timeout: 3))
+        waitForTransactionEditor()
 
         app.buttons["Income"].tap()
 
@@ -559,7 +564,7 @@ final class TransactionIntegrationTests: SpendriftUITestBase {
     func testCategoryPicker_searchFiltersCategories() {
         navigateToTransactions()
         openTransactionsManualEntryForm()
-        XCTAssertTrue(app.navigationBars["New Transaction"].waitForExistence(timeout: 3))
+        waitForTransactionEditor()
 
         app.buttons["Category"].tap()
         XCTAssertTrue(app.navigationBars["Select Category"].waitForExistence(timeout: 3))
@@ -576,7 +581,7 @@ final class TransactionIntegrationTests: SpendriftUITestBase {
     func testCategoryPicker_searchNoResults() {
         navigateToTransactions()
         openTransactionsManualEntryForm()
-        XCTAssertTrue(app.navigationBars["New Transaction"].waitForExistence(timeout: 3))
+        waitForTransactionEditor()
 
         app.buttons["Category"].tap()
         XCTAssertTrue(app.navigationBars["Select Category"].waitForExistence(timeout: 3))
@@ -591,7 +596,7 @@ final class TransactionIntegrationTests: SpendriftUITestBase {
     func testCategoryPicker_createNewCategoryFromPicker() {
         navigateToTransactions()
         openTransactionsManualEntryForm()
-        XCTAssertTrue(app.navigationBars["New Transaction"].waitForExistence(timeout: 3))
+        waitForTransactionEditor()
 
         app.buttons["Category"].tap()
         XCTAssertTrue(app.navigationBars["Select Category"].waitForExistence(timeout: 3))
