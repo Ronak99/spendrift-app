@@ -128,11 +128,10 @@ This document reflects the **current codebase** (not git history): what the app 
 
 ### 14. Settings & feedback
 
-81. **Theme** — Eight accent colors stored in `@AppStorage("themeColor")`; tab tint and various UI use `Color.themeColors`.
-82. **Siri & Shortcuts cards** — Same iCloud shortcut links as onboarding; opens in Safari/Shortcuts.
-83. **Feature request** — `FeatureRequestView`: text + optional **photo** attachment; **Mail compose** when available; fallbacks if Mail unavailable.
-84. **Share** — `ShareLink` with `AppShareContent` preset text/message.
-85. **Profile settings button** — Toolbar entry to open settings from Transactions/Accounts/Categories.
+81. **Siri & Shortcuts cards** — Same iCloud shortcut links as onboarding; opens in Safari/Shortcuts.
+82. **Feature request** — `FeatureRequestView`: text + optional **photo** attachment; **Mail compose** when available; fallbacks if Mail unavailable.
+83. **Share** — `ShareLink` with `AppShareContent` preset text/message.
+84. **Profile settings button** — Toolbar entry to open settings from Transactions/Accounts/Categories.
 
 ### 15. Misc & developer utilities
 

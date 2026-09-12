@@ -15,8 +15,6 @@ struct MessageInboxDebugView: View {
     @Query(sort: \Account.createdOn) private var accounts: [Account]
     @Query(sort: \TransactionCategory.name) private var categories: [TransactionCategory]
     @Query(sort: \Transaction.date, order: .reverse) private var transactions: [Transaction]
-    @AppStorage(Color.selectedThemeIndexKey) private var selectedThemeIndex = Color.defaultThemeIndex
-
     @State private var captureLog: [MessageInboxDebugLog.Entry] = []
     @State private var pending: [MessageInboxDebugLog.PendingRow] = []
     @State private var fallback: [MessageInboxFallback.Item] = []
@@ -25,7 +23,7 @@ struct MessageInboxDebugView: View {
     @State private var isDraining = false
 
     private var accent: Color {
-        Color.accentColor(forThemeIndex: selectedThemeIndex)
+        AppTheme.accent
     }
 
     var body: some View {

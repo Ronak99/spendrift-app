@@ -19,14 +19,12 @@ import StoreKit
 struct ProSettingsRows: View {
     @Binding var paywallContext: PaywallContext?
 
-    @AppStorage(Color.selectedThemeIndexKey) private var selectedThemeIndex = Color.defaultThemeIndex
-
     @State private var entitlement = ProEntitlement.shared
     @State private var showManageSubscriptions = false
     @State private var isStatsExpanded = false
     @State private var restoreMessage: String?
 
-    private var accent: Color { Color.accentColor(forThemeIndex: selectedThemeIndex) }
+    private var accent: Color { AppTheme.accent }
 
     var body: some View {
         Group {

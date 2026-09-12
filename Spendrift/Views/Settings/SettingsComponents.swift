@@ -149,7 +149,6 @@ struct SettingsScreen<Content: View>: View {
     var watermarkIcon: String = "gearshape"
     let content: Content
 
-    @AppStorage(Color.selectedThemeIndexKey) private var selectedThemeIndex = Color.defaultThemeIndex
     @Environment(\.colorScheme) private var colorScheme
 
     init(title: String, watermarkIcon: String = "gearshape", @ViewBuilder content: () -> Content) {
@@ -160,10 +159,6 @@ struct SettingsScreen<Content: View>: View {
 
     private var isDark: Bool { colorScheme == .dark }
 
-    private var washColor: Color {
-        Color.accentColor(forThemeIndex: selectedThemeIndex)
-    }
-
     var body: some View {
         List {
             content
@@ -173,16 +168,15 @@ struct SettingsScreen<Content: View>: View {
         .softScrollEdge()
         .background {
             SettingsAtmosphere(
-                washColor: washColor,
-                watermarkIcon: watermarkIcon,
-                animationToken: selectedThemeIndex
+                washColor: AppTheme.accent,
+                watermarkIcon: watermarkIcon
             )
         }
         .navigationTitle(title)
         .navigationBarTitleDisplayMode(.inline)
         .toolbarBackground(.hidden, for: .navigationBar)
         .toolbarColorScheme(isDark ? .dark : .light, for: .navigationBar)
-        .tint(washColor)
+        .tint(AppTheme.accent)
     }
 }
 

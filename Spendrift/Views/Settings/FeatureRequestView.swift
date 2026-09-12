@@ -13,7 +13,6 @@ import UIKit
 struct FeatureRequestView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.colorScheme) private var colorScheme
-    @AppStorage(Color.selectedThemeIndexKey) private var selectedThemeIndex = Color.defaultThemeIndex
     @AppStorage(DeveloperMode.defaultsKey, store: DeveloperMode.store) private var developerModeUnlocked = false
 
     @FocusState private var ideaFieldFocused: Bool
@@ -26,7 +25,7 @@ struct FeatureRequestView: View {
     @State private var showSentConfirmation = false
 
     private var accent: Color {
-        Color.accentColor(forThemeIndex: selectedThemeIndex)
+        AppTheme.accent
     }
 
     private var isDark: Bool { colorScheme == .dark }

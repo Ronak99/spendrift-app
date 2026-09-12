@@ -7,15 +7,13 @@ import SwiftUI
 
 struct HelpSettingsRows: View {
     @Environment(\.openURL) private var openURL
-    @AppStorage(Color.selectedThemeIndexKey) private var selectedThemeIndex = Color.defaultThemeIndex
-
     @State private var showFeatureRequest = false
     @State private var showInviteSheet = false
 
     private let helpFAQURL = URL(string: "https://spendrift.app/faq")
     private let privacyPolicyURL = URL(string: "https://spendrift.app/privacy_policy")
 
-    private var accent: Color { Color.accentColor(forThemeIndex: selectedThemeIndex) }
+    private var accent: Color { AppTheme.accent }
 
     private enum Row: Int, CaseIterable, Identifiable {
         case faq

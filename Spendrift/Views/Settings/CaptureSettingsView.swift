@@ -15,8 +15,6 @@ struct CaptureSettingsView: View {
     @Query(sort: \Account.createdOn) private var accounts: [Account]
     @Query(sort: \TransactionCategory.name) private var categories: [TransactionCategory]
 
-    @AppStorage(Color.selectedThemeIndexKey) private var selectedThemeIndex = Color.defaultThemeIndex
-
     @State private var showStatementImport = false
     @State private var paywallContext: PaywallContext?
     @State private var showReceiptScanOptions = false
@@ -24,7 +22,7 @@ struct CaptureSettingsView: View {
     @State private var showReceiptLibrary = false
     @State private var receiptShare = ReceiptCaptureController()
 
-    private var accent: Color { Color.accentColor(forThemeIndex: selectedThemeIndex) }
+    private var accent: Color { AppTheme.accent }
 
     private var cameraAvailable: Bool {
         UIImagePickerController.isSourceTypeAvailable(.camera)

@@ -19,13 +19,8 @@ struct SettingsView: View {
     @Query(sort: \Account.createdOn) private var accounts: [Account]
     @Query(sort: \TransactionCategory.name) private var categories: [TransactionCategory]
 
-    @AppStorage(Color.selectedThemeIndexKey) private var selectedThemeIndex =
-        Color.defaultThemeIndex
-    @AppStorage(Color.legacyThemeColorKey) private var legacyThemeColorName =
-        "Blue"
     @AppStorage(DeveloperMode.defaultsKey, store: DeveloperMode.store) private
         var developerModeUnlocked = false
-    @AppStorage(ColoredCategories.defaultsKey) private var coloredCategoriesEnabled = false
 
     @State private var showMessageInboxDebug = false
     @State private var showDebugSwift = false
@@ -41,7 +36,7 @@ struct SettingsView: View {
     private static let developerRevealTapCount = 5
 
     private var accent: Color {
-        Color.accentColor(forThemeIndex: selectedThemeIndex)
+        AppTheme.accent
     }
 
     private var appVersionLabel: String {
@@ -69,13 +64,7 @@ struct SettingsView: View {
                 versionSection
             }
         }
-        .animation(.spring(response: 0.42, dampingFraction: 0.86), value: selectedThemeIndex)
         .animation(.easeInOut(duration: 0.2), value: developerModeUnlocked)
-        .animation(.easeInOut(duration: 0.2), value: coloredCategoriesEnabled)
-        .task {
-            migrateThemeIfNeeded()
-            selectedThemeIndex = Color.normalizedThemeIndex(selectedThemeIndex)
-        }
         .sheet(isPresented: $showMessageInboxDebug) {
             MessageInboxDebugView()
         }
@@ -222,7 +211,7 @@ struct SettingsView: View {
     }
 
     private var developerRowCount: Int {
-        var count = 2
+        var count = 1
         #if DEBUG
             count += 1
         #endif
@@ -233,14 +222,6 @@ struct SettingsView: View {
     @ViewBuilder
     private var developerSection: some View {
         Section("Developer") {
-            SettingsListItem(
-                icon: "paintpalette.fill",
-                title: "Colored Categories",
-                accent: accent,
-                accessory: .toggle($coloredCategoriesEnabled)
-            )
-            .listItemPositioned(index: 0, count: developerRowCount)
-
             #if DEBUG
                 Button {
                     DebugSwift.debugViewControllerWillPresent()
@@ -252,7 +233,7 @@ struct SettingsView: View {
                         accent: accent,
                         accessory: .chevron
                     )
-                    .listItemPositioned(index: 1, count: developerRowCount)
+                    .listItemPositioned(index: 0, count: developerRowCount)
                 }
                 .buttonStyle(.plain)
             #endif
@@ -288,9 +269,9 @@ struct SettingsView: View {
 
     private var messageInboxDeveloperOffset: Int {
         #if DEBUG
-            2
-        #else
             1
+        #else
+            0
         #endif
     }
 
@@ -324,31 +305,12 @@ struct SettingsView: View {
         UINotificationFeedbackGenerator().notificationOccurred(.success)
     }
 
-    // MARK: - Theme
-
     private func processReceiptImage(_ image: UIImage) {
         receiptShare.process(
             image: image,
             accounts: accounts,
             categories: categories,
             modelContext: modelContext
-        )
-    }
-
-    private func migrateThemeIfNeeded() {
-        let defaults = UserDefaults.standard
-        guard defaults.object(forKey: Color.selectedThemeIndexKey) == nil else {
-            return
-        }
-        if let legacyIndex = Color.themeIndex(
-            forLegacyThemeName: legacyThemeColorName
-        ) {
-            selectedThemeIndex = legacyIndex
-        } else {
-            selectedThemeIndex = Color.defaultThemeIndex
-        }
-        legacyThemeColorName = Color.legacyThemeName(
-            forThemeIndex: selectedThemeIndex
         )
     }
 }

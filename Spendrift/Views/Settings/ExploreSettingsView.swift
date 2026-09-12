@@ -13,7 +13,6 @@
 import SwiftUI
 
 struct ExploreSettingsView: View {
-    @AppStorage(Color.selectedThemeIndexKey) private var selectedThemeIndex = Color.defaultThemeIndex
     @Environment(\.colorScheme) private var colorScheme
     @State private var currentPage = 0
     @State private var dragTranslation: CGFloat = 0
@@ -22,7 +21,7 @@ struct ExploreSettingsView: View {
 
     private let pages = ExploreShortcutPage.all
 
-    private var accent: Color { Color.accentColor(forThemeIndex: selectedThemeIndex) }
+    private var accent: Color { AppTheme.accent }
     private var isDark: Bool { colorScheme == .dark }
     private var heroPrimary: Color { SettingsChrome.heroPrimary(isDark: isDark) }
 

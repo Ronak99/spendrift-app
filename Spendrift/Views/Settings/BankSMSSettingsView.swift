@@ -10,8 +10,6 @@ import SwiftUI
 
 struct BankSMSSettingsView: View {
     @Environment(\.openURL) private var openURL
-    @AppStorage(Color.selectedThemeIndexKey) private var selectedThemeIndex = Color.defaultThemeIndex
-
     @State private var lastCapturedAt: Date?
 
     private static let shortcutsAppURL = URL(string: "shortcuts://")
@@ -25,7 +23,7 @@ struct BankSMSSettingsView: View {
         "Repeat for “debited”.",
     ]
 
-    private var accent: Color { Color.accentColor(forThemeIndex: selectedThemeIndex) }
+    private var accent: Color { AppTheme.accent }
 
     /// A capture on record is the only evidence the automation is wired up —
     /// there is no toggle to read, by design.

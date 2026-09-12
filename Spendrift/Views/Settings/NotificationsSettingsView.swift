@@ -6,7 +6,6 @@
 import SwiftUI
 
 struct NotificationsSettingsContent: View {
-    @AppStorage(Color.selectedThemeIndexKey) private var selectedThemeIndex = Color.defaultThemeIndex
     @AppStorage(NotificationManager.Keys.dailyReminderEnabled) private var dailyReminderEnabled = true
     @AppStorage(NotificationManager.Keys.dailyReminderHour) private var dailyReminderHour = NotificationManager.defaultHour
     @AppStorage(NotificationManager.Keys.dailyReminderMinute) private var dailyReminderMinute = NotificationManager.defaultMinute
@@ -15,7 +14,7 @@ struct NotificationsSettingsContent: View {
     @Environment(\.colorScheme) private var colorScheme
     @State private var showReminderTimePicker = false
 
-    private var accent: Color { Color.accentColor(forThemeIndex: selectedThemeIndex) }
+    private var accent: Color { AppTheme.accent }
     private var isDark: Bool { colorScheme == .dark }
 
     private var reminderDate: Date {

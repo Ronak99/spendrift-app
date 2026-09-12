@@ -2,15 +2,13 @@
 //  ColoredCategories.swift
 //  Spendrift
 //
-//  Developer experiment: per-category tints computed from the category name.
-//  Nothing is stored on the model; the map lives entirely on the client.
+//  Per-category tints computed from the category name when no explicit color
+//  is stored on the model. The map lives entirely on the client.
 //
 
 import SwiftUI
 
 enum ColoredCategories {
-    static let defaultsKey = "spendriftColoredCategoriesEnabled"
-
     /// Semantic swatch used by the name map. Tests assert against these tokens
     /// instead of `Color`, which is not reliably equatable.
     enum Swatch: String, Equatable, CaseIterable {
@@ -92,24 +90,6 @@ enum ColoredCategories {
         }
         guard !category.name.isEmpty else { return nil }
         return color(forName: category.name)
-    }
-
-    /// Tint used in lists and the category grid.
-    /// An explicit `colorHex` always wins. Otherwise the name map is used when the
-    /// Colored Categories experiment is on.
-    static func tint(
-        for category: TransactionCategory?,
-        coloredCategoriesEnabled: Bool,
-        unknownFallback: Color = .accentColor
-    ) -> Color {
-        guard let category else { return unknownFallback }
-        if let hex = CategoryPalette.normalizedHex(category.colorHex) {
-            return Color(hex: hex)
-        }
-        if coloredCategoriesEnabled {
-            return color(forName: category.name)
-        }
-        return category.icon == .unknown ? .gray : unknownFallback
     }
 
     private static func normalize(_ name: String) -> String {

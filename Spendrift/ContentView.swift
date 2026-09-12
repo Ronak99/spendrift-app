@@ -16,8 +16,6 @@ struct ContentView: View {
     @Environment(\.colorScheme) private var colorScheme
     @Query(sort: \Account.createdOn) private var accounts: [Account]
     @Query(sort: \TransactionCategory.name) private var categories: [TransactionCategory]
-    @AppStorage(Color.selectedThemeIndexKey) private var selectedThemeIndex = Color.defaultThemeIndex
-    @AppStorage(Color.legacyThemeColorKey) private var legacyThemeColorName = "Blue"
     @AppStorage(NotificationManager.Keys.dailyReminderEnabled) private var dailyReminderEnabled = true
     @AppStorage(NotificationManager.Keys.dailyReminderHour) private var dailyReminderHour = NotificationManager.defaultHour
     @AppStorage(NotificationManager.Keys.dailyReminderMinute) private var dailyReminderMinute = NotificationManager.defaultMinute
@@ -36,10 +34,6 @@ struct ContentView: View {
     @State private var voiceInline = VoiceInlineCaptureController()
     /// Sentinel selection value for the voice CTA. It is never committed to `selectedTab`.
     private static let voiceTabTag = 99
-
-    private var accentColor: Color {
-        Color.accentColor(forThemeIndex: selectedThemeIndex)
-    }
 
     /// Turns the voice tab into an action: the setter starts capture and drops the tag on the
     /// floor, so the current tab stays selected and its content is never swapped out.
@@ -136,12 +130,11 @@ struct ContentView: View {
             // user picks another tab by hand.
             .disabled(voice.blocksNewCapture)
         }
-        .tint(accentColor)
+        .tint(AppTheme.accent)
         .environment(\.openSettings) {
             selectedTab = 3
         }
         .onAppear {
-            migrateThemeIfNeeded()
             TransactionTypeMigration.normalizeNoneTypesIfNeeded(modelContext: modelContext)
             QuickActionsManager.setupQuickActions()
             seedDefaultCategoriesIfNeeded()
@@ -234,17 +227,6 @@ struct ContentView: View {
         case 3: "settings"
         default: "unknown"
         }
-    }
-
-    private func migrateThemeIfNeeded() {
-        let defaults = UserDefaults.standard
-        guard defaults.object(forKey: Color.selectedThemeIndexKey) == nil else { return }
-        if let legacyIndex = Color.themeIndex(forLegacyThemeName: legacyThemeColorName) {
-            selectedThemeIndex = legacyIndex
-        } else {
-            selectedThemeIndex = Color.defaultThemeIndex
-        }
-        legacyThemeColorName = Color.legacyThemeName(forThemeIndex: selectedThemeIndex)
     }
 
     private func enableDailyReminders() {
