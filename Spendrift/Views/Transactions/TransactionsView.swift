@@ -22,6 +22,7 @@ private enum CreateTransactionSheetMode: Identifiable {
 
 struct TransactionsView: View {
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.colorScheme) private var colorScheme
     @Query(sort: \Transaction.date, order: .reverse) private var allTransactions: [Transaction]
     @Query(sort: \Account.createdOn) private var accounts: [Account]
     @Query(sort: \TransactionCategory.name) private var categories: [TransactionCategory]
@@ -103,6 +104,24 @@ struct TransactionsView: View {
         categories.sortedByLastUsage()
     }
 
+    private var isDark: Bool { colorScheme == .dark }
+
+    private var canvas: Color {
+        isDark ? Color(hex: "#0A0A0B") : AppTheme.listBackground
+    }
+
+    private var washColor: Color {
+        CategoryEnamel.income
+    }
+
+    private var addBackground: Color {
+        isDark ? Color.white.opacity(0.92) : Color(hex: "#111111")
+    }
+
+    private var addForeground: Color {
+        isDark ? Color(hex: "#111111") : .white
+    }
+
     /// Status of the receipt shared into the app via the Share Extension.
     /// Scanning is shown by the compact processing capsule below; this bar only
     /// surfaces the brief post-create confirmation.
@@ -129,13 +148,7 @@ struct TransactionsView: View {
                         drillCategory: $drillCategory
                     )
                 } else if transactions.isEmpty {
-                    EmptyStateView(
-                        icon: "tray",
-                        title: "No Transactions",
-                        description: "Get started by adding your first transaction for \(periodViewModel.periodDescription)",
-                        actionTitle: "Add Transaction",
-                        action: openCreateTransactionSheet
-                    )
+                    emptyLedger
                 } else {
                     List {
                         ForEach(transactions.groupedByDateRecentFirst, id: \.dayStart) { section in
@@ -156,6 +169,8 @@ struct TransactionsView: View {
                             }
                         }
                     }
+                    .listStyle(.insetGrouped)
+                    .scrollContentBackground(.hidden)
                     .softScrollEdge()
                 }
             }
@@ -181,54 +196,23 @@ struct TransactionsView: View {
                     .padding(.top, 8)
 
                     if !showingAnalytics {
-                        HStack(spacing: 20) {
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text("Expenses")
-                                    .font(.caption)
-                                    .foregroundColor(.secondary)
-                                Text(formattedExpenses)
-                                    .font(.headline)
-                                    .foregroundColor(.red)
-                            }
-
-                            Spacer()
-
-                            VStack(alignment: .center, spacing: 4) {
-                                Text("Income")
-                                    .font(.caption)
-                                    .foregroundColor(.secondary)
-                                Text(formattedIncome)
-                                    .font(.headline)
-                                    .foregroundColor(.green)
-                            }
-
-                            Spacer()
-
-                            VStack(alignment: .trailing, spacing: 4) {
-                                Text("Savings")
-                                    .font(.caption)
-                                    .foregroundColor(.secondary)
-                                Text(formattedSavings)
-                                    .font(.headline)
-                                    .foregroundColor(savings >= 0 ? .green : .red)
-                            }
-                        }
-                        .padding(.horizontal)
-                        .padding(.bottom, 8)
+                        PeriodLedgerSummary(
+                            expenses: formattedExpenses,
+                            income: formattedIncome,
+                            savings: formattedSavings,
+                            savingsValue: savings
+                        )
+                        .padding(.horizontal, 20)
+                        .padding(.bottom, 10)
                     }
                 }
             }
+            .background { ledgerAtmosphere }
             .navigationTitle(showingAnalytics ? "Analytics" : "Transactions")
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button(action: openCreateTransactionSheet) {
-                        Image(systemName: "plus")
-                    }
-                    .accessibilityLabel("Add transaction")
-                    .accessibilityIdentifier("transactionsAddButton")
-                }
-            }
+            .toolbarBackground(.hidden, for: .navigationBar)
+            .toolbarColorScheme(isDark ? .dark : .light, for: .navigationBar)
+            .toolbar { toolbarContent }
             .navigationDestination(item: $drillCategory) { category in
                 CategoryTransactionsView(
                     category: category,
@@ -405,6 +389,89 @@ struct TransactionsView: View {
         }
     }
 
+    // MARK: Atmosphere
+
+    private var ledgerAtmosphere: some View {
+        ZStack(alignment: .top) {
+            canvas
+
+            ColorWashBackground(color: washColor, isDark: isDark)
+                .frame(height: 280)
+                .frame(maxHeight: .infinity, alignment: .top)
+        }
+        .ignoresSafeArea()
+        .animation(.spring(response: 0.42, dampingFraction: 0.86), value: savings >= 0)
+    }
+
+    private var emptyLedger: some View {
+        VStack {
+            CategoryEnamelTile(
+                systemImage: "tray.fill",
+                color: CategoryEnamel.uncategorized
+            )
+            .frame(width: 72, height: 72)
+            .padding(.top, 24)
+            
+            Spacer()
+                .frame(height: 16)
+
+            Text("No transactions")
+                .font(.system(size: 22, weight: .bold))
+                .tracking(-0.5)
+            
+            Spacer()
+                .frame(height: 8)
+
+            Text("Add one for \(periodViewModel.periodDescription).")
+                .font(.system(size: 15))
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+            
+            Spacer()
+                .frame(height: 24)
+
+            Button(action: openCreateTransactionSheet) {
+                Text("Add transaction")
+                    .font(.system(size: 14, weight: .semibold))
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 8)
+                    .background(addBackground, in: Capsule())
+                    .foregroundStyle(addForeground)
+            }
+            .buttonStyle(.plain)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .padding(.horizontal, 24)
+    }
+
+    // MARK: Toolbar
+
+    @ToolbarContentBuilder
+    private var toolbarContent: some ToolbarContent {
+        if #available(iOS 26.0, *) {
+            ToolbarItem(placement: .navigationBarTrailing) {
+                addButton
+            }
+            .sharedBackgroundVisibility(.hidden)
+        } else {
+            ToolbarItem(placement: .navigationBarTrailing) {
+                addButton
+            }
+        }
+    }
+
+    private var addButton: some View {
+        Button(action: openCreateTransactionSheet) {
+            Image(systemName: "plus")
+                .font(.system(size: 15, weight: .semibold))
+                .foregroundStyle(addForeground)
+                .frame(width: 32, height: 32)
+                .background(addBackground, in: Circle())
+        }
+        .accessibilityLabel("Add transaction")
+        .accessibilityIdentifier("transactionsAddButton")
+    }
+
     private func deleteTransactions(at offsets: IndexSet, in transactionsForDay: [Transaction]) {
         for index in offsets {
             modelContext.delete(transactionsForDay[index])
@@ -419,6 +486,58 @@ struct TransactionsView: View {
             categories: categories,
             modelContext: modelContext
         )
+    }
+}
+
+private struct PeriodLedgerSummary: View {
+    let expenses: String
+    let income: String
+    let savings: String
+    let savingsValue: Double
+
+    var body: some View {
+        HStack(spacing: 20) {
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Expenses")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                Text(expenses)
+                    .font(.headline)
+                    .monospacedDigit()
+                    .foregroundStyle(.red)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
+            }
+
+            Spacer()
+
+            VStack(alignment: .center, spacing: 4) {
+                Text("Income")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                Text(income)
+                    .font(.headline)
+                    .monospacedDigit()
+                    .foregroundStyle(.green)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
+            }
+
+            Spacer()
+
+            VStack(alignment: .trailing, spacing: 4) {
+                Text("Savings")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                Text(savings)
+                    .font(.headline)
+                    .monospacedDigit()
+                    .foregroundStyle(savingsValue >= 0 ? .green : .red)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
+            }
+        }
+        .accessibilityElement(children: .combine)
     }
 }
 

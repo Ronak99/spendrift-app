@@ -39,7 +39,12 @@ struct CategoryGridItem: View {
 /// Palette fill for a category chip. Explicit `colorHex` wins; otherwise the
 /// editor's curated swatch for the name, so the tray always matches the sheet.
 enum CategoryEnamel {
-    static func color(for category: TransactionCategory) -> Color {
+    static let uncategorized = Color(hex: "#8E9AA8")
+    static let income = Color(hex: CategoryPalette.defaultIncomeHex)
+    static let expense = Color(hex: "#FF6B6B")
+
+    static func color(for category: TransactionCategory?) -> Color {
+        guard let category else { return uncategorized }
         if let hex = CategoryPalette.normalizedHex(category.colorHex) {
             return Color(hex: hex)
         }
@@ -55,6 +60,7 @@ enum CategoryEnamel {
 struct CategoryEnamelTile: View {
     let systemImage: String
     let color: Color
+    var showsShadow: Bool = true
 
     var body: some View {
         Color.clear
@@ -63,7 +69,7 @@ struct CategoryEnamelTile: View {
                 GeometryReader { geo in
                     let side = min(geo.size.width, geo.size.height)
                     let radius = side * 0.33
-                    let iconSize = max(18, side * 0.38)
+                    let iconSize = max(14, side * 0.38)
 
                     ZStack {
                         RoundedRectangle(cornerRadius: radius, style: .continuous)
@@ -82,7 +88,11 @@ struct CategoryEnamelTile: View {
                                 RoundedRectangle(cornerRadius: radius, style: .continuous)
                                     .strokeBorder(.white.opacity(0.28), lineWidth: 0.8)
                             }
-                            .shadow(color: color.opacity(0.32), radius: side * 0.12, y: side * 0.08)
+                            .shadow(
+                                color: showsShadow ? color.opacity(0.32) : .clear,
+                                radius: showsShadow ? side * 0.12 : 0,
+                                y: showsShadow ? side * 0.08 : 0
+                            )
 
                         Image(systemName: systemImage)
                             .font(.system(size: iconSize, weight: .semibold))

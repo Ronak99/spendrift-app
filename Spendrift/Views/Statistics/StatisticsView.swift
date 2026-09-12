@@ -185,7 +185,6 @@ struct TransactionAnalyticsContent: View {
             .padding(.bottom, 24)
         }
         .softScrollEdge()
-        .background(AppTheme.listBackground)
     }
 
     private var summaryGrid: some View {
