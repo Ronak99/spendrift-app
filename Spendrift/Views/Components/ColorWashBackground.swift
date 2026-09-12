@@ -2,8 +2,8 @@
 //  ColorWashBackground.swift
 //  Spendrift
 //
-//  Soft colour wash used by the category and transaction editors so both
-//  sheets share the same hero atmosphere.
+//  Soft colour wash used by the category, transaction, and account editors
+//  so those sheets share the same hero atmosphere.
 //
 
 import SwiftUI

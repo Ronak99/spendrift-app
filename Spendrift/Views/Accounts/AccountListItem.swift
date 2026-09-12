@@ -2,51 +2,84 @@
 //  AccountListItem.swift
 //  Spendrift
 //
-//  Created by Ronak Punase on 25/02/26.
+//  Ledger row for an account: enamel icon chip, name, optional Primary
+//  mark, and a tabular balance. Matches TransactionListItem so the
+//  Accounts list feels like the same box.
 //
 
 import SwiftUI
 
 struct AccountListItem: View {
     let account: Account
-    
+
+    private let enamelSize: CGFloat = 42
+
+    private var enamelColor: Color {
+        AccountEnamel.color(for: account.icon)
+    }
+
+    private var balanceColor: Color {
+        account.currentBalance < 0 ? .red : .primary
+    }
+
     var body: some View {
-        HStack(spacing: 16) {
-            // Account icon
-            ZStack {
-                Circle()
-                    .fill(Color.accentColor.opacity(0.2))
-                    .frame(width: 44, height: 44)
-                
-                Image(systemName: account.icon.systemImageName)
-                    .font(.system(size: 20))
-                    .foregroundColor(.accentColor)
-            }
-            
-            // Account details
-            VStack(alignment: .leading, spacing: 6) {
-                HStack(spacing: 8) {
-                    Text(account.name)
-                        .font(.headline)
-                        .foregroundColor(.primary)
-                    if account.isPrimary {
-                        Text("Primary")
-                            .font(.caption2)
-                            .padding(.horizontal, 6)
-                            .padding(.vertical, 2)
-                            .background(Color.accentColor.opacity(0.15))
-                            .clipShape(Capsule())
-                    }
+        HStack(alignment: .center, spacing: 14) {
+            CategoryEnamelTile(
+                systemImage: account.icon.systemImageName,
+                color: enamelColor,
+                showsShadow: false
+            )
+            .frame(width: enamelSize, height: enamelSize)
+
+            VStack(alignment: .leading, spacing: 3) {
+                Text(account.name)
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundStyle(.primary)
+                    .lineLimit(1)
+
+                if account.isPrimary {
+                    Text("Primary")
+                        .font(.system(size: 11, weight: .medium))
+                        .foregroundStyle(.secondary)
                 }
-                
-                Text("Balance: \(account.currentBalance.formatCurrency)")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
             }
-            
-            Spacer()
+
+            Spacer(minLength: 8)
+
+            Text(account.currentBalance.formatCurrency)
+                .font(.system(size: 16, weight: .semibold))
+                .monospacedDigit()
+                .foregroundStyle(balanceColor)
+                .lineLimit(1)
+                .minimumScaleFactor(0.8)
         }
-        .padding(.horizontal, 8)
+        .padding(.horizontal, 6)
+        .accessibilityElement(children: .combine)
+    }
+}
+
+/// Stable enamel fill per account icon, drawn from the category palette
+/// so accounts, categories, and transactions share one colour world.
+enum AccountEnamel {
+    static let fallback = Color(hex: "#6C8CFF")
+
+    static func hex(for icon: AccountIcon) -> String {
+        switch icon {
+        case .bankAccountOne: return "#6C8CFF"
+        case .bankAccountTwo: return "#FFC94D"
+        case .bankAccountThree: return "#4FC3A1"
+        case .bankAccountFour: return "#4FB8E8"
+        case .mastercard: return "#FF6B6B"
+        case .visa: return "#9B7BFF"
+        case .cash: return "#8BD17C"
+        case .wallet: return "#FF9F6B"
+        case .savings: return "#C3A17A"
+        case .unknown: return "#8E9AA8"
+        }
+    }
+
+    static func color(for icon: AccountIcon) -> Color {
+        Color(hex: hex(for: icon))
     }
 }
 
@@ -55,8 +88,16 @@ struct AccountListItem: View {
         AccountListItem(account: Account(
             name: "SBI Savings",
             balance: 50000,
-            icon: .bankAccountOne
+            icon: .bankAccountOne,
+            isPrimary: true
         ))
-        .listItemPositioned(.only)
+        .listItemPositioned(.first)
+
+        AccountListItem(account: Account(
+            name: "ICICI Credit Card",
+            balance: -12450.75,
+            icon: .mastercard
+        ))
+        .listItemPositioned(.last)
     }
 }

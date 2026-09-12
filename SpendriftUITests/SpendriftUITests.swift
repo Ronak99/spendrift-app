@@ -62,10 +62,12 @@ class SpendriftUITestBase: XCTestCase {
         XCTAssertTrue(app.navigationBars.buttons["Save"].waitForExistence(timeout: 3))
     }
 
-    /// Opens New Account from the Accounts tab (toolbar **+** when accounts exist, otherwise empty-state **Add Account**).
+    /// Opens New Account from the Accounts tab (empty-state CTA, then toolbar **+**).
     func openNewAccountSheet() {
-        if app.buttons["Add Account"].waitForExistence(timeout: 2) {
-            app.buttons["Add Account"].tap()
+        if app.buttons["accountsEmptyAddButton"].waitForExistence(timeout: 2) {
+            app.buttons["accountsEmptyAddButton"].tap()
+        } else if app.buttons["accountsAddButton"].waitForExistence(timeout: 3) {
+            app.buttons["accountsAddButton"].tap()
         } else {
             XCTAssertTrue(app.navigationBars.buttons["plus"].waitForExistence(timeout: 3))
             app.navigationBars.buttons["plus"].tap()
@@ -192,14 +194,14 @@ final class AccountIntegrationTests: SpendriftUITestBase {
 
     func testAccountsTab_showsEmptyState_whenNoAccounts() {
         navigateToAccounts()
-        XCTAssertTrue(app.staticTexts["No Accounts"].waitForExistence(timeout: 3))
-        XCTAssertTrue(app.staticTexts["Add your first bank account or wallet to get started"].exists)
-        XCTAssertTrue(app.buttons["Add Account"].exists)
+        XCTAssertTrue(app.staticTexts["No accounts"].waitForExistence(timeout: 3))
+        XCTAssertTrue(app.staticTexts["Add a bank, card, or wallet to start tracking."].exists)
+        XCTAssertTrue(app.buttons["accountsEmptyAddButton"].exists)
     }
 
     func testAccountsEmptyState_addButtonOpensCreateSheet() {
         navigateToAccounts()
-        app.buttons["Add Account"].tap()
+        app.buttons["accountsEmptyAddButton"].tap()
         XCTAssertTrue(app.navigationBars["New Account"].waitForExistence(timeout: 3))
     }
 
@@ -290,7 +292,7 @@ final class AccountIntegrationTests: SpendriftUITestBase {
         }
 
         sleep(1)
-        let noAccountsExists = app.staticTexts["No Accounts"].waitForExistence(timeout: 3)
+        let noAccountsExists = app.staticTexts["No accounts"].waitForExistence(timeout: 3)
         let cellStillExists = app.staticTexts["To Delete"].exists
         XCTAssertTrue(noAccountsExists || !cellStillExists)
     }

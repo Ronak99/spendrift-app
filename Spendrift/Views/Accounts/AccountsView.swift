@@ -2,7 +2,8 @@
 //  AccountsView.swift
 //  Spendrift
 //
-//  Created by Ronak Punase on 25/02/26.
+//  Colour-wash ledger of accounts. Atmosphere, empty state, and add
+//  control match Transactions and Categories so the tabs feel like one box.
 //
 
 import SwiftUI
@@ -10,6 +11,7 @@ import SwiftData
 
 struct AccountsView: View {
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.colorScheme) private var colorScheme
     @Query(sort: \Account.createdOn) private var accounts: [Account]
     @Query(sort: \Transaction.date, order: .reverse) private var allTransactions: [Transaction]
     @State private var showCreateSheet = false
@@ -43,55 +45,177 @@ struct AccountsView: View {
         totalBalanceAllAccounts.formatCurrency
     }
 
+    private var isDark: Bool { colorScheme == .dark }
+
+    private var canvas: Color {
+        isDark ? Color(hex: "#0A0A0B") : AppTheme.listBackground
+    }
+
+    private var heroPrimary: Color {
+        isDark ? .white : Color(hex: "#111111")
+    }
+
+    private var addBackground: Color {
+        isDark ? Color.white.opacity(0.92) : Color(hex: "#111111")
+    }
+
+    private var addForeground: Color {
+        isDark ? Color(hex: "#111111") : .white
+    }
+
+    private var atmosphereAccount: Account? {
+        accounts.first(where: { $0.isPrimary }) ?? accounts.first
+    }
+
+    private var washColor: Color {
+        if let atmosphereAccount {
+            return AccountEnamel.color(for: atmosphereAccount.icon)
+        }
+        return AccountEnamel.fallback
+    }
+
+    private var watermarkIcon: String {
+        atmosphereAccount?.icon.systemImageName ?? "building.columns"
+    }
+
     var body: some View {
         NavigationStack {
             Group {
-                    if accounts.isEmpty {
-                        EmptyStateView(
-                            icon: "creditcard",
-                            title: "No Accounts",
-                            description: "Add your first bank account or wallet to get started",
-                            actionTitle: "Add Account",
-                            action: { showCreateSheet = true }
+                if accounts.isEmpty {
+                    emptyVault
+                } else {
+                    List {
+                        ForEach(Array(accounts.enumerated()), id: \.element.id) { index, account in
+                            NavigationLink {
+                                AccountTransactionsView(account: account)
+                            } label: {
+                                AccountListItem(account: account)
+                                    .listItemPositioned(index: index, count: accounts.count)
+                            }
+                        }
+                        .onDelete { indexSet in
+                            deleteAccounts(at: indexSet)
+                        }
+                    }
+                    .listStyle(.insetGrouped)
+                    .scrollContentBackground(.hidden)
+                    .softScrollEdge()
+                    .scrollingHeaderBar {
+                        AccountLedgerSummary(
+                            balance: formattedTotalBalance,
+                            income: formattedIncomeSoFar,
+                            expenses: formattedExpenseSoFar,
+                            balanceValue: totalBalanceAllAccounts
                         )
-                    } else {
-                        List {
-                            ForEach(Array(accounts.enumerated()), id: \.element.id) { index, account in
-                                NavigationLink {
-                                    AccountTransactionsView(account: account)
-                                } label: {
-                                    AccountListItem(account: account)
-                                        .listItemPositioned(index: index, count: accounts.count)
-                                }
-                            }
-                            .onDelete { indexSet in
-                                deleteAccounts(at: indexSet)
-                            }
-                        }
-                        .softScrollEdge()
-                }
-            }
-            .navigationTitle("Accounts")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    if !accounts.isEmpty {
-                        Button(action: { showCreateSheet = true }) {
-                            Image(systemName: "plus")
-                        }
+                        .padding(.horizontal, 20)
+                        .padding(.top, 8)
+                        .padding(.bottom, 10)
                     }
                 }
             }
+            .background { atmosphere }
+            .navigationTitle("Accounts")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbarBackground(.hidden, for: .navigationBar)
+            .toolbarColorScheme(isDark ? .dark : .light, for: .navigationBar)
+            .toolbar { toolbarContent }
             .sheet(isPresented: $showCreateSheet) {
                 UpdateAccountSheet(account: nil)
             }
         }
     }
-    
+
+    // MARK: Atmosphere
+
+    private var atmosphere: some View {
+        ZStack(alignment: .topTrailing) {
+            canvas
+
+            ColorWashBackground(color: washColor, isDark: isDark)
+                .frame(height: 360)
+                .frame(maxHeight: .infinity, alignment: .top)
+
+            Image(systemName: watermarkIcon)
+                .font(.system(size: 176, weight: .ultraLight))
+                .foregroundStyle(heroPrimary.opacity(isDark ? 0.10 : 0.08))
+                .offset(x: 40, y: -28)
+                .allowsHitTesting(false)
+                .accessibilityHidden(true)
+                .id(watermarkIcon)
+        }
+        .ignoresSafeArea()
+        .animation(.spring(response: 0.42, dampingFraction: 0.86), value: watermarkIcon)
+    }
+
+    // MARK: Empty
+
+    private var emptyVault: some View {
+        VStack(spacing: 16) {
+            CategoryEnamelTile(
+                systemImage: "building.columns",
+                color: AccountEnamel.fallback
+            )
+            .frame(width: 88, height: 88)
+            .padding(.top, 28)
+
+            Text("No accounts")
+                .font(.system(size: 22, weight: .bold))
+                .tracking(-0.5)
+                .foregroundStyle(heroPrimary)
+
+            Text("Add a bank, card, or wallet to start tracking.")
+                .font(.system(size: 15))
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+
+            Button(action: { showCreateSheet = true }) {
+                Text("Add account")
+                    .font(.system(size: 14, weight: .semibold))
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 8)
+                    .background(addBackground, in: Capsule())
+                    .foregroundStyle(addForeground)
+            }
+            .buttonStyle(.plain)
+            .accessibilityIdentifier("accountsEmptyAddButton")
+            .padding(.top, 4)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .padding(.horizontal, 24)
+    }
+
+    // MARK: Toolbar
+
+    @ToolbarContentBuilder
+    private var toolbarContent: some ToolbarContent {
+        if #available(iOS 26.0, *) {
+            ToolbarItem(placement: .navigationBarTrailing) {
+                addButton
+            }
+            .sharedBackgroundVisibility(.hidden)
+        } else {
+            ToolbarItem(placement: .navigationBarTrailing) {
+                addButton
+            }
+        }
+    }
+
+    private var addButton: some View {
+        Button(action: { showCreateSheet = true }) {
+            Image(systemName: "plus")
+                .font(.system(size: 15, weight: .semibold))
+                .foregroundStyle(addForeground)
+                .frame(width: 32, height: 32)
+                .background(addBackground, in: Circle())
+        }
+        .accessibilityLabel("Add account")
+        .accessibilityIdentifier("accountsAddButton")
+    }
+
     private func deleteAccounts(at offsets: IndexSet) {
         let deleteIndices = Set(offsets)
         let toDelete: [Account] = offsets.sorted().map { accounts[$0] }
-        
+
         if let primaryIndex = accounts.firstIndex(where: { $0.isPrimary }),
            deleteIndices.contains(primaryIndex) {
             let remainingIndices = (0..<accounts.count).filter { !deleteIndices.contains($0) }
@@ -104,21 +228,73 @@ struct AccountsView: View {
                 }
             }
         }
-        
+
         for account in toDelete {
             Analytics.capture(.accountDeleted, [Analytics.Key.name: account.name])
             modelContext.delete(account)
         }
-        
+
         Task { @MainActor in
             try? await Task.sleep(for: .milliseconds(450))
-            
+
             do {
                 try modelContext.save()
             } catch {
                 modelContext.rollback()
             }
         }
+    }
+}
+
+private struct AccountLedgerSummary: View {
+    let balance: String
+    let income: String
+    let expenses: String
+    let balanceValue: Double
+
+    var body: some View {
+        HStack(spacing: 20) {
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Balance")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                Text(balance)
+                    .font(.headline)
+                    .monospacedDigit()
+                    .foregroundStyle(balanceValue < 0 ? .red : .primary)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
+            }
+
+            Spacer()
+
+            VStack(alignment: .center, spacing: 4) {
+                Text("Income")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                Text(income)
+                    .font(.headline)
+                    .monospacedDigit()
+                    .foregroundStyle(.green)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
+            }
+
+            Spacer()
+
+            VStack(alignment: .trailing, spacing: 4) {
+                Text("Expenses")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                Text(expenses)
+                    .font(.headline)
+                    .monospacedDigit()
+                    .foregroundStyle(.red)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
+            }
+        }
+        .accessibilityElement(children: .combine)
     }
 }
 
