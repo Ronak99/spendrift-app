@@ -2,7 +2,8 @@
 //  SettingsView.swift
 //  Spendrift
 //
-//  Created by Ronak Punase on 25/02/26.
+//  Colour-wash settings hub. Atmosphere, enamel rows, and capsule
+//  controls match Transactions and Categories so the tabs feel like one box.
 //
 
 import SwiftData
@@ -43,15 +44,11 @@ struct SettingsView: View {
         Color.accentColor(forThemeIndex: selectedThemeIndex)
     }
 
-    private var accentSoft: Color {
-        accent.opacity(0.16)
-    }
-
     private var appVersionLabel: String {
         let version =
             Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String
             ?? "-"
-        return "Spendrift · v\(version)"
+        return "Spendrift v\(version)"
     }
 
     private var cameraAvailable: Bool {
@@ -60,7 +57,7 @@ struct SettingsView: View {
 
     var body: some View {
         NavigationStack {
-            SettingsScreen(title: "Settings") {
+            SettingsScreen(title: "Settings", watermarkIcon: "gearshape") {
                 hubSection
                 proSection
                 supportSection
@@ -72,8 +69,7 @@ struct SettingsView: View {
                 versionSection
             }
         }
-        .tint(accent)
-        .animation(.easeInOut(duration: 0.2), value: selectedThemeIndex)
+        .animation(.spring(response: 0.42, dampingFraction: 0.86), value: selectedThemeIndex)
         .animation(.easeInOut(duration: 0.2), value: developerModeUnlocked)
         .animation(.easeInOut(duration: 0.2), value: coloredCategoriesEnabled)
         .task {
@@ -144,12 +140,16 @@ struct SettingsView: View {
     @ViewBuilder
     private var hubSection: some View {
         Section {
-            ThemeStripRow(
-                selectedIndex: $selectedThemeIndex,
-                accent: accent,
-                accentSoft: accentSoft
-            )
-            .listItemPositioned(index: 0, count: hubRowCount)
+            NavigationLink {
+                PreferencesSettingsView()
+            } label: {
+                SettingsListItem(
+                    icon: "slider.horizontal.3",
+                    title: "Preferences",
+                    accent: accent
+                )
+                .listItemPositioned(index: 0, count: hubRowCount)
+            }
 
             NavigationLink {
                 ExploreSettingsView()
@@ -157,8 +157,7 @@ struct SettingsView: View {
                 SettingsListItem(
                     icon: "sparkles",
                     title: "Explore",
-                    accent: accent,
-                    accentSoft: accentSoft
+                    accent: accent
                 )
                 .listItemPositioned(index: 1, count: hubRowCount)
             }
@@ -170,7 +169,6 @@ struct SettingsView: View {
                     icon: "doc.viewfinder",
                     title: "Scan Receipts",
                     accent: accent,
-                    accentSoft: accentSoft,
                     accessory: .chevron
                 )
                 .listItemPositioned(index: 2, count: hubRowCount)
@@ -203,7 +201,6 @@ struct SettingsView: View {
                     icon: "doc.text",
                     title: "Bank Statements",
                     accent: accent,
-                    accentSoft: accentSoft,
                     accessory: .chevron
                 )
                 .listItemPositioned(index: 3, count: hubRowCount)
@@ -240,7 +237,6 @@ struct SettingsView: View {
                 icon: "paintpalette.fill",
                 title: "Colored Categories",
                 accent: accent,
-                accentSoft: accentSoft,
                 accessory: .toggle($coloredCategoriesEnabled)
             )
             .listItemPositioned(index: 0, count: developerRowCount)
@@ -254,7 +250,6 @@ struct SettingsView: View {
                         icon: "internaldrive.fill",
                         title: "SQLite debugger",
                         accent: accent,
-                        accentSoft: accentSoft,
                         accessory: .chevron
                     )
                     .listItemPositioned(index: 1, count: developerRowCount)
@@ -269,7 +264,6 @@ struct SettingsView: View {
                     icon: "ladybug.fill",
                     title: "Message inbox debug",
                     accent: accent,
-                    accentSoft: accentSoft,
                     accessory: .chevron
                 )
                 .listItemPositioned(index: messageInboxDeveloperOffset, count: developerRowCount)
@@ -283,8 +277,7 @@ struct SettingsView: View {
                     SettingsListItem(
                         icon: "lock.fill",
                         title: "Turn off developer mode",
-                        accent: accent,
-                        accentSoft: accentSoft
+                        accent: accent
                     )
                     .listItemPositioned(.last)
                 }

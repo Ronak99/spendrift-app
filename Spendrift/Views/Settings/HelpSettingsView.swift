@@ -16,7 +16,6 @@ struct HelpSettingsRows: View {
     private let privacyPolicyURL = URL(string: "https://spendrift.app/privacy_policy")
 
     private var accent: Color { Color.accentColor(forThemeIndex: selectedThemeIndex) }
-    private var accentSoft: Color { accent.opacity(0.16) }
 
     private enum Row: Int, CaseIterable, Identifiable {
         case faq
@@ -65,7 +64,6 @@ struct HelpSettingsRows: View {
                     icon: row.icon,
                     title: row.title,
                     accent: accent,
-                    accentSoft: accentSoft,
                     accessory: row.accessory
                 )
                 .listItemPositioned(index: row.rawValue, count: Row.allCases.count)
@@ -104,7 +102,7 @@ struct HelpSettingsRows: View {
 
 struct HelpSettingsView: View {
     var body: some View {
-        SettingsScreen(title: "Help, Privacy & Contact") {
+        SettingsScreen(title: "Help, Privacy & Contact", watermarkIcon: "questionmark.circle") {
             Section {
                 HelpSettingsRows()
             }

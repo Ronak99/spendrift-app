@@ -60,7 +60,10 @@ struct CategoriesView: View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 28) {
-                    typePicker
+                    ChromeSegmentedPicker(
+                        selection: $selectedType,
+                        accessibilityLabel: "Category type"
+                    )
 
                     if visibleCategories.isEmpty {
                         emptyState
@@ -79,7 +82,6 @@ struct CategoriesView: View {
             .toolbarBackground(.hidden, for: .navigationBar)
             .toolbarColorScheme(isDark ? .dark : .light, for: .navigationBar)
             .toolbar { toolbarContent }
-            .sensoryFeedback(.selection, trigger: selectedType)
             .sheet(isPresented: $showCreateSheet) {
                 UpdateCategorySheet(category: nil, defaultTypeWhenCreating: selectedType)
             }
@@ -133,48 +135,6 @@ struct CategoriesView: View {
         .ignoresSafeArea()
         .animation(typeMotion, value: selectedType)
         .animation(typeMotion, value: watermarkIcon)
-    }
-
-    // MARK: Type picker
-
-    private var typePicker: some View {
-        HStack(spacing: 3) {
-            ForEach([CategoryType.expense, CategoryType.income], id: \.self) { option in
-                let isOn = selectedType == option
-                Button {
-                    withAnimation(typeMotion) {
-                        selectedType = option
-                    }
-                } label: {
-                    Text(option.rawValue.capitalized)
-                        .font(.system(size: 13.5, weight: .semibold))
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 9)
-                        .background(
-                            RoundedRectangle(cornerRadius: 10, style: .continuous)
-                                .fill(isOn ? typeSelectedFill : Color.clear)
-                        )
-                        .foregroundStyle(isOn ? typeSelectedForeground : heroPrimary.opacity(0.7))
-                }
-                .buttonStyle(.plain)
-                .accessibilityAddTraits(isOn ? .isSelected : [])
-            }
-        }
-        .padding(3)
-        .background(
-            RoundedRectangle(cornerRadius: 13, style: .continuous)
-                .fill(Color.black.opacity(isDark ? 0.3 : 0.08))
-        )
-        .accessibilityElement(children: .contain)
-        .accessibilityLabel("Category type")
-    }
-
-    private var typeSelectedFill: Color {
-        isDark ? Color.white.opacity(0.9) : Color(hex: "#111111")
-    }
-
-    private var typeSelectedForeground: Color {
-        isDark ? Color(hex: "#111111") : .white
     }
 
     // MARK: Grid

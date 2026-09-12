@@ -5,17 +5,18 @@
 
 import SwiftUI
 
-struct NotificationsSettingsView: View {
+struct NotificationsSettingsContent: View {
     @AppStorage(Color.selectedThemeIndexKey) private var selectedThemeIndex = Color.defaultThemeIndex
     @AppStorage(NotificationManager.Keys.dailyReminderEnabled) private var dailyReminderEnabled = true
     @AppStorage(NotificationManager.Keys.dailyReminderHour) private var dailyReminderHour = NotificationManager.defaultHour
     @AppStorage(NotificationManager.Keys.dailyReminderMinute) private var dailyReminderMinute = NotificationManager.defaultMinute
     @AppStorage(NotificationManager.Keys.dailyReminderTimeInterval) private var reminderTimeInterval = NotificationManager.defaultReminderTimeInterval
 
+    @Environment(\.colorScheme) private var colorScheme
     @State private var showReminderTimePicker = false
 
     private var accent: Color { Color.accentColor(forThemeIndex: selectedThemeIndex) }
-    private var accentSoft: Color { accent.opacity(0.16) }
+    private var isDark: Bool { colorScheme == .dark }
 
     private var reminderDate: Date {
         Date(timeIntervalSince1970: reminderTimeInterval)
@@ -46,35 +47,30 @@ struct NotificationsSettingsView: View {
     }
 
     var body: some View {
-        SettingsScreen(title: "Notifications") {
-            Section {
-                SettingsListItem(
-                    icon: "bell.fill",
-                    title: "Daily reminder",
-                    accent: accent,
-                    accentSoft: accentSoft,
-                    accessory: .toggle(reminderEnabledBinding)
-                )
-                .listItemPositioned(dailyReminderEnabled ? .first : .only)
+        Section {
+            SettingsListItem(
+                icon: "bell.fill",
+                title: "Daily reminder",
+                accent: accent,
+                accessory: .toggle(reminderEnabledBinding)
+            )
+            .listItemPositioned(dailyReminderEnabled ? .first : .only)
 
-                if dailyReminderEnabled {
-                    Button {
-                        showReminderTimePicker = true
-                    } label: {
-                        SettingsListItem(
-                            icon: nil,
-                            title: "Time",
-                            accent: accent,
-                            accentSoft: accentSoft,
-                            accessory: .valueChevron(reminderDisplayValue)
-                        )
-                        .listItemPositioned(.last)
-                    }
-                    .buttonStyle(.plain)
+            if dailyReminderEnabled {
+                Button {
+                    showReminderTimePicker = true
+                } label: {
+                    SettingsListItem(
+                        icon: nil,
+                        title: "Time",
+                        accent: accent,
+                        accessory: .valueChevron(reminderDisplayValue)
+                    )
+                    .listItemPositioned(.last)
                 }
+                .buttonStyle(.plain)
             }
         }
-        .tint(accent)
         .animation(.easeInOut(duration: 0.2), value: dailyReminderEnabled)
         .task {
             migrateReminderTimeIfNeeded()
@@ -98,21 +94,39 @@ struct NotificationsSettingsView: View {
                 .labelsHidden()
                 .padding(.horizontal, 20)
                 .padding(.top, 6)
+                .tint(accent)
 
                 Spacer(minLength: 0)
             }
-            .background(AppTheme.listBackground.ignoresSafeArea())
+            .background {
+                SettingsAtmosphere(washColor: accent, watermarkIcon: "clock")
+            }
             .navigationTitle("Time")
             .navigationBarTitleDisplayMode(.inline)
+            .toolbarBackground(.hidden, for: .navigationBar)
+            .toolbarColorScheme(isDark ? .dark : .light, for: .navigationBar)
             .toolbar {
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Done") {
-                        showReminderTimePicker = false
+                if #available(iOS 26.0, *) {
+                    ToolbarItem(placement: .confirmationAction) {
+                        doneButton
                     }
-                    .foregroundStyle(accent)
+                    .sharedBackgroundVisibility(.hidden)
+                } else {
+                    ToolbarItem(placement: .confirmationAction) {
+                        doneButton
+                    }
                 }
             }
         }
+    }
+
+    private var doneButton: some View {
+        Button {
+            showReminderTimePicker = false
+        } label: {
+            SettingsCapsuleLabel(title: "Done")
+        }
+        .buttonStyle(.plain)
     }
 
     private func handleReminderToggle(_ isOn: Bool) {
@@ -169,6 +183,14 @@ struct NotificationsSettingsView: View {
         formatter.timeStyle = .short
         return formatter
     }()
+}
+
+struct NotificationsSettingsView: View {
+    var body: some View {
+        SettingsScreen(title: "Notifications", watermarkIcon: "bell.fill") {
+            NotificationsSettingsContent()
+        }
+    }
 }
 
 #Preview {

@@ -27,7 +27,6 @@ struct ProSettingsRows: View {
     @State private var restoreMessage: String?
 
     private var accent: Color { Color.accentColor(forThemeIndex: selectedThemeIndex) }
-    private var accentSoft: Color { accent.opacity(0.16) }
 
     var body: some View {
         Group {
@@ -60,7 +59,6 @@ struct ProSettingsRows: View {
                 title: "Spendrift Pro",
                 subtitle: subscribedSubtitle,
                 accent: accent,
-                accentSoft: accentSoft,
                 accessory: .value("Active")
             )
             .listItemPositioned(index: 0, count: 2)
@@ -72,7 +70,6 @@ struct ProSettingsRows: View {
                     icon: "creditcard",
                     title: "Manage subscription",
                     accent: accent,
-                    accentSoft: accentSoft,
                     accessory: .chevron
                 )
                 .listItemPositioned(index: 1, count: 2)
@@ -103,7 +100,6 @@ struct ProSettingsRows: View {
                     title: "Spendrift Pro",
                     subtitle: upgradeSubtitle,
                     accent: accent,
-                    accentSoft: accentSoft,
                     accessory: .chevron
                 )
                 .listItemPositioned(index: 0, count: rowCount)
@@ -127,7 +123,6 @@ struct ProSettingsRows: View {
                     icon: "arrow.clockwise",
                     title: "Restore purchases",
                     accent: accent,
-                    accentSoft: accentSoft,
                     accessory: .chevron
                 )
                 .listItemPositioned(index: rowCount - 1, count: rowCount)
@@ -150,7 +145,6 @@ struct ProSettingsRows: View {
                 title: "Pro Stats",
                 subtitle: "Refills \(AIQuotaStore.nextResetDate().formatted(.dateTime.day().month(.abbreviated)))",
                 accent: accent,
-                accentSoft: accentSoft,
                 accessory: .valueDisclosure(usedPercentLabel, isExpanded: isStatsExpanded)
             )
             .contentShape(Rectangle())

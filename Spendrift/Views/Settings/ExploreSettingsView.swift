@@ -14,6 +14,7 @@ import SwiftUI
 
 struct ExploreSettingsView: View {
     @AppStorage(Color.selectedThemeIndexKey) private var selectedThemeIndex = Color.defaultThemeIndex
+    @Environment(\.colorScheme) private var colorScheme
     @State private var currentPage = 0
     @State private var dragTranslation: CGFloat = 0
 
@@ -22,6 +23,8 @@ struct ExploreSettingsView: View {
     private let pages = ExploreShortcutPage.all
 
     private var accent: Color { Color.accentColor(forThemeIndex: selectedThemeIndex) }
+    private var isDark: Bool { colorScheme == .dark }
+    private var heroPrimary: Color { SettingsChrome.heroPrimary(isDark: isDark) }
 
     private var page: ExploreShortcutPage {
         pages[min(max(currentPage, 0), pages.count - 1)]
@@ -29,7 +32,11 @@ struct ExploreSettingsView: View {
 
     var body: some View {
         ZStack {
-            atmosphericBackground
+            SettingsAtmosphere(
+                washColor: accent,
+                watermarkIcon: page.icon,
+                animationToken: currentPage
+            )
 
             GeometryReader { proxy in
                 let slotWidth = Self.slotWidth(for: proxy.size.width)
@@ -78,6 +85,7 @@ struct ExploreSettingsView: View {
         .navigationTitle("Explore")
         .navigationBarTitleDisplayMode(.inline)
         .toolbarBackground(.hidden, for: .navigationBar)
+        .toolbarColorScheme(isDark ? .dark : .light, for: .navigationBar)
         .tint(accent)
         .sensoryFeedback(.selection, trigger: currentPage)
     }
@@ -87,12 +95,13 @@ struct ExploreSettingsView: View {
     private var copyBlock: some View {
         VStack(spacing: 10) {
             Text(page.title)
-                .font(.system(size: 32, weight: .bold, design: .rounded))
-                .foregroundStyle(.primary)
+                .font(.system(size: 28, weight: .bold))
+                .tracking(-0.8)
+                .foregroundStyle(heroPrimary)
                 .multilineTextAlignment(.center)
 
             Text(page.description)
-                .font(.system(size: 16, weight: .regular))
+                .font(.system(size: 15))
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
                 .lineSpacing(3)
@@ -105,7 +114,7 @@ struct ExploreSettingsView: View {
 
     private var footer: some View {
         VStack(spacing: 14) {
-            ExploreAddShortcutCTA(icon: page.icon, accent: accent) {
+            SettingsPrimaryButton(title: "Add shortcut", systemImage: page.icon) {
                 guard let url = page.shortcutURL else { return }
                 openURL(url)
             }
@@ -119,8 +128,8 @@ struct ExploreSettingsView: View {
                         BankSMSSettingsView()
                     } label: {
                         Text("See setup steps")
-                            .font(.system(size: 14, weight: .medium))
-                            .foregroundStyle(accent)
+                            .font(.system(size: 14, weight: .semibold))
+                            .foregroundStyle(heroPrimary.opacity(0.7))
                     }
                     .transition(.opacity)
                 }
@@ -129,24 +138,6 @@ struct ExploreSettingsView: View {
         }
         .padding(.horizontal, 28)
         .padding(.bottom, 28)
-    }
-
-    private var atmosphericBackground: some View {
-        ZStack {
-            AppTheme.listBackground
-            RadialGradient(
-                colors: [
-                    accent.opacity(0.16),
-                    accent.opacity(0.04),
-                    Color.clear,
-                ],
-                center: UnitPoint(x: 0.5, y: 0.22),
-                startRadius: 8,
-                endRadius: 420
-            )
-        }
-        .ignoresSafeArea()
-        .animation(.easeInOut(duration: 0.4), value: currentPage)
     }
 
     // MARK: - Paging
@@ -262,12 +253,12 @@ private struct ExploreHeroCarousel: View {
         HStack(spacing: 0) {
             ForEach(pages) { page in
                 let distance = min(abs(CGFloat(page.id) - progress), 1)
-                GlowingHeroMark(
-                    systemName: page.icon,
+                CategoryEnamelTile(
+                    systemImage: page.icon,
                     color: accent,
-                    size: 56,
-                    liquidGlassTint: accent
+                    showsShadow: distance < 0.45
                 )
+                .frame(width: 88, height: 88)
                 .scaleEffect(1 - 0.46 * distance)
                 .opacity(1 - 0.74 * Double(distance))
                 .frame(width: slotWidth)
@@ -297,86 +288,6 @@ private struct ExplorePageIndicator: View {
             }
         }
         .accessibilityHidden(true)
-    }
-}
-
-// MARK: - CTA
-
-private struct ExploreAddShortcutCTA: View {
-    let icon: String
-    let accent: Color
-    let action: () -> Void
-
-    var body: some View {
-        Button(action: action) {
-            HStack(spacing: 14) {
-                Image(systemName: icon)
-                    .font(.system(size: 16, weight: .semibold))
-                    .foregroundStyle(accent)
-                    .contentTransition(.symbolEffect(.replace))
-                    .frame(width: 22)
-
-                Text("Add shortcut")
-                    .font(.system(size: 17, weight: .semibold))
-                    .foregroundStyle(.primary)
-
-                Spacer(minLength: 8)
-
-                Image(systemName: "plus")
-                    .font(.system(size: 13, weight: .bold))
-                    .foregroundStyle(accent)
-                    .frame(width: 28, height: 28)
-                    .background(accent.opacity(0.14), in: Circle())
-            }
-            .padding(.leading, 20)
-            .padding(.trailing, 12)
-            .padding(.vertical, 14)
-        }
-        .buttonStyle(ExploreCTAButtonStyle(accent: accent))
-        .accessibilityHint("Opens a shortcut you can add in the Shortcuts app.")
-    }
-}
-
-private struct ExploreCTAButtonStyle: ButtonStyle {
-    let accent: Color
-
-    func makeBody(configuration: Configuration) -> some View {
-        configuration.label
-            .background {
-                Capsule(style: .continuous)
-                    .fill(.ultraThinMaterial)
-                    .overlay {
-                        Capsule(style: .continuous)
-                            .fill(
-                                LinearGradient(
-                                    colors: [
-                                        accent.opacity(configuration.isPressed ? 0.18 : 0.10),
-                                        accent.opacity(configuration.isPressed ? 0.10 : 0.04),
-                                    ],
-                                    startPoint: .topLeading,
-                                    endPoint: .bottomTrailing
-                                )
-                            )
-                    }
-                    .overlay {
-                        Capsule(style: .continuous)
-                            .strokeBorder(
-                                LinearGradient(
-                                    colors: [
-                                        accent.opacity(0.55),
-                                        Color.white.opacity(0.18),
-                                        accent.opacity(0.22),
-                                    ],
-                                    startPoint: .topLeading,
-                                    endPoint: .bottomTrailing
-                                ),
-                                lineWidth: 1
-                            )
-                    }
-                    .shadow(color: accent.opacity(configuration.isPressed ? 0.08 : 0.22), radius: configuration.isPressed ? 8 : 18, y: 8)
-            }
-            .scaleEffect(configuration.isPressed ? 0.98 : 1)
-            .animation(.easeOut(duration: 0.18), value: configuration.isPressed)
     }
 }
 

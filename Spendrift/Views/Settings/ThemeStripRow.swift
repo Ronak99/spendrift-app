@@ -12,7 +12,6 @@ import SwiftUI
 struct ThemeStripRow: View {
     @Binding var selectedIndex: Int
     let accent: Color
-    let accentSoft: Color
 
     private static let startAnchor = "theme-strip-start"
     private static let rowSpace = "theme-strip-row"
@@ -70,15 +69,15 @@ struct ThemeStripRow: View {
                     .onChange(of: proxy.size.width) { _, width in rowWidth = width }
             }
         }
-        .padding(.horizontal, 8)
+        .padding(.horizontal, 6)
     }
 
     private var label: some View {
         HStack(spacing: SettingsTokens.iconGap) {
-            SettingsIconTile(systemName: "paintpalette.fill", accent: accent, accentSoft: accentSoft)
+            SettingsIconTile(systemName: "paintpalette.fill", accent: accent)
             Text("Theme")
-                .font(.headline)
-                .foregroundColor(.primary)
+                .font(.system(size: 16, weight: .semibold))
+                .foregroundStyle(.primary)
                 .background(alignment: .leading) {
                     GeometryReader { proxy in
                         let stop = proxy.frame(in: .named(Self.rowSpace)).maxX + Self.themeClearance

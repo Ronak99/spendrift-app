@@ -162,36 +162,16 @@ struct UpdateAccountSheet: View {
     }
 
     private var rolePicker: some View {
-        HStack(spacing: 3) {
-            ForEach([false, true], id: \.self) { option in
-                let isOn = isPrimary == option
-                Button {
-                    isPrimary = option
-                    nameFieldFocused = false
-                    balanceFieldFocused = false
-                } label: {
-                    Text(option ? "Primary" : "Standard")
-                        .font(.system(size: 13.5, weight: .semibold))
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 9)
-                        .background(
-                            RoundedRectangle(cornerRadius: 10, style: .continuous)
-                                .fill(isOn ? typeSelectedFill : Color.clear)
-                        )
-                        .foregroundStyle(isOn ? typeSelectedForeground : heroPrimary.opacity(0.7))
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel(option ? "Primary" : "Standard")
-                .accessibilityAddTraits(isOn ? .isSelected : [])
-            }
+        ChromeSegmentedPicker(
+            selection: $isPrimary,
+            options: [false, true],
+            accessibilityContainerLabel: "Account role",
+            accessibilityContainerIdentifier: "account-role-picker",
+            title: { $0 ? "Primary" : "Standard" }
+        ) { _ in
+            nameFieldFocused = false
+            balanceFieldFocused = false
         }
-        .padding(3)
-        .background(
-            RoundedRectangle(cornerRadius: 13, style: .continuous)
-                .fill(Color.black.opacity(isDark ? 0.3 : 0.08))
-        )
-        .accessibilityElement(children: .contain)
-        .accessibilityLabel("Account role")
     }
 
     // MARK: Details
@@ -286,14 +266,6 @@ struct UpdateAccountSheet: View {
         .buttonStyle(.plain)
         .opacity(isValid ? 1 : 0.4)
         .disabled(!isValid)
-    }
-
-    private var typeSelectedFill: Color {
-        isDark ? Color.white.opacity(0.9) : Color(hex: "#111111")
-    }
-
-    private var typeSelectedForeground: Color {
-        isDark ? Color(hex: "#111111") : .white
     }
 
     private var saveBackground: Color {

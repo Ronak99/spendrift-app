@@ -26,7 +26,6 @@ struct BankSMSSettingsView: View {
     ]
 
     private var accent: Color { Color.accentColor(forThemeIndex: selectedThemeIndex) }
-    private var accentSoft: Color { accent.opacity(0.16) }
 
     /// A capture on record is the only evidence the automation is wired up —
     /// there is no toggle to read, by design.
@@ -42,7 +41,7 @@ struct BankSMSSettingsView: View {
     }
 
     var body: some View {
-        List {
+        SettingsScreen(title: "Bank SMS", watermarkIcon: "message.fill") {
             Section {
                 statusRow
                     .listItemPositioned(.first)
@@ -51,7 +50,6 @@ struct BankSMSSettingsView: View {
                     icon: nil,
                     title: "Last message captured",
                     accent: accent,
-                    accentSoft: accentSoft,
                     accessory: .value(lastCapturedLabel)
                 )
                 .listItemPositioned(.last)
@@ -65,10 +63,13 @@ struct BankSMSSettingsView: View {
             }
 
             Section {
-                openShortcutsButton
-                    .listRowBackground(Color.clear)
-                    .listRowSeparator(.hidden)
-                    .listItemPositioned(.only)
+                SettingsPrimaryButton(title: "Open Shortcuts") {
+                    guard let url = Self.shortcutsAppURL else { return }
+                    openURL(url)
+                }
+                .listRowBackground(Color.clear)
+                .listRowSeparator(.hidden)
+                .listItemPositioned(.only)
             } footer: {
                 VStack(spacing: 4) {
                     Text("Both automations run without opening Spendrift.")
@@ -81,62 +82,42 @@ struct BankSMSSettingsView: View {
                 .frame(maxWidth: .infinity)
             }
         }
-        .listStyle(.insetGrouped)
-        .softScrollEdge()
-        .navigationTitle("Bank SMS")
-        .navigationBarTitleDisplayMode(.inline)
-        .tint(accent)
         .onAppear { lastCapturedAt = MessageInboxSettings.lastCapturedAt }
     }
 
     private var statusRow: some View {
-        HStack(spacing: 10) {
-            Circle()
-                .fill(isActive ? Color.green : SettingsTokens.textTertiary)
-                .frame(width: 10, height: 10)
-                .overlay {
-                    Circle()
-                        .stroke((isActive ? Color.green : SettingsTokens.textTertiary).opacity(0.18), lineWidth: 4)
-                }
+        HStack(spacing: 14) {
+            CategoryEnamelTile(
+                systemImage: "message.fill",
+                color: isActive ? Color(hex: "#8BD17C") : Color(hex: "#8E9AA8"),
+                showsShadow: false
+            )
+            .frame(width: SettingsTokens.iconSize, height: SettingsTokens.iconSize)
 
             Text(Self.statusLabel(lastCapturedAt: lastCapturedAt))
-                .font(.headline)
-                .foregroundColor(.primary)
+                .font(.system(size: 16, weight: .semibold))
+                .foregroundStyle(.primary)
 
             Spacer(minLength: 0)
         }
-        .padding(.horizontal, 8)
+        .padding(.horizontal, 6)
     }
 
     private func stepRow(number: Int, text: LocalizedStringKey) -> some View {
-        HStack(alignment: .top, spacing: 16) {
+        HStack(alignment: .top, spacing: 14) {
             Text("\(number)")
                 .font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(accent)
-                .frame(width: 24, height: 24)
-                .background(accentSoft, in: Circle())
+                .foregroundStyle(Color(hex: "#0A0A0B"))
+                .frame(width: 28, height: 28)
+                .background(accent, in: RoundedRectangle(cornerRadius: 9, style: .continuous))
 
             Text(text)
-                .font(.headline)
-                .foregroundColor(.primary)
+                .font(.system(size: 16, weight: .semibold))
+                .foregroundStyle(.primary)
                 .fixedSize(horizontal: false, vertical: true)
                 .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .padding(.horizontal, 8)
-    }
-
-    private var openShortcutsButton: some View {
-        Button {
-            guard let url = Self.shortcutsAppURL else { return }
-            openURL(url)
-        } label: {
-            Text("Open Shortcuts")
-                .font(.system(size: 17, weight: .semibold))
-                .foregroundStyle(.black)
-                .frame(maxWidth: .infinity, minHeight: 50)
-                .background(accent, in: Capsule())
-        }
-        .buttonStyle(.plain)
+        .padding(.horizontal, 6)
     }
 
     private static let capturedFormatter: DateFormatter = {

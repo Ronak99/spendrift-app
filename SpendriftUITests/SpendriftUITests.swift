@@ -83,7 +83,7 @@ class SpendriftUITestBase: XCTestCase {
 
     /// Switches the Categories grid to the given segment ("Expense" or "Income").
     func selectCategorySegment(_ type: String) {
-        let segment = app.segmentedControls.firstMatch.buttons[type]
+        let segment = app.descendants(matching: .any)["type-picker"].buttons[type]
         XCTAssertTrue(segment.waitForExistence(timeout: 3))
         segment.tap()
     }

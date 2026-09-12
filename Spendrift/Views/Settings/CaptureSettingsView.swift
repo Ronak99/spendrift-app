@@ -25,7 +25,6 @@ struct CaptureSettingsView: View {
     @State private var receiptShare = ReceiptCaptureController()
 
     private var accent: Color { Color.accentColor(forThemeIndex: selectedThemeIndex) }
-    private var accentSoft: Color { accent.opacity(0.16) }
 
     private var cameraAvailable: Bool {
         UIImagePickerController.isSourceTypeAvailable(.camera)
@@ -34,7 +33,7 @@ struct CaptureSettingsView: View {
     private static let rowCount = 4
 
     var body: some View {
-        SettingsScreen(title: "Capture") {
+        SettingsScreen(title: "Capture", watermarkIcon: "plus.viewfinder") {
             Section {
                 Button {
                     open(OnboardingShortcutShareLinks.voiceRecordExpense)
@@ -44,7 +43,6 @@ struct CaptureSettingsView: View {
                         title: "Speak",
                         subtitle: "Add by voice · Siri Shortcut",
                         accent: accent,
-                        accentSoft: accentSoft,
                         accessory: .chevron
                     )
                     .listItemPositioned(index: 0, count: Self.rowCount)
@@ -59,7 +57,6 @@ struct CaptureSettingsView: View {
                         title: "Type",
                         subtitle: "Add manually · Siri Shortcut",
                         accent: accent,
-                        accentSoft: accentSoft,
                         accessory: .chevron
                     )
                     .listItemPositioned(index: 1, count: Self.rowCount)
@@ -74,7 +71,6 @@ struct CaptureSettingsView: View {
                         title: "Scan receipt",
                         subtitle: "From photo or camera",
                         accent: accent,
-                        accentSoft: accentSoft,
                         accessory: .chevron
                     )
                     .listItemPositioned(index: 2, count: Self.rowCount)
@@ -108,7 +104,6 @@ struct CaptureSettingsView: View {
                         title: "Import statement",
                         subtitle: "Upload a bank statement",
                         accent: accent,
-                        accentSoft: accentSoft,
                         accessory: .chevron
                     )
                     .listItemPositioned(index: 3, count: Self.rowCount)

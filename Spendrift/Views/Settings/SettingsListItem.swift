@@ -2,7 +2,8 @@
 //  SettingsListItem.swift
 //  Spendrift
 //
-//  Settings row styled like TransactionListItem / AccountListItem.
+//  Settings row styled like TransactionListItem / AccountListItem: enamel
+//  chip, 16pt semibold title, optional 12pt subtitle.
 //
 
 import SwiftUI
@@ -24,42 +25,40 @@ struct SettingsListItem: View {
     let title: String
     var subtitle: String?
     let accent: Color
-    let accentSoft: Color
     var accessory: Accessory = .none
 
     var body: some View {
-        HStack(spacing: 16) {
+        HStack(alignment: .center, spacing: 14) {
             if let icon {
-                ZStack {
-                    Circle()
-                        .fill(accentSoft)
-                        .frame(width: 44, height: 44)
-
-                    Image(systemName: icon)
-                        .font(.system(size: 20))
-                        .foregroundColor(accent)
-                }
+                CategoryEnamelTile(
+                    systemImage: icon,
+                    color: accent,
+                    showsShadow: false
+                )
+                .frame(width: SettingsTokens.iconSize, height: SettingsTokens.iconSize)
             } else {
-                Color.clear.frame(width: 44, height: 1)
+                Color.clear.frame(width: SettingsTokens.iconSize, height: 1)
             }
 
-            VStack(alignment: .leading, spacing: 6) {
+            VStack(alignment: .leading, spacing: 3) {
                 Text(title)
-                    .font(.headline)
-                    .foregroundColor(.primary)
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundStyle(.primary)
+                    .lineLimit(1)
 
                 if let subtitle {
                     Text(subtitle)
-                        .font(.caption)
-                        .foregroundColor(.secondary)
+                        .font(.system(size: 12))
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
                 }
             }
 
-            Spacer()
+            Spacer(minLength: 8)
 
             accessoryView
         }
-        .padding(.horizontal, 8)
+        .padding(.horizontal, 6)
     }
 
     @ViewBuilder
@@ -77,13 +76,11 @@ struct SettingsListItem: View {
             HStack(spacing: 4) {
                 SettingsValueLabel(text: value)
                 chevronGlyph
-                    .frame(width: 20, height: 20)
             }
         case let .valueDisclosure(value, isExpanded):
             HStack(spacing: 4) {
                 SettingsValueLabel(text: value)
                 chevronGlyph
-                    .frame(width: 20, height: 20)
                     .rotationEffect(.degrees(isExpanded ? 90 : 0))
                     .animation(.spring(response: 0.42, dampingFraction: 0.86), value: isExpanded)
             }
@@ -91,15 +88,15 @@ struct SettingsListItem: View {
             chevronGlyph
         case .externalLink:
             Image(systemName: "arrow.up.right.square")
-                .font(.system(size: 15, weight: .medium))
-                .foregroundColor(SettingsTokens.chevron)
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(SettingsTokens.chevron)
         }
     }
 
     private var chevronGlyph: some View {
         Image(systemName: "chevron.right")
-            .font(.system(size: 14, weight: .semibold))
-            .foregroundColor(SettingsTokens.chevron)
+            .font(.system(size: 11, weight: .semibold))
+            .foregroundStyle(SettingsTokens.chevron)
     }
 }
 
@@ -109,8 +106,7 @@ struct SettingsListItem: View {
             SettingsListItem(
                 icon: "sparkles",
                 title: "Explore",
-                accent: .blue,
-                accentSoft: .blue.opacity(0.16),
+                accent: Color(hex: "#3A7BFF"),
                 accessory: .chevron
             )
             .listItemPositioned(.first)
@@ -119,8 +115,7 @@ struct SettingsListItem: View {
                 icon: "bell.fill",
                 title: "Daily reminder",
                 subtitle: "A nudge to log spending",
-                accent: .blue,
-                accentSoft: .blue.opacity(0.16),
+                accent: Color(hex: "#3A7BFF"),
                 accessory: .toggle(.constant(true))
             )
             .listItemPositioned(.last)

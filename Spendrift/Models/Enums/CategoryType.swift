@@ -8,6 +8,6 @@
 import Foundation
 
 enum CategoryType: String, Codable, CaseIterable {
-    case income
     case expense
+    case income
 }

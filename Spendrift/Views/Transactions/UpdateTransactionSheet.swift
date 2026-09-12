@@ -216,8 +216,11 @@ struct UpdateTransactionSheet: View {
             }
             .padding(.top, 8)
 
-            typePicker
-                .padding(.top, 26)
+            ChromeSegmentedPicker(selection: $transactionType) { _ in
+                amountFieldFocused = false
+                notesFieldFocused = false
+            }
+            .padding(.top, 26)
         }
         .padding(.horizontal, 20)
         .padding(.bottom, 26)
@@ -299,40 +302,6 @@ struct UpdateTransactionSheet: View {
             return category.name
         }
         return transactionType.rawValue.capitalized
-    }
-
-    private var typePicker: some View {
-        HStack(spacing: 3) {
-            ForEach([TransactionType.income, .expense], id: \.self) { option in
-                let isOn = transactionType == option
-                Button {
-                    transactionType = option
-                    amountFieldFocused = false
-                    notesFieldFocused = false
-                } label: {
-                    Text(option.rawValue.capitalized)
-                        .font(.system(size: 13.5, weight: .semibold))
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 9)
-                        .background(
-                            RoundedRectangle(cornerRadius: 10, style: .continuous)
-                                .fill(isOn ? typeSelectedFill : Color.clear)
-                        )
-                        .foregroundStyle(isOn ? typeSelectedForeground : heroPrimary.opacity(0.7))
-                }
-                .buttonStyle(.plain)
-                .accessibilityIdentifier(option.rawValue.capitalized)
-                .accessibilityLabel(option.rawValue.capitalized)
-                .accessibilityAddTraits(isOn ? .isSelected : [])
-            }
-        }
-        .padding(3)
-        .background(
-            RoundedRectangle(cornerRadius: 13, style: .continuous)
-                .fill(Color.black.opacity(isDark ? 0.3 : 0.08))
-        )
-        .accessibilityElement(children: .contain)
-        .accessibilityLabel("Type")
     }
 
     // MARK: Details
@@ -467,14 +436,6 @@ struct UpdateTransactionSheet: View {
                 .foregroundStyle(saveForeground)
         }
         .buttonStyle(.plain)
-    }
-
-    private var typeSelectedFill: Color {
-        isDark ? Color.white.opacity(0.9) : Color(hex: "#111111")
-    }
-
-    private var typeSelectedForeground: Color {
-        isDark ? Color(hex: "#111111") : .white
     }
 
     private var saveBackground: Color {
