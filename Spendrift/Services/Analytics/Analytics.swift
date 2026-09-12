@@ -8,6 +8,10 @@
 //  No authentication: PostHog's iOS SDK persists an anonymous `distinct_id`, so
 //  funnels and retention work per-device. We never call `identify()`.
 //
+//  PostHog is Release-only. Debug never initializes the SDK, so session replay,
+//  lifecycle autocapture, and product events cannot leak into Spendrift-Prod
+//  from local runs.
+//
 
 import Foundation
 import PostHog
@@ -78,10 +82,20 @@ enum Analytics {
     private static let firstTransactionKey = "didFireFirstTransactionCreated"
     private static let placeholderAPIKey = "phc_REPLACE_ME"
 
+    /// False in Debug so we never construct, configure, or call the PostHog SDK.
+    private static var isPostHogEnabled: Bool {
+        #if DEBUG
+        false
+        #else
+        true
+        #endif
+    }
+
     // MARK: - Lifecycle
 
     static func bootstrap() {
         stampInstallDateIfNeeded()
+        guard isPostHogEnabled else { return }
 
         let apiKey = AppSecrets.posthogAPIKey
         // A missing or placeholder key means analytics isn't configured for this build.
@@ -108,10 +122,6 @@ enum Analytics {
         // SwiftUI view hierarchies don't serialise into PostHog's wireframe format,
         // so capture screenshots instead.
         config.sessionReplayConfig.screenshotMode = true
-        #if DEBUG
-        config.debug = true
-        config.flushAt = 1
-        #endif
         PostHogSDK.shared.setup(config)
 
         if isOptedOut {
@@ -122,7 +132,7 @@ enum Analytics {
     // MARK: - Capture
 
     static func capture(_ event: Event, _ properties: [String: Any] = [:]) {
-        guard !isOptedOut else { return }
+        guard isPostHogEnabled, !isOptedOut else { return }
         PostHogSDK.shared.capture(event.rawValue, properties: properties)
     }
 
@@ -164,6 +174,7 @@ enum Analytics {
         get { UserDefaults.standard.bool(forKey: optOutDefaultsKey) }
         set {
             UserDefaults.standard.set(newValue, forKey: optOutDefaultsKey)
+            guard isPostHogEnabled else { return }
             if newValue {
                 PostHogSDK.shared.optOut()
             } else {
