@@ -8,9 +8,10 @@
 //  No authentication: PostHog's iOS SDK persists an anonymous `distinct_id`, so
 //  funnels and retention work per-device. We never call `identify()`.
 //
-//  PostHog is Release-only. Debug never initializes the SDK, so session replay,
+//  PostHog is production-only (App Store and TestFlight). Debug, Simulator,
+//  and Xcode/Ad Hoc installs never initialize the SDK, so session replay,
 //  lifecycle autocapture, and product events cannot leak into Spendrift-Prod
-//  from local runs.
+//  from local sessions.
 //
 
 import Foundation
@@ -82,13 +83,29 @@ enum Analytics {
     private static let firstTransactionKey = "didFireFirstTransactionCreated"
     private static let placeholderAPIKey = "phc_REPLACE_ME"
 
-    /// False in Debug so we never construct, configure, or call the PostHog SDK.
+    /// False unless this binary was distributed by Apple (App Store or TestFlight).
+    /// Debug, Simulator, and Xcode/Ad Hoc installs never construct the SDK.
     private static var isPostHogEnabled: Bool {
         #if DEBUG
         false
+        #elseif targetEnvironment(simulator)
+        false
         #else
-        true
+        isAppStoreOrTestFlightDistribution
         #endif
+    }
+
+    /// App Store binaries ship without an embedded provisioning profile.
+    /// TestFlight binaries include `beta-reports-active`. Development, Ad Hoc,
+    /// and Enterprise profiles do not.
+    private static var isAppStoreOrTestFlightDistribution: Bool {
+        guard let profilePath = Bundle.main.path(forResource: "embedded", ofType: "mobileprovision") else {
+            return true
+        }
+        guard let contents = try? String(contentsOfFile: profilePath, encoding: .isoLatin1) else {
+            return false
+        }
+        return contents.contains("<key>beta-reports-active</key>")
     }
 
     // MARK: - Lifecycle
