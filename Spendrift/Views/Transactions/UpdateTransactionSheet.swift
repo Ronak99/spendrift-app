@@ -36,7 +36,7 @@ struct UpdateTransactionSheet: View {
     @FocusState private var amountFieldFocused: Bool
     @FocusState private var notesFieldFocused: Bool
 
-    @State private var showAmountLimitAlert = false
+    @State private var saveAlertMessage: String?
 
     @State private var notes: String = ""
     @State private var amount: String = ""
@@ -72,11 +72,23 @@ struct UpdateTransactionSheet: View {
         categoriesSortedByLastUsed.filter { $0.type == selectedCategoryType }
     }
 
-    private var isValid: Bool {
-        guard let amountValue = Double(amount), amountValue > 0 else { return false }
-        guard selectedAccount != nil else { return false }
-        guard let category = selectedCategory, category.type == selectedCategoryType else { return false }
-        return true
+    /// First reason Save cannot complete, or `nil` when the form is ready to write.
+    private var saveBlockedReason: String? {
+        guard let amountValue = Double(amount), amountValue > 0 else {
+            return "Enter an amount greater than zero."
+        }
+        if amountValue >= maxTransactionAmount {
+            return "Thank you for stress testing this app, please report if anything has bugged you so far."
+        }
+        if selectedAccount == nil {
+            return accounts.isEmpty
+                ? "Create an account before saving this transaction."
+                : "Select an account."
+        }
+        if let category = selectedCategory, category.type != selectedCategoryType {
+            return "Select a category that matches this transaction type."
+        }
+        return nil
     }
 
     private var categoryText: String {
@@ -156,8 +168,11 @@ struct UpdateTransactionSheet: View {
                 }
             }
             .alert(
-                "Thank you for stress testing this app, please report if anything has bugged you so far.",
-                isPresented: $showAmountLimitAlert
+                saveAlertMessage ?? "",
+                isPresented: Binding(
+                    get: { saveAlertMessage != nil },
+                    set: { if !$0 { saveAlertMessage = nil } }
+                )
             ) {
                 Button("OK", role: .cancel) {}
             }
@@ -469,8 +484,10 @@ struct UpdateTransactionSheet: View {
     }
 
     private func attemptSave() {
-        if let amountValue = Double(amount), amountValue >= maxTransactionAmount {
-            showAmountLimitAlert = true
+        amountFieldFocused = false
+        notesFieldFocused = false
+        if let message = saveBlockedReason {
+            saveAlertMessage = message
             return
         }
         saveTransaction()
@@ -589,7 +606,8 @@ struct UpdateTransactionSheet: View {
     }
 
     private func saveTransaction() {
-        guard let amountValue = Double(amount) else { return }
+        guard let amountValue = Double(amount), amountValue > 0 else { return }
+        guard selectedAccount != nil else { return }
         guard selectedCategory == nil || selectedCategory?.type == selectedCategoryType else { return }
 
         if let transaction = transaction {

@@ -26,13 +26,22 @@ struct UpdateAccountSheet: View {
     @State private var balance: String = ""
     @State private var icon = AccountIcon.bankAccountOne
     @State private var isPrimary = false
+    @State private var saveAlertMessage: String?
 
     private var isCreating: Bool { account == nil }
 
-    private var isValid: Bool {
-        !name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-            && !balance.isEmpty
-            && Double(balance) != nil
+    /// First reason Save cannot complete, or `nil` when the form is ready to write.
+    private var saveBlockedReason: String? {
+        if name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            return "Enter an account name."
+        }
+        if balance.isEmpty {
+            return isCreating ? "Enter an opening balance." : "Enter a balance."
+        }
+        if Double(balance) == nil {
+            return "Enter a valid balance."
+        }
+        return nil
     }
 
     private var isDark: Bool { colorScheme == .dark }
@@ -72,6 +81,15 @@ struct UpdateAccountSheet: View {
                         saveButton
                     }
                 }
+            }
+            .alert(
+                saveAlertMessage ?? "",
+                isPresented: Binding(
+                    get: { saveAlertMessage != nil },
+                    set: { if !$0 { saveAlertMessage = nil } }
+                )
+            ) {
+                Button("OK", role: .cancel) {}
             }
             .onAppear {
                 if let account {
@@ -255,7 +273,7 @@ struct UpdateAccountSheet: View {
     }
 
     private var saveButton: some View {
-        Button(action: saveAccount) {
+        Button(action: attemptSave) {
             Text("Save")
                 .font(.system(size: 14, weight: .semibold))
                 .padding(.horizontal, 16)
@@ -264,8 +282,6 @@ struct UpdateAccountSheet: View {
                 .foregroundStyle(saveForeground)
         }
         .buttonStyle(.plain)
-        .opacity(isValid ? 1 : 0.4)
-        .disabled(!isValid)
     }
 
     private var saveBackground: Color {
@@ -283,6 +299,16 @@ struct UpdateAccountSheet: View {
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
             nameFieldFocused = true
         }
+    }
+
+    private func attemptSave() {
+        nameFieldFocused = false
+        balanceFieldFocused = false
+        if let message = saveBlockedReason {
+            saveAlertMessage = message
+            return
+        }
+        saveAccount()
     }
 
     private func saveAccount() {

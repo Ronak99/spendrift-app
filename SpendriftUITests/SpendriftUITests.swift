@@ -214,7 +214,7 @@ final class AccountIntegrationTests: SpendriftUITestBase {
         XCTAssertTrue(accountCell.waitForExistence(timeout: 3))
     }
 
-    func testCreateAccount_saveDisabled_whenNameEmpty() {
+    func testCreateAccount_saveShowsAlert_whenNameEmpty() {
         navigateToAccounts()
         openNewAccountSheet()
 
@@ -223,10 +223,12 @@ final class AccountIntegrationTests: SpendriftUITestBase {
         balanceField.typeText("1000")
 
         let saveButton = app.navigationBars.buttons["Save"]
-        XCTAssertFalse(saveButton.isEnabled)
+        XCTAssertTrue(saveButton.isEnabled)
+        saveButton.tap()
+        XCTAssertTrue(app.alerts["Enter an account name."].waitForExistence(timeout: 3))
     }
 
-    func testCreateAccount_saveDisabled_whenBalanceEmpty() {
+    func testCreateAccount_saveShowsAlert_whenBalanceEmpty() {
         navigateToAccounts()
         openNewAccountSheet()
 
@@ -236,7 +238,9 @@ final class AccountIntegrationTests: SpendriftUITestBase {
         nameField.typeText("Test Account")
 
         let saveButton = app.navigationBars.buttons["Save"]
-        XCTAssertFalse(saveButton.isEnabled)
+        XCTAssertTrue(saveButton.isEnabled)
+        saveButton.tap()
+        XCTAssertTrue(app.alerts["Enter an opening balance."].waitForExistence(timeout: 3))
     }
 
     func testCreateAccount_cancelDismissesSheet() {
@@ -346,13 +350,15 @@ final class CategoryIntegrationTests: SpendriftUITestBase {
         XCTAssertTrue(app.staticTexts["Custom Income"].waitForExistence(timeout: 3))
     }
 
-    func testCreateCategory_saveDisabled_whenNameEmpty() {
+    func testCreateCategory_saveShowsAlert_whenNameEmpty() {
         navigateToCategories()
         openNewCategorySheet()
         XCTAssertTrue(app.navigationBars["New Category"].waitForExistence(timeout: 3))
 
         let saveButton = app.navigationBars.buttons["Save"]
-        XCTAssertFalse(saveButton.isEnabled)
+        XCTAssertTrue(saveButton.isEnabled)
+        saveButton.tap()
+        XCTAssertTrue(app.alerts["Enter a category name."].waitForExistence(timeout: 3))
     }
 
     func testCreateCategory_cancelDismissesSheet() {
@@ -445,13 +451,19 @@ final class TransactionIntegrationTests: SpendriftUITestBase {
         XCTAssertTrue(app.staticTexts["Salary"].waitForExistence(timeout: 3))
     }
 
-    func testCreateTransaction_saveDisabled_withoutAccount() {
+    func testCreateTransaction_saveShowsAlert_withoutAccount() {
         navigateToTransactions()
         openTransactionsManualEntryForm()
         waitForTransactionEditor()
 
+        let amountField = app.textFields["0"]
+        amountField.tap()
+        amountField.typeText("500")
+
         let saveButton = app.navigationBars.buttons["Save"]
-        XCTAssertFalse(saveButton.isEnabled)
+        XCTAssertTrue(saveButton.isEnabled)
+        saveButton.tap()
+        XCTAssertTrue(app.alerts["Create an account before saving this transaction."].waitForExistence(timeout: 3))
     }
 
     func testCreateTransaction_cancelDismissesSheet() {

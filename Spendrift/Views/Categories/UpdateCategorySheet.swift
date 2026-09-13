@@ -54,7 +54,7 @@ struct UpdateCategorySheet: View {
     @State private var selectedHex: String
     @State private var didManuallyPickIcon: Bool
     @State private var didManuallyPickColor: Bool
-    @State private var nameError: String?
+    @State private var saveAlertMessage: String?
     @State private var showIconPicker = false
     @State private var showCustomColor = false
 
@@ -64,8 +64,15 @@ struct UpdateCategorySheet: View {
         name.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
-    private var isValid: Bool {
-        !trimmedName.isEmpty
+    /// First reason Save cannot complete, or `nil` when the form is ready to write.
+    private var saveBlockedReason: String? {
+        if trimmedName.isEmpty {
+            return "Enter a category name."
+        }
+        if TransactionCategory.nameExists(trimmedName, in: allCategories, excluding: category?.id) {
+            return "“\(trimmedName)” already exists. Pick another name."
+        }
+        return nil
     }
 
     private var selectedColor: Color { Color(hex: selectedHex) }
@@ -110,13 +117,21 @@ struct UpdateCategorySheet: View {
                     }
                 }
             }
+            .alert(
+                saveAlertMessage ?? "",
+                isPresented: Binding(
+                    get: { saveAlertMessage != nil },
+                    set: { if !$0 { saveAlertMessage = nil } }
+                )
+            ) {
+                Button("OK", role: .cancel) {}
+            }
             .onAppear {
                 if isCreating {
                     focusNameFieldSoon()
                 }
             }
             .onChange(of: name) { _, newValue in
-                nameError = nil
                 applyNameSuggestion(newValue)
             }
             .sheet(isPresented: $showIconPicker) {
@@ -225,9 +240,6 @@ struct UpdateCategorySheet: View {
     private var pickerScroll: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 28) {
-                if let nameError {
-                    nameErrorRow(nameError)
-                }
                 colorSection
                 iconSection
             }
@@ -350,17 +362,6 @@ struct UpdateCategorySheet: View {
         }
     }
 
-    private func nameErrorRow(_ message: String) -> some View {
-        HStack(alignment: .top, spacing: 7) {
-            Image(systemName: "exclamationmark.circle")
-                .font(.system(size: 14, weight: .semibold))
-            Text(message)
-                .font(.system(size: 12.5))
-        }
-        .foregroundStyle(Color(hex: "#FF6B6B"))
-        .accessibilityIdentifier("category-name-error")
-    }
-
     // MARK: Chrome colours
 
     private var canvas: Color {
@@ -377,7 +378,7 @@ struct UpdateCategorySheet: View {
     }
         
     private var saveButton: some View {
-        Button(action: saveCategory) {
+        Button(action: attemptSave) {
             Text("Save")
                 .font(.system(size: 14, weight: .semibold))
                 .padding(.horizontal, 16)
@@ -415,12 +416,20 @@ struct UpdateCategorySheet: View {
         }
     }
 
+    private func attemptSave() {
+        nameFieldFocused = false
+        if let message = saveBlockedReason {
+            saveAlertMessage = message
+            return
+        }
+        saveCategory()
+    }
+
     private func saveCategory() {
         let resolvedName = trimmedName
         guard !resolvedName.isEmpty else { return }
 
         if TransactionCategory.nameExists(resolvedName, in: allCategories, excluding: category?.id) {
-            nameError = "“\(resolvedName)” already exists. Pick another name."
             return
         }
 
