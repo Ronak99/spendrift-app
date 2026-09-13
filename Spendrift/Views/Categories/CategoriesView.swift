@@ -114,24 +114,10 @@ struct CategoriesView: View {
     // MARK: Atmosphere
 
     private var atmosphere: some View {
-        ZStack(alignment: .topTrailing) {
-            canvas
-
-            ColorWashBackground(color: washColor, isDark: isDark)
-                .frame(height: 360)
-                .frame(maxHeight: .infinity, alignment: .top)
-
-            Image(systemName: watermarkIcon)
-                .font(.system(size: 176, weight: .ultraLight))
-                .foregroundStyle(heroPrimary.opacity(isDark ? 0.10 : 0.08))
-                .offset(x: 40, y: -28)
-                .allowsHitTesting(false)
-                .accessibilityHidden(true)
-                .id(watermarkIcon)
-        }
-        .ignoresSafeArea()
-        .animation(typeMotion, value: selectedType)
-        .animation(typeMotion, value: watermarkIcon)
+        CategoryTrayAtmosphere(washColor: washColor, watermarkIcon: watermarkIcon)
+            .ignoresSafeArea()
+            .animation(typeMotion, value: selectedType)
+            .animation(typeMotion, value: watermarkIcon)
     }
 
     // MARK: Grid

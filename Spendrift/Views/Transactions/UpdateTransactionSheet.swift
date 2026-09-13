@@ -191,8 +191,7 @@ struct UpdateTransactionSheet: View {
                 CategoryPickerSheet(
                     selectedCategory: $selectedCategory,
                     categories: filteredCategories,
-                    defaultTypeForNewCategory: selectedCategoryType,
-                    accent: accentColor
+                    defaultTypeForNewCategory: selectedCategoryType
                 )
             }
             .sheet(isPresented: $showCreateCategorySheet) {
@@ -675,52 +674,151 @@ struct AccountPickerSheet: View {
 
     private var isDark: Bool { colorScheme == .dark }
 
-    private var canvas: Color {
-        isDark ? Color(hex: "#0A0A0B") : AppTheme.listBackground
+    private var heroPrimary: Color {
+        isDark ? .white : Color(hex: "#111111")
+    }
+
+    private var washColor: Color {
+        if let selectedAccount {
+            return AccountEnamel.color(for: selectedAccount.icon)
+        }
+        if let first = accounts.first {
+            return AccountEnamel.color(for: first.icon)
+        }
+        return AccountEnamel.fallback
+    }
+
+    private var watermarkIcon: String {
+        if let selectedAccount {
+            return selectedAccount.icon.systemImageName
+        }
+        if let first = accounts.first {
+            return first.icon.systemImageName
+        }
+        return "building.columns"
     }
 
     var body: some View {
         NavigationStack {
-            List {
-                ForEach(accounts) { account in
-                    Button {
-                        selectedAccount = account
-                        dismiss()
-                    } label: {
-                        TransactionPickerRow(
-                            title: account.name,
-                            systemImage: account.icon.systemImageName,
-                            tint: Color.accentColor,
-                            isSelected: selectedAccount?.id == account.id
-                        )
-                    }
-                    .listRowInsets(EdgeInsets(top: 4, leading: 16, bottom: 4, trailing: 16))
-                    .listRowSeparator(.hidden)
-                    .listRowBackground(Color.clear)
-                    .accessibilityIdentifier(account.name)
-                    .accessibilityLabel(account.name)
+            Group {
+                if accounts.isEmpty {
+                    emptyState
+                } else {
+                    accountList
                 }
             }
-            .listStyle(.plain)
-            .scrollContentBackground(.hidden)
-            .background(canvas.ignoresSafeArea())
+            .background {
+                CategoryTrayAtmosphere(washColor: washColor, watermarkIcon: watermarkIcon)
+                    .ignoresSafeArea()
+            }
             .navigationTitle("Select Account")
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .confirmationAction) {
-                    Button {
-                        showCreateAccountSheet = true
-                    } label: {
-                        Image(systemName: "plus")
-                    }
-                }
-            }
+            .toolbarBackground(.hidden, for: .navigationBar)
+            .toolbarColorScheme(isDark ? .dark : .light, for: .navigationBar)
+            .toolbar { toolbarContent }
             .sheet(isPresented: $showCreateAccountSheet) {
                 UpdateAccountSheet(account: nil) { newAccount in
                     selectedAccount = newAccount
                 }
             }
         }
+    }
+
+    private var accountList: some View {
+        List {
+            ForEach(Array(accounts.enumerated()), id: \.element.id) { index, account in
+                let isSelected = selectedAccount?.id == account.id
+                Button {
+                    selectedAccount = account
+                    dismiss()
+                } label: {
+                    AccountListItem(account: account, isSelected: isSelected)
+                        .listItemPositioned(index: index, count: accounts.count)
+                }
+                .buttonStyle(AccountRowPressStyle())
+                .accessibilityIdentifier(account.name)
+                .accessibilityLabel(account.name)
+                .accessibilityAddTraits(isSelected ? .isSelected : [])
+            }
+        }
+        .listStyle(.insetGrouped)
+        .scrollContentBackground(.hidden)
+        .softScrollEdge()
+    }
+
+    private var emptyState: some View {
+        VStack(spacing: 16) {
+            CategoryEnamelTile(
+                systemImage: "building.columns",
+                color: AccountEnamel.fallback
+            )
+            .frame(width: 88, height: 88)
+            .padding(.top, 28)
+
+            Text("No accounts")
+                .font(.system(size: 22, weight: .bold))
+                .tracking(-0.5)
+                .foregroundStyle(heroPrimary)
+
+            Text("Add a bank, card, or wallet to start tracking.")
+                .font(.system(size: 15))
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+
+            Button(action: { showCreateAccountSheet = true }) {
+                Text("Add account")
+                    .font(.system(size: 14, weight: .semibold))
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 8)
+                    .background(addBackground, in: Capsule())
+                    .foregroundStyle(addForeground)
+            }
+            .buttonStyle(.plain)
+            .padding(.top, 4)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .padding(.horizontal, 24)
+        .accessibilityElement(children: .combine)
+    }
+
+    @ToolbarContentBuilder
+    private var toolbarContent: some ToolbarContent {
+        if #available(iOS 26.0, *) {
+            ToolbarItem(placement: .navigationBarTrailing) {
+                addButton
+            }
+            .sharedBackgroundVisibility(.hidden)
+        } else {
+            ToolbarItem(placement: .navigationBarTrailing) {
+                addButton
+            }
+        }
+    }
+
+    private var addButton: some View {
+        Button(action: { showCreateAccountSheet = true }) {
+            Image(systemName: "plus")
+                .font(.system(size: 15, weight: .semibold))
+                .foregroundStyle(addForeground)
+                .frame(width: 32, height: 32)
+                .background(addBackground, in: Circle())
+        }
+        .accessibilityLabel("Add account")
+    }
+
+    private var addBackground: Color {
+        isDark ? Color.white.opacity(0.92) : Color(hex: "#111111")
+    }
+
+    private var addForeground: Color {
+        isDark ? Color(hex: "#111111") : .white
+    }
+}
+
+private struct AccountRowPressStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .opacity(configuration.isPressed ? 0.88 : 1)
     }
 }
 
@@ -730,70 +828,61 @@ struct CategoryPickerSheet: View {
     @Binding var selectedCategory: TransactionCategory?
     let categories: [TransactionCategory]
     let defaultTypeForNewCategory: CategoryType
-    var accent: Color = .accentColor
 
     @State private var showCreateCategorySheet = false
-    @State private var searchText = ""
+
+    private let columns = Array(repeating: GridItem(.flexible(), spacing: 16), count: 3)
 
     private var isDark: Bool { colorScheme == .dark }
 
-    private var canvas: Color {
-        isDark ? Color(hex: "#0A0A0B") : AppTheme.listBackground
+    private var heroPrimary: Color {
+        isDark ? .white : Color(hex: "#111111")
     }
 
-    private var filteredCategories: [TransactionCategory] {
-        if searchText.isEmpty { return categories }
-        return categories.filter { $0.name.localizedCaseInsensitiveContains(searchText) }
+    private var washColor: Color {
+        if let selectedCategory {
+            return CategoryEnamel.color(for: selectedCategory)
+        }
+        if let first = categories.first {
+            return CategoryEnamel.color(for: first)
+        }
+        return Color(hex: CategoryPalette.defaultHex(for: defaultTypeForNewCategory))
+    }
+
+    private var watermarkIcon: String {
+        if let selectedCategory {
+            return selectedCategory.icon.systemImageName
+        }
+        if let first = categories.first {
+            return first.icon.systemImageName
+        }
+        return CategoryPalette.defaultIcon(for: defaultTypeForNewCategory).systemImageName
     }
 
     var body: some View {
         NavigationStack {
-            List {
-                ForEach(filteredCategories) { category in
-                    let tint = ColoredCategories.color(for: category) ?? accent
-                    Button {
-                        selectedCategory = category
-                        dismiss()
-                    } label: {
-                        TransactionPickerRow(
-                            title: category.name,
-                            systemImage: category.icon.systemImageName,
-                            tint: tint,
-                            isSelected: selectedCategory?.id == category.id,
-                            selectedTint: tint
-                        )
+            ScrollView {
+                VStack(spacing: 28) {
+                    if categories.isEmpty {
+                        emptyState
+                    } else {
+                        chipGrid
                     }
-                    .listRowInsets(EdgeInsets(top: 4, leading: 16, bottom: 4, trailing: 16))
-                    .listRowSeparator(.hidden)
-                    .listRowBackground(
-                        selectedCategory?.id == category.id
-                            ? tint.opacity(isDark ? 0.16 : 0.10)
-                            : Color.clear
-                    )
-                    .accessibilityIdentifier(category.name)
-                    .accessibilityLabel(category.name)
                 }
+                .padding(.horizontal, 24)
+                .padding(.top, 12)
+                .padding(.bottom, 40)
             }
-            .listStyle(.plain)
-            .scrollContentBackground(.hidden)
-            .background(canvas.ignoresSafeArea())
-            .overlay {
-                if !searchText.isEmpty && filteredCategories.isEmpty {
-                    ContentUnavailableView.search(text: searchText)
-                }
+            .softScrollEdge()
+            .background {
+                CategoryTrayAtmosphere(washColor: washColor, watermarkIcon: watermarkIcon)
+                    .ignoresSafeArea()
             }
-            .searchable(text: $searchText, prompt: "Search categories")
             .navigationTitle("Select Category")
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .confirmationAction) {
-                    Button {
-                        showCreateCategorySheet = true
-                    } label: {
-                        Image(systemName: "plus")
-                    }
-                }
-            }
+            .toolbarBackground(.hidden, for: .navigationBar)
+            .toolbarColorScheme(isDark ? .dark : .light, for: .navigationBar)
+            .toolbar { toolbarContent }
             .sheet(isPresented: $showCreateCategorySheet) {
                 UpdateCategorySheet(category: nil, defaultTypeWhenCreating: defaultTypeForNewCategory) { newCategory in
                     selectedCategory = newCategory
@@ -801,41 +890,92 @@ struct CategoryPickerSheet: View {
             }
         }
     }
-}
 
-private struct TransactionPickerRow: View {
-    let title: String
-    let systemImage: String
-    let tint: Color
-    var isSelected: Bool = false
-    var selectedTint: Color = .accentColor
-
-    var body: some View {
-        HStack(spacing: 14) {
-            ZStack {
-                RoundedRectangle(cornerRadius: 10, style: .continuous)
-                    .fill(tint.opacity(0.16))
-                    .frame(width: 34, height: 34)
-
-                Image(systemName: systemImage)
-                    .font(.system(size: 14, weight: .semibold))
-                    .foregroundStyle(tint)
-            }
-
-            Text(title)
-                .font(.system(size: 15, weight: .regular))
-                .foregroundStyle(.primary)
-
-            Spacer()
-
-            if isSelected {
-                Image(systemName: "checkmark")
-                    .font(.system(size: 14, weight: .semibold))
-                    .foregroundStyle(selectedTint)
+    private var chipGrid: some View {
+        LazyVGrid(columns: columns, spacing: 12) {
+            ForEach(categories) { category in
+                let isSelected = selectedCategory?.id == category.id
+                Button {
+                    selectedCategory = category
+                    dismiss()
+                } label: {
+                    CategoryGridItem(category: category, isSelected: isSelected)
+                }
+                .buttonStyle(CategoryTilePressStyle())
+                .accessibilityIdentifier(category.name)
+                .accessibilityLabel(category.name)
+                .accessibilityAddTraits(isSelected ? .isSelected : [])
             }
         }
-        .padding(.vertical, 8)
-        .contentShape(Rectangle())
+        .padding(.top, 4)
+    }
+
+    private var emptyState: some View {
+        VStack(spacing: 16) {
+            CategoryEnamelTile(
+                systemImage: CategoryPalette.defaultIcon(for: defaultTypeForNewCategory).systemImageName,
+                color: Color(hex: CategoryPalette.defaultHex(for: defaultTypeForNewCategory))
+            )
+            .frame(width: 88, height: 88)
+            .padding(.top, 28)
+
+            Text("No \(defaultTypeForNewCategory.rawValue) categories")
+                .font(.system(size: 22, weight: .bold))
+                .tracking(-0.5)
+                .foregroundStyle(heroPrimary)
+
+            Text("Add one to start grouping these transactions.")
+                .font(.system(size: 15))
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+
+            Button(action: { showCreateCategorySheet = true }) {
+                Text("Add category")
+                    .font(.system(size: 14, weight: .semibold))
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 8)
+                    .background(addBackground, in: Capsule())
+                    .foregroundStyle(addForeground)
+            }
+            .buttonStyle(.plain)
+            .padding(.top, 4)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.horizontal, 24)
+        .accessibilityElement(children: .combine)
+    }
+
+    @ToolbarContentBuilder
+    private var toolbarContent: some ToolbarContent {
+        if #available(iOS 26.0, *) {
+            ToolbarItem(placement: .navigationBarTrailing) {
+                addButton
+            }
+            .sharedBackgroundVisibility(.hidden)
+        } else {
+            ToolbarItem(placement: .navigationBarTrailing) {
+                addButton
+            }
+        }
+    }
+
+    private var addButton: some View {
+        Button(action: { showCreateCategorySheet = true }) {
+            Image(systemName: "plus")
+                .font(.system(size: 15, weight: .semibold))
+                .foregroundStyle(addForeground)
+                .frame(width: 32, height: 32)
+                .background(addBackground, in: Circle())
+        }
+        .accessibilityLabel("Add category")
+    }
+
+    private var addBackground: Color {
+        isDark ? Color.white.opacity(0.92) : Color(hex: "#111111")
+    }
+
+    private var addForeground: Color {
+        isDark ? Color(hex: "#111111") : .white
     }
 }
 

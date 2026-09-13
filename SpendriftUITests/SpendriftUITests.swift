@@ -575,38 +575,6 @@ final class TransactionIntegrationTests: SpendriftUITestBase {
         XCTAssertFalse(app.buttons["Food"].exists)
     }
 
-    func testCategoryPicker_searchFiltersCategories() {
-        navigateToTransactions()
-        openTransactionsManualEntryForm()
-        waitForTransactionEditor()
-
-        app.buttons["Category"].tap()
-        XCTAssertTrue(app.navigationBars["Select Category"].waitForExistence(timeout: 3))
-
-        let searchField = app.searchFields["Search categories"]
-        XCTAssertTrue(searchField.waitForExistence(timeout: 3))
-        searchField.tap()
-        searchField.typeText("Food")
-
-        XCTAssertTrue(app.buttons["Food"].waitForExistence(timeout: 3))
-        XCTAssertFalse(app.buttons["Groceries"].exists)
-    }
-
-    func testCategoryPicker_searchNoResults() {
-        navigateToTransactions()
-        openTransactionsManualEntryForm()
-        waitForTransactionEditor()
-
-        app.buttons["Category"].tap()
-        XCTAssertTrue(app.navigationBars["Select Category"].waitForExistence(timeout: 3))
-
-        let searchField = app.searchFields["Search categories"]
-        searchField.tap()
-        searchField.typeText("NONEXISTENT")
-
-        XCTAssertTrue(app.staticTexts["No Results"].waitForExistence(timeout: 3))
-    }
-
     func testCategoryPicker_createNewCategoryFromPicker() {
         navigateToTransactions()
         openTransactionsManualEntryForm()

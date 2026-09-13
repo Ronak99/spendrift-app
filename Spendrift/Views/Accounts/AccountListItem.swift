@@ -11,6 +11,7 @@ import SwiftUI
 
 struct AccountListItem: View {
     let account: Account
+    var isSelected: Bool = false
 
     private let enamelSize: CGFloat = 42
 
@@ -30,10 +31,16 @@ struct AccountListItem: View {
                 showsShadow: false
             )
             .frame(width: enamelSize, height: enamelSize)
+            .overlay {
+                RoundedRectangle(cornerRadius: enamelSize * 0.33 + 4, style: .continuous)
+                    .strokeBorder(enamelColor, lineWidth: 2)
+                    .padding(-4)
+                    .opacity(isSelected ? 1 : 0)
+            }
 
             VStack(alignment: .leading, spacing: 3) {
                 Text(account.name)
-                    .font(.system(size: 16, weight: .semibold))
+                    .font(.system(size: 16, weight: isSelected ? .bold : .semibold))
                     .foregroundStyle(.primary)
                     .lineLimit(1)
 

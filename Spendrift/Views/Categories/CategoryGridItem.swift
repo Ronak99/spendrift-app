@@ -10,19 +10,30 @@ import SwiftUI
 
 struct CategoryGridItem: View {
     let category: TransactionCategory
+    var isSelected: Bool = false
 
     private let enamelSize: CGFloat = 80
+
+    private var enamelColor: Color {
+        CategoryEnamel.color(for: category)
+    }
 
     var body: some View {
         VStack(spacing: 10) {
             CategoryEnamelTile(
                 systemImage: category.icon.systemImageName,
-                color: CategoryEnamel.color(for: category)
+                color: enamelColor
             )
             .frame(width: enamelSize, height: enamelSize)
+            .overlay {
+                RoundedRectangle(cornerRadius: enamelSize * 0.33 + 4, style: .continuous)
+                    .strokeBorder(enamelColor, lineWidth: 2)
+                    .padding(-4)
+                    .opacity(isSelected ? 1 : 0)
+            }
 
             Text(category.name)
-                .font(.system(size: 12.5, weight: .medium))
+                .font(.system(size: 12.5, weight: isSelected ? .semibold : .medium))
                 .foregroundStyle(.primary)
                 .multilineTextAlignment(.center)
                 .lineLimit(2)
