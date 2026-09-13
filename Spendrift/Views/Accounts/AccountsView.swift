@@ -68,10 +68,7 @@ struct AccountsView: View {
     }
 
     private var washColor: Color {
-        if let atmosphereAccount {
-            return AccountEnamel.color(for: atmosphereAccount.icon)
-        }
-        return AccountEnamel.fallback
+        AccountEnamel.atmosphere(in: accounts)
     }
 
     private var watermarkIcon: String {

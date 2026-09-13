@@ -111,7 +111,7 @@ struct TransactionsView: View {
     }
 
     private var washColor: Color {
-        CategoryEnamel.income
+        AppTheme.atmosphere
     }
 
     private var addBackground: Color {

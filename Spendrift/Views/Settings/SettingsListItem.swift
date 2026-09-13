@@ -106,7 +106,7 @@ struct SettingsListItem: View {
             SettingsListItem(
                 icon: "sparkles",
                 title: "Explore",
-                accent: Color(hex: "#3A7BFF"),
+                accent: AppTheme.atmosphere,
                 accessory: .chevron
             )
             .listItemPositioned(.first)
@@ -115,7 +115,7 @@ struct SettingsListItem: View {
                 icon: "bell.fill",
                 title: "Daily reminder",
                 subtitle: "A nudge to log spending",
-                accent: Color(hex: "#3A7BFF"),
+                accent: AppTheme.atmosphere,
                 accessory: .toggle(.constant(true))
             )
             .listItemPositioned(.last)

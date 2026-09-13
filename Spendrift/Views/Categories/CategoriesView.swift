@@ -19,7 +19,7 @@ struct CategoriesView: View {
     ])
     private var allCategories: [TransactionCategory]
 
-    @State private var selectedType: CategoryType = .expense
+    @Binding var selectedType: CategoryType
     @State private var showCreateSheet = false
     @State private var categoryToDelete: TransactionCategory?
     @State private var categoryToEdit: TransactionCategory?
@@ -45,10 +45,7 @@ struct CategoriesView: View {
     }
 
     private var washColor: Color {
-        if let first = visibleCategories.first {
-            return CategoryEnamel.color(for: first)
-        }
-        return Color(hex: CategoryPalette.defaultHex(for: selectedType))
+        CategoryEnamel.atmosphere(in: allCategories, type: selectedType)
     }
 
     private var watermarkIcon: String {
@@ -261,6 +258,6 @@ struct CategoriesView: View {
         container.mainContext.insert(category)
     }
 
-    return CategoriesView()
+    return CategoriesView(selectedType: .constant(.expense))
         .modelContainer(container)
 }

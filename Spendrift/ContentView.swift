@@ -22,6 +22,7 @@ struct ContentView: View {
     @AppStorage("spendriftOnboardingVersion") private var onboardingVersion = 0
     @State private var showReminderOptIn = false
     @State private var selectedTab = 0
+    @State private var categoryTabType: CategoryType = .expense
     @State private var showCreateTransaction = false
     @State private var showStatementImport = false
     @State private var paywallContext: PaywallContext?
@@ -54,8 +55,18 @@ struct ContentView: View {
         }
     }
 
-    /// The Liquid Glass tab bar ignores SwiftUI foreground styles on tab labels, so the mic is
-    /// pre-tinted as an `.alwaysOriginal` image to keep its muted red CTA colour.
+    /// Wash of the visible tab, used as TabView tint and the selected ledger icon colour.
+    private var selectedTabWash: Color {
+        switch selectedTab {
+        case 0: AppTheme.atmosphere
+        case 1: AccountEnamel.atmosphere(in: accounts)
+        case 2: CategoryEnamel.atmosphere(in: categories, type: categoryTabType)
+        default: AppTheme.atmosphere
+        }
+    }
+
+    /// The Liquid Glass tab bar ignores SwiftUI foreground styles on tab labels, so icons that
+    /// must keep a specific colour are pre-tinted as `.alwaysOriginal` images.
     private func voiceTabIcon(disabled: Bool) -> UIImage {
         let activeTint: UIColor = colorScheme == .dark
             ? UIColor(red: 0.96, green: 0.47, blue: 0.45, alpha: 1)
@@ -65,6 +76,15 @@ struct ContentView: View {
             : activeTint
         return UIImage(systemName: "mic.fill")?
             .withTintColor(tint, renderingMode: .alwaysOriginal) ?? UIImage()
+    }
+
+    /// Selected ledger icons use the screen wash; unselected stay template so they remain gray.
+    private func ledgerTabIcon(_ systemName: String, selected: Bool) -> UIImage {
+        let image = UIImage(systemName: systemName) ?? UIImage()
+        guard selected else {
+            return image.withRenderingMode(.alwaysTemplate)
+        }
+        return image.withTintColor(UIColor(selectedTabWash), renderingMode: .alwaysOriginal)
     }
 
     var body: some View {
@@ -79,28 +99,48 @@ struct ContentView: View {
                     messageInboxBanner: $messageInboxBanner
                 )
             } label: {
-                Label("", systemImage: "house.fill")
+                Label {
+                    Text("")
+                } icon: {
+                    Image(uiImage: ledgerTabIcon("house.fill", selected: selectedTab == 0))
+                }
+                .accessibilityLabel("Transactions")
             }
 
             Tab(value: 1) {
                 AccountsView()
                     .voiceCaptureBar(controller: voiceInline)
             } label: {
-                Label("", systemImage: "creditcard")
+                Label {
+                    Text("")
+                } icon: {
+                    Image(uiImage: ledgerTabIcon("creditcard", selected: selectedTab == 1))
+                }
+                .accessibilityLabel("Accounts")
             }
 
             Tab(value: 2) {
-                CategoriesView()
+                CategoriesView(selectedType: $categoryTabType)
                     .voiceCaptureBar(controller: voiceInline)
             } label: {
-                Label("", systemImage: "folder")
+                Label {
+                    Text("")
+                } icon: {
+                    Image(uiImage: ledgerTabIcon("folder", selected: selectedTab == 2))
+                }
+                .accessibilityLabel("Categories")
             }
 
             Tab(value: 3) {
                 SettingsView()
                     .voiceCaptureBar(controller: voiceInline)
             } label: {
-                Label("", systemImage: "gearshape.fill")
+                Label {
+                    Text("")
+                } icon: {
+                    Image(uiImage: ledgerTabIcon("gearshape.fill", selected: selectedTab == 3))
+                }
+                .accessibilityLabel("Settings")
             }
 
             // `role: .search` is the only public API that lifts a tab item out of the tab bar
@@ -130,7 +170,7 @@ struct ContentView: View {
             // user picks another tab by hand.
             .disabled(voice.blocksNewCapture)
         }
-        .tint(AppTheme.accent)
+        .tint(selectedTabWash)
         .environment(\.openSettings) {
             selectedTab = 3
         }

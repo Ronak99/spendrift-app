@@ -54,6 +54,22 @@ enum CategoryEnamel {
         }
         return Color(hex: CategoryPalette.hex(matching: ColoredCategories.swatch(forName: name)))
     }
+
+    /// Wash on the Categories tab: first chip in the visible type, else that type's default.
+    static func atmosphere(in categories: [TransactionCategory], type: CategoryType) -> Color {
+        let visible = categories
+            .filter { $0.type == type }
+            .sorted { lhs, rhs in
+                if lhs.sortOrder != rhs.sortOrder {
+                    return lhs.sortOrder < rhs.sortOrder
+                }
+                return lhs.name.localizedStandardCompare(rhs.name) == .orderedAscending
+            }
+        if let first = visible.first {
+            return color(for: first)
+        }
+        return Color(hex: CategoryPalette.defaultHex(for: type))
+    }
 }
 
 /// Glossy rounded tile: solid colour, top-leading sheen, white hairline, ink icon.

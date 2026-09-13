@@ -122,6 +122,7 @@ private struct RootContainerView: View {
 
     var body: some View {
         ContentView()
+            .preferredColorScheme(.dark)
             .task {
                 entitlement.start()
                 await checker.check()

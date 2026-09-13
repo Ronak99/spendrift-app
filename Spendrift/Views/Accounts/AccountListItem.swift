@@ -81,6 +81,14 @@ enum AccountEnamel {
     static func color(for icon: AccountIcon) -> Color {
         Color(hex: hex(for: icon))
     }
+
+    /// Wash on the Accounts tab: primary account, else the first, else Periwinkle.
+    static func atmosphere(in accounts: [Account]) -> Color {
+        if let account = accounts.first(where: { $0.isPrimary }) ?? accounts.first {
+            return color(for: account.icon)
+        }
+        return fallback
+    }
 }
 
 #Preview {

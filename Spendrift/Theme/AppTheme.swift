@@ -10,8 +10,11 @@ import SwiftUI
 import UIKit
 
 enum AppTheme {
-    /// Fixed accent for Settings chrome, tab tint, and other app-wide highlights.
-    static let accent = Color(hex: "#3A7BFF")
+    /// Spendrift cyan. Static wash on Home and Settings, plus Settings chrome.
+    static let atmosphere = Color(hex: "#06DEFF")
+
+    /// Fixed accent for Settings enamel, toggles, and other app-wide highlights.
+    static let accent = atmosphere
 
     /// Gray canvas behind grouped lists, empty states, and summary headers.
     static let listBackground = Color(uiColor: .systemGroupedBackground)

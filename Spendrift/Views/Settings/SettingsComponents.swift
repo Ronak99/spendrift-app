@@ -168,7 +168,7 @@ struct SettingsScreen<Content: View>: View {
         .softScrollEdge()
         .background {
             SettingsAtmosphere(
-                washColor: AppTheme.accent,
+                washColor: AppTheme.atmosphere,
                 watermarkIcon: watermarkIcon
             )
         }
@@ -176,7 +176,7 @@ struct SettingsScreen<Content: View>: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbarBackground(.hidden, for: .navigationBar)
         .toolbarColorScheme(isDark ? .dark : .light, for: .navigationBar)
-        .tint(AppTheme.accent)
+        .tint(AppTheme.atmosphere)
     }
 }
 

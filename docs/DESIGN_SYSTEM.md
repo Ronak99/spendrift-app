@@ -35,15 +35,16 @@ Sheen on enamel tiles, the wash radial, and tile shadows all agree on that direc
 Nothing uses a generic black drop shadow.
 Shadows are tinted with the enamel colour itself.
 
-The product is dual-mode from the first screen.
-Light and dark share one hierarchy: ink `#111111` on paper, or white on `#0A0A0B`.
+The product is dark-only.
+Hierarchy is white on Night Canvas `#0A0A0B`.
 Pure `#000000` is never a canvas.
-Tab tint and Settings chrome use a single Electric Ink accent `#3A7BFF`.
-Category colour is a separate, curated world. It tints atmosphere and chips, not primary buttons.
+Home and Settings wash, tab tint on those tabs, and Settings chrome use a single Spendrift Cyan accent `#06DEFF`.
+Category colour is a separate, curated world.
+It tints atmosphere and chips on Categories (and Accounts via user enamel), not primary buttons.
 
-Onboarding and the Pro paywall are a parallel dark-only family (NeatPass night).
-They keep the wash-and-hero idea, but swap enamel squircles for circular liquid-glass plates and Electric Ink for Cyan Signal `#02dfff`.
-Do not mix those two families on ledger screens.
+Onboarding and the Pro paywall stay in the same night family (NeatPass night).
+They keep the wash-and-hero idea, but swap enamel squircles for circular liquid-glass plates.
+Their Cyan Signal `#02dfff` is the sibling of Spendrift Cyan, not a second chrome accent on ledger screens.
 
 ---
 
@@ -56,7 +57,7 @@ Use the hex, not a nearby system equivalent, whenever the token is stored or pai
 
 - **Ledger Canvas Light** (`UIColor.systemGroupedBackground`) - Grey page behind grouped lists, empty states, and summary headers.
 - **Ledger Surface Light** (`UIColor.secondarySystemGroupedBackground`) - Raised grouped-list rows, inset cards, settings groups, date capsule fill.
-- **Night Canvas** (`#0A0A0B`) - Dark-mode page fill for every ledger tab, editor, and settings screen. Also the ink inside enamel glyphs.
+- **Night Canvas** (`#0A0A0B`) - Page fill for every ledger tab, editor, and settings screen. Also the ink inside enamel glyphs.
 - **Hero Ink** (`#111111`) - Light-mode titles, hero fields, inverted-chrome fill. Dark-mode inverted-chrome type.
 - **Hero Paper** (`#FFFFFF`) - Light-mode inverted-chrome type. Dark-mode titles.
 - **Inverted Chrome Fill Dark** (`#FFFFFF` at 92% opacity) - Plus and Save fill in dark mode.
@@ -67,8 +68,7 @@ Use the hex, not a nearby system equivalent, whenever the token is stored or pai
 
 ### Product accent (one)
 
-- **Electric Ink** (`#3A7BFF`) - Tab bar tint, Settings enamel rows, Explore wash, Feature Request enamel, Settings toggles, Capture/Help/Notifications chrome.
-Saturation stays under 80%.
+- **Spendrift Cyan** (`#06DEFF`) - Home wash, Settings wash, Settings enamel rows, Explore wash, Feature Request enamel, Settings toggles, Capture/Help/Notifications chrome, and selected tab tint on Home and Settings.
 This is the only chrome accent on ledger and settings surfaces.
 Do not use it as a category colour.
 
@@ -129,7 +129,7 @@ Use only on onboarding, the Pro paywall, and other forced-dark marketing sheets.
 
 ### Pro stats rings (quota only)
 
-Concentric usage rings need four distinguishable hues, so they are allowed to leave Electric Ink:
+Concentric usage rings need four distinguishable hues, so they are allowed to leave Spendrift Cyan:
 
 - `#EC4899`, `#22C55E`, `#22C3E6`, `#9B7BFF`.
 
@@ -220,16 +220,16 @@ Heights:
 
 - Ledger tabs (Accounts, Categories): 360pt wash, pinned top.
 - Settings atmosphere: 320pt.
-- Transactions: 280pt, Sea Mint wash, no watermark.
+- Transactions: 280pt, Spendrift Cyan wash, no watermark.
 - Editors: full-bleed behind the hero, pulled up `-120pt` so the tint sits in the toolbar.
 
-The wash colour is never Electric Ink on ledger tabs.
-It follows the object in play:
+Home and Settings wash is static Spendrift Cyan.
+Categories and Accounts follow the object in play:
 
 - Categories: first visible category enamel, or the type default.
 - Accounts: primary account enamel, else first account, else Periwinkle fallback.
-- Transactions: Sea Mint (income).
-- Settings / Explore / Feature Request: Electric Ink.
+- Transactions (Home): Spendrift Cyan `#06DEFF`.
+- Settings / Explore / Feature Request: Spendrift Cyan `#06DEFF`.
 - Editors: the selected category, account, or request accent.
 
 ### 4.2 Ultra-light watermark (the image)
@@ -312,7 +312,7 @@ Shared by Transactions, Accounts, and Categories.
 Accessibility label names the object: "Add transaction", "Add account", "Add category".
 
 Do not use `plus.circle.fill`.
-Do not tint Plus with Electric Ink or enamel.
+Do not tint Plus with Spendrift Cyan or enamel.
 
 ### 5.2 Save, Done, Send (toolbar confirm)
 
@@ -331,7 +331,7 @@ Disabled (account editor): opacity 0.4, `.disabled(true)`.
 Other editors currently stay optically enabled and no-op when invalid. Match the account treatment when touching those screens.
 
 Do not use bordered text "Save".
-Do not fill Save with Electric Ink or enamel.
+Do not fill Save with Spendrift Cyan or enamel.
 Do not put Save in the hero.
 
 ### 5.3 Screen-level primary button
@@ -391,7 +391,7 @@ Grouped lists use `.insetGrouped`, hidden scroll background, `.softScrollEdge()`
 Row chrome is the system grouped surface, not a custom card.
 
 Settings chevron: 11pt semibold, primary 28% (`SettingsTokens.chevron`).
-Toggles tint Electric Ink.
+Toggles tint Spendrift Cyan.
 
 ### 5.8 Editor hero
 
@@ -473,11 +473,10 @@ Do not introduce a third card radius.
 
 Four tabs plus a search-role Speak control that never becomes a fifth page.
 Tab icons: `house.fill`, `creditcard`, `folder`, `gearshape.fill`, `mic.fill`.
-Tab tint: Electric Ink.
+Tab tint follows the visible tab's atmosphere: Spendrift Cyan on Home and Settings, user enamel on Accounts and Categories.
 Speak mic is pre-tinted (cannot rely on tab foreground):
 
-- Light: rgb(0.76, 0.24, 0.23).
-- Dark: rgb(0.96, 0.47, 0.45).
+- Active: rgb(0.96, 0.47, 0.45).
 - Disabled: tertiary label.
 
 Inline navigation titles.
@@ -612,8 +611,8 @@ Use these as the checklist when adding a screen.
 
 ### Settings hub / drill-in
 
-1. `SettingsScreen` + `SettingsAtmosphere` (Electric Ink wash, gear or screen watermark).
-2. `SettingsListItem` enamel at 42, Electric Ink fill.
+1. `SettingsScreen` + `SettingsAtmosphere` (Spendrift Cyan wash, gear or screen watermark).
+2. `SettingsListItem` enamel at 42, Spendrift Cyan fill.
 3. Capsule labels for Done / Send.
 4. `SettingsPrimaryButton` for page-level actions.
 
@@ -660,7 +659,7 @@ Stitch-style reminder for anyone building a new surface:
 
 - A second chip shape (circles, rounded-rect 8pt, squircle with a different ratio).
 - A second Plus or Save (blue pills, green checkmarks, `plus.circle.fill`, text-only trailing buttons).
-- Electric Ink as a category fill or Save fill.
+- Spendrift Cyan as a category fill or Save fill.
 - Enamel glyph in white or primary, instead of Night Canvas `#0A0A0B`.
 - Wash without a top-right radial (flat linear only).
 - Watermark at Regular or Semibold weight, or at a random size.
@@ -672,7 +671,7 @@ Stitch-style reminder for anyone building a new surface:
 - Legacy `EmptyStateView` on any new screen.
 - System `.segmented` Picker on type / role controls.
 - Drop shadows in pure black on enamel. Tint them with the fill.
-- Mixing onboarding Cyan Signal into Transactions, Accounts, Categories, or Settings.
+- Mixing onboarding Cyan Signal into Plus, Save, or enamel chips.
 - Three equal marketing cards. (The category tray is not this.)
 - Centered editor heroes. The enamel stays leading, type stays left of the remaining width.
 - Invisible button type. Inverted chrome is high-contrast on purpose: dark-on-light or light-on-dark, never white-on-white.
@@ -685,7 +684,7 @@ Change tokens here, not by restyling one screen.
 
 | Token | Source |
 | --- | --- |
-| Electric Ink, list canvas, list surface | `Theme/AppTheme.swift` |
+| Spendrift Cyan atmosphere, list canvas, list surface | `Theme/AppTheme.swift` |
 | Hex parser | `Extensions/Color+Extensions.swift` |
 | Enamel palette, defaults, name suggestions | `Utilities/CategoryPalette.swift` |
 | Name fallback swatches | `Utilities/ColoredCategories.swift` |
@@ -712,15 +711,15 @@ Documented so new work closes them instead of copying the wrong variant.
 4. **Save disabled state** is only on the account editor. Transaction and category Save should dim the same way.
 5. **`EmptyStateView`** is the pre-enamel empty state. Replace remaining call sites.
 6. **Analytics** still uses a sequential system palette for pie slices instead of `CategoryEnamel.color(for:)`.
-7. **Onboarding / ledger accent split** (Cyan Signal vs Electric Ink) is intentional. Do not "fix" it by painting ledger Plus buttons cyan.
+7. **Onboarding Cyan Signal vs ledger Spendrift Cyan** are siblings. Do not "unify" them by painting ledger Plus buttons cyan.
 8. **Widget chrome** is still generic accent pills. Bring enamel and inverted capsules across when widgets are touched.
 
 ---
 
 ## 15. Pre-flight for a new screen
 
-- [ ] Canvas is Ledger Canvas Light or Night Canvas `#0A0A0B`, not pure black.
-- [ ] Top-right wash uses `ColorWashBackground` and an enamel (or Electric Ink on Settings).
+- [ ] Canvas is Night Canvas `#0A0A0B`, not pure black.
+- [ ] Top-right wash uses `ColorWashBackground` and enamel (or Spendrift Cyan on Home and Settings).
 - [ ] Watermark is ultra-light 160/176, 8-10% hero ink, top-trailing, not in VoiceOver.
 - [ ] Icons sit in `CategoryEnamelTile` (33% continuous radius, sheen, white hairline, `#0A0A0B` glyph).
 - [ ] Plus is a 32pt inverted circle. Save / primary is an inverted capsule. Same ink/paper pair.
@@ -730,7 +729,7 @@ Documented so new work closes them instead of copying the wrong variant.
 - [ ] Empty state is enamel + 22pt title + inverted capsule.
 - [ ] Motion is the 0.42/0.86 spring, or a recipe listed above.
 - [ ] No second accent, no emoji, no Inter, no circular category icons.
-- [ ] Light and dark both checked. Contrast on Plus/Save holds in both.
+- [ ] Dark-only. Contrast on Plus/Save holds on Night Canvas.
 
 If a single box cannot be ticked, the screen is not in the system yet.
 Fix it before shipping.
