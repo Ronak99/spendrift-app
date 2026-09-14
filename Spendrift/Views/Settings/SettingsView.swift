@@ -130,11 +130,11 @@ struct SettingsView: View {
     private var hubSection: some View {
         Section {
             NavigationLink {
-                PreferencesSettingsView()
+                FeedbackView()
             } label: {
                 SettingsListItem(
-                    icon: "slider.horizontal.3",
-                    title: "Preferences",
+                    icon: "bubble.left.and.text.bubble.right.fill",
+                    title: "Feedback",
                     accent: accent
                 )
                 .listItemPositioned(index: 0, count: hubRowCount)

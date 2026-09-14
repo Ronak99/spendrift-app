@@ -130,6 +130,64 @@ struct SpendriftBackendClient {
         return try decode(ReceiptPayload.self, from: data)
     }
 
+    /// `POST /v1/feedback`
+    func submitFeedback(
+        deviceID: String,
+        appVersion: String,
+        answersJSON: String,
+        skippedToNotes: Bool,
+        notes: String?,
+        locale: String?,
+        region: String?,
+        screenshotData: Data?
+    ) async throws {
+        var fields: [(name: String, value: String, mimeType: String?)] = [
+            ("device_id", deviceID, nil),
+            ("app_version", appVersion, nil),
+            ("answers", answersJSON, nil),
+            ("skipped_to_notes", skippedToNotes ? "true" : "false", nil),
+        ]
+        if let notes { fields.append(("notes", notes, nil)) }
+        if let locale { fields.append(("locale", locale, nil)) }
+        if let region { fields.append(("region", region, nil)) }
+
+        let url = try endpoint(path: "/v1/feedback")
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        applyAuth(&request)
+
+        if let screenshotData {
+            let body = try buildMultipartBody(
+                fields: fields,
+                fileFieldName: "screenshot",
+                fileData: screenshotData,
+                fileName: "screenshot.jpg",
+                fileMIMEType: "image/jpeg"
+            )
+            request.setValue("multipart/form-data; boundary=\(body.boundary)", forHTTPHeaderField: "Content-Type")
+            request.httpBody = body.data
+        } else {
+            let boundary = "Boundary-\(UUID().uuidString)"
+            var body = Data()
+            func append(_ string: String) throws {
+                guard let chunk = string.data(using: .utf8) else {
+                    throw SpendriftBackendError.failedToBuildRequest
+                }
+                body.append(chunk)
+            }
+            for field in fields {
+                try append("--\(boundary)\r\n")
+                try append("Content-Disposition: form-data; name=\"\(field.name)\"\r\n\r\n")
+                try append("\(field.value)\r\n")
+            }
+            try append("--\(boundary)--\r\n")
+            request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
+            request.httpBody = body
+        }
+
+        _ = try await perform(request: request, expectsAuth: true)
+    }
+
     /// `POST /v1/messages/parse-transactions`
     func parseTransactionMessages(
         messages: [MessageParseRequestItem],

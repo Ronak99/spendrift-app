@@ -39,10 +39,9 @@ final class SettingsRedesignScreenshotTests: SpendriftUITestBase {
         app.navigationBars["Explore"].buttons.firstMatch.tap()
         XCTAssertTrue(app.navigationBars["Settings"].waitForExistence(timeout: 5))
 
-        app.staticTexts["Preferences"].tap()
-        XCTAssertTrue(app.navigationBars["Preferences"].waitForExistence(timeout: 5))
-        app.scrollViews.firstMatch.swipeLeft()
+        app.staticTexts["Feedback"].tap()
+        XCTAssertTrue(app.navigationBars["Feedback"].waitForExistence(timeout: 5))
         sleep(1)
-        capture("06-preferences")
+        capture("06-feedback")
     }
 }

@@ -115,6 +115,7 @@ struct ProPaywallView: View {
             await entitlement.loadProducts()
         }
         .onAppear {
+            PaywallSeenStore.markSeen()
             Analytics.capturePro(.paywallViewed, analyticsProperties)
         }
         .onDisappear {

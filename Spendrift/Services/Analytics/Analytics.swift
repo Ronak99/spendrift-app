@@ -52,6 +52,7 @@ enum Analytics {
         case restoreCompleted = "restore_completed"
         case quotaExhausted = "quota_exhausted"
         case proFeatureBlocked = "pro_feature_blocked"
+        case feedbackSubmitted = "feedback_submitted"
     }
 
     /// Property keys. Keep flat and free of PII — never send transaction amounts or notes.
@@ -78,6 +79,7 @@ enum Analytics {
         static let context = "context"
         static let plan = "plan"
         static let remaining = "remaining"
+        static let skippedToNotes = "skipped_to_notes"
     }
 
     private static let optOutDefaultsKey = "analyticsOptOut"
