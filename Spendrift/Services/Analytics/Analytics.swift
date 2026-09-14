@@ -7,6 +7,8 @@
 //
 //  No authentication: PostHog's iOS SDK persists an anonymous `distinct_id`, so
 //  funnels and retention work per-device. We never call `identify()`.
+//  A stable `device_id` super property (Keychain-backed) joins events to Sentry
+//  and Supabase feedback without creating identified person profiles.
 //
 //  PostHog is production-only (App Store and TestFlight). Debug, Simulator,
 //  and Xcode/Ad Hoc installs never initialize the SDK, so session replay,
@@ -140,6 +142,7 @@ enum Analytics {
         // so capture screenshots instead.
         config.sessionReplayConfig.screenshotMode = true
         PostHogSDK.shared.setup(config)
+        PostHogSDK.shared.register(["device_id": DeviceIdentity.current])
 
         if isOptedOut {
             PostHogSDK.shared.optOut()

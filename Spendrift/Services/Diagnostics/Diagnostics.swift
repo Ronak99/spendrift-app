@@ -103,6 +103,9 @@ enum Diagnostics {
                 return event
             }
         }
+        SentrySDK.configureScope { scope in
+            scope.setUser(User(userId: DeviceIdentity.current))
+        }
         #endif
     }
 

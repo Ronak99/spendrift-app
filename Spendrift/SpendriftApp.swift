@@ -18,6 +18,7 @@ struct SpendriftApp: App {
     private let sharedContainer: ModelContainer
 
     init() {
+        _ = DeviceIdentity.current
         Analytics.bootstrap()
         Diagnostics.bootstrap()
 
