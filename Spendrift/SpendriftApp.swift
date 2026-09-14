@@ -125,6 +125,7 @@ private struct RootContainerView: View {
     var body: some View {
         ContentView()
             .preferredColorScheme(.dark)
+            .environment(AppRouter.shared)
             .task {
                 entitlement.start()
                 await checker.check()
@@ -165,6 +166,7 @@ private struct RootContainerView: View {
             }
             .onChange(of: entitlement.status) { _, _ in
                 refreshTrialReminder()
+                NotificationManager.refreshQuotaRefillReminder()
                 resolveActiveSheet()
             }
             .sheet(item: $activeSheet) { sheet in

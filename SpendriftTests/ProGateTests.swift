@@ -80,6 +80,52 @@ struct ProGateTests {
         #expect(AIQuotaStore.used(.voice) == 0)
     }
 
+    @Test
+    func remainingIncludesBonusCredits() {
+        let sandbox = Sandbox()
+        defer { _ = sandbox }
+
+        #expect(AIQuotaStore.grantNotificationRewardIfNeeded())
+        #expect(!AIQuotaStore.grantNotificationRewardIfNeeded())
+        #expect(AIQuotaStore.bonus(.voice) == ProFeature.voice.notificationRewardBonus)
+        #expect(AIQuotaStore.remaining(.voice) == ProFeature.voice.monthlyFreeQuota + ProFeature.voice.notificationRewardBonus)
+        #expect(AIQuotaStore.bonus(.messageImport) == 0)
+    }
+
+    @Test
+    func consumeSpendsMonthlyAllowanceBeforeBonus() {
+        let sandbox = Sandbox()
+        defer { _ = sandbox }
+
+        #expect(AIQuotaStore.grantNotificationRewardIfNeeded())
+        AIQuotaStore.consume(.voice, count: ProFeature.voice.monthlyFreeQuota)
+        #expect(AIQuotaStore.used(.voice) == ProFeature.voice.monthlyFreeQuota)
+        #expect(AIQuotaStore.bonus(.voice) == ProFeature.voice.notificationRewardBonus)
+
+        AIQuotaStore.consume(.voice, count: 3)
+        #expect(AIQuotaStore.used(.voice) == ProFeature.voice.monthlyFreeQuota)
+        #expect(AIQuotaStore.bonus(.voice) == ProFeature.voice.notificationRewardBonus - 3)
+        #expect(AIQuotaStore.remaining(.voice) == ProFeature.voice.notificationRewardBonus - 3)
+    }
+
+    @Test
+    func bonusSurvivesMonthRollover() throws {
+        let sandbox = Sandbox()
+        defer { _ = sandbox }
+
+        let september = try #require(DateComponents(
+            calendar: .current, year: 2026, month: 9, day: 15
+        ).date)
+        let october = try #require(DateComponents(
+            calendar: .current, year: 2026, month: 10, day: 1
+        ).date)
+
+        #expect(AIQuotaStore.grantNotificationRewardIfNeeded())
+        AIQuotaStore.consume(.voice, count: 4, now: september)
+        #expect(AIQuotaStore.used(.voice, now: october) == 0)
+        #expect(AIQuotaStore.bonus(.voice) == ProFeature.voice.notificationRewardBonus)
+    }
+
     // MARK: - Month rollover
 
     @Test

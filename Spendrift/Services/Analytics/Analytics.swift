@@ -40,6 +40,7 @@ enum Analytics {
         case notificationPermissionGranted = "notification_permission_granted"
         case notificationScheduled = "notification_scheduled"
         case notificationOpened = "notification_opened"
+        case notificationRewardGranted = "notification_reward_granted"
         case messageInboxSynced = "message_inbox_synced"
 
         // Spendrift Pro
@@ -73,6 +74,8 @@ enum Analytics {
         static let isDefault = "is_default"
         static let initialBalance = "initial_balance"
         static let granted = "granted"
+        static let path = "path"
+        static let campaign = "campaign"
         static let removedCount = "removed_count"
         static let keptCount = "kept_count"
         static let feature = "feature"
@@ -139,8 +142,8 @@ enum Analytics {
         // opt-out as event capture below.
         config.sessionReplay = true
         config.sessionReplayConfig.maskAllTextInputs = false
-        config.sessionReplayConfig.maskAllImages = true
-        config.sessionReplayConfig.maskAllSandboxedViews = true
+        config.sessionReplayConfig.maskAllImages = false
+        config.sessionReplayConfig.maskAllSandboxedViews = false
         // SwiftUI view hierarchies don't serialise into PostHog's wireframe format,
         // so capture screenshots instead.
         config.sessionReplayConfig.screenshotMode = true

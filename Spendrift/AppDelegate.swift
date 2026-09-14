@@ -21,6 +21,7 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
         didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil
     ) -> Bool {
         UNUserNotificationCenter.current().delegate = self
+        PushNotifications.bootstrap(launchOptions: launchOptions)
         #if DEBUG
         DebugSwiftBootstrap.start(debugSwift)
         #endif

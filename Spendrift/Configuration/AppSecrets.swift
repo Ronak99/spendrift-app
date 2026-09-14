@@ -47,4 +47,9 @@ enum AppSecrets {
         let trimmed = base.absoluteString.trimmingCharacters(in: CharacterSet(charactersIn: "/"))
         return URL(string: trimmed + "/ingest")
     }
+
+    static var oneSignalAppID: String {
+        (Bundle.main.infoDictionary?["SpendriftOneSignalAppID"] as? String ?? "")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+    }
 }

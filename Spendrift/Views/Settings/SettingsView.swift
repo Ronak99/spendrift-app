@@ -9,6 +9,7 @@
 import SwiftData
 import SwiftUI
 import UIKit
+import UserNotifications
 
 #if DEBUG
     import DebugSwift
@@ -31,6 +32,10 @@ struct SettingsView: View {
     @State private var showReceiptCamera = false
     @State private var showReceiptLibrary = false
     @State private var receiptShare = ReceiptCaptureController()
+    @State private var notificationAuthorization: UNAuthorizationStatus?
+    @State private var awaitingSystemGrant = false
+    @Environment(\.scenePhase) private var scenePhase
+    @Environment(AppRouter.self) private var router
 
     /// Taps on the version footer needed to reveal the developer tools.
     private static let developerRevealTapCount = 5
@@ -51,7 +56,9 @@ struct SettingsView: View {
     }
 
     var body: some View {
-        NavigationStack {
+        @Bindable var router = router
+
+        NavigationStack(path: $router.settingsPath) {
             SettingsScreen(title: "Settings", watermarkIcon: "gearshape") {
                 hubSection
                 proSection
@@ -63,8 +70,21 @@ struct SettingsView: View {
 
                 versionSection
             }
+            .navigationDestination(for: AppRouter.SettingsDestination.self) { destination in
+                switch destination {
+                case .feedback:
+                    FeedbackView()
+                case .explore:
+                    ExploreSettingsView()
+                }
+            }
         }
         .animation(.easeInOut(duration: 0.2), value: developerModeUnlocked)
+        .task { await refreshNotificationAuthorization() }
+        .onChange(of: scenePhase) { _, phase in
+            guard phase == .active else { return }
+            Task { await refreshNotificationAuthorization() }
+        }
         .sheet(isPresented: $showMessageInboxDebug) {
             MessageInboxDebugView()
         }
@@ -124,14 +144,22 @@ struct SettingsView: View {
 
     // MARK: - Hub
 
-    private var hubRowCount: Int { 4 }
+    private var showsNotificationOptIn: Bool {
+        guard let notificationAuthorization else { return false }
+        return notificationAuthorization == .notDetermined
+            || notificationAuthorization == .denied
+    }
+
+    private var hubRowCount: Int { showsNotificationOptIn ? 5 : 4 }
+
+    private var exploreIndex: Int { showsNotificationOptIn ? 2 : 1 }
+    private var receiptIndex: Int { showsNotificationOptIn ? 3 : 2 }
+    private var statementIndex: Int { showsNotificationOptIn ? 4 : 3 }
 
     @ViewBuilder
     private var hubSection: some View {
         Section {
-            NavigationLink {
-                FeedbackView()
-            } label: {
+            NavigationLink(value: AppRouter.SettingsDestination.feedback) {
                 SettingsListItem(
                     icon: "bubble.left.and.text.bubble.right.fill",
                     title: "Feedback",
@@ -140,15 +168,17 @@ struct SettingsView: View {
                 .listItemPositioned(index: 0, count: hubRowCount)
             }
 
-            NavigationLink {
-                ExploreSettingsView()
-            } label: {
+            if showsNotificationOptIn {
+                notificationOptInRow
+            }
+
+            NavigationLink(value: AppRouter.SettingsDestination.explore) {
                 SettingsListItem(
                     icon: "sparkles",
                     title: "Explore",
                     accent: accent
                 )
-                .listItemPositioned(index: 1, count: hubRowCount)
+                .listItemPositioned(index: exploreIndex, count: hubRowCount)
             }
 
             Button {
@@ -160,7 +190,7 @@ struct SettingsView: View {
                     accent: accent,
                     accessory: .chevron
                 )
-                .listItemPositioned(index: 2, count: hubRowCount)
+                .listItemPositioned(index: receiptIndex, count: hubRowCount)
             }
             .buttonStyle(.plain)
             .confirmationDialog("Scan receipt", isPresented: $showReceiptScanOptions, titleVisibility: .visible) {
@@ -192,10 +222,31 @@ struct SettingsView: View {
                     accent: accent,
                     accessory: .chevron
                 )
-                .listItemPositioned(index: 3, count: hubRowCount)
+                    .listItemPositioned(index: statementIndex, count: hubRowCount)
             }
             .buttonStyle(.plain)
         }
+    }
+
+    private var notificationOptInRow: some View {
+        SettingsListItem(
+            icon: "bell.badge.fill",
+            title: "Turn on notifications",
+            subtitle: "Get a free top-up: 10 voice notes, 5 receipts, and 1 bank statement.",
+            accent: accent,
+            accessory: .toggle(notificationToggle)
+        )
+        .listItemPositioned(index: 1, count: hubRowCount)
+    }
+
+    private var notificationToggle: Binding<Bool> {
+        Binding(
+            get: { false },
+            set: { newValue in
+                guard newValue else { return }
+                Task { await enableNotificationsFromToggle() }
+            }
+        )
     }
 
     private var proSection: some View {
@@ -313,10 +364,34 @@ struct SettingsView: View {
             modelContext: modelContext
         )
     }
+
+    private func refreshNotificationAuthorization() async {
+        let status = await NotificationManager.authorizationStatus()
+        if awaitingSystemGrant, NotificationManager.isPermissionGranted(status) {
+            awaitingSystemGrant = false
+            _ = await PushNotifications.enableFromSettings()
+        }
+        notificationAuthorization = status
+    }
+
+    private func enableNotificationsFromToggle() async {
+        let status = await NotificationManager.authorizationStatus()
+        if status == .denied {
+            awaitingSystemGrant = true
+        }
+        let granted = await PushNotifications.enableFromSettings()
+        await refreshNotificationAuthorization()
+        if granted {
+            withAnimation(.easeInOut(duration: 0.2)) {
+                notificationAuthorization = .authorized
+            }
+        }
+    }
 }
 
 #Preview {
     SettingsView()
+        .environment(AppRouter.shared)
         .modelContainer(
             for: [Transaction.self, Account.self, TransactionCategory.self],
             inMemory: true

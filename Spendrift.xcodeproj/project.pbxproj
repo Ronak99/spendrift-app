@@ -9,9 +9,12 @@
 /* Begin PBXBuildFile section */
 		65FFD3D22F85103A00D901CF /* SpendriftWidget.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = A10000012E3F70000058CDE8 /* SpendriftWidget.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		C50000032E3F70000058CDE8 /* SpendriftShareExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = C10000012E3F70000058CDE8 /* SpendriftShareExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		D50000032E3F70000058CDE8 /* SpendriftNotificationServiceExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = D10000012E3F70000058CDE8 /* SpendriftNotificationServiceExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		FE00000C2E3F70000058CDE8 /* PostHog in Frameworks */ = {isa = PBXBuildFile; productRef = FE00000B2E3F70000058CDE8 /* PostHog */; };
 		FE00000E2E3F70000058CDE8 /* Sentry in Frameworks */ = {isa = PBXBuildFile; productRef = FE00000D2E3F70000058CDE8 /* Sentry */; };
 		FE0000122E3F70000058CDE8 /* DebugSwift in Frameworks */ = {isa = PBXBuildFile; productRef = FE0000112E3F70000058CDE8 /* DebugSwift */; };
+		FE0000162E3F70000058CDE8 /* OneSignalFramework in Frameworks */ = {isa = PBXBuildFile; productRef = FE0000142E3F70000058CDE8 /* OneSignalFramework */; };
+		FE0000172E3F70000058CDE8 /* OneSignalExtension in Frameworks */ = {isa = PBXBuildFile; productRef = FE0000152E3F70000058CDE8 /* OneSignalExtension */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -43,6 +46,13 @@
 			remoteGlobalIDString = C10000062E3F70000058CDE8;
 			remoteInfo = SpendriftShareExtension;
 		};
+		D50000012E3F70000058CDE8 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 65BB66432E3F644F0058CDE8 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = D10000062E3F70000058CDE8;
+			remoteInfo = SpendriftNotificationServiceExtension;
+		};
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -54,6 +64,7 @@
 			files = (
 				65FFD3D22F85103A00D901CF /* SpendriftWidget.appex in Embed Foundation Extensions */,
 				C50000032E3F70000058CDE8 /* SpendriftShareExtension.appex in Embed Foundation Extensions */,
+				D50000032E3F70000058CDE8 /* SpendriftNotificationServiceExtension.appex in Embed Foundation Extensions */,
 			);
 			name = "Embed Foundation Extensions";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -66,6 +77,7 @@
 		65BB66622E3F64510058CDE8 /* SpendriftUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SpendriftUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		A10000012E3F70000058CDE8 /* SpendriftWidget.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = SpendriftWidget.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		C10000012E3F70000058CDE8 /* SpendriftShareExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = SpendriftShareExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		D10000012E3F70000058CDE8 /* SpendriftNotificationServiceExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = SpendriftNotificationServiceExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -89,6 +101,13 @@
 				Info.plist,
 			);
 			target = C10000062E3F70000058CDE8 /* SpendriftShareExtension */;
+		};
+		D30000012E3F70000058CDE8 /* Exceptions for "SpendriftNotificationServiceExtension" folder in "SpendriftNotificationServiceExtension" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = D10000062E3F70000058CDE8 /* SpendriftNotificationServiceExtension */;
 		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
@@ -127,6 +146,14 @@
 			path = SpendriftShareExtension;
 			sourceTree = "<group>";
 		};
+		D10000022E3F70000058CDE8 /* SpendriftNotificationServiceExtension */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				D30000012E3F70000058CDE8 /* Exceptions for "SpendriftNotificationServiceExtension" folder in "SpendriftNotificationServiceExtension" target */,
+			);
+			path = SpendriftNotificationServiceExtension;
+			sourceTree = "<group>";
+		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -137,6 +164,7 @@
 				FE00000C2E3F70000058CDE8 /* PostHog in Frameworks */,
 				FE00000E2E3F70000058CDE8 /* Sentry in Frameworks */,
 				FE0000122E3F70000058CDE8 /* DebugSwift in Frameworks */,
+				FE0000162E3F70000058CDE8 /* OneSignalFramework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -168,6 +196,14 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		D10000032E3F70000058CDE8 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				FE0000172E3F70000058CDE8 /* OneSignalExtension in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -186,6 +222,7 @@
 				65BB66652E3F64510058CDE8 /* SpendriftUITests */,
 				A10000022E3F70000058CDE8 /* SpendriftWidget */,
 				C10000022E3F70000058CDE8 /* SpendriftShareExtension */,
+				D10000022E3F70000058CDE8 /* SpendriftNotificationServiceExtension */,
 				657A64B72F82972E00814448 /* Frameworks */,
 				65BB664C2E3F644F0058CDE8 /* Products */,
 			);
@@ -199,6 +236,7 @@
 				65BB66622E3F64510058CDE8 /* SpendriftUITests.xctest */,
 				A10000012E3F70000058CDE8 /* SpendriftWidget.appex */,
 				C10000012E3F70000058CDE8 /* SpendriftShareExtension.appex */,
+				D10000012E3F70000058CDE8 /* SpendriftNotificationServiceExtension.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -220,6 +258,7 @@
 			dependencies = (
 				65FFD3D42F85103A00D901CF /* PBXTargetDependency */,
 				C50000022E3F70000058CDE8 /* PBXTargetDependency */,
+				D50000022E3F70000058CDE8 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				65BB664D2E3F644F0058CDE8 /* Spendrift */,
@@ -229,6 +268,7 @@
 				FE00000B2E3F70000058CDE8 /* PostHog */,
 				FE00000D2E3F70000058CDE8 /* Sentry */,
 				FE0000112E3F70000058CDE8 /* DebugSwift */,
+				FE0000142E3F70000058CDE8 /* OneSignalFramework */,
 			);
 			productName = Spendrift;
 			productReference = 65BB664B2E3F644F0058CDE8 /* Spendrift.app */;
@@ -324,6 +364,29 @@
 			productReference = C10000012E3F70000058CDE8 /* SpendriftShareExtension.appex */;
 			productType = "com.apple.product-type.app-extension";
 		};
+		D10000062E3F70000058CDE8 /* SpendriftNotificationServiceExtension */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = D10000072E3F70000058CDE8 /* Build configuration list for PBXNativeTarget "SpendriftNotificationServiceExtension" */;
+			buildPhases = (
+				D10000052E3F70000058CDE8 /* Sources */,
+				D10000032E3F70000058CDE8 /* Frameworks */,
+				D10000042E3F70000058CDE8 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				D10000022E3F70000058CDE8 /* SpendriftNotificationServiceExtension */,
+			);
+			name = SpendriftNotificationServiceExtension;
+			packageProductDependencies = (
+				FE0000152E3F70000058CDE8 /* OneSignalExtension */,
+			);
+			productName = SpendriftNotificationServiceExtension;
+			productReference = D10000012E3F70000058CDE8 /* SpendriftNotificationServiceExtension.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -351,6 +414,9 @@
 					C10000062E3F70000058CDE8 = {
 						CreatedOnToolsVersion = 16.4;
 					};
+					D10000062E3F70000058CDE8 = {
+						CreatedOnToolsVersion = 16.4;
+					};
 				};
 			};
 			buildConfigurationList = 65BB66462E3F644F0058CDE8 /* Build configuration list for PBXProject "Spendrift" */;
@@ -366,6 +432,7 @@
 				FE00000A2E3F70000058CDE8 /* XCRemoteSwiftPackageReference "posthog-ios" */,
 				FE00000F2E3F70000058CDE8 /* XCRemoteSwiftPackageReference "sentry-cocoa" */,
 				FE0000102E3F70000058CDE8 /* XCRemoteSwiftPackageReference "DebugSwift" */,
+				FE0000132E3F70000058CDE8 /* XCRemoteSwiftPackageReference "OneSignal-iOS-SDK" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 65BB664C2E3F644F0058CDE8 /* Products */;
@@ -377,6 +444,7 @@
 				65BB66612E3F64510058CDE8 /* SpendriftUITests */,
 				A10000062E3F70000058CDE8 /* SpendriftWidget */,
 				C10000062E3F70000058CDE8 /* SpendriftShareExtension */,
+				D10000062E3F70000058CDE8 /* SpendriftNotificationServiceExtension */,
 			);
 		};
 /* End PBXProject section */
@@ -411,6 +479,13 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		C10000042E3F70000058CDE8 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		D10000042E3F70000058CDE8 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -455,6 +530,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		D10000052E3F70000058CDE8 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
@@ -477,6 +559,11 @@
 			isa = PBXTargetDependency;
 			target = C10000062E3F70000058CDE8 /* SpendriftShareExtension */;
 			targetProxy = C50000012E3F70000058CDE8 /* PBXContainerItemProxy */;
+		};
+		D50000022E3F70000058CDE8 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = D10000062E3F70000058CDE8 /* SpendriftNotificationServiceExtension */;
+			targetProxy = D50000012E3F70000058CDE8 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -621,12 +708,14 @@
 				INFOPLIST_FILE = Spendrift/Info.plist;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.finance";
 				INFOPLIST_KEY_LSApplicationQueriesSchemes_0 = shortcuts;
+				INFOPLIST_KEY_NSCameraUsageDescription = "Spendrift uses the camera so you can snap a photo of a receipt and turn it into a transaction.";
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Spendrift uses microphone to record voice transactions.";
 				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "Spendrift uses speech recognition to convert voice to transactions.";
 				INFOPLIST_KEY_NSSupportsLiveActivities = YES;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UIBackgroundModes_0 = audio;
+				INFOPLIST_KEY_UIBackgroundModes_1 = "remote-notification";
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UIStatusBarHidden = NO;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
@@ -668,12 +757,14 @@
 				INFOPLIST_FILE = Spendrift/Info.plist;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.finance";
 				INFOPLIST_KEY_LSApplicationQueriesSchemes_0 = shortcuts;
+				INFOPLIST_KEY_NSCameraUsageDescription = "Spendrift uses the camera so you can snap a photo of a receipt and turn it into a transaction.";
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Spendrift uses microphone to record voice transactions.";
 				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "Spendrift uses speech recognition to convert voice to transactions.";
 				INFOPLIST_KEY_NSSupportsLiveActivities = YES;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UIBackgroundModes_0 = audio;
+				INFOPLIST_KEY_UIBackgroundModes_1 = "remote-notification";
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UIStatusBarHidden = NO;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
@@ -893,6 +984,68 @@
 			};
 			name = Release;
 		};
+		D10000082E3F70000058CDE8 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = SpendriftNotificationServiceExtension/SpendriftNotificationServiceExtension.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = YAHK4G4F5A;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = SpendriftNotificationServiceExtension/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = Spendrift;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 18.5;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 2.0.2;
+				PRODUCT_BUNDLE_IDENTIFIER = com.ronakpunase.Spendrift.NotificationServiceExtension;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Debug;
+		};
+		D10000092E3F70000058CDE8 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = SpendriftNotificationServiceExtension/SpendriftNotificationServiceExtension.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = YAHK4G4F5A;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = SpendriftNotificationServiceExtension/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = Spendrift;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 18.5;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 2.0.2;
+				PRODUCT_BUNDLE_IDENTIFIER = com.ronakpunase.Spendrift.NotificationServiceExtension;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -950,6 +1103,15 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
+		D10000072E3F70000058CDE8 /* Build configuration list for PBXNativeTarget "SpendriftNotificationServiceExtension" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				D10000082E3F70000058CDE8 /* Debug */,
+				D10000092E3F70000058CDE8 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
@@ -977,6 +1139,14 @@
 				minimumVersion = 1.19.0;
 			};
 		};
+		FE0000132E3F70000058CDE8 /* XCRemoteSwiftPackageReference "OneSignal-iOS-SDK" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/OneSignal/OneSignal-iOS-SDK";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 5.2.0;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -994,6 +1164,16 @@
 			isa = XCSwiftPackageProductDependency;
 			package = FE0000102E3F70000058CDE8 /* XCRemoteSwiftPackageReference "DebugSwift" */;
 			productName = DebugSwift;
+		};
+		FE0000142E3F70000058CDE8 /* OneSignalFramework */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = FE0000132E3F70000058CDE8 /* XCRemoteSwiftPackageReference "OneSignal-iOS-SDK" */;
+			productName = OneSignalFramework;
+		};
+		FE0000152E3F70000058CDE8 /* OneSignalExtension */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = FE0000132E3F70000058CDE8 /* XCRemoteSwiftPackageReference "OneSignal-iOS-SDK" */;
+			productName = OneSignalExtension;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

@@ -158,6 +158,36 @@ struct SpendriftBackendClient {
         _ = try await perform(request: request, expectsAuth: true)
     }
 
+    /// `POST /v1/notifications/state`
+    func recordNotificationState(
+        deviceID: String,
+        appVersion: String,
+        permissionStatus: String,
+        onesignalSubscriptionID: String?,
+        rewardGranted: Bool
+    ) async throws {
+        var bodyObject: [String: Any] = [
+            "device_id": deviceID,
+            "app_version": appVersion,
+            "permission_status": permissionStatus,
+            "reward_granted": rewardGranted,
+        ]
+        if let onesignalSubscriptionID {
+            bodyObject["onesignal_subscription_id"] = onesignalSubscriptionID
+        }
+
+        let bodyData = try JSONSerialization.data(withJSONObject: bodyObject)
+
+        let url = try endpoint(path: "/v1/notifications/state")
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        applyAuth(&request)
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.httpBody = bodyData
+
+        _ = try await perform(request: request, expectsAuth: true)
+    }
+
     /// `POST /v1/feedback`
     func submitFeedback(
         deviceID: String,

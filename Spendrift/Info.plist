@@ -13,20 +13,24 @@
 			</array>
 		</dict>
 	</array>
-	<key>SpendriftBackendBaseURL</key>
-	<string>$(SPENDRIFT_BACKEND_BASE_URL)</string>
-	<key>SpendriftBackendClientToken</key>
-	<string>$(SPENDRIFT_BACKEND_CLIENT_TOKEN)</string>
-	<key>SpendriftPostHogAPIKey</key>
-	<string>$(SPENDRIFT_POSTHOG_API_KEY)</string>
-	<key>SpendriftSentryDSN</key>
-	<string>$(SPENDRIFT_SENTRY_DSN)</string>
 	<key>NSAppTransportSecurity</key>
 	<dict>
 		<key>NSAllowsLocalNetworking</key>
 		<true/>
 	</dict>
-	<key>NSCameraUsageDescription</key>
-	<string>Spendrift uses the camera so you can snap a photo of a receipt and turn it into a transaction.</string>
+	<key>OneSignal_app_groups_key</key>
+	<string>group.com.ronakpunase.Spendrift</string>
+	<key>OneSignal_suppress_launch_urls</key>
+	<true/>
+	<key>SpendriftBackendBaseURL</key>
+	<string>$(SPENDRIFT_BACKEND_BASE_URL)</string>
+	<key>SpendriftBackendClientToken</key>
+	<string>$(SPENDRIFT_BACKEND_CLIENT_TOKEN)</string>
+	<key>SpendriftOneSignalAppID</key>
+	<string>$(SPENDRIFT_ONESIGNAL_APP_ID)</string>
+	<key>SpendriftPostHogAPIKey</key>
+	<string>$(SPENDRIFT_POSTHOG_API_KEY)</string>
+	<key>SpendriftSentryDSN</key>
+	<string>$(SPENDRIFT_SENTRY_DSN)</string>
 </dict>
 </plist>

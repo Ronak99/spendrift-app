@@ -117,20 +117,29 @@ struct ProStatsRingsView: View {
 struct ProStat: Identifiable {
     let feature: ProFeature
     let used: Int
+    let bonus: Int
     let color: Color
 
     var id: String { feature.id }
     var quota: Int { feature.monthlyFreeQuota }
-    var remaining: Int { max(0, quota - used) }
+    var remainingMonthly: Int { max(0, quota - used) }
+    var remaining: Int { remainingMonthly + bonus }
 
     /// Clamped: a batch import can consume the last credits, and a ring past full
-    /// would wind a second time around the track.
+    /// would wind a second time around the track. Bonus credits widen the pool so
+    /// a spent monthly allowance with leftover bonus does not look empty.
     var usedFraction: Double {
-        guard quota > 0 else { return 0 }
-        return min(1, Double(used) / Double(quota))
+        let pool = quota + bonus
+        guard pool > 0 else { return 0 }
+        return min(1, Double(used) / Double(pool))
     }
 
-    var remainingLabel: String { "\(remaining) of \(quota) left" }
+    var remainingLabel: String {
+        if bonus > 0 {
+            return "\(remainingMonthly) of \(quota) left, +\(bonus) bonus"
+        }
+        return "\(remainingMonthly) of \(quota) left"
+    }
 
     /// Fixed hues from the app palette rather than the user's accent: four shades of
     /// one accent would be indistinguishable stacked as concentric bands.
@@ -146,6 +155,7 @@ struct ProStat: Identifiable {
             ProStat(
                 feature: feature,
                 used: AIQuotaStore.used(feature),
+                bonus: AIQuotaStore.bonus(feature),
                 color: ringColors[index % ringColors.count]
             )
         }

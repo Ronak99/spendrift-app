@@ -3,9 +3,11 @@
 //  Spendrift
 //
 //  Opt-in local notifications that nudge users to log their spending. No backend
-//  or push entitlement required — everything is scheduled on-device via
+//  or push entitlement required - everything is scheduled on-device via
 //  UNUserNotificationCenter. Taps deep-link into the existing quick-add flows
 //  through the registered `spendrift://` URL scheme.
+//
+//  Remote campaigns go through OneSignal. This type only owns on-device requests.
 //
 
 import Foundation
@@ -39,7 +41,11 @@ enum NotificationManager {
         static let typePrefix = "spendrift.reminder.type."
         static let voicePrefix = "spendrift.reminder.voice."
         static let monthlyStatement = "spendrift.reminder.statement.monthly"
+        static let quotaRefill = "spendrift.quota.refill.monthly"
     }
+
+    private static let typeWeekdays = [1, 2, 4, 6]   // Sun, Mon, Wed, Fri
+    private static let voiceWeekdays = [3, 5, 7]     // Tue, Thu, Sat
 
     /// Deep-link destinations carried in each notification's `userInfo`.
     private enum DeepLink {
@@ -47,6 +53,12 @@ enum NotificationManager {
         static let createTransaction = "spendrift://createTransaction"
         static let voiceExpense = "spendrift://voiceExpense"
         static let importStatement = "spendrift://importStatement"
+    }
+
+    private static var reminderIdentifiers: [String] {
+        typeWeekdays.map { RequestID.typePrefix + String($0) }
+            + voiceWeekdays.map { RequestID.voicePrefix + String($0) }
+            + [RequestID.monthlyStatement]
     }
 
     // MARK: - Permission
@@ -66,22 +78,38 @@ enum NotificationManager {
         await UNUserNotificationCenter.current().notificationSettings().authorizationStatus
     }
 
+    static func permissionStatusName(_ status: UNAuthorizationStatus) -> String {
+        switch status {
+        case .notDetermined: "not_determined"
+        case .denied: "denied"
+        case .authorized: "authorized"
+        case .provisional: "provisional"
+        case .ephemeral: "ephemeral"
+        @unknown default: "not_determined"
+        }
+    }
+
+    static func isPermissionGranted(_ status: UNAuthorizationStatus) -> Bool {
+        switch status {
+        case .authorized, .provisional, .ephemeral: true
+        default: false
+        }
+    }
+
     // MARK: - Scheduling
 
-    /// Clears all Spendrift reminders and, when `enabled`, reschedules the daily
+    /// Clears Spendrift spend reminders and, when `enabled`, reschedules the daily
     /// spend reminders (alternating type/voice across weekdays) plus the monthly
     /// bank-statement nudge, all at the user's chosen `hour`/`minute`.
+    ///
+    /// Only removes identifiers this function owns. A blanket
+    /// `removeAllPendingNotificationRequests()` would also wipe the Pro trial
+    /// reminder and the monthly quota-refill notification.
     static func reschedule(enabled: Bool, hour: Int, minute: Int) {
         let center = UNUserNotificationCenter.current()
-        center.removeAllPendingNotificationRequests()
+        center.removePendingNotificationRequests(withIdentifiers: reminderIdentifiers)
 
         guard enabled else { return }
-
-        // Type-expense reminder on Sun/Mon/Wed/Fri; voice-expense on Tue/Thu/Sat.
-        // Alternating keeps both required flavors in rotation without firing two
-        // notifications on the same day.
-        let typeWeekdays = [1, 2, 4, 6]   // Sun, Mon, Wed, Fri
-        let voiceWeekdays = [3, 5, 7]     // Tue, Thu, Sat
 
         for weekday in typeWeekdays {
             scheduleWeekly(
@@ -103,13 +131,47 @@ enum NotificationManager {
                 hour: hour,
                 minute: minute,
                 title: "Speak today's spending",
-                body: "Tap and say what you spent — Spendrift handles the rest.",
+                body: "Tap and say what you spent - Spendrift handles the rest.",
                 deeplink: DeepLink.voiceExpense,
                 kind: "voice"
             )
         }
 
         scheduleMonthlyStatement(hour: hour, minute: minute)
+    }
+
+    /// Schedules a repeating 1st-of-month refill ping for free-tier users who have
+    /// notification permission. Subscribers have no quota to refill.
+    static func refreshQuotaRefillReminder() {
+        Task {
+            let granted = isPermissionGranted(await authorizationStatus())
+            guard granted, !ProEntitlementCache.isPro else {
+                cancelQuotaRefill()
+                return
+            }
+            scheduleQuotaRefill()
+        }
+    }
+
+    static func cancelQuotaRefill() {
+        UNUserNotificationCenter.current()
+            .removePendingNotificationRequests(withIdentifiers: [RequestID.quotaRefill])
+    }
+
+    private static func scheduleQuotaRefill() {
+        var components = DateComponents()
+        components.day = 1
+        components.hour = 10
+        components.minute = 0
+        let trigger = UNCalendarNotificationTrigger(dateMatching: components, repeats: true)
+        add(
+            identifier: RequestID.quotaRefill,
+            title: "Your free AI credits are back",
+            body: "Voice notes, receipts, and a bank statement parse just refilled for the month.",
+            deeplink: nil,
+            kind: "quota_refill",
+            trigger: trigger
+        )
     }
 
     private static func scheduleWeekly(
@@ -131,7 +193,7 @@ enum NotificationManager {
     }
 
     private static func scheduleMonthlyStatement(hour: Int, minute: Int) {
-        // Second day of every month — early enough that the prior month is fully
+        // Second day of every month - early enough that the prior month is fully
         // settled, prompting a statement upload for a complete summary.
         var components = DateComponents()
         components.day = 2
@@ -152,7 +214,7 @@ enum NotificationManager {
         identifier: String,
         title: String,
         body: String,
-        deeplink: String,
+        deeplink: String?,
         kind: String,
         trigger: UNNotificationTrigger
     ) {
@@ -160,7 +222,9 @@ enum NotificationManager {
         content.title = title
         content.body = body
         content.sound = .default
-        content.userInfo = [DeepLink.key: deeplink]
+        if let deeplink {
+            content.userInfo = [DeepLink.key: deeplink]
+        }
 
         let request = UNNotificationRequest(identifier: identifier, content: content, trigger: trigger)
         UNUserNotificationCenter.current().add(request) { error in

@@ -14,6 +14,7 @@ struct ContentView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.scenePhase) private var scenePhase
     @Environment(\.colorScheme) private var colorScheme
+    @Environment(AppRouter.self) private var router
     @Query(sort: \Account.createdOn) private var accounts: [Account]
     @Query(sort: \TransactionCategory.name) private var categories: [TransactionCategory]
     @AppStorage(NotificationManager.Keys.dailyReminderEnabled) private var dailyReminderEnabled = true
@@ -182,6 +183,7 @@ struct ContentView: View {
             handleVoiceIntentLaunchIfNeeded()
             handlePendingReceiptShareIfNeeded()
             drainMessageInboxIfNeeded()
+            drainPendingRoute()
             Analytics.capture(.appOpened, [Analytics.Key.daysSinceInstall: Analytics.daysSinceInstall])
         }
         .onChange(of: scenePhase) { _, newPhase in
@@ -189,6 +191,8 @@ struct ContentView: View {
             handleVoiceIntentLaunchIfNeeded()
             handlePendingReceiptShareIfNeeded()
             drainMessageInboxIfNeeded()
+            drainPendingRoute()
+            PushNotifications.handleForeground()
             Analytics.capture(.appOpened, [Analytics.Key.daysSinceInstall: Analytics.daysSinceInstall])
         }
         .onChange(of: selectedTab) { _, newTab in
@@ -211,6 +215,9 @@ struct ContentView: View {
         }
         .onOpenURL { url in
             handleQuickAction(url: url)
+        }
+        .onChange(of: router.pending) { _, _ in
+            drainPendingRoute()
         }
         // The Pro paywall queues behind this alert; without the broadcast a sheet
         // presented at the same moment would swallow it.
@@ -311,6 +318,12 @@ struct ContentView: View {
         default:
             break
         }
+    }
+
+    private func drainPendingRoute() {
+        guard let route = router.consume() else { return }
+        selectedTab = 3
+        router.settingsPath = [route.settingsDestination]
     }
 
     /// Picks up a receipt image shared via the Share Extension (stored in the App Group)
