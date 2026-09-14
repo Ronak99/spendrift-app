@@ -3,28 +3,29 @@
 Proposal only.
 No implementation in this document.
 
+This ships to **live App Store users**, not a TestFlight-only survey.
+Keep it short enough that someone who opened Feedback because something broke still finishes it.
+
 Feedback becomes its own page in the app, not a mail sheet bolted onto Settings.
-The existing `FeatureRequestView` (free-text idea plus optional screenshot, sent by Mail) stays as the skip destination, not as the default path.
+The last step is always a notes screen (thoughts, bugs, feature requests).
+**Skip to notes** on earlier steps jumps straight to that final step.
 
 ---
 
 ## Page chrome
 
-Every step of the form uses the same navigation bar:
+Every step uses the same navigation bar:
 
-- **Back** on the top left. Goes to the previous step. On the first step it dismisses the page.
-- **"Feedback"** as the centered title on every step, including the skip destination.
-- **Next** on the top right. Advances when the current step has an answer. Disabled until something is selected.
+- **Back** on the top left. Previous step, or dismiss on step 1.
+- **"Feedback"** centered on every step, including notes.
+- **Next** on the top right. Disabled until the step has an answer.
 
-A persistent **Skip to notes** control lives outside the step itself.
-Place it as a text button under the question, or as a tertiary action at the bottom of the page.
-It jumps the user out of the structured form and onto a notes page where they can write freely, request a feature, or dump whatever they actually came to say.
+**Skip to notes** sits below the question (text button or tertiary action).
+It jumps straight to free-text feedback.
+Do not force people who already know what they want to say through the form.
 
-The notes page is the current feature-request surface: a text field, optional screenshot, send.
-Do not force people who already know what they want to say through ten rating screens.
-
-Next on the last structured step submits the form (and can still offer an optional notes coda).
-Back from notes returns to the step they skipped from, unless they already sent.
+Next advances through the survey; the final step uses **Submit** instead of Next.
+Back from the notes step returns to the previous survey step unless they already sent.
 
 ---
 
@@ -32,553 +33,283 @@ Back from notes returns to the step they skipped from, unless they already sent.
 
 Only two input types on structured steps:
 
-1. **0 to 5 stars.** Use for quality, accuracy, delight, and "how much do you want this."
-   0 is a valid answer ("I have not used this" or "this does not work for me"), not a missing answer.
-2. **Multi-choice.** Single-select unless the question is explicitly marked multi-select.
-   Keep option lists short (4 to 6). Always include an honest out: **Not sure**, **Haven't used it**, or **Other**.
+1. **0 to 5 stars** - quality, accuracy, recommendation.
+   0 is valid ("haven't used this" / "doesn't work for me").
+2. **Multi-choice** - single-select unless marked multi-select.
+   Always include **Haven't used it**, **Not sure**, or **Other** where honest.
 
-No sliders, no free text, no numeric keyboards on the structured path.
-Free text belongs only on the skip / notes page.
-
-Prefer one question per step.
-A screen that asks two things at once will be skipped or answered carelessly.
+One question per step on survey steps 1 to 8.
+Free text only on the final notes step (step 9).
 
 ---
 
-## Locked-in steps
+## Live form (8 survey steps + notes)
 
-These two are already decided.
-They should stay first.
+Ship this set.
+Every question maps to a real product surface you can improve from the answer.
 
 ### 1. UI approval
 
 **Question:** How does the app look and feel?
 **Input:** 0 to 5 stars.
 
-This is the first impression score for chrome, type, colour wash, lists, and sheets.
-It is not "do you like Spendrift."
-It is specifically visual and interaction quality.
+Visual and interaction quality only: colour wash, lists, sheets, typography.
+Not "do I like finance apps."
 
-0 can mean "I have not formed an opinion yet."
-Treat 1 to 2 as a design problem, 4 to 5 as "do not restyle this."
+---
 
 ### 2. Found where
 
 **Question:** Where did you find Spendrift?
 **Input:** Single-select.
 
-- Facebook
 - Reddit
-- Instagram
+- YouTube
+- App Store
 - Other
 
-**Suggested extra options** (keep the four above if you want the list tiny, otherwise add these because they match how the app actually grew):
-
-- YouTube
-- App Store search
-- A friend
-- Shortcuts / Apple community
-
-YouTube is the only proven acquisition channel in `BUSINESS_GROWTH_STRATEGY.md`.
-Reddit is already a planned secondary layer.
-Facebook and Instagram are the paid/social surfaces you named.
-Without YouTube and App Store on this list, a large share of real installs will collapse into Other, which is almost useless.
-
-If the list stays at four, that is fine.
-Just know Other will be noisy.
+These four match how installs actually arrive today.
+YouTube is the proven channel; Reddit is the secondary trust layer; App Store is organic search and browse.
+**Other** will still catch friends, Instagram, and anything else without diluting the main buckets.
 
 ---
 
-## What the rest of the form is for
+### 3. Shortcuts and Explore
 
-Spendrift is a privacy-first, on-device ledger with four capture styles (type, voice, receipt, statement PDF) plus Shortcuts, widgets, SMS automations, and a Pro gate on the AI calls.
+**Question:** Have you looked at the shortcuts Spendrift offers?
+**Input:** Single-select.
 
-PostHog can tell you *what people did*.
-This form is for *why*, *what they wanted instead*, and *what they will not do*.
+- Yes, I opened **Explore** or saw them in onboarding
+- I saw them but didn't add any
+- I added at least one shortcut
+- I didn't know they existed
 
-The steps below are ordered so early answers are useful even if someone bails, and later answers get more specific.
+**Why:** Onboarding page 2 and Settings → Explore exist almost entirely to push three iCloud shortcuts:
 
-A practical cap is **10 to 12 structured steps** plus the optional notes page.
-Everything in the "full catalog" section can be swapped in, branched, or dropped.
-The **recommended set** is the one to ship first.
+1. **Voice Record Expense** - speak a transaction
+2. **Log Expense Amount** - type an amount without opening the app
+3. **Log Transaction Message** - bank SMS automation (six-step setup in Shortcuts)
+
+If most people pick "didn't know they existed," discovery is broken, not the shortcuts themselves.
+If they opened Explore but never added one, the friction is in the add flow or the value prop, not awareness.
 
 ---
 
-## Recommended set (ship these)
+### 4. Which shortcuts did you add?
 
-Steps 1 and 2 are the locked-in ones above.
-Then:
-
-### 3. Why they opened it
-
-**Question:** What are you mainly using Spendrift for?
-**Input:** Single-select.
-
-- Just log spending, as little effort as possible
-- See where money went this month
-- Import a bank statement and be done
-- Track more than one account
-- Replace another expense app
-
-**Why:** The product is built as a lazy capture ledger, not a budget OS.
-This answer tells you whether the current promise matches the user, or whether they arrived expecting YNAB / Wallet / a net-worth dashboard.
-
-### 4. How they want to capture
-
-**Question:** How do you prefer to add a transaction?
-**Input:** Single-select. (Multi-select if you want "I use more than one.")
-
-- Type it in the app
-- Speak it
-- Scan a receipt
-- Upload a bank statement
-- Bank SMS, automatically
-- Widget or Shortcut, without opening the app
-- Haven't added one yet
-
-**Why:** Capture is the whole product.
-Voice, receipt, PDF, and SMS are the four Pro-gated AI features.
-Widget / Shortcut is the free power-user path (Explore, onboarding, Action Button).
-If most people pick "type it," Pro is a tax on a minority.
-If they pick "haven't added one yet," the form is catching pre-activation users and later feature questions should be skipped.
-
-### 5. Capture quality
-
-**Question:** When you add something, how often does Spendrift get it right?
-**Input:** 0 to 5 stars.
-
-Show this only if step 4 was not "Haven't added one yet."
-Optional follow-up (same step or the next one) if they pick speak / receipt / statement / SMS:
-
-**Question:** Which capture feels least reliable?
-**Input:** Single-select.
-
-- Voice
-- Receipt scan
-- Statement PDF
-- Bank SMS
-- Manual typing
-- Not sure
-
-**Why:** AI accuracy is the actual cost center and the actual magic.
-A star on "the app" will not tell you if voice miscategorises Food as Shopping, or if PDF import dumping everything as Uncategorized is the thing people bounce on.
-
-### 6. Privacy bargain
-
-**Question:** How do you feel about sending a voice clip, receipt photo, or statement to be read?
-**Input:** Single-select.
-
-- Fine, as long as the ledger stays on my phone
-- I only want on-device, even if capture is dumber
-- I don't think about it
-- I won't use those features
-
-**Why:** The brand is on-device SwiftData with no iCloud and no user accounts.
-Voice, receipts, and PDFs still leave the device through the backend AI proxy.
-This is the one preference that decides whether "privacy-first" is a selling point or a contradiction, and whether an on-device-only mode is worth building.
-
-### 7. Habit and reminders
-
-**Question:** How often do you want to log?
-**Input:** Single-select.
-
-- In the moment, every spend
-- Once a day
-- Once a week
-- Once a month, from a statement
-- Only when I remember
-
-Then, only if they did not pick "Once a month":
-
-**Question:** Daily reminder?
-**Input:** Single-select.
-
-- Yes, I want the nudge
-- No, reminders would annoy me
-- I already turned it off
-- Haven't noticed it
-
-**Why:** Preferences currently *is* the reminder toggle.
-Default is on.
-The first-transaction prompt is easy to miss.
-This tells you whether the nudge is a retention tool or a uninstall reason, and whether statement-once-a-month users should even see a daily bell.
-
-### 8. Home screen and Shortcuts
-
-**Question:** Have you set Spendrift up outside the app?
+**Question:** Which of these did you set up?
 **Input:** Multi-select.
 
-- Home screen widget
-- Siri or Shortcuts
-- Action Button / Back Tap
+Show only if step 3 was **I added at least one shortcut** or **I saw them but didn't add any** (still useful to see what they considered).
+
+- Voice Record Expense
+- Log Expense Amount
 - Bank SMS automation
+- Home screen widget
 - None of these
 
-**Why:** Onboarding and Explore exist almost entirely to push Shortcuts.
-SMS setup is a six-step Shortcuts automation.
-Widgets are free and unused by anyone who never adds one.
-This is the "did the power-user surface land" question.
-If the answer is mostly None, the onboarding Shortcuts page is failing, not the capture engine.
+**Why:** Tells you which shortcut hook actually converts.
+Voice is the YouTube hero; typed amount is the silent power-user path; SMS is the highest-setup, highest-payoff automation.
+Widget is separate but lives in the same "outside the app" bucket.
 
-### 9. Analytics usefulness
+If step 3 was **I didn't know they existed**, skip this step.
 
-**Question:** Does the Analytics tab help you?
+---
+
+### 5. How do you add transactions?
+
+**Question:** How do you actually log spending in Spendrift?
+**Input:** Multi-select.
+
+- Type in the app
+- Speak (in app or via shortcut)
+- Scan a receipt
+- Import a bank statement (PDF)
+- Bank SMS
+- Widget or Shortcut only
+- Haven't logged one yet
+
+**Why:** This is behaviour, not preference.
+PostHog can corroborate it, but self-report still catches intent vs habit ("I want voice but I always type").
+
+If **Haven't logged one yet**, skip steps 6 and 7 and go to step 8 (recommend), then step 9 (notes).
+
+---
+
+### 6. Capture accuracy
+
+**Question:** When you log something, how often does Spendrift get it right?
+**Input:** 0 to 5 stars.
+
+Show only if step 5 was not **Haven't logged one yet**.
+
+**Why:** One score for the capture path they actually use.
+Covers manual typing, voice parsing, receipt scan, PDF rows, and SMS parsing without a separate screen per feature.
+
+Optional branch (only if they rated 0 to 2): one follow-up step.
+
+**Question:** What was wrong most often?
+**Input:** Single-select.
+
+- Wrong amount
+- Wrong category
+- Wrong account
+- It failed / I had to re-enter
+- Not sure
+
+---
+
+### 7. AI features and Pro
+
+**Question:** Have you tried any of Spendrift's AI features?
+**Input:** Multi-select.
+
+- Voice capture
+- Receipt scan
+- Bank statement import
+- Bank SMS import
+- None of these
+
+If they picked at least one AI feature, show on the next screen (same step or one more):
+
+**Question:** How was that feature?
 **Input:** 0 to 5 stars.
 
 Then:
 
-**Question:** What would you want to see more of?
+**Question:** How do you feel about Pro?
 **Input:** Single-select.
 
-- Category breakdown is enough
-- Budgets / limits per category
-- Longer than one month (year, custom range)
-- Recurring bills
-- Nothing, I barely open it
-- Haven't opened it
-
-**Why:** Statistics today is month-scoped: spent, income, net, daily average, donut, daily trend, weekday pattern.
-No budgets, no year view, no export.
-This is the cleanest signal for whether "advanced analytics" from the old monetization brainstorm is real demand or a competitor checkbox.
-
-### 10. Missing piece
-
-**Question:** If we built one thing next, what should it be?
-**Input:** Single-select.
-
-- Budgets
-- Export (CSV / PDF)
-- Recurring transactions
-- iCloud / device sync
-- Split / shared expenses
-- Better categories
-- Something else (send them to notes)
-
-**Why:** These are the gaps that actually exist in the current app:
-
-- No budgets.
-- No export.
-- No recurring.
-- Local-only store, no iCloud, no account.
-- No household / split.
-- Categories are a small seeded set (Salary, Food, Groceries, Transport, Bills, Rent, Shopping, Health, Miscellaneous) plus whatever the user adds.
-- Currency follows the device locale, with an INR-leaning history and no in-app picker.
-
-This is the roadmap vote.
-"Something else" should deep-link to the notes page with the prompt pre-focused.
-
-### 11. Pro value
-
-**Question:** Are the AI features worth paying for?
-**Input:** 0 to 5 stars.
-
-Then:
-
-**Question:** What is closest to how you see Pro?
-**Input:** Single-select.
-
-- I would pay for voice / SMS / receipts / statements
+- Worth paying for
 - Free limits are enough
-- I would pay if it included budgets / export / sync
 - I don't want a subscription
 - I already subscribe
-- I haven't hit the paywall
+- Haven't hit the paywall
 
-**Why:** Pro today gates only the four AI calls.
-Widgets, analytics, themes, and Shortcuts stay free.
-Free monthly allowances are 10 voice, 30 SMS, 5 receipts, 1 statement.
-If people rate Pro 1 star because they wanted sync and export, the packaging is wrong, not the price.
-If they say "free limits are enough," the trial-after-first-success placement is working as designed.
+If they picked **None of these**, skip the star rating and only ask the Pro question if they have seen a paywall (otherwise skip step 7 Pro follow-up entirely and go to step 8, then notes).
 
-### 12. Would you recommend it
+**Why:** Pro gates only the four AI calls (10 voice / 30 SMS / 5 receipts / 1 statement per month free).
+This ties feedback to the paid surface without turning the form into a paywall.
+
+---
+
+### 8. Would you recommend it
 
 **Question:** Would you recommend Spendrift to someone like you?
 **Input:** 0 to 5 stars.
 
-This is a lightweight NPS.
-It belongs last so it is coloured by the rest of the session, not by the chrome alone.
-4 to 5 can later unlock an App Store review prompt.
-1 to 2 should offer the notes page ("what should we fix").
+Lightweight NPS, last so it reflects the whole session.
+4 to 5 can later trigger an App Store review prompt.
+0 to 2 can pre-fill the notes placeholder with "What should we fix?"
 
 ---
 
-## Full catalog (more steps you can add)
+### 9. Notes (final step)
 
-Use these when you want a longer research pass, a one-shot TestFlight survey, or branching after a low score.
-Do not dump all of them into the always-on in-app form.
+**Question:** Anything else you want to share?
+**Input:** Free text (optional) plus optional screenshot.
 
-### Acquisition follow-ups
-
-**Question:** What convinced you to install?
-**Input:** Single-select.
-
-- Voice logging
-- Statement import
-- "It stays on my phone"
-- Shortcuts / Action Button
-- The look of the app
-- Price / free to download
-- Not sure
-
-Ties to the YouTube hooks (voice, PDF populate, Action Button) and the privacy line.
-
-**Question:** Which of these have you used before?
-**Input:** Multi-select.
-
-- Wallet / Money Manager
-- YNAB or similar budget app
-- Apple Wallet / Notes / a spreadsheet
-- Nothing, this is my first tracker
-
-Tells you the comparison set.
-A spreadsheet refugee wants export.
-A YNAB refugee wants budgets and guilt.
-A "nothing" user wants the empty-state first transaction to feel obvious.
-
-### Ledger structure
-
-**Question:** How many pots of money do you need?
-**Input:** Single-select.
-
-- One account is enough
-- A few accounts (cash, bank, card)
-- Many accounts, with a clear primary
-- I want net worth / assets too
-
-The app already has multi-account, a primary account, and derived balances.
-Shortcuts and widgets assume primary.
-If "one account" wins, primary-account UX can stay hidden.
-If "net worth" wins, you are being asked to become a different app.
-
-**Question:** Are the default categories enough?
-**Input:** Single-select.
-
-- Yes
-- I had to add my own
-- I want a much bigger list
-- I want to hide defaults I don't use
-- Haven't looked
-
-The seeded catalog is intentionally small.
-Legacy installs had a larger set (Education, Entertainment, Baby, Investments, and so on).
-This is the preference that decides whether to grow the seed, keep it tight, or add locale packs (the `localeAdditions` hook is empty today).
-
-**Question:** Do you need a third type besides income and expense?
-**Input:** Single-select.
-
-- No
-- Transfer between my own accounts
-- Savings / goals
-- Not sure
-
-Transactions are only income or expense.
-People who move money from checking to savings will currently distort both.
-
-### Capture friction, one feature at a time
-
-Only show the matching question if they claimed to use that method.
-
-**Voice — How was speaking a transaction?**
-0 to 5 stars.
-
-**Voice — What was off?**
-Single-select: amount, category, account, date, it just failed, nothing.
-
-**Receipt — How was scanning a receipt?**
-0 to 5 stars.
-
-**Statement — How was importing a PDF?**
-0 to 5 stars.
-
-**Statement — What got in the way?**
-Single-select: file type (PDF only), size, password-protected file, uncategorized rows, privacy toggle, it worked.
-
-**SMS — How was setting up bank SMS?**
-0 to 5 stars.
-
-**SMS — Where did you stop?**
-Single-select: never tried, Shortcuts was confusing, automation did not fire, parsing was wrong, it works.
-
-These map onto real edges: 2 to 30 second voice clips, PDF-only 20 MB, password PDFs, imported rows landing uncategorized, six-step SMS automation, messages redacted on device then parsed.
-
-### Surfaces people may not have found
-
-**Question:** Which of these do you use?
-**Input:** Multi-select.
-
-- Transactions tab
-- Accounts tab
-- Categories tab
-- Analytics tab
-- Settings
-- Widgets
-- Live Activity / Dynamic Island while voice is running
-
-If Categories and Analytics are rarely checked, those tabs are candidates to simplify, not to load with more.
-
-**Question:** How does adding a transaction by typing feel?
-**Input:** 0 to 5 stars.
-
-The typed sheet is amount-in-the-hero, notes, date, income vs expense, account, category.
-Amounts are whole numbers in the field.
-This is the free forever path.
-If this scores low, Pro cannot save the app.
-
-### Notifications and chrome
-
-**Question:** How do you feel about the daily reminder copy and timing?
-**Input:** Single-select.
-
-- Time is fine
-- I want to pick days, not only time
-- I want a monthly statement reminder only
-- Turn it off by default
-
-Today: daily time picker, default enabled, plus a day-2-of-month statement nudge in the scheduler.
-Users cannot pick weekdays in Settings even though the underlying schedule already varies deep links by weekday.
-
-**Question:** How do you feel about Spendrift's look?
-Already asked as UI approval.
-Optional split if UI stars are 0 to 2:
-
-**Question:** What should change first?
-Single-select: colours, typography, spacing / density, icons, dark / light, it feels like too much, it feels like too little.
-
-There is a night-family onboarding / paywall and a ledger colour-wash.
-A low UI score with "it feels like too much" is a different fix from "colours."
-
-### Money and locale
-
-**Question:** Is the currency display right for you?
-**Input:** Single-select.
-
-- Yes, my phone currency is correct
-- I need to pick a currency in the app
-- I need more than one currency
-- I care about paise / cents, not rounded amounts
-
-Lists can show decimals.
-The Transactions header rounds to whole units after 10 transactions in the month.
-Widgets show integer amounts.
-This is a real consistency bug and a real localisation preference (INR-heavy audience vs everyone else).
-
-### Trust and support
-
-**Question:** If something breaks, what would you do?
-**Input:** Single-select.
-
-- Use this Feedback page
-- Request a feature in Settings
-- Email
-- Leave an App Store review
-- Delete the app
-- Nothing
-
-Tells you whether this page will actually be found, or whether you still need a more obvious entry (empty states, failed voice bar, paywall).
-
-**Question:** How do you feel about anonymous usage analytics?
-**Input:** Single-select.
-
-- Fine
-- I want a toggle
-- I don't want any of it
-
-PostHog and Sentry exist.
-There is still no Settings toggle for `analyticsOptOut` / `diagnosticsOptOut`.
-This is the preference that decides whether that toggle is a trust feature or unused chrome.
-
----
-
-## Branching (keep the form short in production)
-
-Always show:
-
-1. UI approval
-2. Found where
-3. Why they opened it
-4. Preferred capture
-12. Recommend
-
-Show only when relevant:
-
-- Capture quality, if they have added a transaction.
-- Per-feature accuracy, if they named a specific AI method.
-- Privacy bargain, if they use or want AI capture.
-- Reminders, if they are not a once-a-month importer.
-- Outside-the-app setup, if they chose widget / Shortcut / SMS.
-- Analytics follow-up, if they have opened Analytics or used the app more than a few days.
-- Pro value, if they have seen a paywall, used an AI feature, or been around long enough to hit a quota.
-- UI split, only if UI stars are 0 to 2.
-- Missing piece, always, unless they already skipped to notes.
-
-Anyone can hit **Skip to notes** at any time.
-Do not block Next on later steps if they skipped an optional one.
-A selected "Haven't used it" / "Not sure" is a complete answer.
-
----
-
-## Notes / manual feedback page (skip destination)
-
-Title stays **Feedback**.
-Back returns to the form.
-The primary action is Send, not Next.
-
-Copy should make the two modes obvious:
-
-- "Skip the questions and just write."
 - Placeholder: thoughts, a bug, or a feature you want.
+- Primary action is **Submit**, not Next.
+- Notes can be empty if the survey answers alone are enough.
+- **Skip to notes** on any earlier step lands here with prior answers preserved.
 
-Keep screenshot attach.
-That is how people report UI issues the star rating cannot describe.
+On submit, the full survey (steps 1 to 8 answers plus notes) is sent to Supabase keyed by `device_id`.
 
-If they already answered structured steps, send those answers with the note so a "voice is wrong" essay is attached to "I capture by speaking" and a 2-star accuracy score.
+---
 
-If they came here with no structured answers, that is still a valid submission.
+## Branching summary
+
+| Step | Always show? |
+|---|---|
+| 1 UI approval | Yes |
+| 2 Found where | Yes |
+| 3 Shortcuts / Explore | Yes |
+| 4 Which shortcuts added | If step 3 ≠ "didn't know" |
+| 5 How they log | Yes |
+| 6 Capture accuracy | If step 5 ≠ "haven't logged" |
+| 6b What was wrong | If step 6 is 0 to 2 stars |
+| 7 AI + Pro | Yes, but star rating only if they used AI |
+| 8 Recommend | Yes |
+| 9 Notes | Yes (always last; Submit) |
+
+**Skip to notes** available on steps 1 to 8 (jumps to step 9).
+
+Typical path: **8 to 10 screens** depending on answers, always ending on notes.
+Worst case with the accuracy branch: **11** (includes notes).
+Target median: **9**.
+
+---
+
+## What we dropped (and why)
+
+These were in the earlier draft but cut for live users:
+
+- **Why they opened the app** - too abstract; capture behaviour (step 5) is sharper.
+- **Privacy bargain** - important strategically, but not actionable in a short form; use notes or a one-off campaign if needed.
+- **Reminders** - Settings already exposes the toggle; PostHog can show opt-out.
+- **Analytics tab** - usage is measurable; roadmap voting belongs in notes or a future pulse, not every submission.
+- **"Build one thing next"** - duplicates notes; people with strong opinions will skip to write anyway.
+- **Full catalog / 25-step variants** - not for production.
 
 ---
 
 ## What this form should not try to be
 
 - A substitute for PostHog.
-  Do not ask "how many transactions did you create" or "which tab did you open last."
+  Do not ask "how many transactions" or "which tab last."
 - A crash reporter.
   Sentry exists.
 - A paywall.
-  Asking about Pro is research, not a prompt to subscribe.
-- A 25-step interrogation.
-  If you want all of the catalog, run it once on TestFlight, not in Settings for every user.
+  Pro questions are research, not a subscribe prompt.
+- A long survey.
+  If a question does not map to a feature you can fix or a funnel you can measure, cut it.
 
 ---
 
-## Suggested submit payload (for when this is built)
+## Submit payload (Supabase)
 
-Per submission, keep:
+Every submission is keyed by a single **`device_id`**: a Keychain-backed UUID from `DeviceIdentity.current`, generated on first launch per device and independent of analytics opt-out.
 
-- App version
-- Step answers (question id, type, value)
-- Whether they used skip-to-notes
-- Notes text / screenshot flag
-- Locale / region (not a name, not an email unless Mail is the transport)
+The same `device_id` is attached everywhere else:
 
-That is enough to slice "Reddit users who want budgets" vs "YouTube users who live on voice" without turning Feedback into an account system.
+- **PostHog** - registered super property on every event (anonymous `distinct_id` unchanged)
+- **Sentry** - user id on crashes and errors
+- **Supabase** - primary key for joining feedback to product and crash data
+
+Per submission row:
+
+- `device_id` (UUID string, required)
+- `app_version` (marketing version + build)
+- `answers` (JSON: question id, type, value for steps 1 to 8)
+- `skipped_to_notes` (bool: did they jump past remaining survey steps)
+- `notes` (text, optional)
+- `has_screenshot` (bool)
+- `locale` / region (no name, no email)
+
+No auth, no PII. The id is a random UUID only.
+
+Example slices this enables:
+
+- YouTube installs (`found_where`) who never opened Explore, joined via `device_id` to their PostHog funnel
+- Reddit users who added voice shortcut but rate capture 1 to 2 stars, with Sentry errors on the same `device_id`
+- App Store organic users who only type in-app and never tried AI
 
 ---
 
-## Short version of the first ship
+## Quick reference
 
 | # | Question | Input |
 |---|---|---|
 | 1 | How does the app look and feel? | 0 to 5 stars |
-| 2 | Where did you find Spendrift? | Facebook, Reddit, Instagram, Other |
-| 3 | What are you mainly using it for? | Multi-choice |
-| 4 | How do you prefer to add a transaction? | Multi-choice |
-| 5 | When you add something, how often is it right? | 0 to 5 stars |
-| 6 | How do you feel about AI leaving the device? | Multi-choice |
-| 7 | How often do you want to log? | Multi-choice |
-| 8 | Widget, Shortcuts, Action Button, SMS? | Multi-select |
-| 9 | Does Analytics help? | 0 to 5 stars, then one choice |
-| 10 | If we built one thing next? | Multi-choice |
-| 11 | Are the AI features worth paying for? | 0 to 5 stars, then one choice |
-| 12 | Would you recommend Spendrift? | 0 to 5 stars |
+| 2 | Where did you find Spendrift? | Reddit, YouTube, App Store, Other |
+| 3 | Have you looked at the shortcuts Spendrift offers? | Single-select |
+| 4 | Which shortcuts did you set up? | Multi-select (conditional) |
+| 5 | How do you actually log spending? | Multi-select |
+| 6 | How often does logging get it right? | 0 to 5 stars (conditional) |
+| 6b | What was wrong most often? | Single-select (if 0 to 2 stars) |
+| 7 | AI features tried + Pro feeling | Multi-select + stars + single-select |
+| 8 | Would you recommend Spendrift? | 0 to 5 stars |
+| 9 | Anything else you want to share? | Free text + screenshot (Submit) |
 
-Plus Skip to notes, available on every step.
+Plus **Skip to notes** on steps 1 to 8.
