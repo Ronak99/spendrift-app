@@ -80,7 +80,7 @@ enum CategoryNameSuggestion {
     }
 
     private static let rules: [Rule] = [
-        Rule(keywords: ["grocer", "vegetable", "market", "supermarket", "basket"], icon: .groceries, hex: "#8BD17C"),
+        Rule(keywords: ["grocer", "veg", "market", "supermarket", "basket"], icon: .groceries, hex: "#8BD17C"),
         Rule(keywords: ["rent", "house", "home", "mortgage"], icon: .rent, hex: "#6C8CFF"),
         Rule(keywords: ["fuel", "petrol", "diesel", "gas", "car", "transport", "uber", "ola"], icon: .transportation, hex: "#FF9F6B"),
         Rule(keywords: ["food", "dining", "restaurant", "lunch", "dinner", "swiggy", "zomato"], icon: .food, hex: "#FF6B6B"),
