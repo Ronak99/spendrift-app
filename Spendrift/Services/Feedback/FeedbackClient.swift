@@ -40,7 +40,7 @@ struct FeedbackClient {
         let answersJSON = try Self.encodeAnswersJSON(draft.encodedAnswers())
         try await backend.submitFeedback(
             deviceID: DeviceIdentity.current,
-            appVersion: Self.appVersionLabel(),
+            appVersion: AppInfo.appVersionLabel(),
             answersJSON: answersJSON,
             skippedToNotes: draft.skippedToNotes,
             notes: Self.normalizedNotes(draft.notes),
@@ -48,12 +48,6 @@ struct FeedbackClient {
             region: Locale.current.region?.identifier,
             screenshotData: draft.screenshotData
         )
-    }
-
-    static func appVersionLabel() -> String {
-        let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "-"
-        let build = Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "-"
-        return "\(version) (\(build))"
     }
 
     static func normalizedNotes(_ raw: String) -> String? {

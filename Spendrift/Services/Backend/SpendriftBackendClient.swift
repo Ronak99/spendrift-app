@@ -130,6 +130,34 @@ struct SpendriftBackendClient {
         return try decode(ReceiptPayload.self, from: data)
     }
 
+    /// `POST /v1/devices/launch`
+    func recordDeviceLaunch(
+        deviceID: String,
+        posthogID: String?,
+        device: String?,
+        iosVersion: String,
+        appVersion: String
+    ) async throws {
+        var bodyObject: [String: Any] = [
+            "device_id": deviceID,
+            "ios_version": iosVersion,
+            "app_version": appVersion,
+        ]
+        if let posthogID { bodyObject["posthog_id"] = posthogID }
+        if let device { bodyObject["device"] = device }
+
+        let bodyData = try JSONSerialization.data(withJSONObject: bodyObject)
+
+        let url = try endpoint(path: "/v1/devices/launch")
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        applyAuth(&request)
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.httpBody = bodyData
+
+        _ = try await perform(request: request, expectsAuth: true)
+    }
+
     /// `POST /v1/feedback`
     func submitFeedback(
         deviceID: String,

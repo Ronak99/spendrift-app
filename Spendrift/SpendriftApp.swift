@@ -21,6 +21,7 @@ struct SpendriftApp: App {
         _ = DeviceIdentity.current
         Analytics.bootstrap()
         Diagnostics.bootstrap()
+        DeviceLaunchLogger.record()
 
         // Ensure Shortcuts picks up newly added/changed intent parameters.
         Task {

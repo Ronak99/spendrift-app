@@ -86,6 +86,7 @@ enum Analytics {
     private static let installDateKey = "analyticsInstallDate"
     private static let firstTransactionKey = "didFireFirstTransactionCreated"
     private static let placeholderAPIKey = "phc_REPLACE_ME"
+    private static var didSetupPostHog = false
 
     /// False unless this binary was distributed by Apple (App Store or TestFlight).
     /// Debug, Simulator, and Xcode/Ad Hoc installs never construct the SDK.
@@ -145,10 +146,17 @@ enum Analytics {
         config.sessionReplayConfig.screenshotMode = true
         PostHogSDK.shared.setup(config)
         PostHogSDK.shared.register(["device_id": DeviceIdentity.current])
+        didSetupPostHog = true
 
         if isOptedOut {
             PostHogSDK.shared.optOut()
         }
+    }
+
+    /// PostHog's anonymous distinct id, when the SDK was initialized this launch.
+    static var posthogDistinctId: String? {
+        guard didSetupPostHog else { return nil }
+        return PostHogSDK.shared.getDistinctId()
     }
 
     // MARK: - Capture
