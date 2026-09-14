@@ -114,7 +114,7 @@ struct ContentView: View {
                 Label {
                     Text("")
                 } icon: {
-                    Image(uiImage: ledgerTabIcon("creditcard", selected: selectedTab == 1))
+                    Image(uiImage: ledgerTabIcon("building.columns.fill", selected: selectedTab == 1))
                 }
                 .accessibilityLabel("Accounts")
             }
@@ -126,7 +126,7 @@ struct ContentView: View {
                 Label {
                     Text("")
                 } icon: {
-                    Image(uiImage: ledgerTabIcon("folder", selected: selectedTab == 2))
+                    Image(uiImage: ledgerTabIcon("square.grid.2x2.fill", selected: selectedTab == 2))
                 }
                 .accessibilityLabel("Categories")
             }
