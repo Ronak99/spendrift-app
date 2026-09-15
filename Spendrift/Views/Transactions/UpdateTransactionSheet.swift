@@ -829,7 +829,9 @@ struct CategoryPickerSheet: View {
     let categories: [TransactionCategory]
     let defaultTypeForNewCategory: CategoryType
 
+    @State private var query = ""
     @State private var showCreateCategorySheet = false
+    @State private var createDraftName: String?
 
     private let columns = Array(repeating: GridItem(.flexible(), spacing: 16), count: 3)
 
@@ -837,6 +839,18 @@ struct CategoryPickerSheet: View {
 
     private var heroPrimary: Color {
         isDark ? .white : Color(hex: "#111111")
+    }
+
+    private var visibleCategories: [TransactionCategory] {
+        CategorySearch.filter(categories, query: query)
+    }
+
+    private var title: String {
+        "\(defaultTypeForNewCategory.rawValue.capitalized) Categories"
+    }
+
+    private var showsFindField: Bool {
+        !categories.isEmpty || !CategorySearch.needle(from: query).isEmpty
     }
 
     private var washColor: Color {
@@ -863,8 +877,14 @@ struct CategoryPickerSheet: View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 28) {
+                    if showsFindField {
+                        CategoryFindField(query: $query)
+                    }
+
                     if categories.isEmpty {
                         emptyState
+                    } else if visibleCategories.isEmpty {
+                        searchMiss
                     } else {
                         chipGrid
                     }
@@ -873,18 +893,24 @@ struct CategoryPickerSheet: View {
                 .padding(.top, 12)
                 .padding(.bottom, 40)
             }
+            .scrollDismissesKeyboard(.interactively)
+            .scrollIndicators(.hidden)
             .softScrollEdge()
             .background {
                 CategoryTrayAtmosphere(washColor: washColor, watermarkIcon: watermarkIcon)
                     .ignoresSafeArea()
             }
-            .navigationTitle("Select Category")
+            .navigationTitle(title)
             .navigationBarTitleDisplayMode(.inline)
             .toolbarBackground(.hidden, for: .navigationBar)
             .toolbarColorScheme(isDark ? .dark : .light, for: .navigationBar)
             .toolbar { toolbarContent }
-            .sheet(isPresented: $showCreateCategorySheet) {
-                UpdateCategorySheet(category: nil, defaultTypeWhenCreating: defaultTypeForNewCategory) { newCategory in
+            .sheet(isPresented: $showCreateCategorySheet, onDismiss: { createDraftName = nil }) {
+                UpdateCategorySheet(
+                    category: nil,
+                    defaultTypeWhenCreating: defaultTypeForNewCategory,
+                    initialNameWhenCreating: createDraftName
+                ) { newCategory in
                     selectedCategory = newCategory
                 }
             }
@@ -893,7 +919,7 @@ struct CategoryPickerSheet: View {
 
     private var chipGrid: some View {
         LazyVGrid(columns: columns, spacing: 12) {
-            ForEach(categories) { category in
+            ForEach(visibleCategories) { category in
                 let isSelected = selectedCategory?.id == category.id
                 Button {
                     selectedCategory = category
@@ -908,6 +934,14 @@ struct CategoryPickerSheet: View {
             }
         }
         .padding(.top, 4)
+    }
+
+    private var searchMiss: some View {
+        CategorySearchMiss(
+            query: query,
+            type: defaultTypeForNewCategory,
+            onAdd: { openCreate(named: CategorySearch.needle(from: query)) }
+        )
     }
 
     private var emptyState: some View {
@@ -929,7 +963,7 @@ struct CategoryPickerSheet: View {
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
 
-            Button(action: { showCreateCategorySheet = true }) {
+            Button(action: { openCreate() }) {
                 Text("Add category")
                     .font(.system(size: 14, weight: .semibold))
                     .padding(.horizontal, 16)
@@ -960,7 +994,7 @@ struct CategoryPickerSheet: View {
     }
 
     private var addButton: some View {
-        Button(action: { showCreateCategorySheet = true }) {
+        Button(action: { openCreate() }) {
             Image(systemName: "plus")
                 .font(.system(size: 15, weight: .semibold))
                 .foregroundStyle(addForeground)
@@ -976,6 +1010,11 @@ struct CategoryPickerSheet: View {
 
     private var addForeground: Color {
         isDark ? Color(hex: "#111111") : .white
+    }
+
+    private func openCreate(named name: String? = nil) {
+        createDraftName = name
+        showCreateCategorySheet = true
     }
 }
 

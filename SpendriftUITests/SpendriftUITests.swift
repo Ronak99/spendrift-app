@@ -555,7 +555,7 @@ final class TransactionIntegrationTests: SpendriftUITestBase {
 
         // Default is Expense
         app.buttons["Category"].tap()
-        XCTAssertTrue(app.navigationBars["Select Category"].waitForExistence(timeout: 3))
+        XCTAssertTrue(app.navigationBars["Expense Categories"].waitForExistence(timeout: 3))
         XCTAssertTrue(app.buttons["Food"].waitForExistence(timeout: 3))
         // Income categories should not appear
         XCTAssertFalse(app.buttons["Salary"].exists)
@@ -569,7 +569,7 @@ final class TransactionIntegrationTests: SpendriftUITestBase {
         app.buttons["Income"].tap()
 
         app.buttons["Category"].tap()
-        XCTAssertTrue(app.navigationBars["Select Category"].waitForExistence(timeout: 3))
+        XCTAssertTrue(app.navigationBars["Income Categories"].waitForExistence(timeout: 3))
         XCTAssertTrue(app.buttons["Salary"].waitForExistence(timeout: 3))
         // Expense categories should not appear
         XCTAssertFalse(app.buttons["Food"].exists)
@@ -581,10 +581,10 @@ final class TransactionIntegrationTests: SpendriftUITestBase {
         waitForTransactionEditor()
 
         app.buttons["Category"].tap()
-        XCTAssertTrue(app.navigationBars["Select Category"].waitForExistence(timeout: 3))
+        XCTAssertTrue(app.navigationBars["Expense Categories"].waitForExistence(timeout: 3))
 
         // Tap the + button in picker
-        app.navigationBars["Select Category"].buttons["plus"].tap()
+        app.navigationBars["Expense Categories"].buttons["plus"].tap()
         XCTAssertTrue(app.navigationBars["New Category"].waitForExistence(timeout: 3))
 
         let nameField = app.textFields["Enter category name"]

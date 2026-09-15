@@ -465,6 +465,23 @@ Analytics is the one ledger surface that still uses 20pt continuous cards of Led
 When this screen is redesigned, reuse enamel for category legend rows and the wash atmosphere already behind Transactions.
 Do not introduce a third card radius.
 
+### 5.13 Category find field
+
+`CategoryFindField` shares the `ChromeSegmentedPicker` well. Not system `.searchable`.
+
+- Well: continuous rounded rect, corner 13, Track Fill (black 8% light / 30% dark).
+- Height: 44pt min. Horizontal padding 14. Magnifying glass 14 semibold at 42% hero ink.
+- Field: 14 regular, Hero Ink / white, caret tinted the same. Placeholder "Find a category".
+- Clear: hierarchical `xmark.circle.fill` at 42% hero ink, reserved in-layout even when empty.
+- No cyan tint.
+
+**Categories tab:** one chrome row. Leading toolbar search is the 32pt inverted-chrome twin of Plus (`magnifyingglass` / `xmark`). It swaps the type picker for the find field and shows every category. Search matches name, then icon label and keywords (`CategorySearch`). Miss uses the enamel empty recipe and can create from the query.
+
+**Category picker sheet:** find field stays above the type-filtered grid.
+
+Do not restyle this as a pill, a material drawer, or `.searchable`.
+Do not stack the find field under the type picker on Categories.
+
 ---
 
 ## 6. Layout Principles
@@ -670,6 +687,7 @@ Stitch-style reminder for anyone building a new surface:
 - "Scroll to explore", bouncing chevrons, version stamps in heroes.
 - Legacy `EmptyStateView` on any new screen.
 - System `.segmented` Picker on type / role controls.
+- System `.searchable` on Categories or the category picker. Use `CategoryFindField`.
 - Drop shadows in pure black on enamel. Tint them with the fill.
 - Mixing onboarding Cyan Signal into Plus, Save, or enamel chips.
 - Three equal marketing cards. (The category tray is not this.)
@@ -694,6 +712,8 @@ Change tokens here, not by restyling one screen.
 | Ink chrome, wash canvas, hero type | `SettingsChrome` in `Views/Settings/SettingsComponents.swift` |
 | Capsule Save label, full-width primary, atmosphere | `SettingsCapsuleLabel`, `SettingsPrimaryButton`, `SettingsAtmosphere` |
 | Type picker | `Views/Components/ChromeSegmentedPicker.swift` |
+| Category find field | `CategoryFindField` in `Views/Categories/CategoryFindField.swift` |
+| Category search matching | `Utilities/CategorySearch.swift` |
 | Row padding | `Views/Components/ListItemPositionedModifier.swift` |
 | Soft scroll edge / pinned headers | `Views/Components/ScrollEdgeStyle.swift` |
 | Close | `Utilities/SheetDismissToolbarButton.swift` |

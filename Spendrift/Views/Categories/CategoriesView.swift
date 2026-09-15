@@ -2,8 +2,8 @@
 //  CategoriesView.swift
 //  Spendrift
 //
-//  Colour-wash tray of enamel category chips. Atmosphere and controls match
-//  the category editor so picking a type feels like opening the same box.
+//  Colour-wash tray of enamel category chips. A leading toolbar search
+//  swaps the type picker for a find field and searches every category.
 //
 
 import SwiftUI
@@ -20,21 +20,43 @@ struct CategoriesView: View {
     private var allCategories: [TransactionCategory]
 
     @Binding var selectedType: CategoryType
+    @State private var query = ""
+    @State private var isSearchActive = false
     @State private var showCreateSheet = false
+    @State private var createDraftName: String?
     @State private var categoryToDelete: TransactionCategory?
     @State private var categoryToEdit: TransactionCategory?
 
     private let columns = Array(repeating: GridItem(.flexible(), spacing: 16), count: 3)
 
-    private var visibleCategories: [TransactionCategory] {
+    private var typeCategories: [TransactionCategory] {
         allCategories.filter { $0.type == selectedType }
     }
 
-    private var isDark: Bool { colorScheme == .dark }
-
-    private var canvas: Color {
-        isDark ? Color(hex: "#0A0A0B") : AppTheme.listBackground
+    private var catalogCategories: [TransactionCategory] {
+        allCategories.sorted { lhs, rhs in
+            if lhs.type != rhs.type {
+                return lhs.type == .expense
+            }
+            if lhs.sortOrder != rhs.sortOrder {
+                return lhs.sortOrder < rhs.sortOrder
+            }
+            return lhs.name.localizedStandardCompare(rhs.name) == .orderedAscending
+        }
     }
+
+    private var visibleCategories: [TransactionCategory] {
+        if isSearchActive {
+            return CategorySearch.filter(catalogCategories, query: query)
+        }
+        return typeCategories
+    }
+
+    private var sourceCategories: [TransactionCategory] {
+        isSearchActive ? catalogCategories : typeCategories
+    }
+
+    private var isDark: Bool { colorScheme == .dark }
 
     private var heroPrimary: Color {
         isDark ? .white : Color(hex: "#111111")
@@ -49,7 +71,7 @@ struct CategoriesView: View {
     }
 
     private var watermarkIcon: String {
-        visibleCategories.first?.icon.systemImageName
+        typeCategories.first?.icon.systemImageName
             ?? CategoryPalette.defaultIcon(for: selectedType).systemImageName
     }
 
@@ -57,13 +79,12 @@ struct CategoriesView: View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 28) {
-                    ChromeSegmentedPicker(
-                        selection: $selectedType,
-                        accessibilityLabel: "Category type"
-                    )
+                    trayChrome
 
-                    if visibleCategories.isEmpty {
+                    if sourceCategories.isEmpty {
                         emptyState
+                    } else if visibleCategories.isEmpty {
+                        searchMiss
                     } else {
                         chipGrid
                     }
@@ -72,6 +93,8 @@ struct CategoriesView: View {
                 .padding(.top, 12)
                 .padding(.bottom, 40)
             }
+            .scrollDismissesKeyboard(.interactively)
+            .scrollIndicators(.hidden)
             .softScrollEdge()
             .background { atmosphere }
             .navigationTitle("Categories")
@@ -79,8 +102,12 @@ struct CategoriesView: View {
             .toolbarBackground(.hidden, for: .navigationBar)
             .toolbarColorScheme(isDark ? .dark : .light, for: .navigationBar)
             .toolbar { toolbarContent }
-            .sheet(isPresented: $showCreateSheet) {
-                UpdateCategorySheet(category: nil, defaultTypeWhenCreating: selectedType)
+            .sheet(isPresented: $showCreateSheet, onDismiss: { createDraftName = nil }) {
+                UpdateCategorySheet(
+                    category: nil,
+                    defaultTypeWhenCreating: selectedType,
+                    initialNameWhenCreating: createDraftName
+                )
             }
             .sheet(
                 isPresented: Binding(
@@ -120,6 +147,30 @@ struct CategoriesView: View {
             .animation(typeMotion, value: watermarkIcon)
     }
 
+    // MARK: Chrome
+
+    private var trayChrome: some View {
+        Group {
+            if isSearchActive {
+                CategoryFindField(query: $query, autoFocus: true)
+            } else {
+                ChromeSegmentedPicker(
+                    selection: $selectedType,
+                    accessibilityLabel: "Category type"
+                )
+            }
+        }
+        .animation(typeMotion, value: isSearchActive)
+    }
+
+    private var searchMiss: some View {
+        CategorySearchMiss(
+            query: query,
+            type: selectedType,
+            onAdd: { openCreate(named: CategorySearch.needle(from: query)) }
+        )
+    }
+
     // MARK: Grid
 
     private var chipGrid: some View {
@@ -146,6 +197,7 @@ struct CategoriesView: View {
         }
         .padding(.top, 4)
         .animation(typeMotion, value: selectedType)
+        .animation(typeMotion, value: isSearchActive)
     }
 
     // MARK: Empty
@@ -169,7 +221,7 @@ struct CategoriesView: View {
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
 
-            Button(action: { showCreateSheet = true }) {
+            Button(action: { openCreate() }) {
                 Text("Add category")
                     .font(.system(size: 14, weight: .semibold))
                     .padding(.horizontal, 16)
@@ -190,19 +242,42 @@ struct CategoriesView: View {
     @ToolbarContentBuilder
     private var toolbarContent: some ToolbarContent {
         if #available(iOS 26.0, *) {
+            ToolbarItem(placement: .navigationBarLeading) {
+                searchButton
+            }
+            .sharedBackgroundVisibility(.hidden)
             ToolbarItem(placement: .navigationBarTrailing) {
                 addButton
             }
             .sharedBackgroundVisibility(.hidden)
         } else {
+            ToolbarItem(placement: .navigationBarLeading) {
+                searchButton
+            }
             ToolbarItem(placement: .navigationBarTrailing) {
                 addButton
             }
         }
     }
 
+    private var searchButton: some View {
+        Button(action: toggleSearch) {
+            Image(systemName: isSearchActive ? "xmark" : "magnifyingglass")
+                .font(.system(size: 15, weight: .semibold))
+                .foregroundStyle(addForeground)
+                .scaleEffect(x: isSearchActive ? 1 : -1)
+                .frame(width: 32, height: 32)
+                .background(addBackground, in: Circle())
+                .contentTransition(.symbolEffect(.replace))
+        }
+        .accessibilityLabel(isSearchActive ? "Close search" : "Search categories")
+        .accessibilityIdentifier("Search categories")
+        .accessibilityAddTraits(isSearchActive ? .isSelected : [])
+        .sensoryFeedback(.selection, trigger: isSearchActive)
+    }
+
     private var addButton: some View {
-        Button(action: { showCreateSheet = true }) {
+        Button(action: { openCreate() }) {
             Image(systemName: "plus")
                 .font(.system(size: 15, weight: .semibold))
                 .foregroundStyle(addForeground)
@@ -221,6 +296,20 @@ struct CategoriesView: View {
     }
 
     // MARK: Behaviour
+
+    private func toggleSearch() {
+        withAnimation(typeMotion) {
+            isSearchActive.toggle()
+            if !isSearchActive {
+                query = ""
+            }
+        }
+    }
+
+    private func openCreate(named name: String? = nil) {
+        createDraftName = name
+        showCreateSheet = true
+    }
 
     private func delete(_ category: TransactionCategory) {
         guard !category.isDefault else { return }

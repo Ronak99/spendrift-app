@@ -19,26 +19,35 @@ struct UpdateCategorySheet: View {
     let category: TransactionCategory?
     /// When creating a category, pre-select this category type (for example from the transaction form).
     let defaultTypeWhenCreating: CategoryType?
+    /// When creating from a tray search miss, pre-fill the hero with the query.
+    let initialNameWhenCreating: String?
     var onCreated: ((TransactionCategory) -> Void)?
     private let eventSource: CategoryEventSource
 
     init(
         category: TransactionCategory?,
         defaultTypeWhenCreating: CategoryType? = nil,
+        initialNameWhenCreating: String? = nil,
         onCreated: ((TransactionCategory) -> Void)? = nil,
         eventSource: CategoryEventSource = .manual
     ) {
         self.category = category
         self.defaultTypeWhenCreating = defaultTypeWhenCreating
+        self.initialNameWhenCreating = initialNameWhenCreating
         self.onCreated = onCreated
         self.eventSource = eventSource
 
         let initialType = category?.type ?? defaultTypeWhenCreating ?? .expense
-        _name = State(initialValue: category?.name ?? "")
+        let seedName = category?.name
+            ?? initialNameWhenCreating?.trimmingCharacters(in: .whitespacesAndNewlines)
+            ?? ""
+        let suggestion = category == nil ? CategoryNameSuggestion.match(name: seedName) : nil
+        _name = State(initialValue: seedName)
         _type = State(initialValue: initialType)
-        _icon = State(initialValue: category?.icon ?? CategoryPalette.defaultIcon(for: initialType))
+        _icon = State(initialValue: suggestion?.icon ?? category?.icon ?? CategoryPalette.defaultIcon(for: initialType))
         _selectedHex = State(
             initialValue: CategoryPalette.normalizedHex(category?.colorHex)
+                ?? suggestion?.hex
                 ?? (category.map { CategoryPalette.hex(matching: ColoredCategories.swatch(forName: $0.name)) }
                     ?? CategoryPalette.defaultHex(for: initialType))
         )
