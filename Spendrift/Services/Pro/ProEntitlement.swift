@@ -190,6 +190,7 @@ final class ProEntitlement {
         status = newStatus
         ProEntitlementCache.update(isPro: isPro, expiresAt: expiry)
         await refreshTrialEligibility()
+        AudienceTags.scheduleSync()
     }
 
     private func hasAnyPastTransaction() async -> Bool {

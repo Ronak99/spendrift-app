@@ -181,6 +181,7 @@ enum Analytics {
             Key.count: count,
             Key.isRetry: isRetry
         ])
+        AudienceTags.scheduleSync()
 
         let defaults = UserDefaults.standard
         guard !defaults.bool(forKey: firstTransactionKey) else { return }

@@ -40,6 +40,7 @@ enum ShortcutQuickAmountTransaction {
         )
         modelContext.insert(transaction)
         try modelContext.save()
+        AudienceTags.recordTypedShortcutSuccess()
         return transaction
     }
 }

@@ -38,6 +38,12 @@ enum ShortcutQuickAmountTransaction {
         )
         modelContext.insert(transaction)
         try modelContext.save()
+        // Keys must match `AudienceTags.StoreKey` in the main app. The widget
+        // target cannot import OneSignal, so it only writes the App Group flags.
+        let suite = UserDefaults(suiteName: IntentSwiftData.appGroupID) ?? .standard
+        suite.set(true, forKey: "audience.hasTransaction")
+        suite.set(true, forKey: "audience.usedTypedShortcut")
+        suite.set(suite.integer(forKey: "audience.txCount") + 1, forKey: "audience.txCount")
         return transaction
     }
 }

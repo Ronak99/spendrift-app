@@ -190,6 +190,9 @@ struct TransactionsView: View {
                             withAnimation(.easeInOut(duration: 0.2)) {
                                 showingAnalytics.toggle()
                             }
+                            if showingAnalytics {
+                                AudienceTags.markSeenAnalytics()
+                            }
                         }
                     )
                     .padding(.horizontal)

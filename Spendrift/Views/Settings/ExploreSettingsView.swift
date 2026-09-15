@@ -87,6 +87,9 @@ struct ExploreSettingsView: View {
         .toolbarColorScheme(isDark ? .dark : .light, for: .navigationBar)
         .tint(accent)
         .sensoryFeedback(.selection, trigger: currentPage)
+        .onAppear {
+            AudienceTags.markSeenExplore()
+        }
     }
 
     // MARK: - Static chrome
@@ -115,6 +118,7 @@ struct ExploreSettingsView: View {
         VStack(spacing: 14) {
             SettingsPrimaryButton(title: "Add shortcut", systemImage: page.icon) {
                 guard let url = page.shortcutURL else { return }
+                AudienceTags.markExploreShortcutAdded()
                 openURL(url)
             }
             .opacity(page.shortcutURL == nil ? 0.45 : 1)

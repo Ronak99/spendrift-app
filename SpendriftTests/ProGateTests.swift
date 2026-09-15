@@ -23,6 +23,7 @@ struct ProGateTests {
             AIQuotaStore.defaultsOverride = defaults
             ProGate.defaultsOverride = defaults
             ProEntitlementCache.defaultsOverride = defaults
+            AudienceTags.defaultsOverride = defaults
             ProEntitlementCache.update(isPro: isPro, expiresAt: nil)
         }
 
@@ -31,6 +32,7 @@ struct ProGateTests {
             AIQuotaStore.defaultsOverride = nil
             ProGate.defaultsOverride = nil
             ProEntitlementCache.defaultsOverride = nil
+            AudienceTags.defaultsOverride = nil
         }
     }
 

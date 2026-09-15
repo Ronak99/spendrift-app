@@ -118,6 +118,7 @@ enum ProGate {
         Analytics.capturePro(.quotaExhausted, [
             Analytics.Key.feature: feature.rawValue
         ])
+        AudienceTags.recordQuotaHit(feature: feature)
         guard announce else { return }
         NotificationCenter.default.post(
             name: .proQuotaExhausted,

@@ -11,6 +11,21 @@ import Testing
 @testable import Spendrift
 
 struct ShortcutQuickAmountTransactionTests {
+    private final class AudienceSandbox {
+        let suiteName = "spendrift.tests.audience.shortcut.\(UUID().uuidString)"
+        let defaults: UserDefaults
+
+        init() {
+            defaults = UserDefaults(suiteName: suiteName)!
+            AudienceTags.defaultsOverride = defaults
+        }
+
+        deinit {
+            defaults.removePersistentDomain(forName: suiteName)
+            AudienceTags.defaultsOverride = nil
+        }
+    }
+
     private func makeInMemoryContext() throws -> ModelContext {
         let config = ModelConfiguration(isStoredInMemoryOnly: true)
         let container = try ModelContainer(
@@ -24,6 +39,8 @@ struct ShortcutQuickAmountTransactionTests {
 
     @Test
     func createInsertsExpenseOnPrimaryUncategorized() throws {
+        let sandbox = AudienceSandbox()
+        defer { _ = sandbox }
         let context = try makeInMemoryContext()
         let primary = Account(name: "Primary", balance: 0, icon: .unknown, isPrimary: true)
         let other = Account(name: "Other", balance: 0, icon: .unknown, isPrimary: false)
@@ -47,10 +64,15 @@ struct ShortcutQuickAmountTransactionTests {
         let fetched = try context.fetch(FetchDescriptor<Transaction>())
         #expect(fetched.count == 1)
         #expect(fetched[0].id == tx.id)
+        #expect(sandbox.defaults.bool(forKey: AudienceTags.StoreKey.hasTransaction))
+        #expect(sandbox.defaults.bool(forKey: AudienceTags.StoreKey.usedTypedShortcut))
+        #expect(sandbox.defaults.integer(forKey: AudienceTags.StoreKey.txCount) == 1)
     }
 
     @Test
     func createAssignsExpenseCategoryWhenProvided() throws {
+        let sandbox = AudienceSandbox()
+        defer { _ = sandbox }
         let context = try makeInMemoryContext()
         let primary = Account(name: "Primary", balance: 0, icon: .unknown, isPrimary: true)
         context.insert(primary)

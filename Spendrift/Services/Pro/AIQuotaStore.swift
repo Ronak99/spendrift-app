@@ -113,6 +113,7 @@ enum AIQuotaStore {
             let leftoverBonus = max(0, bonus(feature) - overflow)
             suite.set(leftoverBonus, forKey: bonusKey(feature))
         }
+        AudienceTags.scheduleSync()
     }
 
     /// Grants one extra month of the free-tier credits for voice, receipts, and

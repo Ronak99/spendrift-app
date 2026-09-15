@@ -115,6 +115,7 @@ struct OnboardingCarouselView: View {
         UINotificationFeedbackGenerator().notificationOccurred(.success)
         Analytics.capture(.onboardingCompleted, [Analytics.Key.version: OnboardingCarouselView.currentVersion])
         onboardingVersion = OnboardingCarouselView.currentVersion
+        AudienceTags.scheduleSync()
     }
 
     /// Bump to re-show onboarding on major updates.

@@ -16,6 +16,9 @@ enum PushNotifications {
     private static var didSetup = false
     private static let clickListener = PushClickListener()
 
+    /// True after OneSignal initialized this process. Audience tags no-op until then.
+    static var isConfigured: Bool { didSetup }
+
     // MARK: - Lifecycle
 
     /// Initialise OneSignal and attach the click listener. Does not request
@@ -120,6 +123,8 @@ enum PushNotifications {
                 ]
             )
         }
+
+        await AudienceTags.sync()
     }
 }
 
