@@ -475,7 +475,7 @@ Do not introduce a third card radius.
 - Clear: hierarchical `xmark.circle.fill` at 42% hero ink, reserved in-layout even when empty.
 - No cyan tint.
 
-**Categories tab:** one chrome row. Leading toolbar search is the 32pt inverted-chrome twin of Plus (`magnifyingglass` / `xmark`). It swaps the type picker for the find field and shows every category. Search matches name, then icon label and keywords (`CategorySearch`). Miss uses the enamel empty recipe and can create from the query.
+**Categories tab:** one chrome row. Search is a 44pt track-fill circle beside `ChromeSegmentedPicker`, same well as the type control. Opening it swaps the picker for the find field and shows every category. The glyph becomes `xmark` to close. Search matches name, then icon label and keywords (`CategorySearch`). Miss uses the enamel empty recipe and can create from the query.
 
 **Category picker sheet:** find field stays above the type-filtered grid.
 

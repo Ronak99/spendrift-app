@@ -2,8 +2,9 @@
 //  CategoriesView.swift
 //  Spendrift
 //
-//  Colour-wash tray of enamel category chips. A leading toolbar search
-//  swaps the type picker for a find field and searches every category.
+//  Colour-wash tray of enamel category chips. Search sits beside the
+//  type picker; opening it swaps the picker for a find field and
+//  searches every category.
 //
 
 import SwiftUI
@@ -150,15 +151,20 @@ struct CategoriesView: View {
     // MARK: Chrome
 
     private var trayChrome: some View {
-        Group {
-            if isSearchActive {
-                CategoryFindField(query: $query, autoFocus: true)
-            } else {
-                ChromeSegmentedPicker(
-                    selection: $selectedType,
-                    accessibilityLabel: "Category type"
-                )
+        HStack(spacing: 10) {
+            Group {
+                if isSearchActive {
+                    CategoryFindField(query: $query, autoFocus: true)
+                } else {
+                    ChromeSegmentedPicker(
+                        selection: $selectedType,
+                        accessibilityLabel: "Category type"
+                    )
+                }
             }
+            .frame(maxWidth: .infinity)
+
+            searchButton
         }
         .animation(typeMotion, value: isSearchActive)
     }
@@ -242,18 +248,11 @@ struct CategoriesView: View {
     @ToolbarContentBuilder
     private var toolbarContent: some ToolbarContent {
         if #available(iOS 26.0, *) {
-            ToolbarItem(placement: .navigationBarLeading) {
-                searchButton
-            }
-            .sharedBackgroundVisibility(.hidden)
             ToolbarItem(placement: .navigationBarTrailing) {
                 addButton
             }
             .sharedBackgroundVisibility(.hidden)
         } else {
-            ToolbarItem(placement: .navigationBarLeading) {
-                searchButton
-            }
             ToolbarItem(placement: .navigationBarTrailing) {
                 addButton
             }
@@ -264,10 +263,11 @@ struct CategoriesView: View {
         Button(action: toggleSearch) {
             Image(systemName: isSearchActive ? "xmark" : "magnifyingglass")
                 .font(.system(size: 15, weight: .semibold))
-                .foregroundStyle(addForeground)
-                .scaleEffect(x: isSearchActive ? 1 : -1)
-                .frame(width: 32, height: 32)
-                .background(addBackground, in: Circle())
+                .foregroundStyle(heroPrimary)
+                .frame(width: 44, height: 44)
+                .background(
+                    Circle().fill(Color.black.opacity(isDark ? 0.3 : 0.08))
+                )
                 .contentTransition(.symbolEffect(.replace))
         }
         .accessibilityLabel(isSearchActive ? "Close search" : "Search categories")
