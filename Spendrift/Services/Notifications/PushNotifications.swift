@@ -27,7 +27,21 @@ enum PushNotifications {
         guard !didSetup else { return }
 
         let appID = AppSecrets.oneSignalAppID
-        guard !appID.isEmpty, appID != placeholderAppID else { return }
+        guard !appID.isEmpty, appID != placeholderAppID else {
+            // A build whose xcconfig omits SPENDRIFT_ONESIGNAL_APP_ID resolves the
+            // Info.plist key to an empty string, so remote push silently dies here
+            // while everything else in the build looks healthy. Make that loud.
+            Diagnostics.log(
+                "OneSignal app ID missing — remote push disabled for this build",
+                level: .error,
+                tags: [
+                    Diagnostics.Tag.feature: Diagnostics.Feature.notifications.rawValue,
+                    Diagnostics.Tag.stage: Diagnostics.Stage.bootstrap.rawValue,
+                    Diagnostics.Tag.reason: appID.isEmpty ? "empty" : "placeholder",
+                ]
+            )
+            return
+        }
 
         OneSignal.initialize(appID, withLaunchOptions: launchOptions)
         OneSignal.login(DeviceIdentity.current)
