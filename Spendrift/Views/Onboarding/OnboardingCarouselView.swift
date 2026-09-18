@@ -118,6 +118,10 @@ struct OnboardingCarouselView: View {
         AudienceTags.scheduleSync()
     }
 
+    /// Kill switch for the first-run carousel. Leave the rest of the onboarding
+    /// code in place so this can be turned back on without restoring screens.
+    static let isEnabled = false
+
     /// Bump to re-show onboarding on major updates.
     static let currentVersion = 2
 }
