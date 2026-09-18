@@ -181,50 +181,50 @@ struct SettingsView: View {
                 .listItemPositioned(index: exploreIndex, count: hubRowCount)
             }
 
-            Button {
-                showReceiptScanOptions = true
-            } label: {
-                SettingsListItem(
-                    icon: "doc.viewfinder",
-                    title: "Scan Receipts",
-                    accent: accent,
-                    accessory: .chevron
-                )
-                .listItemPositioned(index: receiptIndex, count: hubRowCount)
-            }
-            .buttonStyle(.plain)
-            .confirmationDialog("Scan receipt", isPresented: $showReceiptScanOptions, titleVisibility: .visible) {
-                Button("Take Photo") {
-                    ProAccess.attempt(.receiptScan, paywall: $paywallContext) {
-                        showReceiptCamera = true
-                    }
-                }
-                .disabled(!cameraAvailable || receiptShare.isProcessing)
+            // Button {
+            //     showReceiptScanOptions = true
+            // } label: {
+            //     SettingsListItem(
+            //         icon: "doc.viewfinder",
+            //         title: "Scan Receipts",
+            //         accent: accent,
+            //         accessory: .chevron
+            //     )
+            //     .listItemPositioned(index: receiptIndex, count: hubRowCount)
+            // }
+            // .buttonStyle(.plain)
+            // .confirmationDialog("Scan receipt", isPresented: $showReceiptScanOptions, titleVisibility: .visible) {
+            //     Button("Take Photo") {
+            //         ProAccess.attempt(.receiptScan, paywall: $paywallContext) {
+            //             showReceiptCamera = true
+            //         }
+            //     }
+            //     .disabled(!cameraAvailable || receiptShare.isProcessing)
 
-                Button("Choose from Library") {
-                    ProAccess.attempt(.receiptScan, paywall: $paywallContext) {
-                        showReceiptLibrary = true
-                    }
-                }
-                .disabled(receiptShare.isProcessing)
+            //     Button("Choose from Library") {
+            //         ProAccess.attempt(.receiptScan, paywall: $paywallContext) {
+            //             showReceiptLibrary = true
+            //         }
+            //     }
+            //     .disabled(receiptShare.isProcessing)
 
-                Button("Cancel", role: .cancel) {}
-            }
+            //     Button("Cancel", role: .cancel) {}
+            // }
 
-            Button {
-                ProAccess.attempt(.statementImport, paywall: $paywallContext) {
-                    showStatementImport = true
-                }
-            } label: {
-                SettingsListItem(
-                    icon: "doc.text",
-                    title: "Bank Statements",
-                    accent: accent,
-                    accessory: .chevron
-                )
-                    .listItemPositioned(index: statementIndex, count: hubRowCount)
-            }
-            .buttonStyle(.plain)
+            // Button {
+            //     ProAccess.attempt(.statementImport, paywall: $paywallContext) {
+            //         showStatementImport = true
+            //     }
+            // } label: {
+            //     SettingsListItem(
+            //         icon: "doc.text",
+            //         title: "Bank Statements",
+            //         accent: accent,
+            //         accessory: .chevron
+            //     )
+            //         .listItemPositioned(index: statementIndex, count: hubRowCount)
+            // }
+            // .buttonStyle(.plain)
         }
     }
 
@@ -345,8 +345,7 @@ struct SettingsView: View {
         developerModeUnlocked || DeveloperMode.isEnabled
     }
 
-    /// Hidden unlock from the design: five taps on the version label. The
-    /// passphrase in Request a feature still works too.
+    /// Hidden unlock from the design: five taps on the version label.
     private func registerVersionTap() {
         guard !developerModeUnlocked else { return }
         versionTapCount += 1
