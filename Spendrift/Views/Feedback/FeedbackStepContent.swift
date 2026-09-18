@@ -2,215 +2,203 @@
 //  FeedbackStepContent.swift
 //  Spendrift
 //
+//  Card, radio, and star controls for the single-page feedback survey.
+//  Visual language matches spendrift-future-works/feedback.
+//
 
 import SwiftUI
-import UIKit
 
-struct FeedbackStepContent: View {
-    @Bindable var flow: FeedbackFlow
-    @Binding var showLibrary: Bool
+enum FeedbackSurveyChrome {
+    static let cardRadius: CGFloat = 16
+    /// Extra space between question blocks, on top of each section's scroll clearance.
+    static let sectionGap: CGFloat = 8
+    /// Top inset inside every question so `scrollTo` lands below the progress bar.
+    static let scrollClearance: CGFloat = 32
+    static let titleToCardGap: CGFloat = 14
+    static let rowHorizontal: CGFloat = 16
+    static let rowVertical: CGFloat = 15
+    static let markSize: CGFloat = 21
+    static let innerMarkSize: CGFloat = 11
+    static let progressHeight: CGFloat = 2.5
 
-    @Environment(\.colorScheme) private var colorScheme
-    @FocusState private var notesFocused: Bool
+    static func cardFill(isDark: Bool) -> Color {
+        isDark ? Color(hex: "#15181B") : AppTheme.listGroupBackground
+    }
 
-    private var accent: Color { AppTheme.accent }
-    private var isDark: Bool { colorScheme == .dark }
-    private var heroPrimary: Color { SettingsChrome.heroPrimary(isDark: isDark) }
+    static func unselectedLabel(isDark: Bool) -> Color {
+        isDark ? Color(hex: "#D7DCE0") : Color.primary.opacity(0.78)
+    }
+
+    static func prompt(isDark: Bool) -> Color {
+        isDark ? Color(hex: "#7D858D") : Color.primary.opacity(0.45)
+    }
+
+    static var hairline: Color {
+        Color.primary.opacity(0.06)
+    }
+}
+
+struct FeedbackSurveyProgressBar: View {
+    let progress: Double
+    let accent: Color
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 20) {
-                Text(flow.currentStep.question)
-                    .font(.system(size: 22, weight: .bold))
-                    .tracking(-0.5)
+        GeometryReader { geo in
+            ZStack(alignment: .leading) {
+                Color.clear
+                UnevenRoundedRectangle(
+                    cornerRadii: .init(
+                        topLeading: 0,
+                        bottomLeading: 0,
+                        bottomTrailing: 2,
+                        topTrailing: 2
+                    ),
+                    style: .continuous
+                )
+                .fill(accent)
+                .frame(width: max(0, geo.size.width * progress))
+            }
+        }
+        .frame(height: FeedbackSurveyChrome.progressHeight)
+        .accessibilityLabel("Survey progress")
+        .accessibilityValue("\(Int((progress * 100).rounded())) percent")
+        .animation(.timingCurve(0.4, 0, 0.2, 1, duration: 0.35), value: progress)
+    }
+}
+
+struct FeedbackQuestionHeader: View {
+    let step: FeedbackStep
+    let heroPrimary: Color
+    let promptColor: Color
+
+    var body: some View {
+        HStack(alignment: .firstTextBaseline, spacing: 12) {
+            VStack(alignment: .leading, spacing: 3) {
+                Text(step.question)
+                    .font(.system(size: 15, weight: .semibold))
+                    .tracking(-0.1)
                     .foregroundStyle(heroPrimary)
-                    .fixedSize(horizontal: false, vertical: true)
 
-                stepBody
+                if let prompt = step.prompt {
+                    Text(prompt)
+                        .font(.system(size: 12.5, weight: .regular))
+                        .foregroundStyle(promptColor)
+                }
             }
-            .padding(.horizontal, 20)
-            .padding(.top, 12)
-            .padding(.bottom, 44)
-        }
-        .scrollDismissesKeyboard(.interactively)
-        .scrollIndicators(.hidden)
-    }
+            .frame(maxWidth: .infinity, alignment: .leading)
 
-    @ViewBuilder
-    private var stepBody: some View {
-        switch flow.currentStep {
-        case .uiApproval, .captureAccuracy, .aiFeatureRating, .recommend:
-            FeedbackStarInput(
-                selection: starBinding(for: flow.currentStep),
-                accent: accent,
-                heroPrimary: heroPrimary
-            )
-        case .foundWhere:
-            singleChoiceList(FeedbackOptions.FoundWhere.allCases.map { ($0.id, $0.label) })
-        case .shortcutsExplore:
-            singleChoiceList(FeedbackOptions.ShortcutsExplore.allCases.map { ($0.id, $0.label) })
-        case .whichShortcuts:
-            multiChoiceList(
-                FeedbackOptions.WhichShortcut.allCases.map { ($0.id, $0.label) },
-                exclusive: FeedbackOptions.WhichShortcut.noneOfThese.rawValue
-            )
-        case .howTheyLog:
-            multiChoiceList(
-                FeedbackOptions.HowTheyLog.allCases.map { ($0.id, $0.label) },
-                exclusive: FeedbackOptions.HowTheyLog.haventLogged.rawValue
-            )
-        case .whatWasWrong:
-            singleChoiceList(FeedbackOptions.WhatWasWrong.allCases.map { ($0.id, $0.label) })
-        case .aiFeatures:
-            multiChoiceList(
-                FeedbackOptions.AIFeature.allCases.map { ($0.id, $0.label) },
-                exclusive: FeedbackOptions.AIFeature.noneOfThese.rawValue
-            )
-        case .proFeeling:
-            singleChoiceList(FeedbackOptions.ProFeeling.allCases.map { ($0.id, $0.label) })
-        case .notes:
-            notesStep
-        }
-    }
-
-    private var notesStep: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            TextEditor(text: $flow.draft.notes)
-                .font(.system(size: 16, weight: .regular))
-                .foregroundStyle(heroPrimary)
-                .scrollContentBackground(.hidden)
-                .frame(minHeight: 140)
-                .focused($notesFocused)
-                .tint(heroPrimary)
-                .overlay(alignment: .topLeading) {
-                    if flow.draft.notes.isEmpty {
-                        Text(flow.notesPlaceholder)
-                            .font(.system(size: 16))
-                            .foregroundStyle(.tertiary)
-                            .padding(.top, 8)
-                            .padding(.leading, 4)
-                            .allowsHitTesting(false)
-                    }
-                }
-                .padding(.bottom, 8)
-
-            feedbackMetaRow(title: "Screenshot", showsBottomDivider: flow.draft.screenshotData != nil) {
-                Button {
-                    notesFocused = false
-                    showLibrary = true
-                } label: {
-                    HStack(spacing: 6) {
-                        Text(flow.draft.screenshotData == nil ? "Attach" : "Attached")
-                            .foregroundStyle(heroPrimary)
-                        Image(systemName: "chevron.right")
-                            .font(.system(size: 11, weight: .semibold))
-                            .foregroundStyle(heroPrimary.opacity(0.28))
-                    }
-                }
-                .buttonStyle(.plain)
-            }
-
-            if let imageData = flow.draft.screenshotData,
-               let uiImage = UIImage(data: imageData) {
-                VStack(spacing: 12) {
-                    Image(uiImage: uiImage)
-                        .resizable()
-                        .scaledToFit()
-                        .frame(maxHeight: 180)
-                        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-
-                    Button {
-                        flow.draft.screenshotData = nil
-                    } label: {
-                        Text("Remove screenshot")
-                            .font(.system(size: 14, weight: .regular))
-                            .foregroundStyle(Color(hex: "#FF6B6B"))
-                    }
-                    .buttonStyle(.plain)
-                }
-                .frame(maxWidth: .infinity)
-                .padding(.top, 16)
+            if let accessory = step.accessoryLabel {
+                Text(accessory)
+                    .font(.system(size: 12, weight: .regular))
+                    .foregroundStyle(promptColor)
             }
         }
+        .padding(.horizontal, 4)
     }
+}
 
-    private func starBinding(for step: FeedbackStep) -> Binding<Int?> {
-        Binding(
-            get: { flow.draft.stars(for: step) },
-            set: { value in
-                if let value {
-                    flow.setStars(value, for: step)
-                }
-            }
+struct FeedbackQuestionCard<Content: View>: View {
+    let isDark: Bool
+    @ViewBuilder var content: Content
+
+    var body: some View {
+        let shape = RoundedRectangle(
+            cornerRadius: FeedbackSurveyChrome.cardRadius,
+            style: .continuous
         )
+        VStack(spacing: 0) {
+            content
+        }
+        .background(FeedbackSurveyChrome.cardFill(isDark: isDark), in: shape)
+        .overlay {
+            shape.strokeBorder(FeedbackSurveyChrome.hairline, lineWidth: 1)
+        }
+        .clipShape(shape)
+    }
+}
+
+struct FeedbackSelectionMark: View {
+    enum Style {
+        case radio
+        case checkbox
     }
 
-    private func singleChoiceList(_ options: [(id: String, label: String)]) -> some View {
-        VStack(spacing: 0) {
-            ForEach(Array(options.enumerated()), id: \.element.id) { index, option in
-                let isSelected = flow.draft.single(for: flow.currentStep) == option.id
-                Button {
-                    flow.setSingle(option.id, for: flow.currentStep)
-                } label: {
-                    FeedbackChoiceRow(
-                        title: option.label,
-                        isSelected: isSelected,
-                        showsCheckmark: true,
-                        accent: accent
+    let style: Style
+    let isSelected: Bool
+    let accent: Color
+
+    var body: some View {
+        ZStack {
+            switch style {
+            case .radio:
+                Circle()
+                    .strokeBorder(
+                        isSelected ? accent : Color.primary.opacity(0.22),
+                        lineWidth: 1.5
                     )
-                    .listItemPositioned(index: index, count: options.count)
-                }
-                .buttonStyle(.plain)
+                Circle()
+                    .fill(accent)
+                    .frame(
+                        width: isSelected ? FeedbackSurveyChrome.innerMarkSize : 0,
+                        height: isSelected ? FeedbackSurveyChrome.innerMarkSize : 0
+                    )
+            case .checkbox:
+                RoundedRectangle(cornerRadius: 6, style: .continuous)
+                    .strokeBorder(
+                        isSelected ? accent : Color.primary.opacity(0.22),
+                        lineWidth: 1.5
+                    )
+                RoundedRectangle(cornerRadius: 3.5, style: .continuous)
+                    .fill(accent)
+                    .frame(
+                        width: isSelected ? FeedbackSurveyChrome.innerMarkSize : 0,
+                        height: isSelected ? FeedbackSurveyChrome.innerMarkSize : 0
+                    )
             }
         }
+        .frame(
+            width: FeedbackSurveyChrome.markSize,
+            height: FeedbackSurveyChrome.markSize
+        )
+        .animation(.easeInOut(duration: 0.15), value: isSelected)
+        .accessibilityHidden(true)
     }
+}
 
-    private func multiChoiceList(_ options: [(id: String, label: String)], exclusive: String) -> some View {
-        VStack(spacing: 0) {
-            ForEach(Array(options.enumerated()), id: \.element.id) { index, option in
-                let isSelected = flow.draft.multi(for: flow.currentStep).contains(option.id)
-                Button {
-                    flow.toggleMulti(option.id, for: flow.currentStep, exclusive: exclusive)
-                } label: {
-                    FeedbackChoiceRow(
-                        title: option.label,
-                        isSelected: isSelected,
-                        showsCheckmark: true,
-                        accent: accent
-                    )
-                    .listItemPositioned(index: index, count: options.count)
-                }
-                .buttonStyle(.plain)
-            }
-        }
-    }
+struct FeedbackChoiceRow: View {
+    let title: String
+    let isSelected: Bool
+    let accent: Color
+    var mark: FeedbackSelectionMark.Style = .radio
+    var isLast: Bool = false
+    var unselectedLabel: Color = Color.primary.opacity(0.78)
 
-    private func feedbackMetaRow<Trailing: View>(
-        title: String,
-        showsBottomDivider: Bool,
-        @ViewBuilder trailing: () -> Trailing
-    ) -> some View {
-        HStack(spacing: 12) {
+    var body: some View {
+        HStack(alignment: .center, spacing: 14) {
             Text(title)
-                .font(.system(size: 14, weight: .regular))
-                .foregroundStyle(.secondary)
-            Spacer(minLength: 12)
-            trailing()
-                .font(.system(size: 14, weight: .regular))
+                .font(.system(size: 15, weight: isSelected ? .semibold : .regular))
+                .tracking(-0.1)
+                .foregroundStyle(isSelected ? Color.primary : unselectedLabel)
+                .multilineTextAlignment(.leading)
+                .frame(maxWidth: .infinity, alignment: .leading)
+
+            FeedbackSelectionMark(style: mark, isSelected: isSelected, accent: accent)
         }
-        .frame(minHeight: 46)
+        .padding(.horizontal, FeedbackSurveyChrome.rowHorizontal)
+        .padding(.vertical, FeedbackSurveyChrome.rowVertical)
+        .background(isSelected ? accent.opacity(0.07) : Color.clear)
         .overlay(alignment: .bottom) {
-            if showsBottomDivider {
+            if !isLast {
                 Rectangle()
-                    .fill(Color.primary.opacity(0.08))
+                    .fill(FeedbackSurveyChrome.hairline)
                     .frame(height: 1)
             }
         }
         .contentShape(Rectangle())
+        .animation(.easeInOut(duration: 0.15), value: isSelected)
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 }
-
-// MARK: - Star input
 
 struct FeedbackStarInput: View {
     @Binding var selection: Int?
@@ -218,62 +206,27 @@ struct FeedbackStarInput: View {
     let heroPrimary: Color
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            HStack(spacing: 8) {
-                ForEach(1 ... 5, id: \.self) { star in
-                    Button {
-                        selection = star
-                    } label: {
-                        Image(systemName: (selection ?? -1) >= star ? "star.fill" : "star")
-                            .font(.system(size: 28))
-                            .foregroundStyle((selection ?? -1) >= star ? accent : heroPrimary.opacity(0.28))
-                    }
-                    .buttonStyle(.plain)
-                    .accessibilityLabel("\(star) star")
+        HStack(spacing: 10) {
+            ForEach(1 ... 5, id: \.self) { star in
+                Button {
+                    selection = selection == star ? nil : star
+                } label: {
+                    Image(systemName: filled(star) ? "star.fill" : "star")
+                        .font(.system(size: 28, weight: .regular))
+                        .foregroundStyle(filled(star) ? accent : heroPrimary.opacity(0.28))
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 14)
                 }
+                .buttonStyle(.plain)
+                .accessibilityLabel("\(star) star")
+                .accessibilityAddTraits(selection == star ? .isSelected : [])
             }
-
-            Button {
-                selection = 0
-            } label: {
-                HStack(spacing: 10) {
-                    Image(systemName: selection == 0 ? "checkmark.circle.fill" : "circle")
-                        .foregroundStyle(selection == 0 ? accent : heroPrimary.opacity(0.28))
-                    Text("0 - haven't used this / doesn't work for me")
-                        .font(.system(size: 15, weight: .regular))
-                        .foregroundStyle(heroPrimary)
-                        .multilineTextAlignment(.leading)
-                }
-            }
-            .buttonStyle(.plain)
         }
+        .padding(.horizontal, 8)
     }
-}
 
-// MARK: - Choice row
-
-struct FeedbackChoiceRow: View {
-    let title: String
-    let isSelected: Bool
-    let showsCheckmark: Bool
-    let accent: Color
-
-    var body: some View {
-        HStack(alignment: .center, spacing: 14) {
-            if showsCheckmark {
-                Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
-                    .font(.system(size: 20))
-                    .foregroundStyle(isSelected ? accent : Color.primary.opacity(0.28))
-            }
-
-            Text(title)
-                .font(.system(size: 16, weight: .regular))
-                .foregroundStyle(.primary)
-                .multilineTextAlignment(.leading)
-                .frame(maxWidth: .infinity, alignment: .leading)
-        }
-        .padding(.vertical, 12)
-        .padding(.horizontal, 6)
-        .contentShape(Rectangle())
+    private func filled(_ star: Int) -> Bool {
+        let value = selection ?? -1
+        return value >= star && value > 0
     }
 }

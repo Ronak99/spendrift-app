@@ -119,7 +119,9 @@ private struct RootContainerView: View {
     }
 
     private var needsOnboarding: Bool {
-        onboardingVersion < OnboardingCarouselView.currentVersion && !isUITesting
+        OnboardingCarouselView.isEnabled
+            && onboardingVersion < OnboardingCarouselView.currentVersion
+            && !isUITesting
     }
 
     var body: some View {
@@ -130,6 +132,7 @@ private struct RootContainerView: View {
                 entitlement.start()
                 await checker.check()
                 resolveActiveSheet()
+                seedDefaultDataIfOnboardingDisabled()
             }
             // Completing onboarding updates `onboardingVersion` only; `activeSheet` must be cleared here
             // or the sheet never dismisses (onDisappear never runs while `.onboarding` stays set).
@@ -235,6 +238,15 @@ private struct RootContainerView: View {
         let descriptor = FetchDescriptor<Transaction>()
         guard let all = try? modelContext.fetch(descriptor) else { return 0 }
         return all.filter { aiSources.contains($0.source) }.count
+    }
+
+    /// Default data is normally seeded when the onboarding sheet appears.
+    /// With onboarding disabled, seed on launch so first-run still has a
+    /// starter account and categories.
+    private func seedDefaultDataIfOnboardingDisabled() {
+        guard !OnboardingCarouselView.isEnabled, !didStartSeeding else { return }
+        didStartSeeding = true
+        DefaultDataSeeder.seedIfNeeded(modelContext: modelContext)
     }
 
     /// Determines which sheet to surface based on priority:

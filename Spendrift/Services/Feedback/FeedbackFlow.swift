@@ -2,8 +2,9 @@
 //  FeedbackFlow.swift
 //  Spendrift
 //
-//  Multi-step feedback survey state machine. Branching follows
-//  Spendrift/docs/FEEDBACK_FORM.md.
+//  Single-page feedback survey state. Branching still follows
+//  Spendrift/docs/FEEDBACK_FORM.md, but questions appear or hide in place
+//  instead of advancing a wizard.
 //
 
 import Foundation
@@ -47,6 +48,12 @@ struct FeedbackAnswer: Equatable {
             return ["type": type, "value": Array(ids).sorted()]
         }
     }
+}
+
+/// One-shot request to scroll the survey to the next question after an answer.
+struct FeedbackScrollPulse: Equatable {
+    let step: FeedbackStep
+    let nonce: UInt64
 }
 
 // MARK: - Option catalogs
@@ -211,7 +218,33 @@ extension FeedbackStep {
         }
     }
 
-    var isSurveyStep: Bool { self != .notes }
+    var prompt: String? {
+        switch self {
+        default: nil
+        }
+    }
+
+    var accessoryLabel: String? {
+        switch self {
+        case .notes: "Optional"
+        default: nil
+        }
+    }
+
+    /// Single-choice and star questions auto-advance. Multi-select stays put
+    /// so the person can pick more than one option.
+    var advancesOnAnswer: Bool {
+        switch self {
+        case .whichShortcuts, .howTheyLog, .aiFeatures, .notes:
+            false
+        default:
+            true
+        }
+    }
+}
+
+extension FeedbackStep: Identifiable {
+    var id: Self { self }
 }
 
 // MARK: - Draft + flow
@@ -265,8 +298,14 @@ struct FeedbackDraft: Equatable {
 
     var shouldShowAIFeatureRating: Bool { usedAIFeatures }
 
-    var shouldShowProFeeling: Bool {
-        usedAIFeatures || PaywallSeenStore.hasSeenPaywall || ProEntitlementCache.isPro
+    var hasSurveyAnswers: Bool { !answers.isEmpty }
+
+    var hasNotes: Bool {
+        !notes.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+
+    var canSubmit: Bool {
+        hasSurveyAnswers || hasNotes || screenshotData != nil
     }
 
     func encodedAnswers() -> [String: Any] {
@@ -293,29 +332,37 @@ struct FeedbackDraft: Equatable {
 @MainActor
 @Observable
 final class FeedbackFlow {
-    private(set) var currentStep: FeedbackStep = .uiApproval
-    private var history: [FeedbackStep] = []
     var draft = FeedbackDraft()
     var hasSeenPaywall: Bool
+    private(set) var scrollPulse: FeedbackScrollPulse?
+    private var scrollNonce: UInt64 = 0
 
     init(hasSeenPaywall: Bool = PaywallSeenStore.hasSeenPaywall) {
-        self.hasSeenPaywall = hasSeenPaywall || PaywallSeenStore.hasSeenPaywall
+        self.hasSeenPaywall = hasSeenPaywall
     }
 
-    var canProceed: Bool {
-        switch currentStep {
-        case .notes:
-            return true
-        case .uiApproval, .captureAccuracy, .aiFeatureRating, .recommend:
-            return draft.stars(for: currentStep) != nil
-        case .foundWhere, .shortcutsExplore, .whatWasWrong, .proFeeling:
-            return draft.single(for: currentStep) != nil
-        case .whichShortcuts, .howTheyLog, .aiFeatures:
-            return !draft.multi(for: currentStep).isEmpty
-        }
+    var shouldShowProFeeling: Bool {
+        draft.usedAIFeatures || hasSeenPaywall || ProEntitlementCache.isPro
     }
 
-    var showsSkipToNotes: Bool { currentStep.isSurveyStep }
+    var canSubmit: Bool { draft.canSubmit }
+
+    var visibleSteps: [FeedbackStep] {
+        FeedbackStep.allCases.filter { isShowing($0) }
+    }
+
+    var visibleSurveySteps: [FeedbackStep] {
+        visibleSteps.filter { $0 != .notes }
+    }
+
+    /// Share of visible survey questions that already have an answer.
+    /// Notes are optional, so they stay out of the bar.
+    var surveyProgress: Double {
+        let steps = visibleSurveySteps
+        guard !steps.isEmpty else { return 0 }
+        let answered = steps.filter { draft.answer(for: $0) != nil }.count
+        return Double(answered) / Double(steps.count)
+    }
 
     var notesPlaceholder: String {
         if let rating = draft.stars(for: .recommend), (0 ... 2).contains(rating) {
@@ -324,18 +371,66 @@ final class FeedbackFlow {
         return "Thoughts, a bug, or a feature you want"
     }
 
+    func nextVisibleStep(after step: FeedbackStep) -> FeedbackStep? {
+        let steps = visibleSteps
+        guard let index = steps.firstIndex(of: step) else { return nil }
+        let nextIndex = steps.index(after: index)
+        guard nextIndex < steps.endIndex else { return nil }
+        return steps[nextIndex]
+    }
+
+    func isShowing(_ step: FeedbackStep) -> Bool {
+        switch step {
+        case .uiApproval, .foundWhere, .shortcutsExplore, .howTheyLog, .aiFeatures, .recommend, .notes:
+            return true
+        case .whichShortcuts:
+            return draft.shouldShowWhichShortcuts
+        case .captureAccuracy:
+            return draft.shouldShowCaptureAccuracy
+        case .whatWasWrong:
+            return draft.shouldShowWhatWasWrong
+        case .aiFeatureRating:
+            return draft.shouldShowAIFeatureRating
+        case .proFeeling:
+            return shouldShowProFeeling
+        }
+    }
+
+    func clearAnswer(for step: FeedbackStep) {
+        draft.answers.removeValue(forKey: step)
+        pruneHiddenAnswers()
+    }
+
     func setStars(_ value: Int, for step: FeedbackStep) {
-        draft.answers[step] = .stars(value)
+        let selecting = draft.stars(for: step) != value
+        if selecting {
+            draft.answers[step] = .stars(value)
+        } else {
+            draft.answers.removeValue(forKey: step)
+        }
+        pruneHiddenAnswers()
+        if selecting {
+            queueAdvance(from: step)
+        }
     }
 
     func setSingle(_ id: String, for step: FeedbackStep) {
-        draft.answers[step] = .single(id)
+        let selecting = draft.single(for: step) != id
+        if selecting {
+            draft.answers[step] = .single(id)
+        } else {
+            draft.answers.removeValue(forKey: step)
+        }
+        pruneHiddenAnswers()
+        if selecting {
+            queueAdvance(from: step)
+        }
     }
 
     func toggleMulti(_ id: String, for step: FeedbackStep, exclusive: String? = nil) {
         var selected = draft.multi(for: step)
         if let exclusive, id == exclusive {
-            selected = [exclusive]
+            selected = selected == [exclusive] ? [] : [exclusive]
         } else {
             if let exclusive { selected.remove(exclusive) }
             if selected.contains(id) {
@@ -344,61 +439,36 @@ final class FeedbackFlow {
                 selected.insert(id)
             }
         }
-        draft.answers[step] = .multi(selected)
-    }
-
-    func advance() {
-        guard let next = nextStep(after: currentStep) else { return }
-        history.append(currentStep)
-        currentStep = next
-    }
-
-    func goBack(onFirstStep: () -> Void) {
-        if history.isEmpty {
-            onFirstStep()
-            return
+        if selected.isEmpty {
+            draft.answers.removeValue(forKey: step)
+        } else {
+            draft.answers[step] = .multi(selected)
         }
-        currentStep = history.removeLast()
+        pruneHiddenAnswers()
     }
 
-    func skipToNotes() {
-        draft.skippedToNotes = true
-        if currentStep != .notes {
-            history.append(currentStep)
+    private func pruneHiddenAnswers() {
+        if !draft.shouldShowWhichShortcuts {
+            draft.answers.removeValue(forKey: .whichShortcuts)
         }
-        currentStep = .notes
+        if !draft.shouldShowCaptureAccuracy {
+            draft.answers.removeValue(forKey: .captureAccuracy)
+        }
+        if !draft.shouldShowWhatWasWrong {
+            draft.answers.removeValue(forKey: .whatWasWrong)
+        }
+        if !draft.shouldShowAIFeatureRating {
+            draft.answers.removeValue(forKey: .aiFeatureRating)
+        }
+        if !shouldShowProFeeling {
+            draft.answers.removeValue(forKey: .proFeeling)
+        }
     }
 
-    func nextStep(after step: FeedbackStep) -> FeedbackStep? {
-        switch step {
-        case .uiApproval:
-            return .foundWhere
-        case .foundWhere:
-            return .shortcutsExplore
-        case .shortcutsExplore:
-            return draft.shouldShowWhichShortcuts ? .whichShortcuts : .howTheyLog
-        case .whichShortcuts:
-            return .howTheyLog
-        case .howTheyLog:
-            return draft.shouldShowCaptureAccuracy ? .captureAccuracy : .recommend
-        case .captureAccuracy:
-            return draft.shouldShowWhatWasWrong ? .whatWasWrong : .aiFeatures
-        case .whatWasWrong:
-            return .aiFeatures
-        case .aiFeatures:
-            if draft.shouldShowAIFeatureRating {
-                return .aiFeatureRating
-            }
-            return draft.shouldShowProFeeling ? .proFeeling : .recommend
-        case .aiFeatureRating:
-            return .proFeeling
-        case .proFeeling:
-            return .recommend
-        case .recommend:
-            return .notes
-        case .notes:
-            return nil
-        }
+    private func queueAdvance(from step: FeedbackStep) {
+        guard step.advancesOnAnswer, let next = nextVisibleStep(after: step) else { return }
+        scrollNonce += 1
+        scrollPulse = FeedbackScrollPulse(step: next, nonce: scrollNonce)
     }
 }
 
