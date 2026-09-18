@@ -7,18 +7,14 @@ import SwiftUI
 
 struct HelpSettingsRows: View {
     @Environment(\.openURL) private var openURL
-    @State private var showFeatureRequest = false
     @State private var showInviteSheet = false
 
-    private let helpFAQURL = URL(string: "https://spendrift.app/faq")
-    private let privacyPolicyURL = URL(string: "https://spendrift.app/privacy_policy")
+    private let privacyPolicyURL = URL(string: "https://spendrift.ronakpunase.dev/privacy_policy")
 
     private var accent: Color { AppTheme.accent }
 
     private enum Row: Int, CaseIterable, Identifiable {
-        case faq
         case privacy
-        case feature
         case invite
         case rate
 
@@ -26,9 +22,7 @@ struct HelpSettingsRows: View {
 
         var icon: String {
             switch self {
-            case .faq: "questionmark.circle.fill"
             case .privacy: "hand.raised.fill"
-            case .feature: "lightbulb.fill"
             case .invite: "square.and.arrow.up.fill"
             case .rate: "star.fill"
             }
@@ -36,9 +30,7 @@ struct HelpSettingsRows: View {
 
         var title: String {
             switch self {
-            case .faq: "Help & FAQ"
             case .privacy: "Privacy Policy"
-            case .feature: "Request a feature"
             case .invite: "Invite friends"
             case .rate: "Rate Spendrift"
             }
@@ -46,8 +38,8 @@ struct HelpSettingsRows: View {
 
         var accessory: SettingsListItem.Accessory {
             switch self {
-            case .faq, .privacy: .externalLink
-            case .feature, .invite: .chevron
+            case .privacy: .externalLink
+            case .invite: .chevron
             case .rate: .none
             }
         }
@@ -69,9 +61,6 @@ struct HelpSettingsRows: View {
             .buttonStyle(.plain)
         }
         .tint(accent)
-        .sheet(isPresented: $showFeatureRequest) {
-            FeatureRequestView()
-        }
         .sheet(isPresented: $showInviteSheet) {
             ShareSheet(items: [AppShareContent.fullShareText])
         }
@@ -79,12 +68,8 @@ struct HelpSettingsRows: View {
 
     private func handleTap(_ row: Row) {
         switch row {
-        case .faq:
-            open(helpFAQURL)
         case .privacy:
             open(privacyPolicyURL)
-        case .feature:
-            showFeatureRequest = true
         case .invite:
             showInviteSheet = true
         case .rate:
