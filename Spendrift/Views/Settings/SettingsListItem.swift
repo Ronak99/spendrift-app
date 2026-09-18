@@ -17,6 +17,7 @@ struct SettingsListItem: View {
         /// Value plus a chevron that rotates to point down while the row is open.
         case valueDisclosure(String, isExpanded: Bool)
         case chevron
+        case progress
         case externalLink
     }
 
@@ -86,6 +87,10 @@ struct SettingsListItem: View {
             }
         case .chevron:
             chevronGlyph
+        case .progress:
+            ProgressView()
+                .controlSize(.small)
+                .tint(SettingsTokens.chevron)
         case .externalLink:
             Image(systemName: "arrow.up.right.square")
                 .font(.system(size: 13, weight: .semibold))

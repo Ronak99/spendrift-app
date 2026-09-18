@@ -23,6 +23,7 @@ struct ProSettingsRows: View {
     @State private var showManageSubscriptions = false
     @State private var isStatsExpanded = false
     @State private var restoreMessage: String?
+    @State private var isRestoring = false
 
     private var accent: Color { AppTheme.accent }
 
@@ -115,17 +116,18 @@ struct ProSettingsRows: View {
             }
 
             Button {
-                Task { await restore() }
+                startRestore()
             } label: {
                 SettingsListItem(
                     icon: "arrow.clockwise",
                     title: "Restore purchases",
                     accent: accent,
-                    accessory: .chevron
+                    accessory: isRestoring ? .progress : .chevron
                 )
                 .listItemPositioned(index: rowCount - 1, count: rowCount)
             }
             .buttonStyle(.plain)
+            .disabled(isRestoring)
         }
     }
 
@@ -160,8 +162,19 @@ struct ProSettingsRows: View {
             : (entitlement.isEligibleForTrial ? "7 days free, then unlimited" : "Unlimited AI capture")
     }
 
+    /// Flip `isRestoring` before the Task hops, otherwise a second tap on the
+    /// same run loop can still fire another `AppStore.sync()`.
+    private func startRestore() {
+        guard !isRestoring else { return }
+        isRestoring = true
+        Task {
+            await restore()
+            isRestoring = false
+        }
+    }
+
     private func restore() async {
-        let restored = await entitlement.restorePurchases()
+        guard let restored = await entitlement.restorePurchases() else { return }
         Analytics.capturePro(.restoreCompleted, [Analytics.Key.granted: restored])
         restoreMessage = restored
             ? "Spendrift Pro is active on this device."

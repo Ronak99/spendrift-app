@@ -88,6 +88,7 @@ final class ProEntitlement {
     private(set) var products: [Product] = []
     private(set) var isLoadingProducts = false
     private(set) var purchaseInFlight = false
+    private var restoreInFlight = false
 
     /// True while the App Store will still grant the 7-day introductory offer. False
     /// once the user has already taken a trial anywhere in the subscription group.
@@ -219,7 +220,7 @@ final class ProEntitlement {
         guard let product = product(for: plan) else {
             return .failed(message: Self.productUnavailableMessage)
         }
-        guard !purchaseInFlight else { return .cancelled }
+        guard !purchaseInFlight, !restoreInFlight else { return .cancelled }
         purchaseInFlight = true
         defer { purchaseInFlight = false }
 
@@ -248,7 +249,13 @@ final class ProEntitlement {
         }
     }
 
-    func restorePurchases() async -> Bool {
+    /// Returns `nil` when a purchase or restore is already in flight, so a
+    /// repeated tap is dropped instead of treated as a completed restore.
+    func restorePurchases() async -> Bool? {
+        guard !purchaseInFlight, !restoreInFlight else { return nil }
+        restoreInFlight = true
+        defer { restoreInFlight = false }
+
         try? await AppStore.sync()
         await refreshEntitlement()
         return isPro

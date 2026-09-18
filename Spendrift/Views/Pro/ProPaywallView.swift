@@ -60,6 +60,7 @@ struct ProPaywallView: View {
     @State private var selectedPlan: ProEntitlement.Plan = .yearly
     @State private var errorMessage: String?
     @State private var showPendingNotice = false
+    @State private var isRestoring = false
 
     private let accent = OnboardingTheme.accent
     private let privacyPolicyURL = URL(string: "https://spendrift.ronakpunase.dev/privacy_policy")!
@@ -257,7 +258,7 @@ struct ProPaywallView: View {
                 .padding(.vertical, 16)
                 .background(Capsule().fill(accent))
             }
-            .disabled(entitlement.products.isEmpty || entitlement.purchaseInFlight)
+            .disabled(entitlement.products.isEmpty || entitlement.purchaseInFlight || isRestoring)
             .opacity(entitlement.products.isEmpty ? 0.5 : 1)
             .padding(.horizontal, 24)
 
@@ -269,9 +270,17 @@ struct ProPaywallView: View {
                 .padding(.horizontal, 28)
 
             HStack(spacing: 16) {
-                Button("Restore") {
-                    Task { await restore() }
+                Button {
+                    startRestore()
+                } label: {
+                    if isRestoring {
+                        ProgressView()
+                            .controlSize(.small)
+                    } else {
+                        Text("Restore")
+                    }
                 }
+                .disabled(isRestoring || entitlement.purchaseInFlight)
                 Link("Privacy", destination: privacyPolicyURL)
                 Link("Terms", destination: termsURL)
                 Button(dismissTitle) {
@@ -333,9 +342,20 @@ struct ProPaywallView: View {
         }
     }
 
+    /// Flip `isRestoring` before the Task hops, otherwise a second tap on the
+    /// same run loop can still fire another `AppStore.sync()`.
+    private func startRestore() {
+        guard !isRestoring, !entitlement.purchaseInFlight else { return }
+        isRestoring = true
+        Task {
+            await restore()
+            isRestoring = false
+        }
+    }
+
     private func restore() async {
         errorMessage = nil
-        let restored = await entitlement.restorePurchases()
+        guard let restored = await entitlement.restorePurchases() else { return }
         Analytics.capturePro(.restoreCompleted, [Analytics.Key.granted: restored])
         if restored {
             dismiss()
