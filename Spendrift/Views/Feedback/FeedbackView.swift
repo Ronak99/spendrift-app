@@ -22,7 +22,6 @@ struct FeedbackView: View {
     @State private var showError = false
     @State private var showThanks = false
     @State private var errorMessage = ""
-    @State private var showLibrary = false
     @State private var scrollTask: Task<Void, Never>?
     @FocusState private var notesFocused: Bool
 
@@ -85,15 +84,6 @@ struct FeedbackView: View {
         .onDisappear {
             scrollTask?.cancel()
         }
-        .sheet(isPresented: $showLibrary) {
-            PhotoLibraryPicker { image in
-                showLibrary = false
-                if let image {
-                    flow.draft.screenshotData = image.jpegData(compressionQuality: 0.85)
-                }
-            }
-            .ignoresSafeArea()
-        }
         .alert("Couldn't send feedback", isPresented: $showError) {
             Button("OK", role: .cancel) {}
         } message: {
@@ -114,54 +104,37 @@ struct FeedbackView: View {
         case .foundWhere:
             choiceSection(
                 for: .foundWhere,
-                options: FeedbackOptions.FoundWhere.allCases.map { ($0.id, $0.label) },
-                multi: false
+                options: FeedbackOptions.FoundWhere.allCases.map { ($0.id, $0.label) }
             )
         case .shortcutsExplore:
             choiceSection(
                 for: .shortcutsExplore,
-                options: FeedbackOptions.ShortcutsExplore.allCases.map { ($0.id, $0.label) },
-                multi: false
-            )
-        case .whichShortcuts:
-            choiceSection(
-                for: .whichShortcuts,
-                options: FeedbackOptions.WhichShortcut.allCases.map { ($0.id, $0.label) },
-                multi: true,
-                exclusive: FeedbackOptions.WhichShortcut.noneOfThese.rawValue
+                options: FeedbackOptions.ShortcutsExplore.allCases.map { ($0.id, $0.label) }
             )
         case .howTheyLog:
             choiceSection(
                 for: .howTheyLog,
-                options: FeedbackOptions.HowTheyLog.allCases.map { ($0.id, $0.label) },
-                multi: true,
-                exclusive: FeedbackOptions.HowTheyLog.haventLogged.rawValue
+                options: FeedbackOptions.HowTheyLog.allCases.map { ($0.id, $0.label) }
             )
         case .captureAccuracy:
             starSection(for: .captureAccuracy)
         case .whatWasWrong:
             choiceSection(
                 for: .whatWasWrong,
-                options: FeedbackOptions.WhatWasWrong.allCases.map { ($0.id, $0.label) },
-                multi: false
+                options: FeedbackOptions.WhatWasWrong.allCases.map { ($0.id, $0.label) }
             )
         case .aiFeatures:
             choiceSection(
                 for: .aiFeatures,
-                options: FeedbackOptions.AIFeature.allCases.map { ($0.id, $0.label) },
-                multi: true,
-                exclusive: FeedbackOptions.AIFeature.noneOfThese.rawValue
+                options: FeedbackOptions.AIFeature.allCases.map { ($0.id, $0.label) }
             )
         case .aiFeatureRating:
             starSection(for: .aiFeatureRating)
         case .proFeeling:
             choiceSection(
                 for: .proFeeling,
-                options: FeedbackOptions.ProFeeling.allCases.map { ($0.id, $0.label) },
-                multi: false
+                options: FeedbackOptions.ProFeeling.allCases.map { ($0.id, $0.label) }
             )
-        case .recommend:
-            starSection(for: .recommend)
         case .notes:
             notesSection
         }
@@ -182,24 +155,6 @@ struct FeedbackView: View {
                     accent: accent,
                     heroPrimary: heroPrimary
                 )
-
-                Button {
-                    flow.setStars(0, for: step)
-                } label: {
-                    FeedbackChoiceRow(
-                        title: "0 - haven't used this / doesn't work for me",
-                        isSelected: flow.draft.stars(for: step) == 0,
-                        accent: accent,
-                        isLast: true,
-                        unselectedLabel: unselectedLabel
-                    )
-                }
-                .buttonStyle(.plain)
-                .overlay(alignment: .top) {
-                    Rectangle()
-                        .fill(FeedbackSurveyChrome.hairline)
-                        .frame(height: 1)
-                }
             }
         }
     }
@@ -207,9 +162,7 @@ struct FeedbackView: View {
     @ViewBuilder
     private func choiceSection(
         for step: FeedbackStep,
-        options: [(id: String, label: String)],
-        multi: Bool,
-        exclusive: String? = nil
+        options: [(id: String, label: String)]
     ) -> some View {
         VStack(alignment: .leading, spacing: FeedbackSurveyChrome.titleToCardGap) {
             FeedbackQuestionHeader(
@@ -220,21 +173,14 @@ struct FeedbackView: View {
 
             FeedbackQuestionCard(isDark: isDark) {
                 ForEach(Array(options.enumerated()), id: \.element.id) { index, option in
-                    let isSelected = multi
-                        ? flow.draft.multi(for: step).contains(option.id)
-                        : flow.draft.single(for: step) == option.id
+                    let isSelected = flow.draft.single(for: step) == option.id
                     Button {
-                        if multi {
-                            flow.toggleMulti(option.id, for: step, exclusive: exclusive)
-                        } else {
-                            flow.setSingle(option.id, for: step)
-                        }
+                        flow.setSingle(option.id, for: step)
                     } label: {
                         FeedbackChoiceRow(
                             title: option.label,
                             isSelected: isSelected,
                             accent: accent,
-                            mark: multi ? .checkbox : .radio,
                             isLast: index == options.count - 1,
                             unselectedLabel: unselectedLabel
                         )
@@ -274,59 +220,6 @@ struct FeedbackView: View {
                             .padding(.leading, 17)
                             .allowsHitTesting(false)
                     }
-                }
-
-                Button {
-                    notesFocused = false
-                    showLibrary = true
-                } label: {
-                    HStack {
-                        Text("Screenshot")
-                            .font(.system(size: 15, weight: .regular))
-                            .foregroundStyle(heroPrimary)
-                        Spacer(minLength: 12)
-                        HStack(spacing: 6) {
-                            Text(flow.draft.screenshotData == nil ? "Attach" : "Attached")
-                                .foregroundStyle(heroPrimary)
-                            Image(systemName: "chevron.right")
-                                .font(.system(size: 11, weight: .semibold))
-                                .foregroundStyle(heroPrimary.opacity(0.28))
-                        }
-                        .font(.system(size: 14, weight: .regular))
-                    }
-                    .padding(.horizontal, FeedbackSurveyChrome.rowHorizontal)
-                    .padding(.vertical, 14)
-                    .contentShape(Rectangle())
-                }
-                .buttonStyle(.plain)
-                .overlay(alignment: .top) {
-                    Rectangle()
-                        .fill(FeedbackSurveyChrome.hairline)
-                        .frame(height: 1)
-                }
-
-                if let imageData = flow.draft.screenshotData,
-                   let uiImage = UIImage(data: imageData) {
-                    VStack(spacing: 12) {
-                        Image(uiImage: uiImage)
-                            .resizable()
-                            .scaledToFit()
-                            .frame(maxHeight: 180)
-                            .frame(maxWidth: .infinity)
-                            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-
-                        Button {
-                            flow.draft.screenshotData = nil
-                        } label: {
-                            Text("Remove screenshot")
-                                .font(.system(size: 14, weight: .regular))
-                                .foregroundStyle(Color(hex: "#FF6B6B"))
-                        }
-                        .buttonStyle(.plain)
-                    }
-                    .padding(.horizontal, 16)
-                    .padding(.bottom, 16)
-                    .padding(.top, 4)
                 }
             }
         }

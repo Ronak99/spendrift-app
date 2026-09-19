@@ -3,8 +3,8 @@
 //  Spendrift
 //
 //  Single-page feedback survey state. Branching still follows
-//  Spendrift/docs/FEEDBACK_FORM.md, but questions appear or hide in place
-//  instead of advancing a wizard.
+//  Spendrift/docs/FEEDBACK_FORM.md, but every structured question is a
+//  single choice so answering can scroll the next question into place.
 //
 
 import Foundation
@@ -15,14 +15,12 @@ enum FeedbackStep: Equatable, Hashable, CaseIterable {
     case uiApproval
     case foundWhere
     case shortcutsExplore
-    case whichShortcuts
     case howTheyLog
     case captureAccuracy
     case whatWasWrong
     case aiFeatures
     case aiFeatureRating
     case proFeeling
-    case recommend
     case notes
 }
 
@@ -31,7 +29,6 @@ enum FeedbackStep: Equatable, Hashable, CaseIterable {
 enum FeedbackAnswerValue: Equatable {
     case stars(Int)
     case single(String)
-    case multi(Set<String>)
 }
 
 struct FeedbackAnswer: Equatable {
@@ -44,8 +41,6 @@ struct FeedbackAnswer: Equatable {
             return ["type": type, "value": n]
         case .single(let id):
             return ["type": type, "value": id]
-        case .multi(let ids):
-            return ["type": type, "value": Array(ids).sorted()]
         }
     }
 }
@@ -60,13 +55,14 @@ struct FeedbackScrollPulse: Equatable {
 
 enum FeedbackOptions {
     enum FoundWhere: String, CaseIterable, Identifiable {
-        case reddit, youtube, appStore = "app_store", other
+        case reddit, youtube, appStore = "app_store", linkedIn = "linked_in", other
         var id: String { rawValue }
         var label: String {
             switch self {
             case .reddit: "Reddit"
             case .youtube: "YouTube"
             case .appStore: "App Store"
+            case .linkedIn: "LinkedIn"
             case .other: "Other"
             }
         }
@@ -80,7 +76,7 @@ enum FeedbackOptions {
         var id: String { rawValue }
         var label: String {
             switch self {
-            case .openedExploreOrOnboarding: "Yes, I opened Explore or saw them in onboarding"
+            case .openedExploreOrOnboarding: "Yes, I opened the Explore option"
             case .sawButDidntAdd: "I saw them but didn't add any"
             case .addedAtLeastOne: "I added at least one shortcut"
             case .didntKnow: "I didn't know they existed"
@@ -88,42 +84,18 @@ enum FeedbackOptions {
         }
     }
 
-    enum WhichShortcut: String, CaseIterable, Identifiable {
-        case voiceRecordExpense = "voice_record_expense"
-        case logExpenseAmount = "log_expense_amount"
-        case bankSmsAutomation = "bank_sms_automation"
-        case homeScreenWidget = "home_screen_widget"
-        case noneOfThese = "none_of_these"
-        var id: String { rawValue }
-        var label: String {
-            switch self {
-            case .voiceRecordExpense: "Voice Record Expense"
-            case .logExpenseAmount: "Log Expense Amount"
-            case .bankSmsAutomation: "Bank SMS automation"
-            case .homeScreenWidget: "Home screen widget"
-            case .noneOfThese: "None of these"
-            }
-        }
-    }
-
     enum HowTheyLog: String, CaseIterable, Identifiable {
         case typeInApp = "type_in_app"
         case speak
-        case scanReceipt = "scan_receipt"
-        case importStatement = "import_statement"
         case bankSms = "bank_sms"
-        case widgetOrShortcutOnly = "widget_or_shortcut_only"
         case haventLogged = "havent_logged"
         var id: String { rawValue }
         var label: String {
             switch self {
-            case .typeInApp: "Type in the app"
-            case .speak: "Speak (in app or via shortcut)"
-            case .scanReceipt: "Scan a receipt"
-            case .importStatement: "Import a bank statement (PDF)"
-            case .bankSms: "Bank SMS"
-            case .widgetOrShortcutOnly: "Widget or Shortcut only"
-            case .haventLogged: "Haven't logged one yet"
+            case .typeInApp: "I type most expenses in the app"
+            case .speak: "I speak them, in the app or via shortcut"
+            case .bankSms: "Bank SMS logs them for me"
+            case .haventLogged: "I haven't logged one yet"
             }
         }
     }
@@ -137,29 +109,25 @@ enum FeedbackOptions {
         var id: String { rawValue }
         var label: String {
             switch self {
-            case .wrongAmount: "Wrong amount"
-            case .wrongCategory: "Wrong category"
-            case .wrongAccount: "Wrong account"
-            case .failedReenter: "It failed / I had to re-enter"
-            case .notSure: "Not sure"
+            case .wrongAmount: "It got the amount wrong"
+            case .wrongCategory: "It picked the wrong category"
+            case .wrongAccount: "It put it on the wrong account"
+            case .failedReenter: "It failed and I had to re-enter"
+            case .notSure: "Not sure what went wrong"
             }
         }
     }
 
     enum AIFeature: String, CaseIterable, Identifiable {
         case voiceCapture = "voice_capture"
-        case receiptScan = "receipt_scan"
-        case bankStatementImport = "bank_statement_import"
         case bankSmsImport = "bank_sms_import"
         case noneOfThese = "none_of_these"
         var id: String { rawValue }
         var label: String {
             switch self {
-            case .voiceCapture: "Voice capture"
-            case .receiptScan: "Receipt scan"
-            case .bankStatementImport: "Bank statement import"
-            case .bankSmsImport: "Bank SMS import"
-            case .noneOfThese: "None of these"
+            case .voiceCapture: "I've used voice capture"
+            case .bankSmsImport: "I've imported bank SMS"
+            case .noneOfThese: "I haven't tried any of these"
             }
         }
     }
@@ -173,11 +141,11 @@ enum FeedbackOptions {
         var id: String { rawValue }
         var label: String {
             switch self {
-            case .worthPaying: "Worth paying for"
-            case .freeEnough: "Free limits are enough"
+            case .worthPaying: "The AI features feel worth paying for"
+            case .freeEnough: "The free limits are enough for me"
             case .noSubscription: "I don't want a subscription"
-            case .alreadySubscribe: "I already subscribe"
-            case .haventHitPaywall: "Haven't hit the paywall"
+            case .alreadySubscribe: "I have already subscribed"
+            case .haventHitPaywall: "I haven't hit the paywall yet"
             }
         }
     }
@@ -189,14 +157,12 @@ extension FeedbackStep {
         case .uiApproval: "ui_approval"
         case .foundWhere: "found_where"
         case .shortcutsExplore: "shortcuts_explored"
-        case .whichShortcuts: "which_shortcuts"
         case .howTheyLog: "how_they_log"
         case .captureAccuracy: "capture_accuracy"
         case .whatWasWrong: "what_was_wrong"
         case .aiFeatures: "ai_features"
         case .aiFeatureRating: "ai_feature_rating"
         case .proFeeling: "pro_feeling"
-        case .recommend: "recommend"
         case .notes: "notes"
         }
     }
@@ -206,14 +172,12 @@ extension FeedbackStep {
         case .uiApproval: "How does the app look and feel?"
         case .foundWhere: "Where did you find Spendrift?"
         case .shortcutsExplore: "Have you looked at the shortcuts Spendrift offers?"
-        case .whichShortcuts: "Which of these did you set up?"
-        case .howTheyLog: "How do you actually log spending in Spendrift?"
+        case .howTheyLog: "What's the main way you log spending in Spendrift?"
         case .captureAccuracy: "When you log something, how often does Spendrift get it right?"
         case .whatWasWrong: "What was wrong most often?"
-        case .aiFeatures: "Have you tried any of Spendrift's AI features?"
+        case .aiFeatures: "Which AI feature have you actually used?"
         case .aiFeatureRating: "How was that feature?"
         case .proFeeling: "How do you feel about Pro?"
-        case .recommend: "Would you recommend Spendrift to someone like you?"
         case .notes: "Anything else you want to share?"
         }
     }
@@ -226,20 +190,13 @@ extension FeedbackStep {
 
     var accessoryLabel: String? {
         switch self {
-        case .notes: "Optional"
         default: nil
         }
     }
 
-    /// Single-choice and star questions auto-advance. Multi-select stays put
-    /// so the person can pick more than one option.
+    /// Structured answers auto-advance so the next question scrolls into place.
     var advancesOnAnswer: Bool {
-        switch self {
-        case .whichShortcuts, .howTheyLog, .aiFeatures, .notes:
-            false
-        default:
-            true
-        }
+        self != .notes
     }
 }
 
@@ -252,7 +209,6 @@ extension FeedbackStep: Identifiable {
 struct FeedbackDraft: Equatable {
     var answers: [FeedbackStep: FeedbackAnswerValue] = [:]
     var notes: String = ""
-    var screenshotData: Data?
     var skippedToNotes = false
 
     func answer(for step: FeedbackStep) -> FeedbackAnswerValue? {
@@ -269,31 +225,21 @@ struct FeedbackDraft: Equatable {
         return nil
     }
 
-    func multi(for step: FeedbackStep) -> Set<String> {
-        if case .multi(let value)? = answers[step] { return value }
-        return []
-    }
-
     var usedAIFeatures: Bool {
-        let selected = multi(for: .aiFeatures)
-        return !selected.isEmpty && !selected.contains(FeedbackOptions.AIFeature.noneOfThese.rawValue)
+        guard let raw = single(for: .aiFeatures) else { return false }
+        return raw != FeedbackOptions.AIFeature.noneOfThese.rawValue
     }
 
     var hasLoggedTransactions: Bool {
-        !multi(for: .howTheyLog).contains(FeedbackOptions.HowTheyLog.haventLogged.rawValue)
-            && !multi(for: .howTheyLog).isEmpty
-    }
-
-    var shouldShowWhichShortcuts: Bool {
-        guard let raw = single(for: .shortcutsExplore) else { return false }
-        return raw != FeedbackOptions.ShortcutsExplore.didntKnow.rawValue
+        guard let raw = single(for: .howTheyLog) else { return false }
+        return raw != FeedbackOptions.HowTheyLog.haventLogged.rawValue
     }
 
     var shouldShowCaptureAccuracy: Bool { hasLoggedTransactions }
 
     var shouldShowWhatWasWrong: Bool {
         guard let rating = stars(for: .captureAccuracy) else { return false }
-        return (0 ... 2).contains(rating)
+        return (1 ... 2).contains(rating)
     }
 
     var shouldShowAIFeatureRating: Bool { usedAIFeatures }
@@ -305,15 +251,15 @@ struct FeedbackDraft: Equatable {
     }
 
     var canSubmit: Bool {
-        hasSurveyAnswers || hasNotes || screenshotData != nil
+        hasSurveyAnswers || hasNotes
     }
 
     func encodedAnswers() -> [String: Any] {
         var payload: [String: Any] = [:]
         let surveySteps: [FeedbackStep] = [
-            .uiApproval, .foundWhere, .shortcutsExplore, .whichShortcuts,
+            .uiApproval, .foundWhere, .shortcutsExplore,
             .howTheyLog, .captureAccuracy, .whatWasWrong, .aiFeatures,
-            .aiFeatureRating, .proFeeling, .recommend
+            .aiFeatureRating, .proFeeling
         ]
         for step in surveySteps {
             guard let value = answers[step] else { continue }
@@ -321,7 +267,6 @@ struct FeedbackDraft: Equatable {
             switch value {
             case .stars: answerType = "stars"
             case .single: answerType = "single"
-            case .multi: answerType = "multi"
             }
             payload[step.questionKey] = FeedbackAnswer(type: answerType, value: value).encode()
         }
@@ -365,10 +310,7 @@ final class FeedbackFlow {
     }
 
     var notesPlaceholder: String {
-        if let rating = draft.stars(for: .recommend), (0 ... 2).contains(rating) {
-            return "What should we fix?"
-        }
-        return "Thoughts, a bug, or a feature you want"
+        "Thoughts, a bug, or a feature you want"
     }
 
     func nextVisibleStep(after step: FeedbackStep) -> FeedbackStep? {
@@ -381,10 +323,8 @@ final class FeedbackFlow {
 
     func isShowing(_ step: FeedbackStep) -> Bool {
         switch step {
-        case .uiApproval, .foundWhere, .shortcutsExplore, .howTheyLog, .aiFeatures, .recommend, .notes:
+        case .uiApproval, .foundWhere, .shortcutsExplore, .howTheyLog, .aiFeatures, .notes:
             return true
-        case .whichShortcuts:
-            return draft.shouldShowWhichShortcuts
         case .captureAccuracy:
             return draft.shouldShowCaptureAccuracy
         case .whatWasWrong:
@@ -427,30 +367,7 @@ final class FeedbackFlow {
         }
     }
 
-    func toggleMulti(_ id: String, for step: FeedbackStep, exclusive: String? = nil) {
-        var selected = draft.multi(for: step)
-        if let exclusive, id == exclusive {
-            selected = selected == [exclusive] ? [] : [exclusive]
-        } else {
-            if let exclusive { selected.remove(exclusive) }
-            if selected.contains(id) {
-                selected.remove(id)
-            } else {
-                selected.insert(id)
-            }
-        }
-        if selected.isEmpty {
-            draft.answers.removeValue(forKey: step)
-        } else {
-            draft.answers[step] = .multi(selected)
-        }
-        pruneHiddenAnswers()
-    }
-
     private func pruneHiddenAnswers() {
-        if !draft.shouldShowWhichShortcuts {
-            draft.answers.removeValue(forKey: .whichShortcuts)
-        }
         if !draft.shouldShowCaptureAccuracy {
             draft.answers.removeValue(forKey: .captureAccuracy)
         }

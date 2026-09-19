@@ -3,7 +3,9 @@
 //  Spendrift
 //
 //  Card, radio, and star controls for the single-page feedback survey.
-//  Visual language matches spendrift-future-works/feedback.
+//  Every structured question is a single choice so answering can scroll
+//  the next question into place. Visual language matches
+//  spendrift-future-works/feedback.
 //
 
 import SwiftUI
@@ -118,43 +120,22 @@ struct FeedbackQuestionCard<Content: View>: View {
 }
 
 struct FeedbackSelectionMark: View {
-    enum Style {
-        case radio
-        case checkbox
-    }
-
-    let style: Style
     let isSelected: Bool
     let accent: Color
 
     var body: some View {
         ZStack {
-            switch style {
-            case .radio:
-                Circle()
-                    .strokeBorder(
-                        isSelected ? accent : Color.primary.opacity(0.22),
-                        lineWidth: 1.5
-                    )
-                Circle()
-                    .fill(accent)
-                    .frame(
-                        width: isSelected ? FeedbackSurveyChrome.innerMarkSize : 0,
-                        height: isSelected ? FeedbackSurveyChrome.innerMarkSize : 0
-                    )
-            case .checkbox:
-                RoundedRectangle(cornerRadius: 6, style: .continuous)
-                    .strokeBorder(
-                        isSelected ? accent : Color.primary.opacity(0.22),
-                        lineWidth: 1.5
-                    )
-                RoundedRectangle(cornerRadius: 3.5, style: .continuous)
-                    .fill(accent)
-                    .frame(
-                        width: isSelected ? FeedbackSurveyChrome.innerMarkSize : 0,
-                        height: isSelected ? FeedbackSurveyChrome.innerMarkSize : 0
-                    )
-            }
+            Circle()
+                .strokeBorder(
+                    isSelected ? accent : Color.primary.opacity(0.22),
+                    lineWidth: 1.5
+                )
+            Circle()
+                .fill(accent)
+                .frame(
+                    width: isSelected ? FeedbackSurveyChrome.innerMarkSize : 0,
+                    height: isSelected ? FeedbackSurveyChrome.innerMarkSize : 0
+                )
         }
         .frame(
             width: FeedbackSurveyChrome.markSize,
@@ -169,7 +150,6 @@ struct FeedbackChoiceRow: View {
     let title: String
     let isSelected: Bool
     let accent: Color
-    var mark: FeedbackSelectionMark.Style = .radio
     var isLast: Bool = false
     var unselectedLabel: Color = Color.primary.opacity(0.78)
 
@@ -182,7 +162,7 @@ struct FeedbackChoiceRow: View {
                 .multilineTextAlignment(.leading)
                 .frame(maxWidth: .infinity, alignment: .leading)
 
-            FeedbackSelectionMark(style: mark, isSelected: isSelected, accent: accent)
+            FeedbackSelectionMark(isSelected: isSelected, accent: accent)
         }
         .padding(.horizontal, FeedbackSurveyChrome.rowHorizontal)
         .padding(.vertical, FeedbackSurveyChrome.rowVertical)
@@ -226,7 +206,7 @@ struct FeedbackStarInput: View {
     }
 
     private func filled(_ star: Int) -> Bool {
-        let value = selection ?? -1
-        return value >= star && value > 0
+        guard let value = selection else { return false }
+        return value >= star
     }
 }

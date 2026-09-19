@@ -196,8 +196,7 @@ struct SpendriftBackendClient {
         skippedToNotes: Bool,
         notes: String?,
         locale: String?,
-        region: String?,
-        screenshotData: Data?
+        region: String?
     ) async throws {
         var fields: [(name: String, value: String, mimeType: String?)] = [
             ("device_id", deviceID, nil),
@@ -214,34 +213,22 @@ struct SpendriftBackendClient {
         request.httpMethod = "POST"
         applyAuth(&request)
 
-        if let screenshotData {
-            let body = try buildMultipartBody(
-                fields: fields,
-                fileFieldName: "screenshot",
-                fileData: screenshotData,
-                fileName: "screenshot.jpg",
-                fileMIMEType: "image/jpeg"
-            )
-            request.setValue("multipart/form-data; boundary=\(body.boundary)", forHTTPHeaderField: "Content-Type")
-            request.httpBody = body.data
-        } else {
-            let boundary = "Boundary-\(UUID().uuidString)"
-            var body = Data()
-            func append(_ string: String) throws {
-                guard let chunk = string.data(using: .utf8) else {
-                    throw SpendriftBackendError.failedToBuildRequest
-                }
-                body.append(chunk)
+        let boundary = "Boundary-\(UUID().uuidString)"
+        var body = Data()
+        func append(_ string: String) throws {
+            guard let chunk = string.data(using: .utf8) else {
+                throw SpendriftBackendError.failedToBuildRequest
             }
-            for field in fields {
-                try append("--\(boundary)\r\n")
-                try append("Content-Disposition: form-data; name=\"\(field.name)\"\r\n\r\n")
-                try append("\(field.value)\r\n")
-            }
-            try append("--\(boundary)--\r\n")
-            request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
-            request.httpBody = body
+            body.append(chunk)
         }
+        for field in fields {
+            try append("--\(boundary)\r\n")
+            try append("Content-Disposition: form-data; name=\"\(field.name)\"\r\n\r\n")
+            try append("\(field.value)\r\n")
+        }
+        try append("--\(boundary)--\r\n")
+        request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
+        request.httpBody = body
 
         _ = try await perform(request: request, expectsAuth: true)
     }

@@ -45,8 +45,7 @@ struct FeedbackClient {
             skippedToNotes: draft.skippedToNotes,
             notes: Self.normalizedNotes(draft.notes),
             locale: Locale.current.identifier,
-            region: Locale.current.region?.identifier,
-            screenshotData: draft.screenshotData
+            region: Locale.current.region?.identifier
         )
     }
 
