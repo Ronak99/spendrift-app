@@ -91,6 +91,8 @@ final class SpeechTranscriptionService {
                 AVLinearPCMIsBigEndianKey: false
             ]
             let recorder = try AVAudioRecorder(url: url, settings: settings)
+            // Feeds the live waveform in the recording bar; must be set before `record()`.
+            recorder.isMeteringEnabled = true
             recorder.prepareToRecord()
             recorder.record(forDuration: VoiceAudioPolicy.maxClipDurationSeconds)
 
@@ -134,6 +136,26 @@ final class SpeechTranscriptionService {
             try? FileManager.default.removeItem(at: sourceURL)
         }
     }
+
+    /// Loudness of the most recent input, normalized to `0...1`, or `0` when not recording.
+    ///
+    /// Average power, not peak: peak power sits high even for room noise, which left silence
+    /// and speech only a few points apart in the waveform. The decibel span is mapped
+    /// linearly then squared, so noise collapses toward zero while soft speech still shows
+    /// as small bars and loud speech fills the strip.
+    func currentInputLevel() -> Float {
+        guard state == .recording, let recorder = audioRecorder else { return 0 }
+        recorder.updateMeters()
+        let decibels = recorder.averagePower(forChannel: 0)
+        let span = Self.meterCeilingDecibels - Self.meterFloorDecibels
+        let linear = min(max((decibels - Self.meterFloorDecibels) / span, 0), 1)
+        return linear * linear
+    }
+
+    /// Average power of a quiet room on a handset mic; anything quieter is drawn as silence.
+    private static let meterFloorDecibels: Float = -50
+    /// Average power of loud, close speech; anything louder fills the strip.
+    private static let meterCeilingDecibels: Float = -10
 
     /// Raw file bytes for `input_audio` (base64-encoded by the client).
     func audioDataForChatAPI() throws -> Data {

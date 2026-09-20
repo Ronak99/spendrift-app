@@ -29,6 +29,8 @@ final class VoiceInlineCaptureController {
     var manualSheetPayload: VoiceInlineManualSheetPayload?
     /// Set when the microphone begins capturing; drives the progress ring in the recording bar.
     private(set) var recordingStartedAt: Date?
+    /// Live microphone loudness history; drives the waveform in the recording bar.
+    let levelMeter = VoiceInputLevelMeter()
 
     private var speechService = SpeechTranscriptionService()
     private var pipelineService = VoiceExpensePipelineService()
@@ -75,6 +77,7 @@ final class VoiceInlineCaptureController {
     func cancelCapture() {
         guard displayState == .recording else { return }
         recordingStartedAt = nil
+        levelMeter.stop()
         speechService.reset()
         liveActivityController.end(message: "Cancelled")
         resetRetryContext()
@@ -132,6 +135,7 @@ final class VoiceInlineCaptureController {
     ) {
         guard displayState == .recording else { return }
         recordingStartedAt = nil
+        levelMeter.stop()
         liveActivityController.update(state: .reviewing, message: "Finishing…")
         speechService.stopRecordingForReview()
 
@@ -253,6 +257,9 @@ final class VoiceInlineCaptureController {
             setError(reason)
         } else {
             recordingStartedAt = Date()
+            levelMeter.start { [speechService] in
+                speechService.currentInputLevel()
+            }
             liveActivityController.update(state: .recording, message: "Listening…")
         }
     }
@@ -425,10 +432,19 @@ final class VoiceInlineCaptureController {
     }
 
     #if DEBUG
-    /// For SwiftUI Previews: drive the bar UI without starting the microphone.
+    /// For SwiftUI Previews: drive the bar UI without starting the microphone. The recording
+    /// state gets a synthetic speech-like level so the waveform has something to draw.
     func applyPreviewDisplayState(_ state: VoiceInlineDisplayState) {
         displayState = state
         recordingStartedAt = (state == .recording) ? Date() : nil
+        levelMeter.stop()
+        guard state == .recording else { return }
+        levelMeter.start {
+            let t = Date().timeIntervalSinceReferenceDate
+            let syllables = max(0, sin(t * 9)) * 0.6
+            let phrase = (sin(t * 0.7) + 1) / 2
+            return Float(syllables * phrase + .random(in: 0...0.08))
+        }
     }
     #endif
 }
