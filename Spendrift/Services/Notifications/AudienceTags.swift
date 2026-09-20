@@ -305,7 +305,7 @@ enum AudienceTags {
 
         return SnapshotInput(
             onboardingDone: UserDefaults.standard.integer(forKey: onboardingVersionKey)
-                >= OnboardingCarouselView.currentVersion,
+                >= OnboardingFlowView.currentVersion,
             ledger: loadLedgerSnapshot(),
             seenExplore: suite.bool(forKey: StoreKey.seenExplore),
             exploreShortcutAdded: suite.bool(forKey: StoreKey.exploreShortcutAdded),

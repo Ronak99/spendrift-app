@@ -328,15 +328,19 @@ This is the product path as instrumented, not as designed on paper.
 3. `device_notifications` row upserted with current permission, almost always `not_determined` on a fresh install.
 4. `app_opened` with `days_since_install = 0`.
 5. Mandatory App Store update sheet, if any, before anything else.
-6. Onboarding carousel (version `2`) if `spendriftOnboardingVersion` is lower.
+6. Onboarding (version `3`) if `spendriftOnboardingVersion` is lower, presented full screen.
 
-Onboarding is three pages: Welcome, Siri and Shortcuts, Get Started.
-Only completion is logged:
+Onboarding is three pages: Welcome, Voice, Pro.
+The Voice page records the user, runs the real parse pipeline, and writes the result to the ledger stamped with the capture time.
 
-- `onboarding_completed` with `version: 2`
+Logged:
 
-There is no `onboarding_page_viewed`, no skip event, and no event for tapping the shortcut share links on page 2.
-Live: **21** `onboarding_completed` vs **27** `Application Installed` in 30 days.
+- `onboarding_step_viewed` with `step: welcome | voice | pro`
+- `onboarding_completed` with `version: 3`
+
+The voice demo itself is covered by the existing voice events: a failed parse still fires `voice_capture_failed`, and the backend call still spends a `voice` credit through `ProGate.recordUsage`.
+There is no skip event.
+Live (against the retired version `2` carousel): **21** `onboarding_completed` vs **27** `Application Installed` in 30 days.
 Some installs never finish onboarding, or were already past this version.
 
 Default account and categories are seeded when onboarding starts.
@@ -541,6 +545,7 @@ The Notification Service Extension is what makes confirmed delivery real.
 | --- | --- | --- | --- |
 | `app_opened` | yes | 1,211 / 35 devices | Session + retention |
 | `screen_viewed` | yes | 1,006 / 31 devices | Tab navigation |
+| `onboarding_step_viewed` | yes | new | Drop-off inside onboarding |
 | `onboarding_completed` | yes | 21 / 21 | Onboarding done |
 | `transaction_created` | yes | 433 / 19 | Core capture |
 | `first_transaction_created` | yes | 12 / 12 | Activation |
@@ -736,7 +741,6 @@ Add only events that create an audience or a funnel step that tags cannot expres
 | `explore_page_viewed` | `page` (`voice`, `typed`, `sms`) | Which Explore card they reached |
 | `explore_shortcut_tapped` | `page` | Saw vs tried to add |
 | `analytics_viewed` | none | Never-seen-charts |
-| `onboarding_page_viewed` | `page` (`welcome`, `shortcuts`, `get_started`) | Drop-off inside onboarding |
 | `learning_step_completed` | `step`, `id` | Future learning |
 | `learning_completed` | `version` | Future learning |
 | `shortcut_logged` | `kind` (`typed_amount`) | Silent typed shortcut success |

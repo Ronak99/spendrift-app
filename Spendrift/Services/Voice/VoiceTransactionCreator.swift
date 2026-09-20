@@ -78,13 +78,20 @@ enum VoiceTransactionCreator {
     /// Must run on the main actor: `modelContext` is the SwiftUI environment's main-thread
     /// context, and the `accounts`/`categories` model objects are bound to it. Mutating or
     /// reading them off-thread corrupts the context's identity map and traps on `save()`.
+    ///
+    /// `recordedAt` stamps the row with the moment of capture instead of the date the
+    /// model inferred. Onboarding uses this so the first entry lands at the top of today.
+    /// `announceProMoment` is the celebration paywall; onboarding already pitches Pro on
+    /// the next page, so it turns this off and marks the feature pitched itself.
     @MainActor
     static func createFromAIVoice(
         payload: VoiceTransactionPayload,
         accounts: [Account],
         categories: [TransactionCategory],
         modelContext: ModelContext,
-        isRetry: Bool = false
+        isRetry: Bool = false,
+        recordedAt: Date? = nil,
+        announceProMoment: Bool = true
     ) -> VoiceCreateResult {
         let buildResult = buildDraftFromAIPayload(payload: payload, accounts: accounts, categories: categories)
         if let failure = buildResult.failure {
@@ -126,7 +133,7 @@ enum VoiceTransactionCreator {
         let transaction = Transaction(
             notes: draft.notes,
             amount: amount,
-            date: draft.date,
+            date: recordedAt ?? draft.date,
             transactionType: draft.transactionType,
             category: draft.category,
             account: draft.account,
@@ -135,7 +142,9 @@ enum VoiceTransactionCreator {
         modelContext.insert(transaction)
         try? modelContext.save()
         Analytics.captureTransactionCreated(method: "voice", type: draft.transactionType.rawValue, isRetry: isRetry)
-        ProGate.announceMomentIfNeeded(.voice)
+        if announceProMoment {
+            ProGate.announceMomentIfNeeded(.voice)
+        }
         return .created(transaction)
     }
 

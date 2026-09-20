@@ -17,7 +17,7 @@ This document reflects the **current codebase** (not git history): what the app 
 ### 2. Onboarding
 
 6. **Three-page dark-mode carousel** — Welcome, Siri & Shortcuts, Get Started; pill page indicator; haptic on completion.
-7. **Versioned onboarding** — `@AppStorage("spendriftOnboardingVersion")`; bump `OnboardingCarouselView.currentVersion` to show onboarding again after major updates.
+7. **Versioned onboarding** — `@AppStorage("spendriftOnboardingVersion")`; bump `OnboardingFlowView.currentVersion` to show onboarding again after major updates.
 8. **Welcome copy** — Highlights multi-account tracking, voice capture, categories, and private on-device storage. AI calls still send feature-specific data off-device for voice/statement parsing.
 9. **Shortcuts page** — Deep links to two iCloud shortcut URLs (`OnboardingShortcutShareLinks`) for “Voice Record Expense” and “Log Expense Amount”; third bullet “Quick Access” has **no URL** (informational only).
 10. **Get Started** — Final CTA completes onboarding.

@@ -96,14 +96,15 @@ private struct RootContainerView: View {
     @Environment(\.modelContext) private var modelContext
 
     /// Stores the onboarding version the user has completed.
-    /// 0 = never shown. Bump `OnboardingCarouselView.currentVersion` in code to re-show on major updates.
+    /// 0 = never shown. Bump `OnboardingFlowView.currentVersion` in code to re-show on major updates.
     @AppStorage("spendriftOnboardingVersion") private var onboardingVersion = 0
 
     @State private var checker = AppUpdateChecker()
     @State private var entitlement = ProEntitlement.shared
     @State private var activeSheet: RootSheet?
-    /// Guards against starting the background seed more than once per launch.
-    @State private var didStartSeeding = false
+    /// Fin. parks onboarding for the rest of this launch. `@State` so a cold start
+    /// presents it again even when `spendriftOnboardingVersion` is already current.
+    @State private var finishedOnboardingThisLaunch = false
 
     /// A Pro moment that has been earned but not yet shown. Held rather than presented
     /// immediately so it can queue behind the notification opt-in alert and behind the
@@ -119,9 +120,33 @@ private struct RootContainerView: View {
     }
 
     private var needsOnboarding: Bool {
-        OnboardingCarouselView.isEnabled
-            && onboardingVersion < OnboardingCarouselView.currentVersion
-            && !isUITesting
+        guard OnboardingFlowView.isEnabled, !isUITesting else { return false }
+        if finishedOnboardingThisLaunch { return false }
+        if OnboardingFlowView.showsEveryLaunch { return true }
+        return onboardingVersion < OnboardingFlowView.currentVersion
+    }
+
+    /// Onboarding is a full page, not a card, so it is presented separately from the
+    /// sheet queue. `activeSheet` still owns the priority ordering; these two bindings
+    /// just route the winner to the right presentation.
+    private var onboardingPresentation: Binding<Bool> {
+        Binding(
+            get: { activeSheet == .onboarding },
+            set: { isPresented in
+                guard !isPresented, activeSheet == .onboarding else { return }
+                activeSheet = nil
+            }
+        )
+    }
+
+    private var sheetPresentation: Binding<RootSheet?> {
+        Binding(
+            get: { activeSheet == .onboarding ? nil : activeSheet },
+            set: { newValue in
+                guard newValue == nil, activeSheet != .onboarding else { return }
+                activeSheet = nil
+            }
+        )
     }
 
     var body: some View {
@@ -172,16 +197,22 @@ private struct RootContainerView: View {
                 NotificationManager.refreshQuotaRefillReminder()
                 resolveActiveSheet()
             }
-            .sheet(item: $activeSheet) { sheet in
+            .fullScreenCover(isPresented: onboardingPresentation) {
+                OnboardingFlowView(onboardingVersion: $onboardingVersion) {
+                    finishedOnboardingThisLaunch = true
+                    resolveActiveSheet()
+                }
+                .onDisappear { resolveActiveSheet() }
+            }
+            .sheet(item: sheetPresentation) { sheet in
                 switch sheet {
                 case .mandatoryUpdate(let version, let url):
                     AppUpdateSheet(kind: .mandatory, latestVersion: version, storeURL: url)
                         .interactiveDismissDisabled(true)
 
                 case .onboarding:
-                    OnboardingCarouselView(onboardingVersion: $onboardingVersion)
-                        .interactiveDismissDisabled(true)
-                        .onDisappear { resolveActiveSheet() }
+                    // Presented by `fullScreenCover` above.
+                    EmptyView()
 
                 case .optionalUpdate(let version, let url):
                     AppUpdateSheet(kind: .optional, latestVersion: version, storeURL: url)
@@ -240,11 +271,11 @@ private struct RootContainerView: View {
         return all.filter { aiSources.contains($0.source) }.count
     }
 
-    /// Default data is normally seeded when the onboarding sheet appears.
+    /// Default data is normally seeded when onboarding appears.
     /// With onboarding disabled, seed on launch so first-run still has a
     /// starter account and categories.
     private func seedDefaultDataIfOnboardingDisabled() {
-        guard !OnboardingCarouselView.isEnabled, !didStartSeeding else { return }
+        guard !OnboardingFlowView.isEnabled, !didStartSeeding else { return }
         didStartSeeding = true
         DefaultDataSeeder.seedIfNeeded(modelContext: modelContext)
     }

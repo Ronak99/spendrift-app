@@ -21,6 +21,7 @@ enum Analytics {
     enum Event: String {
         case appOpened = "app_opened"
         case screenViewed = "screen_viewed"
+        case onboardingStepViewed = "onboarding_step_viewed"
         case onboardingCompleted = "onboarding_completed"
         case transactionCreated = "transaction_created"
         case firstTransactionCreated = "first_transaction_created"
@@ -62,6 +63,7 @@ enum Analytics {
         static let type = "type"
         static let count = "count"
         static let tab = "tab"
+        static let step = "step"
         static let kind = "kind"
         static let reason = "reason"
         static let source = "source"

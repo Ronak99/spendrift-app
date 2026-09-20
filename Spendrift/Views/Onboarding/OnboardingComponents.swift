@@ -26,24 +26,48 @@ enum OnboardingVisualAsset {
 
 // MARK: - Sheet background
 
-/// Base onboarding backdrop plus a top-heavy wash that matches the active page accent.
+/// Night Studio canvas with a light top-right pool of the page's CTA colour.
+/// The field stays airy; the hue in the corner is the button, lifted toward white
+/// so it reads as cyan / coral / green instead of a dark stain on the night fill.
 struct OnboardingSheetAtmosphericBackground: View {
     var tintColor: Color
 
     var body: some View {
         ZStack {
             OnboardingTheme.background
+
             LinearGradient(
                 stops: [
-                    .init(color: tintColor.opacity(0.14), location: 0),
-                    .init(color: tintColor.opacity(0.06), location: 0.28),
-                    .init(color: tintColor.opacity(0.015), location: 0.55),
-                    .init(color: OnboardingTheme.background, location: 1)
+                    .init(color: tintColor.opacity(0.08), location: 0),
+                    .init(color: tintColor.opacity(0.03), location: 0.30),
+                    .init(color: OnboardingTheme.background, location: 0.58)
                 ],
                 startPoint: .top,
                 endPoint: .bottom
             )
+
+            RadialGradient(
+                colors: [
+                    Color.white.opacity(0.07),
+                    Color.clear
+                ],
+                center: UnitPoint(x: 0.88, y: 0.0),
+                startRadius: 0,
+                endRadius: 220
+            )
+
+            RadialGradient(
+                colors: [
+                    tintColor.opacity(0.26),
+                    tintColor.opacity(0.10),
+                    Color.clear
+                ],
+                center: UnitPoint(x: 0.88, y: 0.0),
+                startRadius: 8,
+                endRadius: 300
+            )
         }
+        .washMotion(value: AppMotion.colorToken(tintColor))
     }
 }
 
