@@ -102,6 +102,10 @@ struct AccountIconCell: View {
     let accent: Color
     var action: () -> Void
 
+    private var motionToken: String {
+        "\(isSelected)-\(AppMotion.colorToken(accent))"
+    }
+
     var body: some View {
         Button(action: action) {
             Image(systemName: icon.systemImageName)
@@ -121,6 +125,7 @@ struct AccountIconCell: View {
                 }
         }
         .buttonStyle(.plain)
+        .washMotion(value: motionToken)
         .accessibilityLabel(icon.pickerLabel)
         .accessibilityAddTraits(isSelected ? .isSelected : [])
     }

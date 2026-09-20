@@ -89,6 +89,10 @@ struct CategoryEnamelTile: View {
     let color: Color
     var showsShadow: Bool = true
 
+    private var motionToken: String {
+        "\(systemImage)-\(AppMotion.colorToken(color))"
+    }
+
     var body: some View {
         Color.clear
             .aspectRatio(1, contentMode: .fit)
@@ -124,10 +128,12 @@ struct CategoryEnamelTile: View {
                         Image(systemName: systemImage)
                             .font(.system(size: iconSize, weight: .semibold))
                             .foregroundStyle(Color(hex: "#0A0A0B"))
+                            .contentTransition(.symbolEffect(.replace))
                     }
                     .frame(width: side, height: side)
                 }
             }
+            .washMotion(value: motionToken)
             .accessibilityHidden(true)
     }
 }

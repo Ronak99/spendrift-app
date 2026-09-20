@@ -247,38 +247,20 @@ struct UpdateTransactionSheet: View {
                     .offset(x: 36, y: 8)
                     .allowsHitTesting(false)
                     .accessibilityHidden(true)
+                    .contentTransition(.opacity)
+                    .washMotion(value: heroIcon)
             }
             .padding(.top, -120)
         }
     }
 
     private var iconTile: some View {
-        ZStack {
-            RoundedRectangle(cornerRadius: 23, style: .continuous)
-                .fill(accentColor)
-                .overlay {
-                    RoundedRectangle(cornerRadius: 23, style: .continuous)
-                        .fill(
-                            LinearGradient(
-                                colors: [.white.opacity(0.35), .clear],
-                                startPoint: .topLeading,
-                                endPoint: UnitPoint(x: 0.55, y: 0.7)
-                            )
-                        )
-                }
-                .overlay {
-                    RoundedRectangle(cornerRadius: 23, style: .continuous)
-                        .strokeBorder(.white.opacity(0.28), lineWidth: 0.8)
-                }
-                .shadow(color: accentColor.opacity(0.38), radius: 16, y: 10)
-
-            Image(systemName: heroIcon.systemImageName)
-                .font(.system(size: 28, weight: .semibold))
-                .foregroundStyle(Color(hex: "#0A0A0B"))
-        }
+        CategoryEnamelTile(
+            systemImage: heroIcon.systemImageName,
+            color: accentColor
+        )
         .frame(width: 70, height: 70)
         .accessibilityHidden(true)
-        .transaction { $0.disablesAnimations = true }
     }
 
     private var amountLine: some View {
@@ -354,6 +336,7 @@ struct UpdateTransactionSheet: View {
                     Circle()
                         .fill(accentColor)
                         .frame(width: 8, height: 8)
+                        .washMotion(value: AppMotion.colorToken(accentColor))
                     Text(categoryText)
                         .foregroundStyle(heroPrimary)
                     chevron

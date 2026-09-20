@@ -47,6 +47,7 @@ struct CategoryCustomColorSheet: View {
                         .fill(previewColor)
                         .frame(width: 56, height: 56)
                         .shadow(color: previewColor.opacity(0.35), radius: 12, y: 6)
+                        .washMotion(value: "\(selectedRow)-\(selectedColumn)")
 
                     VStack(alignment: .leading, spacing: 4) {
                         Text(previewHex)

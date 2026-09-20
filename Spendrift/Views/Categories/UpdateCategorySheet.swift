@@ -204,38 +204,20 @@ struct UpdateCategorySheet: View {
                     .offset(x: 36, y: 8)
                     .allowsHitTesting(false)
                     .accessibilityHidden(true)
+                    .contentTransition(.opacity)
+                    .washMotion(value: icon)
             }
             .padding(.top, -120)
         }
     }
 
     private var iconTile: some View {
-        ZStack {
-            RoundedRectangle(cornerRadius: 23, style: .continuous)
-                .fill(selectedColor)
-                .overlay {
-                    RoundedRectangle(cornerRadius: 23, style: .continuous)
-                        .fill(
-                            LinearGradient(
-                                colors: [.white.opacity(0.35), .clear],
-                                startPoint: .topLeading,
-                                endPoint: UnitPoint(x: 0.55, y: 0.7)
-                            )
-                        )
-                }
-                .overlay {
-                    RoundedRectangle(cornerRadius: 23, style: .continuous)
-                        .strokeBorder(.white.opacity(0.28), lineWidth: 0.8)
-                }
-                .shadow(color: selectedColor.opacity(0.38), radius: 16, y: 10)
-
-            Image(systemName: icon.systemImageName)
-                .font(.system(size: 28, weight: .semibold))
-                .foregroundStyle(Color(hex: "#0A0A0B"))
-        }
+        CategoryEnamelTile(
+            systemImage: icon.systemImageName,
+            color: selectedColor
+        )
         .frame(width: 70, height: 70)
         .accessibilityHidden(true)
-        .transaction { $0.animation = nil }
     }
 
     private var metaLine: some View {
@@ -387,6 +369,7 @@ struct UpdateCategorySheet: View {
                     }
                     .font(.system(size: 13, weight: .semibold))
                     .foregroundStyle(selectedColor)
+                    .washMotion(value: selectedHex)
                 }
                 .buttonStyle(.plain)
             }

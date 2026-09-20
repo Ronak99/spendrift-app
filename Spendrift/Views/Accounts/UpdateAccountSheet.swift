@@ -22,13 +22,22 @@ struct UpdateAccountSheet: View {
     @FocusState private var nameFieldFocused: Bool
     @FocusState private var balanceFieldFocused: Bool
 
-    @State private var name: String = ""
-    @State private var balance: String = ""
-    @State private var icon = AccountIcon.bankAccountOne
-    @State private var isPrimary = false
+    @State private var name: String
+    @State private var balance: String
+    @State private var icon: AccountIcon
+    @State private var isPrimary: Bool
     @State private var saveAlertMessage: String?
     @State private var showIconPicker = false
     @State private var showTransactions = false
+
+    init(account: Account?, onCreated: ((Account) -> Void)? = nil) {
+        self.account = account
+        self.onCreated = onCreated
+        _name = State(initialValue: account?.name ?? "")
+        _balance = State(initialValue: account.map { $0.balance.wholeAmountDisplayString } ?? "")
+        _icon = State(initialValue: account?.icon ?? .bankAccountOne)
+        _isPrimary = State(initialValue: account?.isPrimary ?? false)
+    }
 
     private var isCreating: Bool { account == nil }
 
@@ -102,12 +111,7 @@ struct UpdateAccountSheet: View {
                 Button("OK", role: .cancel) {}
             }
             .onAppear {
-                if let account {
-                    name = account.name
-                    balance = account.balance.wholeAmountDisplayString
-                    icon = account.icon
-                    isPrimary = account.isPrimary
-                } else {
+                if isCreating {
                     isPrimary = allAccounts.isEmpty
                     focusNameFieldSoon()
                 }
@@ -171,6 +175,8 @@ struct UpdateAccountSheet: View {
                     .offset(x: 36, y: 8)
                     .allowsHitTesting(false)
                     .accessibilityHidden(true)
+                    .contentTransition(.opacity)
+                    .washMotion(value: icon)
             }
             .padding(.top, -120)
         }
@@ -183,7 +189,6 @@ struct UpdateAccountSheet: View {
         )
         .frame(width: 70, height: 70)
         .accessibilityHidden(true)
-        .transaction { $0.animation = nil }
     }
 
     private var metaLine: some View {
@@ -311,6 +316,7 @@ struct UpdateAccountSheet: View {
                     }
                     .font(.system(size: 13, weight: .semibold))
                     .foregroundStyle(accentColor)
+                    .washMotion(value: icon.enamelHex)
                 }
                 .buttonStyle(.plain)
             }

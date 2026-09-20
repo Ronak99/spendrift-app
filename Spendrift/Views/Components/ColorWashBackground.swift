@@ -44,5 +44,6 @@ struct ColorWashBackground: View {
                 )
             )
         }
+        .washMotion(value: AppMotion.colorToken(color))
     }
 }

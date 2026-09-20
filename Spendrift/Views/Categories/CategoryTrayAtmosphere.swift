@@ -39,7 +39,8 @@ struct CategoryTrayAtmosphere: View {
                 .offset(x: 40, y: -28)
                 .allowsHitTesting(false)
                 .accessibilityHidden(true)
-                .id(watermarkIcon)
+                .contentTransition(.opacity)
+                .washMotion(value: watermarkIcon)
         }
     }
 }

@@ -62,7 +62,8 @@ struct SettingsAtmosphere: View {
                 .offset(x: 40, y: -28)
                 .allowsHitTesting(false)
                 .accessibilityHidden(true)
-                .id(watermarkIcon)
+                .contentTransition(.opacity)
+                .washMotion(value: watermarkIcon)
         }
         .ignoresSafeArea()
         .animation(.spring(response: 0.42, dampingFraction: 0.86), value: animationToken)

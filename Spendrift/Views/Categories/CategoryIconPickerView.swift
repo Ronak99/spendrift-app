@@ -104,6 +104,10 @@ struct CategoryIconCell: View {
     var showsLabel: Bool = true
     var action: () -> Void
 
+    private var motionToken: String {
+        "\(isSelected)-\(AppMotion.colorToken(accent))"
+    }
+
     var body: some View {
         Button(action: action) {
             VStack(spacing: 7) {
@@ -133,6 +137,7 @@ struct CategoryIconCell: View {
             }
         }
         .buttonStyle(.plain)
+        .washMotion(value: motionToken)
         .accessibilityLabel(icon.pickerLabel)
         .accessibilityAddTraits(isSelected ? .isSelected : [])
     }

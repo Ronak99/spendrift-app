@@ -35,7 +35,7 @@ struct ChromeSegmentedPicker<Option: Hashable>: View {
     }
 
     private var selectionMotion: Animation? {
-        reduceMotion ? nil : .spring(response: 0.42, dampingFraction: 0.86)
+        AppMotion.wash(reduceMotion)
     }
 
     var body: some View {
