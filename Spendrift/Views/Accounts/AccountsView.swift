@@ -15,6 +15,7 @@ struct AccountsView: View {
     @Query(sort: \Account.createdOn) private var accounts: [Account]
     @Query(sort: \Transaction.date, order: .reverse) private var allTransactions: [Transaction]
     @State private var showCreateSheet = false
+    @State private var accountToEdit: Account?
 
     private var totalBalanceAllAccounts: Double {
         accounts.reduce(0) { $0 + $1.currentBalance }
@@ -79,12 +80,15 @@ struct AccountsView: View {
                 } else {
                     List {
                         ForEach(Array(accounts.enumerated()), id: \.element.id) { index, account in
-                            NavigationLink {
-                                AccountTransactionsView(account: account)
+                            Button {
+                                accountToEdit = account
                             } label: {
                                 AccountListItem(account: account)
                                     .listItemPositioned(index: index, count: accounts.count)
                             }
+                            .buttonStyle(.plain)
+                            .accessibilityIdentifier(account.name)
+                            .accessibilityLabel(account.name)
                         }
                         .onDelete { indexSet in
                             deleteAccounts(at: indexSet)
@@ -114,6 +118,16 @@ struct AccountsView: View {
             .toolbar { toolbarContent }
             .sheet(isPresented: $showCreateSheet) {
                 UpdateAccountSheet(account: nil)
+            }
+            .sheet(
+                isPresented: Binding(
+                    get: { accountToEdit != nil },
+                    set: { if !$0 { accountToEdit = nil } }
+                )
+            ) {
+                if let accountToEdit {
+                    UpdateAccountSheet(account: accountToEdit)
+                }
             }
         }
     }

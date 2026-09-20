@@ -3,8 +3,8 @@
 //  Spendrift
 //
 //  Color-wash editor for creating and updating accounts. Name lives in the
-//  hero so the preview is the header; balance and icon sit below it the way
-//  the category editor places colour and icon.
+//  hero so the preview is the header; balance, transactions, and icon sit
+//  below it the way the category editor places colour and icon.
 //
 
 import SwiftUI
@@ -28,6 +28,7 @@ struct UpdateAccountSheet: View {
     @State private var isPrimary = false
     @State private var saveAlertMessage: String?
     @State private var showIconPicker = false
+    @State private var showTransactions = false
 
     private var isCreating: Bool { account == nil }
 
@@ -72,10 +73,14 @@ struct UpdateAccountSheet: View {
                 detailsScroll
             }
             .background(canvas.ignoresSafeArea())
+            .navigationTitle(isCreating ? "New Account" : "Edit Account")
             .navigationBarTitleDisplayMode(.inline)
             .toolbarBackground(.hidden, for: .navigationBar)
             .toolbarColorScheme(isDark ? .dark : .light, for: .navigationBar)
             .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    SheetDismissToolbarButton()
+                }
                 if #available(iOS 26.0, *) {
                     ToolbarItem(placement: .confirmationAction) {
                         saveButton
@@ -109,6 +114,11 @@ struct UpdateAccountSheet: View {
             }
             .sheet(isPresented: $showIconPicker) {
                 AccountIconPickerView(selectedIcon: $icon, accentHex: icon.enamelHex)
+            }
+            .sheet(isPresented: $showTransactions) {
+                if let account {
+                    AccountTransactionsSheet(account: account)
+                }
             }
         }
     }
@@ -207,6 +217,9 @@ struct UpdateAccountSheet: View {
             VStack(alignment: .leading, spacing: 28) {
                 VStack(spacing: 0) {
                     balanceRow
+                    if !isCreating {
+                        transactionsRow
+                    }
                 }
 
                 iconSection
@@ -221,8 +234,16 @@ struct UpdateAccountSheet: View {
         .scrollIndicators(.hidden)
     }
 
+    private var persistedTransactionCount: Int {
+        (account?.transactions ?? []).filter(\.isPersisted).count
+    }
+
+    private var transactionsValueText: String {
+        persistedTransactionCount == 0 ? "None" : "\(persistedTransactionCount)"
+    }
+
     private var balanceRow: some View {
-        AccountMetaRow(title: isCreating ? "Opening" : "Balance", showsBottomDivider: false) {
+        AccountMetaRow(title: isCreating ? "Opening" : "Balance", showsBottomDivider: !isCreating) {
             HStack(alignment: .firstTextBaseline, spacing: 6) {
                 Text(currencySymbol)
                     .font(.system(size: 14, weight: .semibold))
@@ -241,6 +262,30 @@ struct UpdateAccountSheet: View {
                     .accessibilityLabel("Enter balance")
             }
         }
+    }
+
+    private var transactionsRow: some View {
+        Button {
+            nameFieldFocused = false
+            balanceFieldFocused = false
+            showTransactions = true
+        } label: {
+            AccountMetaRow(title: "Transactions", showsBottomDivider: false) {
+                HStack(spacing: 6) {
+                    Text(transactionsValueText)
+                        .font(.system(size: 14, weight: .regular))
+                        .monospacedDigit()
+                        .foregroundStyle(heroPrimary)
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 11, weight: .semibold))
+                        .foregroundStyle(heroPrimary.opacity(0.28))
+                }
+            }
+        }
+        .buttonStyle(.plain)
+        .accessibilityIdentifier("Transactions")
+        .accessibilityLabel("Transactions")
+        .accessibilityValue(transactionsValueText)
     }
 
     private var iconSection: some View {
