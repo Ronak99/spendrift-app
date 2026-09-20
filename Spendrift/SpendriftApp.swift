@@ -105,6 +105,8 @@ private struct RootContainerView: View {
     /// Fin. parks onboarding for the rest of this launch. `@State` so a cold start
     /// presents it again even when `spendriftOnboardingVersion` is already current.
     @State private var finishedOnboardingThisLaunch = false
+    /// Guards against starting the background seed more than once per launch.
+    @State private var didStartSeeding = false
 
     /// A Pro moment that has been earned but not yet shown. Held rather than presented
     /// immediately so it can queue behind the notification opt-in alert and behind the
