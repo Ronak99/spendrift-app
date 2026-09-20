@@ -93,6 +93,24 @@ extension TransactionCategory {
         "\(type.rawValue):\(name.lowercased())"
     }
 
+    /// Switches the category direction and realigns every transaction filed under it, so an
+    /// expense category flipped to income turns its history into income and vice versa (RON-219).
+    /// Returns the number of transactions that were retyped.
+    @discardableResult
+    func applyType(_ newType: CategoryType) -> Int {
+        guard type != newType else { return 0 }
+        type = newType
+
+        let resolved = TransactionType(categoryType: newType)
+        var retyped = 0
+        for transaction in transactions ?? []
+        where transaction.isPersisted && transaction.transactionType != resolved {
+            transaction.transactionType = resolved
+            retyped += 1
+        }
+        return retyped
+    }
+
     /// True when another category already uses this name, ignoring case and surrounding space.
     static func nameExists(
         _ name: String,
