@@ -81,6 +81,8 @@ struct StreamingText: View {
     var multilineTextAlignment: TextAlignment = .leading
     var contentAlignment: Alignment = .leading
     var tapSkipsToEnd: Bool = true
+    /// Lower priority (e.g. `.background`) when the animation must not delay other work on the main actor.
+    var writeTaskPriority: TaskPriority = .low
     /// Increment to wipe and write again.
     var replayToken: Int = 0
     var onFinished: (() -> Void)? = nil
@@ -111,7 +113,7 @@ struct StreamingText: View {
             guard tapSkipsToEnd, !isFinished else { return }
             gate.skipToEnd = true
         }
-        .task(id: replayToken) {
+        .task(id: replayToken, priority: writeTaskPriority) {
             await write()
         }
     }

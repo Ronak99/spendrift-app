@@ -65,13 +65,16 @@ final class VoiceInlineCaptureController {
 
     private func beginCaptureInternal() {
         guard displayState == .hidden else { return }
-        displayState = .recording
         manualSheetPayload = nil
         lastCaptureSource = .inApp
         retainedAudioData = nil
-        Task {
+        // Live Activity + mic setup run before the recording UI (hint animation) so capture
+        // is not blocked behind StreamingText on the main actor.
+        liveActivityController.start()
+        Task(priority: .userInitiated) {
             await startRecordingSession()
         }
+        displayState = .recording
     }
 
     func cancelCapture() {
@@ -246,8 +249,11 @@ final class VoiceInlineCaptureController {
     }
 
     private func startRecordingSession() async {
-        liveActivityController.start()
-        await speechService.startRecording()
+        let service = speechService
+        await Task.detached(priority: .userInitiated) {
+            await service.startRecording()
+        }.value
+
         if speechService.state != .recording {
             liveActivityController.failAndEnd(message: "Mic unavailable")
             let reason: VoiceFailureReason = speechService.isMicrophonePermissionDenied

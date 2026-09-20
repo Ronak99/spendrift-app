@@ -252,12 +252,13 @@ private struct VoiceCaptureExampleHintView: View {
     var body: some View {
         StreamingText(
             text: script,
-            cadence: .natural,
+            cadence: .fast,
             font: .system(size: 12, weight: .regular),
             textColor: Color.secondary.opacity(0.72),
-            multilineTextAlignment: .center,
+            multilineTextAlignment: .leading,
             contentAlignment: .leading,
-            tapSkipsToEnd: true
+            tapSkipsToEnd: false,
+            writeTaskPriority: .background
         )
         .padding(.horizontal, 4)
     }
