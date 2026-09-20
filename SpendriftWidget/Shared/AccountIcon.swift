@@ -12,11 +12,17 @@ enum AccountIcon: String, Codable, CaseIterable {
     case bankAccountTwo
     case bankAccountThree
     case bankAccountFour
+    case currentAccount
+    case salaryAccount
+    case jointAccount
     case mastercard
     case visa
     case cash
     case wallet
     case savings
+    case fixedDeposit
+    case investments
+    case crypto
     case unknown
 }
 
@@ -31,6 +37,12 @@ extension AccountIcon {
             return "indianrupeesign.circle"
         case .bankAccountFour:
             return "building.columns"
+        case .currentAccount:
+            return "building"
+        case .salaryAccount:
+            return "briefcase"
+        case .jointAccount:
+            return "person.2"
         case .mastercard:
             return "creditcard"
         case .visa:
@@ -41,6 +53,12 @@ extension AccountIcon {
             return "wallet.pass"
         case .savings:
             return "lock.circle"
+        case .fixedDeposit:
+            return "calendar.badge.clock"
+        case .investments:
+            return "chart.line.uptrend.xyaxis"
+        case .crypto:
+            return "bitcoinsign.circle"
         case .unknown:
             return "questionmark.circle"
         }

@@ -51,31 +51,11 @@ struct IconGridPicker<T: RawRepresentable & CaseIterable & Hashable>: View where
             return categoryIcon.systemImageName
         }
 
-        let rawValue = icon.rawValue.lowercased()
-        switch rawValue {
-        case "bankaccountone":
-            return "building.2"
-        case "bankaccounttwo":
-            return "bolt.circle"
-        case "bankaccountthree":
-            return "indianrupeesign.circle"
-        case "bankaccountfour":
-            return "building.columns"
-        case "mastercard":
-            return "creditcard"
-        case "visa":
-            return "creditcard.fill"
-        case "cash":
-            return "banknote"
-        case "wallet":
-            return "wallet.pass"
-        case "savings":
-            return "lock.circle"
-        case "unknown":
-            return "questionmark.circle"
-        default:
-            return "xmark"
+        if let accountIcon = icon as? AccountIcon {
+            return accountIcon.systemImageName
         }
+
+        return "xmark"
     }
 }
 
