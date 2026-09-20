@@ -389,29 +389,21 @@ private struct AccountIconCell: View {
 
     var body: some View {
         Button(action: action) {
-            VStack(spacing: 7) {
-                Image(systemName: icon.systemImageName)
-                    .font(.system(size: 22, weight: .regular))
-                    .foregroundStyle(isSelected ? accent : Color.primary.opacity(0.62))
-                    .frame(height: 24)
-
-                Text(icon.pickerLabel)
-                    .font(.system(size: 10.5, weight: .semibold))
-                    .foregroundStyle(.secondary)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.8)
-            }
-            .frame(maxWidth: .infinity)
-            .padding(.top, 13)
-            .padding(.bottom, 10)
-            .background(
-                RoundedRectangle(cornerRadius: 18, style: .continuous)
-                    .fill(isSelected ? accent.opacity(0.15) : Color.primary.opacity(0.06))
-            )
-            .overlay {
-                RoundedRectangle(cornerRadius: 18, style: .continuous)
-                    .strokeBorder(isSelected ? accent : Color.clear, lineWidth: 1.5)
-            }
+            Image(systemName: icon.systemImageName)
+                .font(.system(size: 22, weight: .regular))
+                .foregroundStyle(isSelected ? accent : Color.primary.opacity(0.62))
+                .frame(height: 24)
+                .frame(maxWidth: .infinity)
+                .padding(.top, 16)
+                .padding(.bottom, 16)
+                .background(
+                    RoundedRectangle(cornerRadius: 18, style: .continuous)
+                        .fill(isSelected ? accent.opacity(0.15) : Color.primary.opacity(0.06))
+                )
+                .overlay {
+                    RoundedRectangle(cornerRadius: 18, style: .continuous)
+                        .strokeBorder(isSelected ? accent : Color.clear, lineWidth: 1.5)
+                }
         }
         .buttonStyle(.plain)
         .accessibilityLabel(icon.pickerLabel)
