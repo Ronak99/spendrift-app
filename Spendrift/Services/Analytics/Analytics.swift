@@ -10,10 +10,8 @@
 //  A stable `device_id` super property (Keychain-backed) joins events to Sentry
 //  and Supabase feedback without creating identified person profiles.
 //
-//  PostHog is production-only (App Store and TestFlight). Debug, Simulator,
-//  and Xcode/Ad Hoc installs never initialize the SDK, so session replay,
-//  lifecycle autocapture, and product events cannot leak into Spendrift-Prod
-//  from local sessions.
+//  PostHog is Debug-only for now (local remote-config testing). Before shipping,
+//  restore Release to TestFlight/App Store via `isAppStoreOrTestFlightDistribution`.
 //
 
 import Foundation
@@ -91,15 +89,11 @@ enum Analytics {
     private static let placeholderAPIKey = "phc_REPLACE_ME"
     private static var didSetupPostHog = false
 
-    /// False unless this binary was distributed by Apple (App Store or TestFlight).
-    /// Debug, Simulator, and Xcode/Ad Hoc installs never construct the SDK.
     private static var isPostHogEnabled: Bool {
         #if DEBUG
-        false
-        #elseif targetEnvironment(simulator)
-        false
+        true
         #else
-        isAppStoreOrTestFlightDistribution
+        false
         #endif
     }
 
@@ -160,6 +154,13 @@ enum Analytics {
     static var posthogDistinctId: String? {
         guard didSetupPostHog else { return nil }
         return PostHogSDK.shared.getDistinctId()
+    }
+
+    /// JSON object payload for a remote config / feature flag, when PostHog is active.
+    static func remoteConfigPayload(forKey key: String) -> [String: Any]? {
+        guard isPostHogEnabled, !isOptedOut, didSetupPostHog else { return nil }
+        guard let payload = PostHogSDK.shared.getFeatureFlagResult(key)?.payload else { return nil }
+        return payload as? [String: Any]
     }
 
     // MARK: - Capture

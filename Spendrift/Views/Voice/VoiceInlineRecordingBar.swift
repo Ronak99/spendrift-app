@@ -225,42 +225,28 @@ struct VoiceInlineRecordingBar: View {
 
 // MARK: - Recording hints
 
-private enum VoiceCaptureExampleHints {
-    /// Currency-agnostic phrases users can mirror when speaking an expense.
-    static let scripts: [String] = [
-        #"Try saying, "₹250 for Lunch""#,
-        #"Try saying, "Received 350 as dividend""#,
-        #"Try saying, "Paid 3500 for electric bill""#,
-        #"Try saying, "Groceries, about ₹800""#,
-        #"Try saying, "Monthly gym membership worth 3500""#,
-        #"Try saying, "Team lunch on me, ₹1200""#,
-    ]
-
-    static func randomScript() -> String {
-        scripts.randomElement() ?? scripts[0]
-    }
-}
-
 /// One random example phrase per recording session; streams in once and stays until recording ends.
 private struct VoiceCaptureExampleHintView: View {
-    private let script: String
+    private let script: String?
 
     init() {
-        script = VoiceCaptureExampleHints.randomScript()
+        script = VoiceCaptureHints.randomScript()
     }
 
     var body: some View {
-        StreamingText(
-            text: script,
-            cadence: .fast,
-            font: .system(size: 12, weight: .regular),
-            textColor: Color.secondary.opacity(0.72),
-            multilineTextAlignment: .leading,
-            contentAlignment: .leading,
-            tapSkipsToEnd: false,
-            writeTaskPriority: .background
-        )
-        .padding(.horizontal, 4)
+        if let script {
+            StreamingText(
+                text: script,
+                cadence: .fast,
+                font: .system(size: 12, weight: .regular),
+                textColor: Color.secondary.opacity(0.72),
+                multilineTextAlignment: .leading,
+                contentAlignment: .leading,
+                tapSkipsToEnd: false,
+                writeTaskPriority: .background
+            )
+            .padding(.horizontal, 4)
+        }
     }
 }
 
