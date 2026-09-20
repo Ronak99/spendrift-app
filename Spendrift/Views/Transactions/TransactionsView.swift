@@ -216,8 +216,8 @@ struct TransactionsView: View {
             .toolbarBackground(.hidden, for: .navigationBar)
             .toolbarColorScheme(isDark ? .dark : .light, for: .navigationBar)
             .toolbar { toolbarContent }
-            .navigationDestination(item: $drillCategory) { category in
-                CategoryTransactionsView(
+            .sheet(item: $drillCategory) { category in
+                CategoryTransactionsSheet(
                     category: category,
                     initialDate: periodViewModel.selectedDate
                 )

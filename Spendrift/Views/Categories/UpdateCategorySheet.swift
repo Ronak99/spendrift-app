@@ -66,6 +66,7 @@ struct UpdateCategorySheet: View {
     @State private var saveAlertMessage: String?
     @State private var showIconPicker = false
     @State private var showCustomColor = false
+    @State private var showTransactions = false
 
     private var isCreating: Bool { category == nil }
 
@@ -152,6 +153,11 @@ struct UpdateCategorySheet: View {
                 CategoryCustomColorSheet(initialHex: selectedHex) { hex in
                     selectedHex = hex
                     didManuallyPickColor = true
+                }
+            }
+            .sheet(isPresented: $showTransactions) {
+                if let category {
+                    CategoryTransactionsSheet(category: category)
                 }
             }
         }
@@ -249,17 +255,51 @@ struct UpdateCategorySheet: View {
     private var pickerScroll: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 28) {
+                if !isCreating {
+                    transactionsRow
+                }
                 colorSection
                 iconSection
             }
             .padding(.horizontal, 20)
-            .padding(.top, 28)
+            .padding(.top, isCreating ? 28 : 8)
             .padding(.bottom, 44)
             .opacity(nameFieldFocused ? 0.45 : 1)
             .animation(.easeInOut(duration: 0.2), value: nameFieldFocused)
         }
         .scrollDismissesKeyboard(.interactively)
         .scrollIndicators(.hidden)
+    }
+
+    private var persistedTransactionCount: Int {
+        (category?.transactions ?? []).filter(\.isPersisted).count
+    }
+
+    private var transactionsValueText: String {
+        persistedTransactionCount == 0 ? "None" : "\(persistedTransactionCount)"
+    }
+
+    private var transactionsRow: some View {
+        Button {
+            nameFieldFocused = false
+            showTransactions = true
+        } label: {
+            CategoryMetaRow(title: "Transactions", showsBottomDivider: false) {
+                HStack(spacing: 6) {
+                    Text(transactionsValueText)
+                        .font(.system(size: 14, weight: .regular))
+                        .monospacedDigit()
+                        .foregroundStyle(heroPrimary)
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 11, weight: .semibold))
+                        .foregroundStyle(heroPrimary.opacity(0.28))
+                }
+            }
+        }
+        .buttonStyle(.plain)
+        .accessibilityIdentifier("Transactions")
+        .accessibilityLabel("Transactions")
+        .accessibilityValue(transactionsValueText)
     }
 
     private var colorSection: some View {
@@ -467,6 +507,32 @@ struct UpdateCategorySheet: View {
 
         try? modelContext.save()
         dismiss()
+    }
+}
+
+private struct CategoryMetaRow<Trailing: View>: View {
+    let title: String
+    var showsBottomDivider: Bool = true
+    @ViewBuilder var trailing: () -> Trailing
+
+    var body: some View {
+        HStack(spacing: 12) {
+            Text(title)
+                .font(.system(size: 14, weight: .regular))
+                .foregroundStyle(.secondary)
+            Spacer(minLength: 12)
+            trailing()
+                .font(.system(size: 14, weight: .regular))
+        }
+        .frame(minHeight: 46)
+        .overlay(alignment: .bottom) {
+            if showsBottomDivider {
+                Rectangle()
+                    .fill(Color.primary.opacity(0.08))
+                    .frame(height: 1)
+            }
+        }
+        .contentShape(Rectangle())
     }
 }
 

@@ -182,12 +182,14 @@ struct CategoriesView: View {
     private var chipGrid: some View {
         LazyVGrid(columns: columns, spacing: 12) {
             ForEach(visibleCategories) { category in
-                NavigationLink {
-                    CategoryTransactionsView(category: category)
+                Button {
+                    categoryToEdit = category
                 } label: {
                     CategoryGridItem(category: category)
                 }
                 .buttonStyle(CategoryTilePressStyle())
+                .accessibilityIdentifier(category.name)
+                .accessibilityLabel(category.name)
                 .contextMenu {
                     Button("Edit", systemImage: "pencil") {
                         categoryToEdit = category
