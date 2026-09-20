@@ -38,6 +38,58 @@ extension AccountIcon {
         allCases.filter { $0 != .unknown }
     }
 
+    /// First two rows in the account editor. A selected icon outside this set
+    /// replaces the last cell so the current choice stays visible.
+    static let featuredForPicker: [AccountIcon] = [
+        .bankAccountOne, .bankAccountTwo, .mastercard, .cash,
+        .wallet, .savings, .investments, .crypto,
+    ]
+
+    var pickerGroup: String {
+        switch self {
+        case .bankAccountOne, .bankAccountTwo, .bankAccountThree, .bankAccountFour,
+             .currentAccount, .salaryAccount, .jointAccount:
+            return "Banks"
+        case .mastercard, .visa:
+            return "Cards"
+        case .cash, .wallet, .savings, .fixedDeposit, .investments, .crypto, .unknown:
+            return "Cash & assets"
+        }
+    }
+
+    var searchKeywords: String {
+        switch self {
+        case .bankAccountOne: return "bank savings branch institution"
+        case .bankAccountTwo: return "upi bhim instant transfer"
+        case .bankAccountThree: return "rupee inr india currency"
+        case .bankAccountFour: return "branch columns institution"
+        case .currentAccount: return "current checking business"
+        case .salaryAccount: return "salary paycheck income job"
+        case .jointAccount: return "joint family shared couple"
+        case .mastercard: return "card credit debit mastercard"
+        case .visa: return "visa credit debit card"
+        case .cash: return "cash notes currency"
+        case .wallet: return "wallet pocket upi"
+        case .savings: return "savings safe lock fund"
+        case .fixedDeposit: return "deposit fd tenure lock"
+        case .investments: return "invest mutual fund sip portfolio"
+        case .crypto: return "crypto bitcoin coin blockchain"
+        case .unknown: return "other"
+        }
+    }
+
+    static var pickerGroups: [(title: String, icons: [AccountIcon])] {
+        var grouped: [(String, [AccountIcon])] = []
+        for icon in selectable {
+            if let index = grouped.firstIndex(where: { $0.0 == icon.pickerGroup }) {
+                grouped[index].1.append(icon)
+            } else {
+                grouped.append((icon.pickerGroup, [icon]))
+            }
+        }
+        return grouped.map { (title: $0.0, icons: $0.1) }
+    }
+
     var systemImageName: String {
         switch self {
         case .bankAccountOne:
@@ -75,7 +127,7 @@ extension AccountIcon {
         }
     }
 
-    /// Short label under each cell in the account editor icon grid.
+    /// Short label for VoiceOver and the account editor meta line.
     var pickerLabel: String {
         switch self {
         case .bankAccountOne: return "Bank"

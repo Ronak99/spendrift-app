@@ -27,6 +27,7 @@ struct UpdateAccountSheet: View {
     @State private var icon = AccountIcon.bankAccountOne
     @State private var isPrimary = false
     @State private var saveAlertMessage: String?
+    @State private var showIconPicker = false
 
     private var isCreating: Bool { account == nil }
 
@@ -52,10 +53,14 @@ struct UpdateAccountSheet: View {
         Locale.autoupdatingCurrent.currencySymbol ?? "$"
     }
 
-    private var pickerIcons: [AccountIcon] {
-        var icons = AccountIcon.selectable
+    private var featuredIcons: [AccountIcon] {
+        var icons = AccountIcon.featuredForPicker
         if !icons.contains(icon) {
-            icons.append(icon)
+            if icons.count == 8 {
+                icons[7] = icon
+            } else {
+                icons.append(icon)
+            }
         }
         return icons
     }
@@ -101,6 +106,9 @@ struct UpdateAccountSheet: View {
                     isPrimary = allAccounts.isEmpty
                     focusNameFieldSoon()
                 }
+            }
+            .sheet(isPresented: $showIconPicker) {
+                AccountIconPickerView(selectedIcon: $icon, accentHex: icon.enamelHex)
             }
         }
     }
@@ -237,17 +245,36 @@ struct UpdateAccountSheet: View {
 
     private var iconSection: some View {
         VStack(alignment: .leading, spacing: 14) {
-            Text("Icon")
-                .font(.system(size: 12, weight: .semibold))
-                .tracking(0.8)
-                .textCase(.uppercase)
-                .foregroundStyle(.secondary)
+            HStack(alignment: .firstTextBaseline) {
+                Text("Icon")
+                    .font(.system(size: 12, weight: .semibold))
+                    .tracking(0.8)
+                    .textCase(.uppercase)
+                    .foregroundStyle(.secondary)
+
+                Spacer()
+
+                Button {
+                    nameFieldFocused = false
+                    balanceFieldFocused = false
+                    showIconPicker = true
+                } label: {
+                    HStack(spacing: 3) {
+                        Text("Browse all \(AccountIcon.selectable.count)")
+                        Image(systemName: "chevron.right")
+                            .font(.system(size: 11, weight: .semibold))
+                    }
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(accentColor)
+                }
+                .buttonStyle(.plain)
+            }
 
             LazyVGrid(
-                columns: Array(repeating: GridItem(.flexible(), spacing: 11), count: 3),
+                columns: Array(repeating: GridItem(.flexible(), spacing: 11), count: 4),
                 spacing: 11
             ) {
-                ForEach(pickerIcons, id: \.self) { item in
+                ForEach(featuredIcons, id: \.self) { item in
                     AccountIconCell(
                         icon: item,
                         isSelected: icon == item,
@@ -378,36 +405,6 @@ private struct AccountMetaRow<Trailing: View>: View {
             }
         }
         .contentShape(Rectangle())
-    }
-}
-
-private struct AccountIconCell: View {
-    let icon: AccountIcon
-    let isSelected: Bool
-    let accent: Color
-    var action: () -> Void
-
-    var body: some View {
-        Button(action: action) {
-            Image(systemName: icon.systemImageName)
-                .font(.system(size: 22, weight: .regular))
-                .foregroundStyle(isSelected ? accent : Color.primary.opacity(0.62))
-                .frame(height: 24)
-                .frame(maxWidth: .infinity)
-                .padding(.top, 16)
-                .padding(.bottom, 16)
-                .background(
-                    RoundedRectangle(cornerRadius: 18, style: .continuous)
-                        .fill(isSelected ? accent.opacity(0.15) : Color.primary.opacity(0.06))
-                )
-                .overlay {
-                    RoundedRectangle(cornerRadius: 18, style: .continuous)
-                        .strokeBorder(isSelected ? accent : Color.clear, lineWidth: 1.5)
-                }
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel(icon.pickerLabel)
-        .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 }
 
