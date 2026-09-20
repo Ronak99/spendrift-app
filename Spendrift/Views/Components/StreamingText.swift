@@ -78,6 +78,8 @@ struct StreamingText: View {
     var cadence: StreamingTextCadence = .natural
     var font: Font = .system(size: 17, weight: .medium)
     var textColor: Color = .primary
+    var multilineTextAlignment: TextAlignment = .leading
+    var contentAlignment: Alignment = .leading
     var tapSkipsToEnd: Bool = true
     /// Increment to wipe and write again.
     var replayToken: Int = 0
@@ -98,9 +100,9 @@ struct StreamingText: View {
             renderedText(at: context.date)
                 .font(font)
                 .lineSpacing(5)
-                .multilineTextAlignment(.leading)
+                .multilineTextAlignment(multilineTextAlignment)
                 .fixedSize(horizontal: false, vertical: true)
-                .frame(maxWidth: .infinity, alignment: .leading)
+                .frame(maxWidth: .infinity, alignment: contentAlignment)
         }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(script.displayText)

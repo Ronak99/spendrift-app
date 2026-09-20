@@ -15,24 +15,34 @@ struct VoiceInlineRecordingBar: View {
     let categories: [TransactionCategory]
 
     var body: some View {
-        VStack(spacing: 0) {
-            switch controller.displayState {
-            case .hidden:
-                EmptyView()
-            case .recording:
-                recordingContent
-            case .processing:
-                processingContent
-            case .error(let reason):
-                errorContent(reason: reason)
+        VStack(spacing: 8) {
+            if controller.displayState == .recording {
+                VoiceCaptureExampleHintView()
+                    .transition(.opacity)
             }
+
+            barContent
+                .frame(maxWidth: .infinity)
+                .background(.ultraThinMaterial, in: RoundedRectangle(cornerSize: .init(width: 24, height: 24)))
+                .shadow(color: .black.opacity(0.12), radius: 12, y: -4)
         }
-        .frame(maxWidth: .infinity)
-        .background(.ultraThinMaterial, in: RoundedRectangle(cornerSize: .init(width: 24, height: 24)))
-        .shadow(color: .black.opacity(0.12), radius: 12, y: -4)
         .padding(.horizontal, 16)
         .padding(.bottom, 4)
         .animation(.bouncy, value: controller.displayState)
+    }
+
+    @ViewBuilder
+    private var barContent: some View {
+        switch controller.displayState {
+        case .hidden:
+            EmptyView()
+        case .recording:
+            recordingContent
+        case .processing:
+            processingContent
+        case .error(let reason):
+            errorContent(reason: reason)
+        }
     }
 
     private var recordingContent: some View {
@@ -210,6 +220,46 @@ struct VoiceInlineRecordingBar: View {
         case .transcriptionFailed: return "exclamationmark.bubble"
         case .unknown:             return "exclamationmark.triangle"
         }
+    }
+}
+
+// MARK: - Recording hints
+
+private enum VoiceCaptureExampleHints {
+    /// Currency-agnostic phrases users can mirror when speaking an expense.
+    static let scripts: [String] = [
+        #"Try saying, "₹250 for Lunch""#,
+        #"Try saying, "Received 350 as dividend""#,
+        #"Try saying, "Paid 3500 for electric bill""#,
+        #"Try saying, "Groceries, about ₹800""#,
+        #"Try saying, "Monthly gym membership worth 3500""#,
+        #"Try saying, "Team lunch on me, ₹1200""#,
+    ]
+
+    static func randomScript() -> String {
+        scripts.randomElement() ?? scripts[0]
+    }
+}
+
+/// One random example phrase per recording session; streams in once and stays until recording ends.
+private struct VoiceCaptureExampleHintView: View {
+    private let script: String
+
+    init() {
+        script = VoiceCaptureExampleHints.randomScript()
+    }
+
+    var body: some View {
+        StreamingText(
+            text: script,
+            cadence: .natural,
+            font: .system(size: 12, weight: .regular),
+            textColor: Color.secondary.opacity(0.72),
+            multilineTextAlignment: .center,
+            contentAlignment: .leading,
+            tapSkipsToEnd: true
+        )
+        .padding(.horizontal, 4)
     }
 }
 
