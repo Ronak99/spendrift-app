@@ -76,11 +76,17 @@ enum AccountEnamel {
         case .bankAccountTwo: return "#FFC94D"
         case .bankAccountThree: return "#4FC3A1"
         case .bankAccountFour: return "#4FB8E8"
+        case .currentAccount: return "#E27BD8"
+        case .salaryAccount: return "#FF8FA8"
+        case .jointAccount: return "#9B7BFF"
         case .mastercard: return "#FF6B6B"
         case .visa: return "#9B7BFF"
         case .cash: return "#8BD17C"
         case .wallet: return "#FF9F6B"
         case .savings: return "#C3A17A"
+        case .fixedDeposit: return "#C3A17A"
+        case .investments: return "#8BD17C"
+        case .crypto: return "#FFC94D"
         case .unknown: return "#8E9AA8"
         }
     }
