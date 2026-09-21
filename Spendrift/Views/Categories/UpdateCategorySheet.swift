@@ -469,7 +469,7 @@ struct UpdateCategorySheet: View {
 
         if let category {
             category.name = resolvedName
-            category.type = type
+            category.applyType(type)
             category.icon = icon
             category.colorHex = hex
         } else {

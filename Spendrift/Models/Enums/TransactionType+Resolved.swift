@@ -12,6 +12,10 @@ extension TransactionType {
         if raw == "none" { return .expense }
         return TransactionType(rawValue: raw) ?? defaultValue
     }
+
+    init(categoryType: CategoryType) {
+        self = categoryType == .income ? .income : .expense
+    }
 }
 
 extension CategoryType {
