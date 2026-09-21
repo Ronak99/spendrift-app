@@ -354,10 +354,17 @@ struct UpdateAccountSheet: View {
         Button(action: attemptSave) {
             Text("Save")
                 .font(.system(size: 14, weight: .semibold))
+                .lineLimit(1)
                 .padding(.horizontal, 16)
                 .padding(.vertical, 8)
                 .background(saveBackground, in: Capsule())
                 .foregroundStyle(saveForeground)
+                // A bare `Text` is the one thing in a toolbar item the navigation bar is
+                // willing to compress, so on narrow iPhones — and at larger Dynamic Type,
+                // where the inline title claims more of the bar — the label truncated to
+                // "S…". Pinning the capsule at its ideal width makes the bar shrink the
+                // title instead, the same way the pickers' `addButton` holds a fixed frame.
+                .fixedSize(horizontal: true, vertical: false)
         }
         .buttonStyle(.plain)
     }
