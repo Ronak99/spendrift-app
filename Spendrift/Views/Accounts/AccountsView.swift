@@ -60,16 +60,8 @@ struct AccountsView: View {
         isDark ? Color(hex: "#111111") : .white
     }
 
-    private var atmosphereAccount: Account? {
-        accounts.first(where: { $0.isPrimary }) ?? accounts.first
-    }
-
     private var washColor: Color {
         AccountEnamel.atmosphere(in: accounts)
-    }
-
-    private var watermarkIcon: String {
-        atmosphereAccount?.icon.systemImageName ?? "building.columns"
     }
 
     var body: some View {
@@ -135,9 +127,9 @@ struct AccountsView: View {
     // MARK: Atmosphere
 
     private var atmosphere: some View {
-        CategoryTrayAtmosphere(washColor: washColor, watermarkIcon: watermarkIcon)
+        CategoryTrayAtmosphere(washColor: washColor)
             .ignoresSafeArea()
-            .animation(.spring(response: 0.42, dampingFraction: 0.86), value: watermarkIcon)
+            .animation(.spring(response: 0.42, dampingFraction: 0.86), value: washColor)
     }
 
     // MARK: Empty

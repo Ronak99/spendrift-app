@@ -4,14 +4,15 @@
 //
 //  Shared colour-wash canvas for ledger trays and pickers (Categories,
 //  Accounts, category picker, account picker) so those surfaces share the
-//  same top-right atmosphere recipe.
+//  same top-right atmosphere recipe. Omit `watermarkIcon` for the wash on
+//  its own, with no mark in the corner.
 //
 
 import SwiftUI
 
 struct CategoryTrayAtmosphere: View {
     let washColor: Color
-    let watermarkIcon: String
+    var watermarkIcon: String? = nil
 
     @Environment(\.colorScheme) private var colorScheme
 
@@ -33,14 +34,16 @@ struct CategoryTrayAtmosphere: View {
                 .frame(height: 360)
                 .frame(maxHeight: .infinity, alignment: .top)
 
-            Image(systemName: watermarkIcon)
-                .font(.system(size: 176, weight: .ultraLight))
-                .foregroundStyle(heroPrimary.opacity(isDark ? 0.10 : 0.08))
-                .offset(x: 40, y: -28)
-                .allowsHitTesting(false)
-                .accessibilityHidden(true)
-                .contentTransition(.opacity)
-                .washMotion(value: watermarkIcon)
+            if let watermarkIcon {
+                Image(systemName: watermarkIcon)
+                    .font(.system(size: 176, weight: .ultraLight))
+                    .foregroundStyle(heroPrimary.opacity(isDark ? 0.10 : 0.08))
+                    .offset(x: 40, y: -28)
+                    .allowsHitTesting(false)
+                    .accessibilityHidden(true)
+                    .contentTransition(.opacity)
+                    .washMotion(value: watermarkIcon)
+            }
         }
     }
 }

@@ -54,10 +54,7 @@ struct FeedbackView: View {
             }
         }
         .background {
-            SettingsAtmosphere(
-                washColor: AppTheme.atmosphere,
-                watermarkIcon: "bubble.left.and.text.bubble.right"
-            )
+            SettingsAtmosphere(washColor: AppTheme.atmosphere)
         }
         .safeAreaInset(edge: .top, spacing: 0) {
             FeedbackSurveyProgressBar(progress: flow.surveyProgress, accent: accent)

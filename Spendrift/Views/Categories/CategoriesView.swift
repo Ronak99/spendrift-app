@@ -71,11 +71,6 @@ struct CategoriesView: View {
         CategoryEnamel.atmosphere(in: allCategories, type: selectedType)
     }
 
-    private var watermarkIcon: String {
-        typeCategories.first?.icon.systemImageName
-            ?? CategoryPalette.defaultIcon(for: selectedType).systemImageName
-    }
-
     var body: some View {
         NavigationStack {
             ScrollView {
@@ -142,10 +137,9 @@ struct CategoriesView: View {
     // MARK: Atmosphere
 
     private var atmosphere: some View {
-        CategoryTrayAtmosphere(washColor: washColor, watermarkIcon: watermarkIcon)
+        CategoryTrayAtmosphere(washColor: washColor)
             .ignoresSafeArea()
             .animation(typeMotion, value: selectedType)
-            .animation(typeMotion, value: watermarkIcon)
     }
 
     // MARK: Chrome
