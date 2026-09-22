@@ -26,8 +26,8 @@ struct VoiceInlineRecordingBar: View {
                 .background(.ultraThinMaterial, in: RoundedRectangle(cornerSize: .init(width: 24, height: 24)))
                 .shadow(color: .black.opacity(0.12), radius: 12, y: -4)
         }
-        .padding(.horizontal, 16)
-        .padding(.bottom, 4)
+        .padding(.horizontal, 24)
+        .padding(.bottom, 12)
         .animation(.bouncy, value: controller.displayState)
     }
 
