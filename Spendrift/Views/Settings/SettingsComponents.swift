@@ -39,10 +39,10 @@ enum SettingsChrome {
 }
 
 /// Colour-wash canvas plus the ultra-light watermark used on ledger screens.
+/// Omit `watermarkIcon` for the wash on its own, with no mark in the corner.
 struct SettingsAtmosphere: View {
     let washColor: Color
-    var watermarkIcon: String = "gearshape"
-    var animationToken: Int = 0
+    var watermarkIcon: String? = nil
 
     @Environment(\.colorScheme) private var colorScheme
 
@@ -56,17 +56,18 @@ struct SettingsAtmosphere: View {
                 .frame(height: 320)
                 .frame(maxHeight: .infinity, alignment: .top)
 
-            Image(systemName: watermarkIcon)
-                .font(.system(size: 176, weight: .ultraLight))
-                .foregroundStyle(SettingsChrome.heroPrimary(isDark: isDark).opacity(isDark ? 0.10 : 0.08))
-                .offset(x: 40, y: -28)
-                .allowsHitTesting(false)
-                .accessibilityHidden(true)
-                .contentTransition(.opacity)
-                .washMotion(value: watermarkIcon)
+            if let watermarkIcon {
+                Image(systemName: watermarkIcon)
+                    .font(.system(size: 176, weight: .ultraLight))
+                    .foregroundStyle(SettingsChrome.heroPrimary(isDark: isDark).opacity(isDark ? 0.10 : 0.08))
+                    .offset(x: 40, y: -28)
+                    .allowsHitTesting(false)
+                    .accessibilityHidden(true)
+                    .contentTransition(.opacity)
+                    .washMotion(value: watermarkIcon)
+            }
         }
         .ignoresSafeArea()
-        .animation(.spring(response: 0.42, dampingFraction: 0.86), value: animationToken)
         .animation(.spring(response: 0.42, dampingFraction: 0.86), value: watermarkIcon)
     }
 }
@@ -147,12 +148,12 @@ struct SettingsPrimaryButton: View {
 
 struct SettingsScreen<Content: View>: View {
     let title: String
-    var watermarkIcon: String = "gearshape"
+    var watermarkIcon: String?
     let content: Content
 
     @Environment(\.colorScheme) private var colorScheme
 
-    init(title: String, watermarkIcon: String = "gearshape", @ViewBuilder content: () -> Content) {
+    init(title: String, watermarkIcon: String? = nil, @ViewBuilder content: () -> Content) {
         self.title = title
         self.watermarkIcon = watermarkIcon
         self.content = content()

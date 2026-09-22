@@ -59,7 +59,7 @@ struct SettingsView: View {
         @Bindable var router = router
 
         NavigationStack(path: $router.settingsPath) {
-            SettingsScreen(title: "Settings", watermarkIcon: "gearshape") {
+            SettingsScreen(title: "Settings") {
                 hubSection
                 proSection
                 supportSection

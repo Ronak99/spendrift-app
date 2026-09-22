@@ -31,11 +31,7 @@ struct ExploreSettingsView: View {
 
     var body: some View {
         ZStack {
-            SettingsAtmosphere(
-                washColor: accent,
-                watermarkIcon: page.icon,
-                animationToken: currentPage
-            )
+            SettingsAtmosphere(washColor: accent)
 
             GeometryReader { proxy in
                 let slotWidth = Self.slotWidth(for: proxy.size.width)
