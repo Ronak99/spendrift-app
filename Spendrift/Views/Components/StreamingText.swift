@@ -80,6 +80,15 @@ struct StreamingText: View {
     var textColor: Color = .primary
     var multilineTextAlignment: TextAlignment = .leading
     var contentAlignment: Alignment = .leading
+    /// Letter spacing. Set here rather than with `.tracking` outside so the reserved
+    /// space and the written line are measured with the same metrics.
+    var tracking: CGFloat = 0
+    /// Lay the view out at the full copy's size from the first frame, so a line that is
+    /// still writing itself does not push the rest of the screen around.
+    var reservesSpace: Bool = false
+    /// Hold at empty until this turns true. Pair it with `reservesSpace` to stage one
+    /// block of copy after another without the layout moving in between.
+    var startsWriting: Bool = true
     var tapSkipsToEnd: Bool = true
     /// Lower priority (e.g. `.background`) when the animation must not delay other work on the main actor.
     var writeTaskPriority: TaskPriority = .low
@@ -98,13 +107,14 @@ struct StreamingText: View {
     }
 
     var body: some View {
-        TimelineView(.animation(minimumInterval: 1.0 / 30.0, paused: fadeSettled || reduceMotion)) { context in
-            renderedText(at: context.date)
-                .font(font)
-                .lineSpacing(5)
-                .multilineTextAlignment(multilineTextAlignment)
-                .fixedSize(horizontal: false, vertical: true)
-                .frame(maxWidth: .infinity, alignment: contentAlignment)
+        Group {
+            if reservesSpace {
+                styled(Text(script.displayText))
+                    .hidden()
+                    .overlay(alignment: contentAlignment) { writer }
+            } else {
+                writer
+            }
         }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(script.displayText)
@@ -113,9 +123,25 @@ struct StreamingText: View {
             guard tapSkipsToEnd, !isFinished else { return }
             gate.skipToEnd = true
         }
-        .task(id: replayToken, priority: writeTaskPriority) {
+        .task(id: [replayToken, startsWriting ? 1 : 0], priority: writeTaskPriority) {
             await write()
         }
+    }
+
+    private var writer: some View {
+        TimelineView(.animation(minimumInterval: 1.0 / 30.0, paused: fadeSettled || reduceMotion)) { context in
+            styled(renderedText(at: context.date))
+        }
+    }
+
+    private func styled(_ text: Text) -> some View {
+        text
+            .font(font)
+            .tracking(tracking)
+            .lineSpacing(5)
+            .multilineTextAlignment(multilineTextAlignment)
+            .fixedSize(horizontal: false, vertical: true)
+            .frame(maxWidth: .infinity, alignment: contentAlignment)
     }
 
     private func renderedText(at now: Date) -> Text {
@@ -144,6 +170,12 @@ struct StreamingText: View {
         revealed = []
         isFinished = false
         fadeSettled = false
+
+        // Nothing to animate yet, so park the timeline rather than ticking at 30 Hz.
+        guard startsWriting else {
+            fadeSettled = true
+            return
+        }
 
         if reduceMotion || script.displayText.isEmpty {
             revealAll(script.displayText, opaque: true)

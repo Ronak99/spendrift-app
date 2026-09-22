@@ -4,10 +4,10 @@
 //
 //  Building blocks for the first-run walkthrough.
 //
-//  The flow holds one idea per page, so every page is the same three slots: a line of
-//  narration up top, a single enamel squircle in the middle, and one capsule at the bottom.
-//  Keeping the geometry identical across pages is what lets the pages slide past each
-//  other without anything appearing to jump.
+//  The flow holds one idea per page, so every page is the same three slots: narration at
+//  the top, a single enamel squircle in the middle, and one capsule on the floor. Each
+//  slot reserves the space its final content needs, so copy can write itself and the
+//  middle can change without the headline or the button moving.
 //
 
 import SwiftUI
@@ -56,8 +56,9 @@ enum OnboardingStep: Int, CaseIterable, Identifiable {
 
 // MARK: - Page scaffold
 
-/// The shared three-slot page. `narration` is pinned to a floor height so the enamel tile
-/// in `focus` lands on the same baseline whether the copy runs to one line or three.
+/// The shared three-slot page. Narration is anchored to the top and the capsule to the
+/// bottom; the focus slot takes whatever is left and centres its object there, so the
+/// only thing that ever moves is the object itself.
 ///
 /// The page also owns the entrance order: the line writes itself, then the object arrives,
 /// then the capsule. Pass `narrationFinished` from `OnboardingNarration`.
@@ -73,16 +74,16 @@ struct OnboardingPage<Narration: View, Focus: View, Action: View>: View {
 
     var body: some View {
         VStack(spacing: 0) {
+            // Copy at the top, capsule on the floor, and everything that moves happens
+            // in the middle. Nothing in the outer two slots depends on the inner one,
+            // so neither the headline nor the button shifts as a page plays out.
             narration
-                .frame(maxWidth: .infinity, minHeight: 190, alignment: .topLeading)
-
-            Spacer(minLength: 28)
+                .frame(maxWidth: .infinity, alignment: .topLeading)
 
             focus
-                .frame(maxWidth: .infinity, minHeight: 208)
+                .frame(maxWidth: .infinity, minHeight: 128)
+                .frame(maxHeight: .infinity)
                 .onboardingReveal(showsFocus, reduceMotion: reduceMotion)
-
-            Spacer(minLength: 28)
 
             action
                 .frame(maxWidth: .infinity)
@@ -90,7 +91,7 @@ struct OnboardingPage<Narration: View, Focus: View, Action: View>: View {
         }
         .padding(.horizontal, 28)
         .padding(.top, 36)
-        .padding(.bottom, 32)
+        .padding(.bottom, 24)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .onChange(of: narrationFinished) { _, finished in
             guard finished else { return }
@@ -128,37 +129,72 @@ private extension View {
 
 // MARK: - Narration
 
-/// Streamed headline with an optional quiet line underneath that can change while the
-/// headline stays put - the subline carries state, the headline carries the idea.
+/// Copy in two voices. The headline is the one white line that carries the idea; the
+/// detail and the subline are smaller and quieter, and everything below the headline
+/// can change while the headline stays put - the subline is where page state speaks.
+///
+/// Both streamed blocks reserve their full size up front and the detail waits for the
+/// headline, so the copy writes itself without moving the object underneath it.
 struct OnboardingNarration: View {
+    /// White, large, one idea.
     let headline: String
+    /// Everything the headline does not have to carry. Written once the headline lands.
+    var detail: String?
+    /// Live state under the copy. May arrive, change, and leave.
     var subline: String?
-    var onHeadlineFinished: (() -> Void)?
+    /// Hold two subline rows from the start, for pages whose subline arrives late.
+    var reservesSublineSpace: Bool = false
+    /// Called when the last block of copy has finished writing itself.
+    var onFinished: (() -> Void)?
+
+    @State private var headlineFinished = false
+
+    private static let detailFont = Font.system(size: 16)
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
+        VStack(alignment: .leading, spacing: 12) {
             StreamingText(
                 text: headline,
-                cadence: .natural,
-                font: .system(size: 27, weight: .semibold),
+                cadence: .slow,
+                font: .system(size: 30, weight: .bold),
                 textColor: OnboardingTheme.textPrimary,
                 multilineTextAlignment: .leading,
                 contentAlignment: .leading,
-                onFinished: onHeadlineFinished
+                tracking: -0.7,
+                reservesSpace: true,
+                onFinished: handleHeadlineFinished
             )
-            .tracking(-0.5)
 
-            // Two lines are reserved whether or not there is a line to show, so the
-            // subline can change - or arrive late - without nudging the object below it.
-            Text(subline ?? " ")
-                .font(.system(size: 15))
-                .foregroundStyle(subline == nil ? .clear : OnboardingTheme.textSecondary)
-                .lineLimit(2, reservesSpace: true)
-                .contentTransition(.opacity)
-                .animation(.easeInOut(duration: 0.28), value: subline)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .accessibilityHidden(subline == nil)
+            if let detail {
+                StreamingText(
+                    text: detail,
+                    cadence: .natural,
+                    font: Self.detailFont,
+                    textColor: OnboardingTheme.textSecondary,
+                    multilineTextAlignment: .leading,
+                    contentAlignment: .leading,
+                    reservesSpace: true,
+                    startsWriting: headlineFinished,
+                    onFinished: { onFinished?() }
+                )
+            }
+
+            if reservesSublineSpace || subline != nil {
+                Text(subline ?? " ")
+                    .font(Self.detailFont)
+                    .foregroundStyle(subline == nil ? .clear : OnboardingTheme.textSecondary)
+                    .lineLimit(2, reservesSpace: reservesSublineSpace)
+                    .contentTransition(.opacity)
+                    .animation(.easeInOut(duration: 0.28), value: subline)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .accessibilityHidden(subline == nil)
+            }
         }
+    }
+
+    private func handleHeadlineFinished() {
+        headlineFinished = true
+        if detail == nil { onFinished?() }
     }
 }
 
@@ -176,6 +212,9 @@ struct OnboardingHeroPlate: View {
     var accent: Color
     /// Empty-state / Explore size. Large enough to be the page's only object.
     var side: CGFloat = 88
+    /// Room around the tile for the level rings and the busy arc. Just enough for them,
+    /// so the object does not carry a halo of empty space into the page's layout.
+    private static let breathingRoom: CGFloat = 40
     /// When set, the tile is ringed by the live microphone level.
     var levelMeter: VoiceInputLevelMeter?
     var isBusy: Bool = false
@@ -214,12 +253,12 @@ struct OnboardingHeroPlate: View {
             if isBusy {
                 OnboardingBusyRing(
                     accent: accent,
-                    side: side + 20,
-                    cornerRadius: cornerRadius
+                    tileSide: side,
+                    tileCornerRadius: cornerRadius
                 )
             }
         }
-        .frame(width: side + 56, height: side + 56)
+        .frame(width: side + Self.breathingRoom, height: side + Self.breathingRoom)
     }
 
     @ViewBuilder
@@ -346,30 +385,57 @@ private struct OnboardingLevelRings: View {
     }
 }
 
-/// Arc that orbits the tile while the backend is reading the clip. Its own view so the
-/// `repeatForever` rotation starts on insertion and dies with it.
+/// Stroke locked to the tile while the backend is reading the clip.
+///
+/// The shape stays put. Only the highlight travels. Rotating a trimmed squircle tumbles
+/// its corners off the button, so the outline never actually surrounds the tap target.
 private struct OnboardingBusyRing: View {
     let accent: Color
-    let side: CGFloat
-    let cornerRadius: CGFloat
+    let tileSide: CGFloat
+    let tileCornerRadius: CGFloat
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @State private var isSpinning = false
+
+    private let gap: CGFloat = 8
+    private let lineWidth: CGFloat = 2.5
+    private let lap: TimeInterval = 1.15
+
+    /// Outer edge of the stroke, one gap outside the tile.
+    private var ringSide: CGFloat { tileSide + (gap + lineWidth) * 2 }
+    /// Parallel outline: offsetting a rounded rect outward grows its corner radius by the same amount.
+    private var ringRadius: CGFloat { tileCornerRadius + gap + lineWidth }
 
     var body: some View {
-        RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-            .trim(from: 0, to: 0.18)
-            .stroke(accent, style: StrokeStyle(lineWidth: 2.5, lineCap: .round))
-            .frame(width: side, height: side)
-            .rotationEffect(.degrees(isSpinning ? 360 : 0))
-            .opacity(reduceMotion ? 0.6 : 1)
-            .onAppear {
-                guard !reduceMotion else { return }
-                withAnimation(.linear(duration: 1.1).repeatForever(autoreverses: false)) {
-                    isSpinning = true
-                }
-            }
-            .accessibilityHidden(true)
+        TimelineView(.animation(minimumInterval: 1.0 / 30.0, paused: reduceMotion)) { timeline in
+            let turns = reduceMotion
+                ? 0
+                : timeline.date.timeIntervalSinceReferenceDate
+                    .truncatingRemainder(dividingBy: lap) / lap
+            ring(turns: turns)
+        }
+        .accessibilityHidden(true)
+    }
+
+    private func ring(turns: Double) -> some View {
+        let shape = RoundedRectangle(cornerRadius: ringRadius, style: .continuous)
+
+        return ZStack {
+            shape.strokeBorder(accent.opacity(0.22), lineWidth: lineWidth)
+            shape.strokeBorder(
+                AngularGradient(
+                    gradient: Gradient(stops: [
+                        .init(color: accent, location: 0),
+                        .init(color: accent.opacity(0.55), location: 0.12),
+                        .init(color: accent.opacity(0), location: 0.34),
+                        .init(color: accent.opacity(0), location: 1)
+                    ]),
+                    center: .center,
+                    angle: .degrees(turns * 360)
+                ),
+                lineWidth: lineWidth
+            )
+        }
+        .frame(width: ringSide, height: ringSide)
     }
 }
 
@@ -433,36 +499,51 @@ struct OnboardingHeardTransactionCard: View {
 
 // MARK: - Action capsule
 
-/// One capsule per page, always in the same place. `isPrimary` swaps the fill for a
-/// hairline outline so a page can offer a way out without changing the layout.
+/// One action per page, always in the same place and always the same height, whichever
+/// style it wears.
 struct OnboardingActionButton: View {
+    /// How loudly the action asks to be taken.
+    enum Style: Equatable {
+        /// The page's own next step: filled capsule in the page accent.
+        case filled
+        /// A way past a page whose real offer is somewhere else on screen - the plate,
+        /// usually. Bare text and an arrow, so it steps aside rather than competing.
+        case quiet
+    }
+
     let title: String
     var fill: Color
-    var isPrimary: Bool = true
+    var style: Style = .filled
     let action: () -> Void
 
     var body: some View {
         Button(action: action) {
-            Text(title)
-                .font(.headline)
-                .contentTransition(.opacity)
-                .foregroundStyle(isPrimary ? OnboardingTheme.background : OnboardingTheme.textSecondary)
+            label
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 16)
                 .background {
-                    ZStack {
-                        Capsule()
-                            .fill(fill)
-                            .opacity(isPrimary ? 1 : 0)
-                        Capsule()
-                            .strokeBorder(Color.white.opacity(0.16), lineWidth: 1)
-                            .opacity(isPrimary ? 0 : 1)
-                    }
+                    Capsule()
+                        .fill(fill)
+                        .opacity(style == .filled ? 1 : 0)
                 }
         }
         .buttonStyle(OnboardingCapsulePressStyle())
-        .animation(.easeInOut(duration: 0.32), value: isPrimary)
+        .animation(.easeInOut(duration: 0.32), value: style)
         .animation(.easeInOut(duration: 0.32), value: title)
+    }
+
+    private var label: some View {
+        HStack(spacing: 10) {
+            Text(title)
+                .contentTransition(.opacity)
+
+            if style == .quiet {
+                Image(systemName: "arrow.right")
+                    .font(.system(size: 15, weight: .semibold))
+            }
+        }
+        .font(.headline)
+        .foregroundStyle(style == .filled ? OnboardingTheme.background : OnboardingTheme.textSecondary)
     }
 
     private struct OnboardingCapsulePressStyle: ButtonStyle {
@@ -475,6 +556,20 @@ struct OnboardingActionButton: View {
 }
 
 #if DEBUG
+#Preview("Busy plate") {
+    ZStack {
+        OnboardingSheetAtmosphericBackground(tintColor: OnboardingStep.voice.accent)
+            .ignoresSafeArea()
+        OnboardingHeroPlate(
+            mark: .symbol("mic.fill"),
+            accent: OnboardingStep.voice.accent,
+            isBusy: true,
+            accessibilityLabel: "Reading it back"
+        )
+    }
+    .preferredColorScheme(.dark)
+}
+
 #Preview("Page scaffold") {
     ZStack {
         OnboardingSheetAtmosphericBackground(tintColor: OnboardingStep.voice.accent)
@@ -482,8 +577,10 @@ struct OnboardingActionButton: View {
 
         OnboardingPage(narrationFinished: true) {
             OnboardingNarration(
-                headline: "Everyone makes you log an expense by hand.",
-                subline: "Tap the mic and say what you spent."
+                headline: "Just say it.",
+                detail: "Everywhere else, logging an expense means typing it out.",
+                subline: "Tap the mic and say what you spent.",
+                reservesSublineSpace: true
             )
         } focus: {
             OnboardingHeroPlate(

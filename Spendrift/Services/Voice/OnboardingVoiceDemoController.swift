@@ -82,10 +82,11 @@ final class OnboardingVoiceDemoController {
         case listening
         case thinking
         case heard(OnboardingHeardTransaction)
-        /// Audio came back empty, too short, or unparseable. Recoverable by tapping again.
-        case missed
-        /// The user refused the microphone. Onboarding moves on rather than nagging.
-        case refused
+        /// Something in the pipeline did not work out: a refused microphone, a clip with
+        /// no speech in it, no network, a backend that said no. Onboarding does not try
+        /// to explain which - it offers the door to the app instead. Tapping the plate
+        /// again is still allowed, in case the run was simply unlucky.
+        case failed
     }
 
     private(set) var phase: Phase = .idle
@@ -98,23 +99,23 @@ final class OnboardingVoiceDemoController {
     var isListening: Bool { phase == .listening }
 
     var allowsTapToSpeak: Bool {
-        phase == .idle || phase == .missed
+        phase == .idle || phase == .failed
     }
 
     // MARK: - Capture
 
-    /// Asks for the microphone if needed, then starts recording. Refusal is terminal for
-    /// this step: the caller advances instead of asking again.
+    /// Asks for the microphone if needed, then starts recording. Anything that goes
+    /// wrong lands on `.failed`; the step never advances on its own.
     func beginListening() async {
         guard allowsTapToSpeak else { return }
 
         switch AVAudioApplication.shared.recordPermission {
         case .denied:
-            phase = .refused
+            phase = .failed
             return
         case .undetermined:
             guard await AVAudioApplication.requestRecordPermission() else {
-                phase = .refused
+                phase = .failed
                 return
             }
         default:
@@ -129,9 +130,8 @@ final class OnboardingVoiceDemoController {
         }.value
 
         guard speech.state == .recording else {
-            let refused = speech.isMicrophonePermissionDenied
             speech.reset()
-            phase = refused ? .refused : .missed
+            phase = .failed
             return
         }
 
@@ -154,12 +154,12 @@ final class OnboardingVoiceDemoController {
 
         Task { @MainActor in
             guard let audio = await drainCapturedAudio() else {
-                phase = .missed
+                phase = .failed
                 return
             }
 
             guard await VoiceRecordingSpeechPresence.likelyContainsSpeech(wavData: audio) else {
-                phase = .missed
+                phase = .failed
                 return
             }
 
@@ -177,7 +177,7 @@ final class OnboardingVoiceDemoController {
                     announceProMoment: false
                 )
                 guard case .created(let transaction) = result else {
-                    phase = .missed
+                    phase = .failed
                     return
                 }
                 // Onboarding pitches Pro on the next page. Mark this feature done so the
@@ -186,7 +186,7 @@ final class OnboardingVoiceDemoController {
                 UINotificationFeedbackGenerator().notificationOccurred(.success)
                 phase = .heard(OnboardingHeardTransaction(transaction: transaction))
             } catch {
-                phase = .missed
+                phase = .failed
             }
         }
     }

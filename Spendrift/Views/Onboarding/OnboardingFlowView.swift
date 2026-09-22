@@ -119,9 +119,10 @@ private struct OnboardingWelcomePage: View {
     var body: some View {
         OnboardingPage(narrationFinished: narrationFinished) {
             OnboardingNarration(
-                headline: "Hi. Spendrift is a cure to my own laziness. "
-                    + "<600ms wait> Hopefully it becomes one for yours too.",
-                onHeadlineFinished: { narrationFinished = true }
+                headline: "Welcome to Spendrift.",
+                detail: "I built this app as a cure to my own laziness.<500ms wait> "
+                    + "Hopefully, it does the same for you.",
+                onFinished: { narrationFinished = true }
             )
         } focus: {
             OnboardingHeroPlate(
@@ -157,13 +158,16 @@ private struct OnboardingVoicePage: View {
         return false
     }
 
+    private var hasFailed: Bool { voice.phase == .failed }
+
     var body: some View {
         OnboardingPage(narrationFinished: narrationFinished) {
             OnboardingNarration(
-                headline: "Everyone makes you log an expense by hand. "
-                    + "<500ms wait> Here, you just say it.",
+                headline: "Just say it.",
+                detail: "Everywhere else, logging an expense means typing it out.",
                 subline: subline,
-                onHeadlineFinished: { narrationFinished = true }
+                reservesSublineSpace: true,
+                onFinished: { narrationFinished = true }
             )
         } focus: {
             focus
@@ -175,9 +179,22 @@ private struct OnboardingVoicePage: View {
                     fill: accent,
                     action: onContinue
                 )
+            } else if hasFailed {
+                // The demo did not work out. Rather than diagnosing why - no microphone,
+                // no network, nothing heard - the page hands them the door. Quiet, so it
+                // does not compete with the plate, which is still the thing to tap.
+                OnboardingActionButton(
+                    title: "I'll try later",
+                    fill: accent,
+                    style: .quiet,
+                    action: onContinue
+                )
             } else {
-                Color.clear
-                    .frame(height: 52)
+                // The real capsule, invisible: the floor slot keeps the exact height it
+                // will have once the button arrives, so nothing shifts when it does.
+                OnboardingActionButton(title: "Awesome, next", fill: accent, action: {})
+                    .hidden()
+                    .allowsHitTesting(false)
                     .accessibilityHidden(true)
             }
         }
@@ -196,13 +213,6 @@ private struct OnboardingVoicePage: View {
                 categories: categories
             )
         }
-        // A refused microphone ends this page. Move on without asking twice.
-        .task(id: voice.phase) {
-            guard voice.phase == .refused else { return }
-            try? await Task.sleep(for: .milliseconds(400))
-            guard !Task.isCancelled else { return }
-            onContinue()
-        }
     }
 
     @ViewBuilder
@@ -212,27 +222,24 @@ private struct OnboardingVoicePage: View {
                 .transition(.scale(scale: 0.94).combined(with: .opacity))
         } else {
             VStack(spacing: 16) {
-                HStack(alignment: .center, spacing: 12) {
-                    Color.clear
-                        .frame(width: Self.tapHintWidth)
-
+                VStack(spacing: 8) {
                     OnboardingHeroPlate(
-                        mark: .symbol(voice.isListening ? "stop.fill" : "mic.fill"),
-                        accent: accent,
-                        levelMeter: voice.isListening ? voice.levelMeter : nil,
-                        isBusy: voice.phase == .thinking,
-                        accessibilityLabel: voice.isListening
-                            ? "Stop and read it back"
-                            : "Speak an expense",
-                        action: handleTap
-                    )
+                            mark: .symbol(voice.isListening ? "stop.fill" : "mic.fill"),
+                            accent: accent,
+                            levelMeter: voice.isListening ? voice.levelMeter : nil,
+                            isBusy: voice.phase == .thinking,
+                            accessibilityLabel: voice.isListening
+                                ? "Stop and read it back"
+                                : "Speak an expense",
+                            action: handleTap
+                        )
 
-                    Text("Tap me")
-                        .font(.system(size: 15, weight: .medium))
-                        .foregroundStyle(OnboardingTheme.textSecondary)
-                        .frame(width: Self.tapHintWidth, alignment: .leading)
-                        .opacity(showsTapHint ? 1 : 0)
-                        .accessibilityHidden(!showsTapHint)
+                        Text(tapHint)
+                            .font(.system(size: 15, weight: .medium))
+                            .foregroundStyle(OnboardingTheme.textSecondary)
+                            .contentTransition(.opacity)
+                            .opacity(showsTapHint ? 1 : 0)
+                            .accessibilityHidden(!showsTapHint)
                 }
 
                 VoiceLevelWaveform(meter: voice.levelMeter, tint: accent.opacity(0.85))
@@ -243,12 +250,17 @@ private struct OnboardingVoicePage: View {
         }
     }
 
-    private static let tapHintWidth: CGFloat = 64
+    /// An invitation first time round, an offer of a second go after a run that did not
+    /// work out. The capsule below is the other way forward.
+    private var tapHint: String {
+        hasFailed ? "Give it another shot?" : "Tap me"
+    }
 
-    /// Idle and missed: the mic is waiting. Hidden once they are speaking or we are reading.
+    /// Waiting for a tap, first time or after a failed run. Hidden once they are
+    /// speaking or we are reading the clip back.
     private var showsTapHint: Bool {
         switch voice.phase {
-        case .idle, .missed: true
+        case .idle, .failed: true
         default: false
         }
     }
@@ -259,14 +271,14 @@ private struct OnboardingVoicePage: View {
         case .listening: "Your language, your dialect. Say what you spent."
         case .thinking:  "Reading it back."
         case .heard:     "That is the whole flow."
-        case .missed:    "Did not catch that. Try again."
-        case .refused:   nil
+        // No blame and no diagnosis. The capsule below says what happens next.
+        case .failed:    nil
         }
     }
 
     private func handleTap() {
         switch voice.phase {
-        case .idle, .missed:
+        case .idle, .failed:
             UIImpactFeedbackGenerator(style: .light).impactOccurred()
             Task { await voice.beginListening() }
         case .listening:
@@ -276,7 +288,7 @@ private struct OnboardingVoicePage: View {
                 accounts: accounts,
                 categories: categories
             )
-        case .thinking, .heard, .refused:
+        case .thinking, .heard:
             break
         }
     }
@@ -307,10 +319,11 @@ private struct OnboardingProPage: View {
     var body: some View {
         OnboardingPage(narrationFinished: narrationFinished) {
             OnboardingNarration(
-                headline: "Ten voice notes a month are on the house. "
-                    + "<500ms wait> They refill on the 1st.",
+                headline: "Tap the bell icon.",
+                detail: "To receive 10 free voice notes.",
                 subline: subline,
-                onHeadlineFinished: { narrationFinished = true }
+                reservesSublineSpace: true,
+                onFinished: { narrationFinished = true }
             )
         } focus: {
             OnboardingHeroPlate(
@@ -351,7 +364,7 @@ private struct OnboardingProPage: View {
 
     private var subline: String? {
         switch reward {
-        case .offered:  narrationFinished ? "Tap the bell for one more month, free." : nil
+        case .offered:  nil
         case .asking:   "One moment."
         case .granted:  "Done. Ten more voice notes, five receipts, one statement."
         case .declined: "No bother. You can turn them on in Settings."
