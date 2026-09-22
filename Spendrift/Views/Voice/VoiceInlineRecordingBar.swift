@@ -138,76 +138,73 @@ struct VoiceInlineRecordingBar: View {
         .padding(.vertical, 18)
     }
 
+    /// Failure card, 2A: one shell for every reason, separated only by the icon chip's
+    /// tone. Amber marks what the app cannot fix by itself; everything recoverable takes
+    /// the neutral chip. Exactly one filled action per card, with the escape hatch beside it.
     private func errorContent(reason: VoiceFailureReason) -> some View {
-        VStack(alignment: .leading, spacing: 14) {
-            HStack(alignment: .top, spacing: 12) {
-                Image(systemName: errorIcon(for: reason))
-                    .font(.title3)
-                    .symbolRenderingMode(.hierarchical)
-                    .foregroundStyle(.orange)
-                    .accessibilityHidden(true)
+        VStack(alignment: .leading, spacing: 20) {
+            HStack(alignment: .top, spacing: 14) {
+                errorIconChip(for: reason)
 
-                VStack(alignment: .leading, spacing: 4) {
+                VStack(alignment: .leading, spacing: 6) {
                     Text(reason.title)
-                        .font(.subheadline.weight(.semibold))
+                        .font(.system(size: 17, weight: .semibold))
+                        .tracking(-0.17)
                         .foregroundStyle(.primary)
+                        .fixedSize(horizontal: false, vertical: true)
+
                     Text(reason.guidance)
-                        .font(.subheadline)
+                        .font(.system(size: 14))
+                        .lineSpacing(4)
                         .foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
                 }
+                .frame(maxWidth: .infinity, alignment: .leading)
 
-                Spacer(minLength: 0)
-            }
-
-            HStack(spacing: 12) {
-                primaryButton(for: reason)
-
-                Button("Enter manually") {
-                    controller.openManualFromError(accounts: accounts, hint: reason.guidance)
-                }
-                .buttonStyle(.bordered)
-
-                Spacer(minLength: 0)
-
-                Button("Dismiss") {
+                VoiceErrorDismissButton {
                     controller.dismissError()
                 }
-                .buttonStyle(.borderless)
-                .foregroundStyle(.secondary)
+                .id(reason)
+                .padding(.top, -4)
+                .padding(.trailing, -4)
+            }
+
+            HStack(spacing: 10) {
+                Button(reason.primaryActionTitle) {
+                    switch reason.primaryAction {
+                    case .retry:
+                        controller.retry(
+                            modelContext: modelContext,
+                            accounts: accounts,
+                            categories: categories
+                        )
+                    case .openSettings:
+                        controller.openSettings()
+                    }
+                }
+                .buttonStyle(VoiceFailurePrimaryButtonStyle())
+
+                Button(reason.secondaryActionTitle) {
+                    controller.openManualFromError(accounts: accounts, hint: reason.guidance)
+                }
+                .buttonStyle(VoiceFailureSecondaryButtonStyle())
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.horizontal, 16)
-        .padding(.vertical, 16)
+        .padding(20)
     }
 
-    /// Prominent, reason-aware recovery action: one-tap retry, or a deep link to Settings
-    /// when microphone access has been denied.
-    @ViewBuilder
-    private func primaryButton(for reason: VoiceFailureReason) -> some View {
-        Button {
-            switch reason.primaryAction {
-            case .retry:
-                controller.retry(
-                    modelContext: modelContext,
-                    accounts: accounts,
-                    categories: categories
-                )
-            case .openSettings:
-                controller.openSettings()
-            }
-        } label: {
-            Label(reason.primaryActionTitle, systemImage: primaryActionIcon(for: reason.primaryAction))
-        }
-        .buttonStyle(.borderedProminent)
-    }
+    private func errorIconChip(for reason: VoiceFailureReason) -> some View {
+        let tint: Color = reason.tone == .blocked ? .orange : .secondary
 
-    private func primaryActionIcon(for action: VoiceFailurePrimaryAction) -> String {
-        switch action {
-        case .retry:        return "arrow.clockwise"
-        case .openSettings: return "gear"
-        }
+        return Image(systemName: errorIcon(for: reason))
+            .font(.system(size: 18, weight: .medium))
+            .symbolRenderingMode(.hierarchical)
+            .foregroundStyle(tint)
+            .frame(width: 36, height: 36)
+            .background(tint.opacity(reason.tone == .blocked ? 0.16 : 0.12),
+                        in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+            .accessibilityHidden(true)
     }
 
     private func errorIcon(for reason: VoiceFailureReason) -> String {
@@ -220,6 +217,88 @@ struct VoiceInlineRecordingBar: View {
         case .transcriptionFailed: return "exclamationmark.bubble"
         case .unknown:             return "exclamationmark.triangle"
         }
+    }
+}
+
+// MARK: - Failure card buttons
+
+/// The single filled action on a failure card.
+private struct VoiceFailurePrimaryButtonStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .font(.system(size: 15, weight: .semibold))
+            .foregroundStyle(Color(hex: "#062E35"))
+            .frame(maxWidth: .infinity)
+            .frame(height: 44)
+            .background(AppTheme.accent.opacity(configuration.isPressed ? 0.75 : 1),
+                        in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+    }
+}
+
+/// The escape hatch beside it: same size, no fill.
+private struct VoiceFailureSecondaryButtonStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .font(.system(size: 15, weight: .medium))
+            .foregroundStyle(.primary)
+            .frame(maxWidth: .infinity)
+            .frame(height: 44)
+            .background(Color.primary.opacity(configuration.isPressed ? 0.08 : 0),
+                        in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .stroke(Color.primary.opacity(0.18), lineWidth: 1)
+            )
+    }
+}
+
+// MARK: - Error dismiss
+
+/// Close control for the voice failure card. A thin ring counts down for 5 seconds,
+/// then the card dismisses on its own. Tapping the cross dismisses immediately.
+private struct VoiceErrorDismissButton: View {
+    private static let lifetime: TimeInterval = 5
+
+    let onDismiss: () -> Void
+
+    @State private var startedAt = Date()
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    var body: some View {
+        TimelineView(.animation(minimumInterval: 1.0 / 30.0)) { timeline in
+            let elapsed = timeline.date.timeIntervalSince(startedAt)
+            let remaining = reduceMotion ? 1.0 : max(0, 1 - elapsed / Self.lifetime)
+            closeButton(ringFraction: remaining)
+        }
+        .task {
+            try? await Task.sleep(for: .seconds(Self.lifetime))
+            guard !Task.isCancelled else { return }
+            onDismiss()
+        }
+    }
+
+    private func closeButton(ringFraction: Double) -> some View {
+        Button(action: onDismiss) {
+            ZStack {
+                Circle()
+                    .trim(from: 0, to: ringFraction)
+                    .stroke(
+                        Color.primary.opacity(0.55),
+                        style: StrokeStyle(lineWidth: 1, lineCap: .round)
+                    )
+                    .rotationEffect(.degrees(-90))
+                    .padding(0.5)
+                    .transaction { $0.animation = nil }
+
+                Image(systemName: "xmark")
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundStyle(.secondary)
+            }
+            .frame(width: 28, height: 28)
+            .contentShape(Circle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Dismiss")
     }
 }
 
@@ -302,6 +381,10 @@ private struct VoiceInlineRecordingBarPreviewHost: View {
 
 #Preview("Processing") {
     VoiceInlineRecordingBarPreviewHost(state: .processing)
+}
+
+#Preview("Error — recording too short") {
+    VoiceInlineRecordingBarPreviewHost(state: .error(.recordingTooShort))
 }
 
 #Preview("Error — mic permission") {

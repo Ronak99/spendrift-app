@@ -123,8 +123,8 @@ private struct RootContainerView: View {
 
     private var needsOnboarding: Bool {
         guard OnboardingFlowView.isEnabled, !isUITesting else { return false }
-        if finishedOnboardingThisLaunch { return false }
-        if OnboardingFlowView.showsEveryLaunch { return true }
+//        if finishedOnboardingThisLaunch { return false }
+//        if OnboardingFlowView.showsEveryLaunch { return true }
         return onboardingVersion < OnboardingFlowView.currentVersion
     }
 
