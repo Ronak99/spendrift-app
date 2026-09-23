@@ -72,17 +72,6 @@ enum ProFeature: String, CaseIterable, Identifiable, Sendable {
         }
     }
 
-    /// Extra credits granted once when the user turns notifications on from Settings.
-    /// SMS is excluded: 30 a month already drains headlessly from Shortcuts.
-    var notificationRewardBonus: Int {
-        switch self {
-        case .voice:           10
-        case .receiptScan:     5
-        case .statementImport: 1
-        case .messageImport:   0
-        }
-    }
-
     /// Unit noun for quota copy, e.g. "10 voice notes left this month".
     func unitLabel(count: Int) -> String {
         switch self {

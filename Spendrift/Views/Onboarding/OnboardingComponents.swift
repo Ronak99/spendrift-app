@@ -21,7 +21,7 @@ enum OnboardingTheme {
 /// Named assets used by onboarding (mirrors app icon artwork from `AppIcon.appiconset`).
 enum OnboardingVisualAsset {
     /// Same artwork as `wallet_icon.png` in the app icon set; bundled as `OnboardingHeroMark.imageset`.
-    static let heroMark = "OnboardingHeroMark"
+    static let heroMark = "SpendriftIcon"
 }
 
 // MARK: - Sheet background

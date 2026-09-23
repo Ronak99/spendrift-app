@@ -321,7 +321,6 @@ private struct VoiceCaptureExampleHintView: View {
                 textColor: Color.secondary.opacity(0.72),
                 multilineTextAlignment: .leading,
                 contentAlignment: .leading,
-                tapSkipsToEnd: false,
                 writeTaskPriority: .background
             )
             .padding(.horizontal, 4)

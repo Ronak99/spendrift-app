@@ -230,7 +230,7 @@ Status is read asynchronously on appear and re-read when the scene becomes activ
 `SettingsListItem` already supports `.toggle(Binding<Bool>)`, so no new component is needed.
 
 - **`.notDetermined`**: flipping the toggle on calls `NotificationManager.requestAuthorization()`.
-  On grant, register with OneSignal, grant the bonus credits, sync state to the backend, and let the row disappear.
+  On grant, register with OneSignal, unlock the signup month's free credits, sync state to the backend, and let the row disappear.
   On refusal, the toggle springs back off and the row stays.
 - **`.denied`**: the row opens `UIApplication.openSettingsURLString` instead of prompting, because iOS will not show the system prompt a second time.
   A toggle that does nothing is worse than no toggle.
@@ -240,54 +240,46 @@ Status is read asynchronously on appear and re-read when the scene becomes activ
 The original idea was "Get 1 day of Pro usage".
 That does not survive contact with the code: `ProEntitlement.isPro` is derived from StoreKit and `ProEntitlementCache` only mirrors it, so a fake 24-hour Pro window would have the app claiming a subscription the user does not have, in the paywall and in the Pro settings section.
 
-Bonus credits say the same thing honestly and need no new entitlement concept.
-
-> **Turn on notifications**
-> Get a free top-up: 10 voice notes, 5 receipts, and 1 bank statement.
+Free credits say the same thing honestly and need no new entitlement concept.
+See [Signup-month unlock](#signup-month-unlock) for how they are released.
 
 ---
 
-## Bonus credits
+## Signup-month unlock
+
+Notification permission no longer adds bonus credits on top of the free tier.
+Instead, it is what releases the free tier in the user's first month.
+
+### Rules
+
+- The signup month is the first calendar month `AIQuotaStore` sees the install.
+  For installs from before this rule, that is the month they updated, so the rule applies to everyone.
+- In the signup month, every feature's free allowance is 0 until notification permission is granted.
+- Granting permission at any point in the signup month releases the full `monthlyFreeQuota` immediately.
+  That covers the onboarding bell, the Settings row, the post-entry prompt, and the iOS Settings app, because `PushNotifications.syncState()` checks the status at launch and on every foreground.
+- From the following month on, every free user gets the full monthly allowance whether or not they granted permission.
+- The voice demo in onboarding is exempt from the quota (`QuotaPolicy.exempt`): it runs before the notification page, needs no credit, and does not spend one.
 
 ### Storage
 
-`AIQuotaStore` gains a bonus layer beside the existing monthly counters, in the same App Group suite.
-
-- Key `aiQuota.bonus.<feature>`.
-- **Not** cleared by `rolloverIfNeeded`, because it is a one-time reward and not a monthly allowance.
+- `aiQuota.signupPeriod` holds the signup month, stamped on first touch.
+- `aiQuota.notificationRewardGranted` records the unlock.
+  It keeps its original name so installs that took the old reward count as unlocked.
+- Leftover `aiQuota.bonus.<feature>` balances from the old reward are cleared when the signup month is stamped.
 
 ### Arithmetic
 
 ```
-remaining(feature) = max(0, monthlyFreeQuota - used) + bonus(feature)
+monthlyAllowance(feature) = signup month and not unlocked ? 0 : monthlyFreeQuota
+remaining(feature) = max(0, monthlyAllowance(feature) - used)
 ```
 
-`consume` spends the free monthly allowance first and only drains bonus on overflow, so the reward survives as long as possible.
-This replaces the current clamp at `monthlyFreeQuota`, which would otherwise swallow any overflow silently.
-
-`ProGate.evaluate` needs no change: it already returns `.allowed(remaining:)` straight from `AIQuotaStore.remaining`.
-
-### Amounts
-
-Defined on `ProFeature` as `notificationRewardBonus`, sized to one extra month of the free tier:
-
-- Voice capture: 10
-- Receipt scan: 5
-- Statement import: 1
-- SMS auto-import: 0
-
-SMS is excluded.
-It already allows 30 a month and drains headlessly from a Shortcuts automation, so extra credits there are invisible to the user and make poor copy.
-
-### Idempotency
-
-A `notificationRewardGranted` flag in the App Group suite stops a second grant within one install.
-Reinstall deliberately re-grants, per the decision to ignore that edge case for now.
+`consume` clamps stored usage at the allowance, so nothing spent while locked carries into the unlock.
 
 ### Surfacing
 
-`ProStatsRingsView` and `ProStat.averageUsedPercent` compute against `monthlyFreeQuota` and will misreport once bonus credits exist.
-Pro Stats should show the bonus explicitly, for example `10 of 10 used, +10 bonus`, otherwise a user with credits left sees a full ring.
+`ProStatsRingsView` computes against `monthlyAllowance`, and shows "Turn on notifications to unlock" while the allowance is 0.
+The onboarding notification page tells a decliner when their free credits start.
 
 ---
 

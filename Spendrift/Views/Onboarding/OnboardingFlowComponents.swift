@@ -64,6 +64,9 @@ enum OnboardingStep: Int, CaseIterable, Identifiable {
 /// then the capsule. Pass `narrationFinished` from `OnboardingNarration`.
 struct OnboardingPage<Narration: View, Focus: View, Action: View>: View {
     var narrationFinished: Bool
+    /// How long the capsule waits after the object arrives. Longer on a page that wants
+    /// the object tried before the way out is offered.
+    var actionDelay: Duration = .milliseconds(220)
     @ViewBuilder var narration: Narration
     @ViewBuilder var focus: Focus
     @ViewBuilder var action: Action
@@ -107,11 +110,13 @@ struct OnboardingPage<Narration: View, Focus: View, Action: View>: View {
     }
 
     private func reveal() {
-        guard !showsAction else { return }
+        // Keyed to the focus, which flips at once, so the backstop firing during a long
+        // action delay does not schedule the capsule a second time.
+        guard !showsFocus else { return }
         let entrance: Animation? = reduceMotion ? nil : .spring(response: 0.5, dampingFraction: 0.9)
         withAnimation(entrance) { showsFocus = true }
         Task { @MainActor in
-            try? await Task.sleep(for: .milliseconds(220))
+            try? await Task.sleep(for: actionDelay)
             withAnimation(entrance) { showsAction = true }
         }
     }
@@ -130,8 +135,8 @@ private extension View {
 // MARK: - Narration
 
 /// Copy in two voices. The headline is the one white line that carries the idea; the
-/// detail and the subline are smaller and quieter, and everything below the headline
-/// can change while the headline stays put - the subline is where page state speaks.
+/// detail is smaller and quieter. Page state speaks through the hint under the hero
+/// plate, not here, so the copy stays put once written.
 ///
 /// Both streamed blocks reserve their full size up front and the detail waits for the
 /// headline, so the copy writes itself without moving the object underneath it.
@@ -140,16 +145,20 @@ struct OnboardingNarration: View {
     let headline: String
     /// Everything the headline does not have to carry. Written once the headline lands.
     var detail: String?
-    /// Live state under the copy. May arrive, change, and leave.
-    var subline: String?
-    /// Hold two subline rows from the start, for pages whose subline arrives late.
-    var reservesSublineSpace: Bool = false
     /// Called when the last block of copy has finished writing itself.
     var onFinished: (() -> Void)?
 
     @State private var headlineFinished = false
 
     private static let detailFont = Font.system(size: 16)
+
+    /// The detail picks up the moment the headline's last glyph lands. The headline's
+    /// own lead-in already let the screen settle, so a second one reads as a stall.
+    private static let detailCadence: StreamingTextCadence = {
+        var cadence = StreamingTextCadence.natural
+        cadence.leadingDelayMilliseconds = 0
+        return cadence
+    }()
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -168,7 +177,7 @@ struct OnboardingNarration: View {
             if let detail {
                 StreamingText(
                     text: detail,
-                    cadence: .natural,
+                    cadence: Self.detailCadence,
                     font: Self.detailFont,
                     textColor: OnboardingTheme.textSecondary,
                     multilineTextAlignment: .leading,
@@ -177,17 +186,6 @@ struct OnboardingNarration: View {
                     startsWriting: headlineFinished,
                     onFinished: { onFinished?() }
                 )
-            }
-
-            if reservesSublineSpace || subline != nil {
-                Text(subline ?? " ")
-                    .font(Self.detailFont)
-                    .foregroundStyle(subline == nil ? .clear : OnboardingTheme.textSecondary)
-                    .lineLimit(2, reservesSpace: reservesSublineSpace)
-                    .contentTransition(.opacity)
-                    .animation(.easeInOut(duration: 0.28), value: subline)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .accessibilityHidden(subline == nil)
             }
         }
     }
@@ -439,6 +437,27 @@ private struct OnboardingBusyRing: View {
     }
 }
 
+// MARK: - Tap hint
+
+/// The quiet line under a hero plate: what to do with it, or what it is doing now.
+/// Always holds two rows so the plate above never moves as the hint changes or clears.
+struct OnboardingTapHint: View {
+    let text: String?
+
+    var body: some View {
+        Text(text ?? " ")
+            .font(.system(size: 15, weight: .medium))
+            .foregroundStyle(OnboardingTheme.textSecondary)
+            .multilineTextAlignment(.center)
+            .lineLimit(2, reservesSpace: true)
+            .frame(maxWidth: 300)
+            .contentTransition(.opacity)
+            .opacity(text == nil ? 0 : 1)
+            .animation(.easeInOut(duration: 0.28), value: text)
+            .accessibilityHidden(text == nil)
+    }
+}
+
 // MARK: - Heard transaction
 
 /// The row Spendrift heard, drawn the way the ledger draws it. This is the payoff of the
@@ -578,17 +597,18 @@ struct OnboardingActionButton: View {
         OnboardingPage(narrationFinished: true) {
             OnboardingNarration(
                 headline: "Just say it.",
-                detail: "Everywhere else, logging an expense means typing it out.",
-                subline: "Tap the mic and say what you spent.",
-                reservesSublineSpace: true
+                detail: "One tap, one sentence. Done."
             )
         } focus: {
-            OnboardingHeroPlate(
-                mark: .symbol("mic.fill"),
-                accent: OnboardingStep.voice.accent,
-                accessibilityLabel: "Start speaking",
-                action: {}
-            )
+            VStack(spacing: 8) {
+                OnboardingHeroPlate(
+                    mark: .symbol("mic.fill"),
+                    accent: OnboardingStep.voice.accent,
+                    accessibilityLabel: "Start speaking",
+                    action: {}
+                )
+                OnboardingTapHint(text: "Tap me")
+            }
         } action: {
             OnboardingActionButton(
                 title: "Awesome, next",

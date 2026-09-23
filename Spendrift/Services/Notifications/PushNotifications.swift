@@ -63,8 +63,9 @@ enum PushNotifications {
 
     // MARK: - Permission grant
 
-    /// Called after the Settings toggle. Requests permission if needed, grants
-    /// bonus credits on success, registers for remote notifications, and syncs.
+    /// Called after the Settings toggle. Requests permission if needed, unlocks the
+    /// signup month's free credits on success, registers for remote notifications,
+    /// and syncs.
     @MainActor
     static func enableFromSettings() async -> Bool {
         let status = await NotificationManager.authorizationStatus()
@@ -84,9 +85,6 @@ enum PushNotifications {
         guard granted else { return false }
 
         UIApplication.shared.registerForRemoteNotifications()
-        if AIQuotaStore.grantNotificationRewardIfNeeded() {
-            Analytics.capture(.notificationRewardGranted)
-        }
         await syncState()
         NotificationManager.refreshQuotaRefillReminder()
         return true
@@ -114,6 +112,12 @@ enum PushNotifications {
         guard !ProcessInfo.processInfo.arguments.contains("-UITesting") else { return }
 
         let status = await NotificationManager.authorizationStatus()
+        // Permission granted anywhere - the onboarding bell, Settings, the post-entry
+        // prompt, or the iOS Settings app - releases the signup month's free credits.
+        if NotificationManager.isPermissionGranted(status),
+           AIQuotaStore.unlockWithNotificationsIfNeeded() {
+            Analytics.capture(.notificationRewardGranted)
+        }
         let subscriptionID = didSetup ? OneSignal.User.pushSubscription.id : nil
 
         do {
@@ -123,7 +127,7 @@ enum PushNotifications {
                 appVersion: AppInfo.appVersionLabel(),
                 permissionStatus: NotificationManager.permissionStatusName(status),
                 onesignalSubscriptionID: subscriptionID,
-                rewardGranted: AIQuotaStore.didGrantNotificationReward
+                rewardGranted: AIQuotaStore.didUnlockWithNotifications
             )
         } catch {
             Diagnostics.log(

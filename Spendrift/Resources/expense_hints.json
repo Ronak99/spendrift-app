@@ -1,0 +1,108 @@
+{
+    "locales": {
+        "default": {
+            "scripts": [
+                "50 for lunch",
+                "Paid 200 for electric bill",
+                "12 for coffee",
+                "Paid 85 for groceries",
+                "20 for taxi ride",
+                "Paid 600 for rent",
+                "30 for gas"
+            ]
+        },
+        "en_IN": {
+            "scripts": [
+                "₹250 for Lunch",
+                "Paid 3500 for electric bill",
+                "₹120 for auto rickshaw",
+                "Paid 1800 for groceries at DMart",
+                "₹499 for Swiggy order",
+                "Paid 2000 rent advance",
+                "₹850 for mobile recharge",
+                "सब्ज़ी के लिए 300 रुपए",
+                "किराने का सामान के लिए 1200 रुपए दिए"
+            ]
+        },
+        "en_US": {
+            "scripts": [
+                "$50 for lunch",
+                "Paid 500 for electric bill",
+                "$12 for Uber ride",
+                "Paid 85 for groceries at Trader Joe's",
+                "$8.50 for coffee",
+                "Paid 1200 for rent",
+                "$60 for gym membership"
+            ]
+        },
+        "en_GB": {
+            "scripts": [
+                "£8 for lunch",
+                "Paid 65 for electric bill",
+                "£4.50 for a coffee",
+                "Paid 40 for groceries at Tesco",
+                "£15 for a train ticket",
+                "Paid 900 for rent",
+                "£25 for a takeaway"
+            ]
+        },
+        "en_CA": {
+            "scripts": [
+                "$14 for lunch",
+                "Paid 110 for hydro bill",
+                "$6 for a coffee at Tim Hortons",
+                "Paid 95 for groceries at Loblaws",
+                "$18 for parking",
+                "Paid 1600 for rent",
+                "$45 for gas"
+            ]
+        },
+        "en_AU": {
+            "scripts": [
+                "$16 for lunch",
+                "Paid 120 for electricity bill",
+                "$5 for a flat white",
+                "Paid 80 for groceries at Woolworths",
+                "$35 for an Uber",
+                "Paid 550 for rent",
+                "$20 for parking"
+            ]
+        },
+        "de_DE": {
+            "scripts": [
+                "12 Euro für Mittagessen",
+                "75 bezahlt für Stromrechnung",
+                "3,50 Euro für Kaffee",
+                "60 bezahlt für Einkauf bei Edeka",
+                "9 Euro für die Bahnfahrkarte",
+                "850 bezahlt für Miete",
+                "40 Euro für Tanken",
+                "25 Euro fürs Abendessen"
+            ]
+        },
+        "ja_JP": {
+            "scripts": [
+                "ランチに800円",
+                "電気代に5000円払った",
+                "コーヒーに450円",
+                "スーパーで買い物に3200円払った",
+                "電車の切符に250円",
+                "家賃に85000円払った",
+                "コンビニで600円",
+                "タクシーに1200円払った"
+            ]
+        },
+        "ar_SA": {
+            "scripts": [
+                "٢٥ ريال للغداء",
+                "دفعت ٤٠٠ فاتورة الكهرباء",
+                "١٢ ريال للقهوة",
+                "دفعت ٣٥٠ للبقالة من بنده",
+                "٢٠ ريال لتوصيل طلب",
+                "دفعت ٣٠٠٠ للإيجار",
+                "١٥٠ ريال للبنزين",
+                "دفعت ٥٠ ريال للبنزين"
+            ]
+        }
+    }
+}

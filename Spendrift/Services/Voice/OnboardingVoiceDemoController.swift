@@ -4,7 +4,7 @@
 //
 //  The voice step of onboarding runs the real pipeline - real microphone, real
 //  backend parse - then writes the result to the ledger stamped with now, so the
-//  first thing they see after "Fin." is the transaction they just spoke.
+//  first thing they see after "Finish." is the transaction they just spoke.
 //
 
 import AVFoundation
@@ -164,9 +164,12 @@ final class OnboardingVoiceDemoController {
             }
 
             do {
+                // The demo runs before the notification page, when a new user has no
+                // free credits yet, and the expense it creates is free for everyone.
                 let payload = try await VoiceTransactionService().parseTransaction(
                     audioData: audio,
-                    categories: categories
+                    categories: categories,
+                    quota: .exempt
                 )
                 let result = VoiceTransactionCreator.createFromAIVoice(
                     payload: payload,

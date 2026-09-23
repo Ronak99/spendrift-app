@@ -102,7 +102,7 @@ private struct RootContainerView: View {
     @State private var checker = AppUpdateChecker()
     @State private var entitlement = ProEntitlement.shared
     @State private var activeSheet: RootSheet?
-    /// Fin. parks onboarding for the rest of this launch. `@State` so a cold start
+    /// Finish. parks onboarding for the rest of this launch. `@State` so a cold start
     /// presents it again even when `spendriftOnboardingVersion` is already current.
     @State private var finishedOnboardingThisLaunch = false
     /// Guards against starting the background seed more than once per launch.

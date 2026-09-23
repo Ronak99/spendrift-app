@@ -18,13 +18,18 @@ struct ProGateTests {
         let suiteName = "spendrift.tests.pro.\(UUID().uuidString)"
         let defaults: UserDefaults
 
-        init(isPro: Bool = false) {
+        /// `notificationsGranted` defaults to on so the arithmetic tests see the full
+        /// monthly allowance; the signup-month tests turn it off.
+        init(isPro: Bool = false, notificationsGranted: Bool = true) {
             defaults = UserDefaults(suiteName: suiteName)!
             AIQuotaStore.defaultsOverride = defaults
             ProGate.defaultsOverride = defaults
             ProEntitlementCache.defaultsOverride = defaults
             AudienceTags.defaultsOverride = defaults
             ProEntitlementCache.update(isPro: isPro, expiresAt: nil)
+            if notificationsGranted {
+                AIQuotaStore.unlockWithNotificationsIfNeeded()
+            }
         }
 
         deinit {
@@ -82,100 +87,72 @@ struct ProGateTests {
         #expect(AIQuotaStore.used(.voice) == 0)
     }
 
+    // MARK: - Signup month
+
+    private static func date(month: Int, day: Int) throws -> Date {
+        try #require(DateComponents(calendar: .current, year: 2026, month: month, day: day).date)
+    }
+
     @Test
-    func remainingIncludesBonusCredits() {
-        let sandbox = Sandbox()
+    func signupMonthHasNoFreeQuotaWithoutNotifications() throws {
+        let sandbox = Sandbox(notificationsGranted: false)
+        defer { _ = sandbox }
+        let september = try Self.date(month: 9, day: 15)
+
+        for feature in ProFeature.allCases {
+            #expect(AIQuotaStore.monthlyAllowance(feature, now: september) == 0)
+            #expect(!AIQuotaStore.hasQuota(feature, now: september))
+        }
+        #expect(AIQuotaStore.isAwaitingNotificationUnlock(now: september))
+    }
+
+    @Test
+    func grantingNotificationsUnlocksTheSignupMonthOnce() throws {
+        let sandbox = Sandbox(notificationsGranted: false)
+        defer { _ = sandbox }
+        let september = try Self.date(month: 9, day: 15)
+
+        #expect(AIQuotaStore.remaining(.voice, now: september) == 0)
+        #expect(AIQuotaStore.unlockWithNotificationsIfNeeded())
+        #expect(!AIQuotaStore.unlockWithNotificationsIfNeeded())
+
+        // The grant releases the plain monthly allowance, with no bonus on top.
+        #expect(AIQuotaStore.remaining(.voice, now: september) == ProFeature.voice.monthlyFreeQuota)
+        #expect(!AIQuotaStore.isAwaitingNotificationUnlock(now: september))
+    }
+
+    @Test
+    func declinerGetsTheFullQuotaFromNextMonth() throws {
+        let sandbox = Sandbox(notificationsGranted: false)
+        defer { _ = sandbox }
+        let september = try Self.date(month: 9, day: 15)
+        let october = try Self.date(month: 10, day: 1)
+
+        #expect(AIQuotaStore.remaining(.voice, now: september) == 0)
+        for feature in ProFeature.allCases {
+            #expect(AIQuotaStore.remaining(feature, now: october) == feature.monthlyFreeQuota)
+        }
+    }
+
+    @Test
+    func usageWhileLockedDoesNotCarryIntoTheUnlock() throws {
+        let sandbox = Sandbox(notificationsGranted: false)
+        defer { _ = sandbox }
+        let september = try Self.date(month: 9, day: 15)
+
+        AIQuotaStore.consume(.voice, count: 3, now: september)
+        #expect(AIQuotaStore.used(.voice, now: september) == 0)
+
+        AIQuotaStore.unlockWithNotificationsIfNeeded()
+        #expect(AIQuotaStore.remaining(.voice, now: september) == ProFeature.voice.monthlyFreeQuota)
+    }
+
+    @Test
+    func lockedUserIsBlockedByTheGate() {
+        let sandbox = Sandbox(notificationsGranted: false)
         defer { _ = sandbox }
 
-        #expect(AIQuotaStore.grantNotificationRewardIfNeeded())
-        #expect(!AIQuotaStore.grantNotificationRewardIfNeeded())
-        #expect(AIQuotaStore.bonus(.voice) == ProFeature.voice.notificationRewardBonus)
-        #expect(AIQuotaStore.remaining(.voice) == ProFeature.voice.monthlyFreeQuota + ProFeature.voice.notificationRewardBonus)
-        #expect(AIQuotaStore.bonus(.messageImport) == 0)
-    }
-
-    @Test
-    func consumeSpendsMonthlyAllowanceBeforeBonus() {
-        let sandbox = Sandbox()
-        defer { _ = sandbox }
-
-        #expect(AIQuotaStore.grantNotificationRewardIfNeeded())
-        AIQuotaStore.consume(.voice, count: ProFeature.voice.monthlyFreeQuota)
-        #expect(AIQuotaStore.used(.voice) == ProFeature.voice.monthlyFreeQuota)
-        #expect(AIQuotaStore.bonus(.voice) == ProFeature.voice.notificationRewardBonus)
-
-        AIQuotaStore.consume(.voice, count: 3)
-        #expect(AIQuotaStore.used(.voice) == ProFeature.voice.monthlyFreeQuota)
-        #expect(AIQuotaStore.bonus(.voice) == ProFeature.voice.notificationRewardBonus - 3)
-        #expect(AIQuotaStore.remaining(.voice) == ProFeature.voice.notificationRewardBonus - 3)
-    }
-
-    @Test
-    func bonusSurvivesMonthRollover() throws {
-        let sandbox = Sandbox()
-        defer { _ = sandbox }
-
-        let september = try #require(DateComponents(
-            calendar: .current, year: 2026, month: 9, day: 15
-        ).date)
-        let october = try #require(DateComponents(
-            calendar: .current, year: 2026, month: 10, day: 1
-        ).date)
-
-        #expect(AIQuotaStore.grantNotificationRewardIfNeeded())
-        AIQuotaStore.consume(.voice, count: 4, now: september)
-        #expect(AIQuotaStore.used(.voice, now: october) == 0)
-        #expect(AIQuotaStore.bonus(.voice) == ProFeature.voice.notificationRewardBonus)
-    }
-
-    // MARK: - Month rollover
-
-    @Test
-    func rolloverZeroesEveryCounter() throws {
-        let sandbox = Sandbox()
-        defer { _ = sandbox }
-
-        let september = try #require(DateComponents(
-            calendar: .current, year: 2026, month: 9, day: 15
-        ).date)
-        let october = try #require(DateComponents(
-            calendar: .current, year: 2026, month: 10, day: 1
-        ).date)
-
-        AIQuotaStore.consume(.voice, count: 4, now: september)
-        AIQuotaStore.consume(.statementImport, count: 1, now: september)
-        #expect(AIQuotaStore.used(.voice, now: september) == 4)
-
-        // Reading in the next month is what triggers the reset — there is no
-        // scheduled job, so a stale period must be detected lazily.
-        #expect(AIQuotaStore.used(.voice, now: october) == 0)
-        #expect(AIQuotaStore.used(.statementImport, now: october) == 0)
-    }
-
-    @Test
-    func periodsAreDistinctPerCalendarMonth() throws {
-        let september = try #require(DateComponents(
-            calendar: .current, year: 2026, month: 9, day: 30
-        ).date)
-        let october = try #require(DateComponents(
-            calendar: .current, year: 2026, month: 10, day: 1
-        ).date)
-
-        #expect(AIQuotaStore.period(for: september) == "2026-09")
-        #expect(AIQuotaStore.period(for: october) == "2026-10")
-    }
-
-    @Test
-    func nextResetIsTheFirstOfNextMonth() throws {
-        let midSeptember = try #require(DateComponents(
-            calendar: .current, year: 2026, month: 9, day: 15, hour: 13
-        ).date)
-
-        let reset = AIQuotaStore.nextResetDate(from: midSeptember)
-        let components = Calendar.current.dateComponents([.year, .month, .day], from: reset)
-        #expect(components.year == 2026)
-        #expect(components.month == 10)
-        #expect(components.day == 1)
+        #expect(ProGate.evaluate(.voice) == .blocked(.voice))
     }
 
     // MARK: - Gate decisions

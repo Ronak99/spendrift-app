@@ -2,44 +2,78 @@
 //  VoiceCaptureHints.swift
 //  Spendrift
 //
-//  Example phrases shown while voice recording. Copy and locale coverage come from
-//  the PostHog remote config flag `voice_capture_hints`.
+//  Example phrases shown while voice recording, so the user has an expense in mind
+//  the moment the mic opens. Copy and locale coverage ship in the bundled
+//  `expense_hints.json`.
 //
 
 import Foundation
 
 enum VoiceCaptureHints {
-    static let remoteConfigFlagKey = "voice_capture_hints"
+    /// The catalog every locale falls back to when it has no entry of its own.
+    static let defaultLocaleKey = "default"
 
-    /// BCP 47-style identifier from Language & Region (e.g. `en_IN`). Matches PostHog `locales` keys.
-    static var currentLocaleIdentifier: String {
-        Locale.current.identifier
+    struct Catalog: Decodable, Equatable {
+        struct Entry: Decodable, Equatable {
+            let scripts: [String]
+        }
+
+        let locales: [String: Entry]
     }
 
-    /// Scripts for `localeIdentifier`, or empty when the locale is absent or PostHog is unavailable.
-    static func scripts(for localeIdentifier: String, payload: [String: Any]?) -> [String] {
-        guard let payload else { return [] }
-        return Self.parseScripts(from: payload, localeIdentifier: localeIdentifier)
+    /// Decoded once per launch. Empty if the file is missing or malformed, which the
+    /// callers treat the same as a locale with no scripts.
+    static let bundledCatalog: Catalog = {
+        guard
+            let url = Bundle.main.url(forResource: "expense_hints", withExtension: "json"),
+            let data = try? Data(contentsOf: url),
+            let catalog = try? JSONDecoder().decode(Catalog.self, from: data)
+        else {
+            return Catalog(locales: [:])
+        }
+        return catalog
+    }()
+
+    static func randomScript(
+        for locale: Locale = .current,
+        catalog: Catalog = bundledCatalog
+    ) -> String? {
+        scripts(for: locale, catalog: catalog).randomElement()
     }
 
-    static func scriptsForCurrentLocale() -> [String] {
-        let payload = Analytics.remoteConfigPayload(forKey: remoteConfigFlagKey)
-        return scripts(for: currentLocaleIdentifier, payload: payload)
+    /// The most specific non-empty list for `locale`: its exact language and region
+    /// (`en_IN`), then any entry for the same region (a Hindi device in India still
+    /// gets rupees), then `default`.
+    static func scripts(for locale: Locale, catalog: Catalog) -> [String] {
+        for key in lookupKeys(for: locale, catalog: catalog) {
+            let scripts = cleaned(catalog.locales[key]?.scripts ?? [])
+            if !scripts.isEmpty { return scripts }
+        }
+        return []
     }
 
-    static func randomScript(for localeIdentifier: String = currentLocaleIdentifier) -> String? {
-        scripts(for: localeIdentifier, payload: Analytics.remoteConfigPayload(forKey: remoteConfigFlagKey))
-            .randomElement()
+    // MARK: - Lookup
+
+    private static func lookupKeys(for locale: Locale, catalog: Catalog) -> [String] {
+        var keys: [String] = []
+        let region = locale.region?.identifier
+
+        // Built from components rather than `locale.identifier`, which can carry
+        // extensions such as `@rg=gbzzzz` that would never match a catalog key.
+        if let language = locale.language.languageCode?.identifier, let region {
+            keys.append("\(language)_\(region)")
+        }
+        if let region {
+            keys += catalog.locales.keys
+                .filter { $0.hasSuffix("_\(region)") }
+                .sorted()
+        }
+        keys.append(defaultLocaleKey)
+        return keys
     }
 
-    // MARK: - Parsing
-
-    static func parseScripts(from payload: [String: Any], localeIdentifier: String) -> [String] {
-        guard let locales = payload["locales"] as? [String: Any] else { return [] }
-        guard let localeEntry = locales[localeIdentifier] as? [String: Any] else { return [] }
-        guard let scripts = localeEntry["scripts"] as? [Any] else { return [] }
-        return scripts.compactMap { element in
-            guard let line = element as? String else { return nil }
+    private static func cleaned(_ scripts: [String]) -> [String] {
+        scripts.compactMap { line in
             let trimmed = line.trimmingCharacters(in: .whitespacesAndNewlines)
             return trimmed.isEmpty ? nil : trimmed
         }

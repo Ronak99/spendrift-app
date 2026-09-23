@@ -10,8 +10,8 @@
 //  A stable `device_id` super property (Keychain-backed) joins events to Sentry
 //  and Supabase feedback without creating identified person profiles.
 //
-//  PostHog is Debug-only for now (local remote-config testing). Before shipping,
-//  restore Release to TestFlight/App Store via `isAppStoreOrTestFlightDistribution`.
+//  PostHog runs in every build configuration whenever a real API key and backend
+//  URL are configured. Every call below is a no-op until `bootstrap()` has set it up.
 //
 
 import Foundation
@@ -91,32 +91,10 @@ enum Analytics {
     private static let placeholderAPIKey = "phc_REPLACE_ME"
     private static var didSetupPostHog = false
 
-    private static var isPostHogEnabled: Bool {
-        #if DEBUG
-        true
-        #else
-        false
-        #endif
-    }
-
-    /// App Store binaries ship without an embedded provisioning profile.
-    /// TestFlight binaries include `beta-reports-active`. Development, Ad Hoc,
-    /// and Enterprise profiles do not.
-    private static var isAppStoreOrTestFlightDistribution: Bool {
-        guard let profilePath = Bundle.main.path(forResource: "embedded", ofType: "mobileprovision") else {
-            return true
-        }
-        guard let contents = try? String(contentsOfFile: profilePath, encoding: .isoLatin1) else {
-            return false
-        }
-        return contents.contains("<key>beta-reports-active</key>")
-    }
-
     // MARK: - Lifecycle
 
     static func bootstrap() {
         stampInstallDateIfNeeded()
-        guard isPostHogEnabled else { return }
 
         let apiKey = AppSecrets.posthogAPIKey
         // A missing or placeholder key means analytics isn't configured for this build.
@@ -158,17 +136,10 @@ enum Analytics {
         return PostHogSDK.shared.getDistinctId()
     }
 
-    /// JSON object payload for a remote config / feature flag, when PostHog is active.
-    static func remoteConfigPayload(forKey key: String) -> [String: Any]? {
-        guard isPostHogEnabled, !isOptedOut, didSetupPostHog else { return nil }
-        guard let payload = PostHogSDK.shared.getFeatureFlagResult(key)?.payload else { return nil }
-        return payload as? [String: Any]
-    }
-
     // MARK: - Capture
 
     static func capture(_ event: Event, _ properties: [String: Any] = [:]) {
-        guard isPostHogEnabled, !isOptedOut else { return }
+        guard didSetupPostHog, !isOptedOut else { return }
         PostHogSDK.shared.capture(event.rawValue, properties: properties)
     }
 
@@ -211,7 +182,7 @@ enum Analytics {
         get { UserDefaults.standard.bool(forKey: optOutDefaultsKey) }
         set {
             UserDefaults.standard.set(newValue, forKey: optOutDefaultsKey)
-            guard isPostHogEnabled else { return }
+            guard didSetupPostHog else { return }
             if newValue {
                 PostHogSDK.shared.optOut()
             } else {

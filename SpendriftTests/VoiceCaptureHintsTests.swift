@@ -8,49 +8,55 @@ import Testing
 @testable import Spendrift
 
 struct VoiceCaptureHintsTests {
-    private static let samplePayload: [String: Any] = [
-        "locales": [
-            "en_IN": [
-                "scripts": [
-                    #"Try saying, "₹250 for Lunch""#,
-                    #"Try saying, "Paid 3500 for electric bill""#
-                ]
-            ],
-            "en_US": [
-                "scripts": [
-                    #"Try saying, \"$50 for lunch\""#
-                ]
-            ]
-        ]
-    ]
+    private static let catalog = VoiceCaptureHints.Catalog(locales: [
+        "default": .init(scripts: ["50 for lunch"]),
+        "en_IN": .init(scripts: ["₹250 for Lunch", "Paid 3500 for electric bill"]),
+        "en_US": .init(scripts: ["$50 for lunch"])
+    ])
 
     @Test
     func returnsScriptsForMatchingLocale() {
-        let scripts = VoiceCaptureHints.parseScripts(from: Self.samplePayload, localeIdentifier: "en_IN")
-        #expect(scripts.count == 2)
-        #expect(scripts.first?.contains("₹250") == true)
+        let scripts = VoiceCaptureHints.scripts(for: Locale(identifier: "en_IN"), catalog: Self.catalog)
+        #expect(scripts == ["₹250 for Lunch", "Paid 3500 for electric bill"])
     }
 
     @Test
-    func missingLocaleReturnsEmpty() {
-        let scripts = VoiceCaptureHints.parseScripts(from: Self.samplePayload, localeIdentifier: "de_DE")
-        #expect(scripts.isEmpty)
+    func ignoresLocaleIdentifierExtensions() {
+        let scripts = VoiceCaptureHints.scripts(for: Locale(identifier: "en_US@calendar=gregorian"), catalog: Self.catalog)
+        #expect(scripts == ["$50 for lunch"])
     }
 
     @Test
-    func missingPayloadReturnsEmpty() {
-        let scripts = VoiceCaptureHints.scripts(for: "en_IN", payload: nil)
-        #expect(scripts.isEmpty)
+    func fallsBackToSameRegion() {
+        let scripts = VoiceCaptureHints.scripts(for: Locale(identifier: "hi_IN"), catalog: Self.catalog)
+        #expect(scripts.first == "₹250 for Lunch")
     }
 
     @Test
-    func stripsBlankScriptLines() {
-        let payload: [String: Any] = [
-            "locales": [
-                "en_IN": ["scripts": ["  Valid line  ", "   ", ""]]
-            ]
-        ]
-        let scripts = VoiceCaptureHints.parseScripts(from: payload, localeIdentifier: "en_IN")
-        #expect(scripts == ["Valid line"])
+    func unknownLocaleFallsBackToDefault() {
+        let scripts = VoiceCaptureHints.scripts(for: Locale(identifier: "fr_FR"), catalog: Self.catalog)
+        #expect(scripts == ["50 for lunch"])
+    }
+
+    @Test
+    func emptyCatalogReturnsNoScript() {
+        let empty = VoiceCaptureHints.Catalog(locales: [:])
+        #expect(VoiceCaptureHints.randomScript(for: Locale(identifier: "en_IN"), catalog: empty) == nil)
+    }
+
+    @Test
+    func blankOnlyEntryFallsThroughToDefault() {
+        let catalog = VoiceCaptureHints.Catalog(locales: [
+            "default": .init(scripts: ["50 for lunch"]),
+            "en_IN": .init(scripts: ["  Valid line  ", "   ", ""]),
+            "en_GB": .init(scripts: ["   "])
+        ])
+        #expect(VoiceCaptureHints.scripts(for: Locale(identifier: "en_IN"), catalog: catalog) == ["Valid line"])
+        #expect(VoiceCaptureHints.scripts(for: Locale(identifier: "en_GB"), catalog: catalog) == ["50 for lunch"])
+    }
+
+    @Test
+    func bundledCatalogCoversDefault() {
+        #expect(!(VoiceCaptureHints.bundledCatalog.locales["default"]?.scripts.isEmpty ?? true))
     }
 }

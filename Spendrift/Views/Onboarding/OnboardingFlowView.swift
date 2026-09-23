@@ -120,14 +120,13 @@ private struct OnboardingWelcomePage: View {
         OnboardingPage(narrationFinished: narrationFinished) {
             OnboardingNarration(
                 headline: "Welcome to Spendrift.",
-                detail: "I built this app as a cure to my own laziness.<500ms wait> "
-                    + "Hopefully, it does the same for you.",
+                detail: "I built this app as a cure to my own laziness.",
                 onFinished: { narrationFinished = true }
             )
         } focus: {
             OnboardingHeroPlate(
                 mark: .asset(OnboardingVisualAsset.heroMark),
-                accent: OnboardingStep.welcome.accent,
+                accent: Color(hex: "#000"),
                 accessibilityLabel: "Spendrift"
             )
         } action: {
@@ -150,6 +149,8 @@ private struct OnboardingVoicePage: View {
 
     @Environment(\.modelContext) private var modelContext
     @State private var narrationFinished = false
+    /// Picked fresh on every tap of the mic, so a second attempt offers a new idea.
+    @State private var exampleScript: String?
 
     private let accent = OnboardingStep.voice.accent
 
@@ -164,9 +165,7 @@ private struct OnboardingVoicePage: View {
         OnboardingPage(narrationFinished: narrationFinished) {
             OnboardingNarration(
                 headline: "Just say it.",
-                detail: "Everywhere else, logging an expense means typing it out.",
-                subline: subline,
-                reservesSublineSpace: true,
+                detail: "One tap, one sentence. Done.",
                 onFinished: { narrationFinished = true }
             )
         } focus: {
@@ -218,28 +217,27 @@ private struct OnboardingVoicePage: View {
     @ViewBuilder
     private var focus: some View {
         if case .heard(let heard) = voice.phase {
-            OnboardingHeardTransactionCard(heard: heard)
-                .transition(.scale(scale: 0.94).combined(with: .opacity))
+            VStack(spacing: 16) {
+                OnboardingHeardTransactionCard(heard: heard)
+
+                OnboardingTapHint(text: tapHint)
+            }
+            .transition(.scale(scale: 0.94).combined(with: .opacity))
         } else {
             VStack(spacing: 16) {
                 VStack(spacing: 8) {
                     OnboardingHeroPlate(
-                            mark: .symbol(voice.isListening ? "stop.fill" : "mic.fill"),
-                            accent: accent,
-                            levelMeter: voice.isListening ? voice.levelMeter : nil,
-                            isBusy: voice.phase == .thinking,
-                            accessibilityLabel: voice.isListening
-                                ? "Stop and read it back"
-                                : "Speak an expense",
-                            action: handleTap
-                        )
+                        mark: .symbol(voice.isListening ? "stop.fill" : "mic.fill"),
+                        accent: accent,
+                        levelMeter: voice.isListening ? voice.levelMeter : nil,
+                        isBusy: voice.phase == .thinking,
+                        accessibilityLabel: voice.isListening
+                            ? "Stop and read it back"
+                            : "Speak an expense",
+                        action: handleTap
+                    )
 
-                        Text(tapHint)
-                            .font(.system(size: 15, weight: .medium))
-                            .foregroundStyle(OnboardingTheme.textSecondary)
-                            .contentTransition(.opacity)
-                            .opacity(showsTapHint ? 1 : 0)
-                            .accessibilityHidden(!showsTapHint)
+                    OnboardingTapHint(text: tapHint)
                 }
 
                 VoiceLevelWaveform(meter: voice.levelMeter, tint: accent.opacity(0.85))
@@ -250,29 +248,18 @@ private struct OnboardingVoicePage: View {
         }
     }
 
-    /// An invitation first time round, an offer of a second go after a run that did not
-    /// work out. The capsule below is the other way forward.
-    private var tapHint: String {
-        hasFailed ? "Give it another shot?" : "Tap me"
-    }
-
-    /// Waiting for a tap, first time or after a failed run. Hidden once they are
-    /// speaking or we are reading the clip back.
-    private var showsTapHint: Bool {
+    /// An invitation first time round, what is happening while they speak, the payoff
+    /// under the heard card, and an offer of a second go after a run that did not work
+    /// out - no blame and no diagnosis, the capsule below is the other way forward.
+    private var tapHint: String? {
         switch voice.phase {
-        case .idle, .failed: true
-        default: false
-        }
-    }
-
-    private var subline: String? {
-        switch voice.phase {
-        case .idle:      nil
-        case .listening: "Your language, your dialect. Say what you spent."
-        case .thinking:  "Reading it back."
-        case .heard:     "That is the whole flow."
-        // No blame and no diagnosis. The capsule below says what happens next.
-        case .failed:    nil
+        case .idle:      "Tap me"
+        // An example gives them something to say the moment the mic opens.
+        case .listening: exampleScript.map { "Try saying \"\($0)\"" }
+            ?? "Your language, your dialect. Say what you spent."
+        case .thinking:  nil
+        case .heard:     "Voila! An app that works for you."
+        case .failed:    "Give it another shot?"
         }
     }
 
@@ -280,6 +267,7 @@ private struct OnboardingVoicePage: View {
         switch voice.phase {
         case .idle, .failed:
             UIImpactFeedbackGenerator(style: .light).impactOccurred()
+            exampleScript = VoiceCaptureHints.randomScript()
             Task { await voice.beginListening() }
         case .listening:
             UIImpactFeedbackGenerator(style: .light).impactOccurred()
@@ -317,26 +305,29 @@ private struct OnboardingProPage: View {
     private let accent = OnboardingStep.pro.accent
 
     var body: some View {
-        OnboardingPage(narrationFinished: narrationFinished) {
+        // "Fin." holds back so the bell gets a moment to be tapped first.
+        OnboardingPage(narrationFinished: narrationFinished, actionDelay: .seconds(2)) {
             OnboardingNarration(
                 headline: "Tap the bell icon.",
                 detail: "To receive 10 free voice notes.",
-                subline: subline,
-                reservesSublineSpace: true,
                 onFinished: { narrationFinished = true }
             )
         } focus: {
-            OnboardingHeroPlate(
-                mark: .symbol(rewardSymbol),
-                accent: accent,
-                isBusy: reward == .asking,
-                accessibilityLabel: rewardAccessibilityLabel,
-                action: reward == .offered ? requestNotifications : nil
-            )
+            VStack(spacing: 8) {
+                OnboardingHeroPlate(
+                    mark: .symbol(rewardSymbol),
+                    accent: accent,
+                    isBusy: reward == .asking,
+                    accessibilityLabel: rewardAccessibilityLabel,
+                    action: reward == .offered ? requestNotifications : nil
+                )
+
+                OnboardingTapHint(text: tapHint)
+            }
             .animation(.spring(response: 0.42, dampingFraction: 0.86), value: reward)
         } action: {
             OnboardingActionButton(
-                title: "Fin.",
+                title: "Let's go.",
                 fill: accent,
                 action: onFinish
             )
@@ -362,13 +353,18 @@ private struct OnboardingProPage: View {
         }
     }
 
-    private var subline: String? {
+    private var tapHint: String {
         switch reward {
-        case .offered:  nil
+        case .offered:  "Tap me"
         case .asking:   "One moment."
-        case .granted:  "Done. Ten more voice notes, five receipts, one statement."
-        case .declined: "No bother. You can turn them on in Settings."
+        case .granted:  "Done. Ten voice notes, five receipts and a statement, on us."
+        // Free credits wait for next month unless they change their mind in Settings.
+        case .declined: "No bother. Free credits start \(nextRefillText), or sooner from Settings."
         }
+    }
+
+    private var nextRefillText: String {
+        AIQuotaStore.nextResetDate().formatted(.dateTime.day().month(.abbreviated))
     }
 
     private func requestNotifications() {

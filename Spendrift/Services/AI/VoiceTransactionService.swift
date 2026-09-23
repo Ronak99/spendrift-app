@@ -14,9 +14,12 @@ struct VoiceTransactionService {
         self.backend = backend ?? (try? SpendriftBackendClient())
     }
 
+    /// `quota: .exempt` is for the onboarding demo only: the user's first voice note
+    /// is on the house, so it neither needs a credit nor spends one.
     func parseTransaction(
         audioData: Data,
-        categories: [TransactionCategory]
+        categories: [TransactionCategory],
+        quota: QuotaPolicy = .enforced
     ) async throws -> VoiceTransactionPayload {
         guard let backend else {
             throw AIServiceError.missingAPIKey
@@ -25,7 +28,7 @@ struct VoiceTransactionService {
         // Last line of defence. The UI gates before recording so the user sees a
         // paywall rather than an error, but voice also starts from App Intents and
         // Shortcuts, which bypass that check entirely.
-        guard ProGate.isAllowed(.voice) else {
+        guard quota == .exempt || ProGate.isAllowed(.voice) else {
             ProGate.reportBlocked(.voice)
             throw AIServiceError.quotaExhausted(.voice)
         }
@@ -37,7 +40,9 @@ struct VoiceTransactionService {
                 clientTodayIso: SpendriftBackendClient.makeClientTodayIso(),
                 timezone: SpendriftBackendClient.makeTimezoneIdentifier()
             )
-            ProGate.recordUsage(.voice)
+            if quota == .enforced {
+                ProGate.recordUsage(.voice)
+            }
             return payload
         } catch let error as SpendriftBackendError {
             throw mapBackendError(error)

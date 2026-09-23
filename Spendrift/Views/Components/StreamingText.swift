@@ -89,7 +89,7 @@ struct StreamingText: View {
     /// Hold at empty until this turns true. Pair it with `reservesSpace` to stage one
     /// block of copy after another without the layout moving in between.
     var startsWriting: Bool = true
-    var tapSkipsToEnd: Bool = true
+    var tapSkipsToEnd: Bool = false
     /// Lower priority (e.g. `.background`) when the animation must not delay other work on the main actor.
     var writeTaskPriority: TaskPriority = .low
     /// Increment to wipe and write again.
@@ -208,7 +208,9 @@ struct StreamingText: View {
                     )
                 )
 
-                if script.hasAuthoredPause(after: index) {
+                // A breath after the last glyph has nothing to lead into; it would
+                // only hold back `onFinished` and whatever is chained to it.
+                if index == script.beats.count - 1 || script.hasAuthoredPause(after: index) {
                     continue
                 }
 

@@ -12,15 +12,22 @@
 //  Counters are incremented only after a *successful* parse, so a failed voice note
 //  or an unreadable PDF never costs the user a credit.
 //
-//  Bonus credits (the notification opt-in reward) live beside the monthly counters
-//  and are not cleared on month rollover.
+//  Free credits are earned, not given. The signup month - the first month this store
+//  sees the user, which for installs from before this rule is the month they updated -
+//  carries no free allowance until the user grants notification permission. From the
+//  following month on, every free user gets the full monthly allowance either way.
 //
 
 import Foundation
 
 enum AIQuotaStore {
     private static let periodKey = "aiQuota.period"
-    private static let rewardGrantedKey = "aiQuota.notificationRewardGranted"
+    private static let signupPeriodKey = "aiQuota.signupPeriod"
+    /// Kept under its original name so users who took the old opt-in reward count as
+    /// having granted notification permission.
+    private static let notificationUnlockKey = "aiQuota.notificationRewardGranted"
+    /// Leftover credits from the retired notification reward, cleared on first touch.
+    private static let legacyBonusKeyPrefix = "aiQuota.bonus."
 
     /// Test seam. Production always resolves to the shared App Group suite; tests
     /// point this at a throwaway suite so they never disturb real usage counts.
@@ -32,10 +39,6 @@ enum AIQuotaStore {
 
     private static func usageKey(_ feature: ProFeature) -> String {
         "aiQuota.\(feature.rawValue)"
-    }
-
-    private static func bonusKey(_ feature: ProFeature) -> String {
-        "aiQuota.bonus.\(feature.rawValue)"
     }
 
     // MARK: - Period
@@ -58,11 +61,17 @@ enum AIQuotaStore {
         return calendar.date(byAdding: .month, value: 1, to: startOfMonth) ?? date
     }
 
-    /// Zeroes every monthly counter when the stored period is stale. Bonus credits
-    /// are a one-time reward and are left alone. Called on each read and write, so
-    /// a month rollover is picked up without any scheduled work.
+    /// Zeroes every monthly counter when the stored period is stale, and stamps the
+    /// signup month the first time the store is touched. Called on each read and
+    /// write, so a month rollover is picked up without any scheduled work.
     private static func rolloverIfNeeded(now: Date = Date()) {
         let current = period(for: now)
+        if suite.string(forKey: signupPeriodKey) == nil {
+            suite.set(current, forKey: signupPeriodKey)
+            for feature in ProFeature.allCases {
+                suite.removeObject(forKey: legacyBonusKeyPrefix + feature.rawValue)
+            }
+        }
         guard suite.string(forKey: periodKey) != current else { return }
         for feature in ProFeature.allCases {
             suite.removeObject(forKey: usageKey(feature))
@@ -77,56 +86,52 @@ enum AIQuotaStore {
         return suite.integer(forKey: usageKey(feature))
     }
 
-    static func bonus(_ feature: ProFeature) -> Int {
-        max(0, suite.integer(forKey: bonusKey(feature)))
+    /// Free uses available this month: nothing in the signup month until notification
+    /// permission is granted, the feature's full monthly quota otherwise.
+    static func monthlyAllowance(_ feature: ProFeature, now: Date = Date()) -> Int {
+        isAwaitingNotificationUnlock(now: now) ? 0 : feature.monthlyFreeQuota
+    }
+
+    /// True in the signup month while notification permission has not been granted.
+    static func isAwaitingNotificationUnlock(now: Date = Date()) -> Bool {
+        rolloverIfNeeded(now: now)
+        return !didUnlockWithNotifications
+            && suite.string(forKey: signupPeriodKey) == period(for: now)
     }
 
     static func remaining(_ feature: ProFeature, now: Date = Date()) -> Int {
-        max(0, feature.monthlyFreeQuota - used(feature, now: now)) + bonus(feature)
+        max(0, monthlyAllowance(feature, now: now) - used(feature, now: now))
     }
 
     static func hasQuota(_ feature: ProFeature, now: Date = Date()) -> Bool {
         remaining(feature, now: now) > 0
     }
 
-    static var didGrantNotificationReward: Bool {
-        suite.bool(forKey: rewardGrantedKey)
+    static var didUnlockWithNotifications: Bool {
+        suite.bool(forKey: notificationUnlockKey)
     }
 
     // MARK: - Write
 
-    /// Records `count` successful uses. Spends the free monthly allowance first
-    /// and only drains bonus credits on overflow, so the reward lasts as long as
-    /// possible. A batch import that overshoots remaining credits (monthly plus
-    /// bonus) cannot push stored usage past the monthly quota.
+    /// Records `count` successful uses. A batch import that overshoots the remaining
+    /// credits cannot push stored usage past this month's allowance.
     static func consume(_ feature: ProFeature, count: Int = 1, now: Date = Date()) {
         guard count > 0 else { return }
         rolloverIfNeeded(now: now)
 
         let monthlyUsed = suite.integer(forKey: usageKey(feature))
-        let freeRemaining = max(0, feature.monthlyFreeQuota - monthlyUsed)
-        let fromFree = min(count, freeRemaining)
-        let overflow = count - fromFree
-
-        suite.set(monthlyUsed + fromFree, forKey: usageKey(feature))
-        if overflow > 0 {
-            let leftoverBonus = max(0, bonus(feature) - overflow)
-            suite.set(leftoverBonus, forKey: bonusKey(feature))
-        }
+        let allowance = monthlyAllowance(feature, now: now)
+        suite.set(min(allowance, monthlyUsed + count), forKey: usageKey(feature))
         AudienceTags.scheduleSync()
     }
 
-    /// Grants one extra month of the free-tier credits for voice, receipts, and
-    /// statements. Idempotent within an install; reinstall re-grants by design.
+    /// Records that the user granted notification permission, which releases the
+    /// signup month's free allowance. Returns `true` only the first time.
     @discardableResult
-    static func grantNotificationRewardIfNeeded() -> Bool {
-        guard !didGrantNotificationReward else { return false }
-        for feature in ProFeature.allCases {
-            let extra = feature.notificationRewardBonus
-            guard extra > 0 else { continue }
-            suite.set(bonus(feature) + extra, forKey: bonusKey(feature))
-        }
-        suite.set(true, forKey: rewardGrantedKey)
+    static func unlockWithNotificationsIfNeeded() -> Bool {
+        guard !didUnlockWithNotifications else { return false }
+        suite.set(true, forKey: notificationUnlockKey)
+        AudienceTags.scheduleSync()
         return true
     }
 
@@ -134,9 +139,9 @@ enum AIQuotaStore {
     static func resetAll() {
         for feature in ProFeature.allCases {
             suite.removeObject(forKey: usageKey(feature))
-            suite.removeObject(forKey: bonusKey(feature))
         }
         suite.set(period(), forKey: periodKey)
-        suite.removeObject(forKey: rewardGrantedKey)
+        suite.removeObject(forKey: signupPeriodKey)
+        suite.removeObject(forKey: notificationUnlockKey)
     }
 }

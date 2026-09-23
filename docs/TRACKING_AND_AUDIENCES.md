@@ -241,7 +241,7 @@ Body:
 | `permission_status` | Current `UNAuthorizationStatus` |
 | `permission_granted_at` | Set to `now()` whenever status is granted. Overwritten on every granted sync, so it is "last seen granted", not "first granted". |
 | `onesignal_subscription_id` | OneSignal push subscription id, or `null` if SDK did not set up |
-| `reward_granted` | Whether this install already received the notification bonus credits |
+| `reward_granted` | Whether this install has unlocked its signup month's free credits by granting notification permission |
 | `reward_granted_at` | Same overwrite behavior as `permission_granted_at` |
 | `app_version` | Updated on every sync |
 | `created_at` / `updated_at` | Row timestamps |

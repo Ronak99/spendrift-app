@@ -29,6 +29,12 @@ extension Notification.Name {
     static let reminderOptInDismissed = Notification.Name("Spendrift.reminderOptInDismissed")
 }
 
+/// Whether a backend call is gated by, and counted against, the free-tier quota.
+enum QuotaPolicy {
+    case enforced
+    case exempt
+}
+
 enum ProGate {
     static let featureUserInfoKey = "feature"
 
