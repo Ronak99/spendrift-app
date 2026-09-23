@@ -14,24 +14,6 @@ enum ColoredCategories {
     enum Swatch: String, Equatable, CaseIterable {
         case orange, green, indigo, blue, teal, pink, purple, red
         case mint, yellow, cyan, brown, gray
-
-        var color: Color {
-            switch self {
-            case .orange: return .orange
-            case .green: return .green
-            case .indigo: return .indigo
-            case .blue: return .blue
-            case .teal: return .teal
-            case .pink: return .pink
-            case .purple: return .purple
-            case .red: return .red
-            case .mint: return .mint
-            case .yellow: return .yellow
-            case .cyan: return .cyan
-            case .brown: return .brown
-            case .gray: return .gray
-            }
-        }
     }
 
     /// Known catalog names (current defaults plus every legacy name we ever shipped).
@@ -79,8 +61,12 @@ enum ColoredCategories {
         return hashedSwatch(forName: key)
     }
 
+    /// Always resolved through `CategoryPalette`, so a category without a stored
+    /// `colorHex` renders in the same curated tone the editor and the grid use.
+    /// Reading a swatch as its system `Color` drifts off the palette — SwiftUI's
+    /// `.pink` is far redder than the palette's `#E27BD8` (RON-231).
     static func color(forName name: String) -> Color {
-        swatch(forName: name).color
+        Color(hex: CategoryPalette.hex(matching: swatch(forName: name)))
     }
 
     static func color(for category: TransactionCategory?) -> Color? {
