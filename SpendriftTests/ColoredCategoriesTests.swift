@@ -3,6 +3,7 @@
 //  SpendriftTests
 //
 
+import SwiftUI
 import Testing
 @testable import Spendrift
 
@@ -42,6 +43,23 @@ struct ColoredCategoriesTests {
         let second = ColoredCategories.swatch(forName: "Coffee Shop")
         #expect(first == second)
         #expect(first != .gray)
+    }
+
+    @Test
+    func nameMapResolvesToTheCuratedPaletteTone() {
+        // Shopping has no stored hex, so it falls through the name map. It has to
+        // land on the palette's pink, not SwiftUI's much redder `.pink` (RON-231).
+        #expect(ColoredCategories.color(forName: "Shopping").hexString == "#E27BD8")
+        #expect(ColoredCategories.color(forName: "Food").hexString == "#FF9F6B")
+        #expect(ColoredCategories.color(forName: "Health").hexString == "#FF6B6B")
+    }
+
+    @Test
+    func seededCategoryWithoutHexMatchesTheCategoryChip() {
+        let shopping = TransactionCategory(name: "Shopping", type: .expense, icon: .shopping)
+        #expect(shopping.colorHex == nil)
+        let sheetTint = ColoredCategories.color(for: shopping)?.hexString
+        #expect(sheetTint == CategoryEnamel.color(for: shopping).hexString)
     }
 
     @Test
