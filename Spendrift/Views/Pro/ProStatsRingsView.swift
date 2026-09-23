@@ -3,9 +3,9 @@
 //  Spendrift
 //
 //  The expanded body of the "Pro Stats" settings row: this month's free-tier usage
-//  for all four AI features as concentric rings, plus a legend.
+//  for each surfaced AI feature as concentric rings, plus a legend.
 //
-//  One dial instead of four rows. The rings are decorative — every number they
+//  One dial instead of a row per feature. The rings are decorative — every number they
 //  encode is also written out in the legend below, which is what VoiceOver reads.
 //
 
@@ -136,8 +136,8 @@ struct ProStat: Identifiable {
         return "\(remaining) of \(quota) left"
     }
 
-    /// Fixed hues from the app palette rather than the user's accent: four shades of
-    /// one accent would be indistinguishable stacked as concentric bands.
+    /// Fixed hues from the app palette rather than the user's accent: shades of one
+    /// accent would be indistinguishable stacked as concentric bands.
     private static let ringColors: [Color] = [
         Color(hex: "#EC4899"),
         Color(hex: "#22C55E"),
@@ -145,8 +145,13 @@ struct ProStat: Identifiable {
         Color(hex: "#9B7BFF"),
     ]
 
+    /// Statement import and receipt scan have no entry point in the app right now,
+    /// so reporting their credits would show quota for features the user cannot find.
+    /// Add them back here once they are surfaced again.
+    private static let surfacedFeatures: [ProFeature] = [.voice, .messageImport]
+
     static func currentMonth() -> [ProStat] {
-        ProFeature.allCases.enumerated().map { index, feature in
+        surfacedFeatures.enumerated().map { index, feature in
             ProStat(
                 feature: feature,
                 used: AIQuotaStore.used(feature),
@@ -157,8 +162,8 @@ struct ProStat: Identifiable {
     }
 
     /// Headline percentage for the collapsed row. Each feature is weighted equally
-    /// instead of pooling credits, so spending the single statement import registers
-    /// as a quarter of Pro used rather than one forty-sixth.
+    /// instead of pooling credits, so a feature with a small allowance is not drowned
+    /// out by one with a large allowance.
     static func averageUsedPercent(_ stats: [ProStat]) -> Int {
         guard !stats.isEmpty else { return 0 }
         let mean = stats.reduce(0.0) { $0 + $1.usedFraction } / Double(stats.count)

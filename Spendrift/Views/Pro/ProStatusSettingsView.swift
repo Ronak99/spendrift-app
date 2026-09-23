@@ -4,12 +4,12 @@
 //
 //  Settings rows for Spendrift Pro: current plan or trial countdown when subscribed,
 //  and a single "Pro Stats" row when not, opening into this month's remaining free
-//  allowance for all four AI features at once.
+//  allowance for every surfaced AI feature at once.
 //
 //  Showing the free tier's remaining credits here is deliberate. A quota the user
 //  cannot see is indistinguishable from a bug the first time it stops them, and
 //  App Review expects a visible Restore Purchases path besides. They are folded into
-//  one expandable row so four near-identical counters do not outweigh the rest of
+//  one expandable row so near-identical counters do not outweigh the rest of
 //  the section.
 //
 

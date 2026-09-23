@@ -507,7 +507,7 @@ private struct PeriodLedgerSummary: View {
                 Text(expenses)
                     .font(.headline)
                     .monospacedDigit()
-                    .foregroundStyle(.red)
+                    .foregroundStyle(CategoryEnamel.expense)
                     .lineLimit(1)
                     .minimumScaleFactor(0.7)
             }
@@ -521,7 +521,7 @@ private struct PeriodLedgerSummary: View {
                 Text(income)
                     .font(.headline)
                     .monospacedDigit()
-                    .foregroundStyle(.green)
+                    .foregroundStyle(CategoryEnamel.income)
                     .lineLimit(1)
                     .minimumScaleFactor(0.7)
             }
@@ -535,7 +535,7 @@ private struct PeriodLedgerSummary: View {
                 Text(savings)
                     .font(.headline)
                     .monospacedDigit()
-                    .foregroundStyle(savingsValue >= 0 ? .green : .red)
+                    .foregroundStyle(savingsValue >= 0 ? CategoryEnamel.income : CategoryEnamel.expense)
                     .lineLimit(1)
                     .minimumScaleFactor(0.7)
             }

@@ -132,7 +132,7 @@ struct ProPaywallView: View {
             ZStack {
                 GlowingHeroGlow(color: accent, size: 45)
                 GlowingHeroMark(
-                    assetName: OnboardingVisualAsset.heroMark,
+                    assetName: OnboardingVisualAsset.proHeroMark,
                     color: accent,
                     size: 45,
                     liquidGlassTint: accent

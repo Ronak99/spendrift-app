@@ -22,6 +22,8 @@ enum OnboardingTheme {
 enum OnboardingVisualAsset {
     /// Same artwork as `wallet_icon.png` in the app icon set; bundled as `OnboardingHeroMark.imageset`.
     static let heroMark = "SpendriftIcon"
+    /// Alternate wallet artwork used by the Pro paywall hero.
+    static let proHeroMark = "SpendriftIconAlt"
 }
 
 // MARK: - Sheet background

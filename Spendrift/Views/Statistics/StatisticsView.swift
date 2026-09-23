@@ -17,10 +17,6 @@ struct TransactionAnalyticsContent: View {
     /// Cumulative angle value reported by tapping a pie slice; mapped back to a category.
     @State private var selectedAngle: Double?
 
-    private let categoryPalette: [Color] = [
-        .blue, .purple, .pink, .orange, .teal, .green, .indigo, .cyan, .mint, .yellow, .brown
-    ]
-
     init(periodViewModel: TransactionViewModel, drillCategory: Binding<TransactionCategory?>) {
         self.periodViewModel = periodViewModel
         self._drillCategory = drillCategory
@@ -82,14 +78,14 @@ struct TransactionAnalyticsContent: View {
         }
         .sorted { $0.amount > $1.amount }
 
-        return rows.enumerated().map { index, row in
+        return rows.map { row in
             CategorySpendingData(
                 category: row.category,
                 name: row.category?.name ?? "Uncategorized",
                 iconName: row.category?.icon.systemImageName ?? "questionmark.circle",
                 amount: row.amount,
                 share: row.amount / totalSpent,
-                color: categoryPalette[index % categoryPalette.count]
+                color: CategoryEnamel.color(for: row.category)
             )
         }
     }
@@ -187,31 +183,34 @@ struct TransactionAnalyticsContent: View {
         .softScrollEdge()
     }
 
+    /// Palette blue shared by the daily average card and the daily trend chart.
+    private let trendColor = Color(hex: CategoryPalette.hex(matching: .blue))
+
     private var summaryGrid: some View {
         LazyVGrid(columns: [GridItem(.flexible(), spacing: 16), GridItem(.flexible(), spacing: 16)], spacing: 16) {
             summaryCard(
                 title: "Spent",
                 value: totalSpent.formatCurrency,
                 caption: "\(expenseTransactions.count) expense transactions",
-                color: .red
+                color: CategoryEnamel.expense
             )
             summaryCard(
                 title: "Income",
                 value: totalIncome.formatCurrency,
                 caption: "\(incomeTransactions.count) income transactions",
-                color: .green
+                color: CategoryEnamel.income
             )
             summaryCard(
                 title: "Net",
                 value: netSavings.formatCurrency,
                 caption: netSavings >= 0 ? "You saved money" : "You overspent",
-                color: netSavings >= 0 ? .green : .orange
+                color: netSavings >= 0 ? CategoryEnamel.income : CategoryEnamel.expense
             )
             summaryCard(
                 title: "Daily Avg",
                 value: averageDailySpend.formatCurrency,
                 caption: "Average spend per day",
-                color: .blue
+                color: trendColor
             )
         }
         .padding(.horizontal)
@@ -318,7 +317,7 @@ struct TransactionAnalyticsContent: View {
                 )
                 .foregroundStyle(
                     LinearGradient(
-                        colors: [Color.blue.opacity(0.35), Color.blue.opacity(0.05)],
+                        colors: [trendColor.opacity(0.35), trendColor.opacity(0.05)],
                         startPoint: .top,
                         endPoint: .bottom
                     )
@@ -329,7 +328,7 @@ struct TransactionAnalyticsContent: View {
                     x: .value("Date", day.date),
                     y: .value("Spent", day.amount)
                 )
-                .foregroundStyle(Color.blue)
+                .foregroundStyle(trendColor)
                 .lineStyle(StrokeStyle(lineWidth: 3, lineCap: .round, lineJoin: .round))
                 .interpolationMethod(.catmullRom)
             }
@@ -355,7 +354,10 @@ struct TransactionAnalyticsContent: View {
                 )
                 .foregroundStyle(
                     LinearGradient(
-                        colors: [Color.purple, Color.pink],
+                        colors: [
+                            Color(hex: CategoryPalette.hex(matching: .purple)),
+                            Color(hex: CategoryPalette.hex(matching: .pink))
+                        ],
                         startPoint: .top,
                         endPoint: .bottom
                     )
