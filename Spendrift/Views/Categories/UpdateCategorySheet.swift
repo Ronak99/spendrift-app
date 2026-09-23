@@ -363,7 +363,7 @@ struct UpdateCategorySheet: View {
                     showIconPicker = true
                 } label: {
                     HStack(spacing: 3) {
-                        Text("Browse all \(CategoryIcon.selectable.count)")
+                        Text("Browse all")
                         Image(systemName: "chevron.right")
                             .font(.system(size: 11, weight: .semibold))
                     }
