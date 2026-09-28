@@ -1,0 +1,582 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "Spendrift iOS architecture",
+    "quality_profile": "showcase",
+    "viewBox": [
+      1380,
+      720
+    ],
+    "repository": {
+      "url": "https://github.com/Ronak99/spendrift-app",
+      "provider": "github",
+      "link_mode": "web",
+      "revision": "703d9b36c913e6f1fb53dd5d2be359d204ca9d80"
+    },
+    "views": [
+      {
+        "id": "capture-path",
+        "label": "AI capture path",
+        "focus": [
+          "shell",
+          "pipelines",
+          "progate",
+          "client",
+          "api",
+          "store"
+        ],
+        "note": "Voice, receipt, statement and SMS capture all flow through one gated pipeline to the backend and into the ledger."
+      },
+      {
+        "id": "entry-surfaces",
+        "label": "Entry surfaces",
+        "focus": [
+          "widgets",
+          "intents",
+          "shareext",
+          "store",
+          "shell"
+        ],
+        "note": "Widgets, Shortcuts and the Share Extension run as separate processes and meet the app through the App Group."
+      },
+      {
+        "id": "monetization",
+        "label": "Pro and quota",
+        "focus": [
+          "pipelines",
+          "progate",
+          "appstore",
+          "notifications"
+        ],
+        "note": "StoreKit 2 entitlement plus per-feature monthly credits decide whether an AI parse may run."
+      },
+      {
+        "id": "telemetry",
+        "label": "Telemetry and push",
+        "focus": [
+          "shell",
+          "observability",
+          "api",
+          "notifications",
+          "onesignal"
+        ],
+        "note": "PostHog and Sentry are reached through the backend host; OneSignal handles remote push and audience tags."
+      }
+    ]
+  },
+  "components": [
+    {
+      "id": "widgets",
+      "type": "frontend",
+      "label": "Widget extension",
+      "sublabel": "Widgets, Live Activity",
+      "tag": "SpendriftWidget",
+      "pos": [
+        30,
+        90
+      ],
+      "size": [
+        170,
+        72
+      ],
+      "sources": [
+        {
+          "path": "SpendriftWidget/SpendriftVoiceWidgetBundle.swift",
+          "line": 9,
+          "label": "Widget bundle"
+        },
+        {
+          "path": "SpendriftWidget/WidgetDataStore.swift",
+          "label": "Ledger snapshots"
+        }
+      ]
+    },
+    {
+      "id": "intents",
+      "type": "frontend",
+      "label": "App Intents",
+      "sublabel": "Voice, amount, SMS log",
+      "tag": "AppIntents",
+      "pos": [
+        30,
+        260
+      ],
+      "size": [
+        170,
+        72
+      ],
+      "sources": [
+        {
+          "path": "Spendrift/Intents/ExpenseAppShortcuts.swift",
+          "label": "Shortcut catalog"
+        },
+        {
+          "path": "Spendrift/Intents/VoiceExpenseIntent.swift",
+          "label": "Voice intent"
+        },
+        {
+          "path": "Spendrift/Intents/LogTransactionMessageIntent.swift",
+          "label": "SMS log intent"
+        }
+      ]
+    },
+    {
+      "id": "shareext",
+      "type": "frontend",
+      "label": "Share Extension",
+      "sublabel": "Receipt image handoff",
+      "tag": "SpendriftShareExtension",
+      "pos": [
+        30,
+        430
+      ],
+      "size": [
+        170,
+        72
+      ],
+      "sources": [
+        {
+          "path": "SpendriftShareExtension/ShareViewController.swift",
+          "label": "Share controller"
+        },
+        {
+          "path": "Spendrift/Utilities/ReceiptShareInbox.swift",
+          "label": "Host-side inbox"
+        }
+      ]
+    },
+    {
+      "id": "shell",
+      "type": "frontend",
+      "label": "SwiftUI app shell",
+      "sublabel": "Tabs, sheets, router",
+      "tag": "Spendrift",
+      "pos": [
+        604,
+        90
+      ],
+      "size": [
+        170,
+        72
+      ],
+      "sources": [
+        {
+          "path": "Spendrift/SpendriftApp.swift",
+          "line": 15,
+          "label": "App entry"
+        },
+        {
+          "path": "Spendrift/ContentView.swift",
+          "line": 13,
+          "label": "Tab shell"
+        },
+        {
+          "path": "Spendrift/Services/Navigation/AppRouter.swift",
+          "label": "Router"
+        }
+      ]
+    },
+    {
+      "id": "pipelines",
+      "type": "backend",
+      "label": "Capture pipelines",
+      "sublabel": "Voice, receipt, PDF, SMS",
+      "pos": [
+        604,
+        260
+      ],
+      "size": [
+        170,
+        72
+      ],
+      "sources": [
+        {
+          "path": "Spendrift/Services/Voice/VoiceExpensePipelineService.swift",
+          "label": "Voice"
+        },
+        {
+          "path": "Spendrift/Services/Receipt/ReceiptExpensePipelineService.swift",
+          "label": "Receipt"
+        },
+        {
+          "path": "Spendrift/Services/MessageInbox/MessageInboxSyncService.swift",
+          "label": "SMS inbox"
+        }
+      ]
+    },
+    {
+      "id": "progate",
+      "type": "security",
+      "label": "Pro gate and quota",
+      "sublabel": "StoreKit 2 + credits",
+      "pos": [
+        604,
+        600
+      ],
+      "size": [
+        170,
+        72
+      ],
+      "sources": [
+        {
+          "path": "Spendrift/Services/Pro/ProGate.swift",
+          "label": "Gate"
+        },
+        {
+          "path": "Spendrift/Services/Pro/ProEntitlement.swift",
+          "label": "Entitlement"
+        },
+        {
+          "path": "Spendrift/Services/Pro/AIQuotaStore.swift",
+          "label": "Quota"
+        }
+      ]
+    },
+    {
+      "id": "notifications",
+      "type": "backend",
+      "label": "Notifications",
+      "sublabel": "Reminders, remote push",
+      "pos": [
+        891,
+        430
+      ],
+      "size": [
+        170,
+        72
+      ],
+      "sources": [
+        {
+          "path": "Spendrift/Services/Notifications/PushNotifications.swift",
+          "label": "Push"
+        },
+        {
+          "path": "Spendrift/Utilities/NotificationManager.swift",
+          "label": "Local reminders"
+        },
+        {
+          "path": "SpendriftNotificationServiceExtension/NotificationService.swift",
+          "label": "Service extension"
+        }
+      ]
+    },
+    {
+      "id": "client",
+      "type": "backend",
+      "label": "Backend client",
+      "sublabel": "URLSession + token",
+      "pos": [
+        891,
+        260
+      ],
+      "size": [
+        170,
+        72
+      ],
+      "sources": [
+        {
+          "path": "Spendrift/Services/Backend/SpendriftBackendClient.swift",
+          "line": 8,
+          "label": "Client"
+        },
+        {
+          "path": "Spendrift/Configuration/AppSecrets.swift",
+          "label": "Base URL and keys"
+        }
+      ]
+    },
+    {
+      "id": "store",
+      "type": "database",
+      "label": "App Group store",
+      "sublabel": "Ledger, inbox, defaults",
+      "tag": "group.com.ronakpunase.Spendrift",
+      "pos": [
+        317,
+        260
+      ],
+      "size": [
+        170,
+        72
+      ],
+      "sources": [
+        {
+          "path": "Spendrift/Intents/IntentSwiftData.swift",
+          "line": 9,
+          "label": "Ledger container"
+        },
+        {
+          "path": "Spendrift/Intents/MessageInboxSwiftData.swift",
+          "label": "Inbox container"
+        },
+        {
+          "path": "Spendrift/Models/Transaction.swift",
+          "label": "Ledger models"
+        }
+      ]
+    },
+    {
+      "id": "api",
+      "type": "cloud",
+      "label": "Spendrift backend",
+      "sublabel": "AI parsing, feedback",
+      "tag": "/v1/*",
+      "pos": [
+        1178,
+        260
+      ],
+      "size": [
+        170,
+        72
+      ],
+      "sources": [
+        {
+          "path": "Spendrift/Services/Backend/SpendriftBackendModels.swift",
+          "label": "Wire models"
+        }
+      ]
+    },
+    {
+      "id": "observability",
+      "type": "external",
+      "label": "PostHog + Sentry",
+      "sublabel": "Facades, via backend",
+      "pos": [
+        1178,
+        90
+      ],
+      "size": [
+        170,
+        72
+      ],
+      "sources": [
+        {
+          "path": "Spendrift/Services/Analytics/Analytics.swift",
+          "label": "Analytics facade"
+        },
+        {
+          "path": "Spendrift/Services/Diagnostics/Diagnostics.swift",
+          "label": "Diagnostics facade"
+        },
+        {
+          "path": "Spendrift/Services/Diagnostics/SentryTunnelURLProtocol.swift",
+          "label": "Sentry tunnel"
+        }
+      ]
+    },
+    {
+      "id": "onesignal",
+      "type": "external",
+      "label": "OneSignal",
+      "sublabel": "Push, audience tags",
+      "pos": [
+        1178,
+        430
+      ],
+      "size": [
+        170,
+        72
+      ],
+      "sources": [
+        {
+          "path": "Spendrift/Services/Notifications/AudienceTags.swift",
+          "label": "Audience tags"
+        }
+      ]
+    },
+    {
+      "id": "appstore",
+      "type": "external",
+      "label": "App Store",
+      "sublabel": "StoreKit 2, updates",
+      "pos": [
+        1178,
+        600
+      ],
+      "size": [
+        170,
+        72
+      ],
+      "sources": [
+        {
+          "path": "Spendrift/Utilities/AppUpdateChecker.swift",
+          "label": "Update checker"
+        },
+        {
+          "path": "Spendrift/Views/Pro/ProPaywallView.swift",
+          "label": "Paywall"
+        }
+      ]
+    }
+  ],
+  "boundaries": [
+    {
+      "kind": "region",
+      "label": "App extensions (separate processes)",
+      "wraps": [
+        "widgets",
+        "intents",
+        "shareext"
+      ],
+      "pad": 24
+    },
+    {
+      "kind": "security-group",
+      "label": "Shared App Group container",
+      "wraps": [
+        "store"
+      ],
+      "pad": 20
+    },
+    {
+      "kind": "region",
+      "label": "Spendrift host app",
+      "wraps": [
+        "shell",
+        "pipelines",
+        "progate",
+        "client",
+        "notifications"
+      ],
+      "pad": 24
+    },
+    {
+      "kind": "region",
+      "label": "Cloud services",
+      "wraps": [
+        "observability",
+        "api",
+        "onesignal",
+        "appstore"
+      ],
+      "pad": 24
+    }
+  ],
+  "connections": [
+    {
+      "id": "widgets-store",
+      "from": "widgets",
+      "to": "store",
+      "label": "reads ledger snapshots",
+      "variant": "dashed",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "intents-store",
+      "from": "intents",
+      "to": "store",
+      "label": "writes ledger, inbox"
+    },
+    {
+      "id": "shareext-store",
+      "from": "shareext",
+      "to": "store",
+      "label": "stashes receipt image",
+      "fromSide": "top",
+      "toSide": "bottom"
+    },
+    {
+      "id": "store-shell",
+      "from": "store",
+      "to": "shell",
+      "label": "ledger queries, pending imports"
+    },
+    {
+      "id": "pipelines-store",
+      "from": "pipelines",
+      "to": "store",
+      "label": "inserts transactions",
+      "labelDy": 20
+    },
+    {
+      "id": "shell-pipelines",
+      "from": "shell",
+      "to": "pipelines",
+      "label": "audio, image, PDF, inbox drain",
+      "variant": "emphasis",
+      "labelDy": 24
+    },
+    {
+      "id": "pipelines-progate",
+      "from": "pipelines",
+      "to": "progate",
+      "label": "isAllowed, consume credit",
+      "labelDy": 24
+    },
+    {
+      "id": "pipelines-client",
+      "from": "pipelines",
+      "to": "client",
+      "label": "parse request",
+      "variant": "emphasis"
+    },
+    {
+      "id": "client-api",
+      "from": "client",
+      "to": "api",
+      "label": "HTTPS + client token",
+      "variant": "emphasis"
+    },
+    {
+      "id": "shell-observability",
+      "from": "shell",
+      "to": "observability",
+      "label": "events, breadcrumbs, errors",
+      "variant": "dashed"
+    },
+    {
+      "id": "observability-api",
+      "from": "observability",
+      "to": "api",
+      "label": "proxied via backend host",
+      "variant": "dashed",
+      "labelDy": 24
+    },
+    {
+      "id": "progate-appstore",
+      "from": "progate",
+      "to": "appstore",
+      "label": "products, purchases, restore"
+    },
+    {
+      "id": "progate-notifications",
+      "from": "progate",
+      "to": "notifications",
+      "label": "trial and quota reminders"
+    },
+    {
+      "id": "notifications-onesignal",
+      "from": "notifications",
+      "to": "onesignal",
+      "label": "subscription, tags"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "One gated capture pipeline",
+      "items": [
+        "Voice, receipt, statement and SMS capture share the same shape: gate, parse on the backend, insert into the ledger",
+        "AI keys never ship in the app; only a client token reaches the /v1 backend"
+      ]
+    },
+    {
+      "dot": "violet",
+      "title": "App Group is the seam",
+      "items": [
+        "Four processes (app, widgets, intents, share extension) share one SwiftData ledger",
+        "Quota counters and pending imports live in the shared defaults suite, not UserDefaults.standard"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "Facades keep vendors out of features",
+      "items": [
+        "Analytics wraps PostHog, Diagnostics wraps Sentry, PushNotifications wraps OneSignal",
+        "Pro state is read via ProGate so feature code never touches StoreKit"
+      ]
+    }
+  ]
+}

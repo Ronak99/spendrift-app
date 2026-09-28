@@ -206,7 +206,7 @@ Launch logging is new.
 Do not treat `devices` as a complete install census yet.
 PostHog `Application Installed` (27 devices in 30 days) is the better historical install count until this table fills.
 
-Ledger tables (`ledger_users`, `ledger_accounts`, `ledger_categories`, `ledger_transactions`) exist and are empty.
+Ledger tables (`users`, `accounts`, `categories`, `transactions`) exist and are empty.
 They are not part of the current tracking path.
 
 ### 2.3 Supabase `public.device_notifications` at launch and foreground
