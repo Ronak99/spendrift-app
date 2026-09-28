@@ -310,16 +310,16 @@ struct SettingsView: View {
                     .listItemPositioned(index: 0, count: developerRowCount)
                 }
                 .buttonStyle(.plain)
+            #endif
 
-                SettingsListItem(
+            SettingsListItem(
                     icon: "crown.fill",
                     title: "Force Pro",
                     subtitle: "Act as a subscriber, however the app launches",
                     accent: accent,
                     accessory: .toggle(forcedProBinding)
-                )
-                .listItemPositioned(index: 1, count: developerRowCount)
-            #endif
+            )
+            .listItemPositioned(index: 1, count: developerRowCount)
 
             Button {
                 showMessageInboxDebug = true
