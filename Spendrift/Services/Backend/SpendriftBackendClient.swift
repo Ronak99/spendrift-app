@@ -252,6 +252,12 @@ struct SpendriftBackendClient {
                 if let capturedAtIso = item.capturedAtIso {
                     dict["capturedAtIso"] = capturedAtIso
                 }
+                if let source = item.source {
+                    dict["source"] = source
+                }
+                if let subject = item.subject {
+                    dict["subject"] = subject
+                }
                 return dict
             },
             "categories": categoryInputs,
@@ -269,6 +275,32 @@ struct SpendriftBackendClient {
 
         let data = try await perform(request: request, expectsAuth: true)
         return try decode(MessageParsePayload.self, from: data)
+    }
+
+    /// `GET /v1/inbound/emails`
+    func fetchInboundEmails(tag: String, since: String?) async throws -> InboundEmailsPayload {
+        let url = try endpoint(path: "/v1/inbound/emails")
+        guard var components = URLComponents(url: url, resolvingAgainstBaseURL: false) else {
+            throw SpendriftBackendError.invalidBaseURL
+        }
+        var queryItems = [URLQueryItem(name: "tag", value: tag)]
+        if let since {
+            queryItems.append(URLQueryItem(name: "since", value: since))
+        }
+        components.queryItems = queryItems
+        // URLComponents leaves "+" alone, but servers decode a query "+" as a space,
+        // which turns the cursor's "+00:00" offset into an invalid timestamp.
+        components.percentEncodedQuery = components.percentEncodedQuery?
+            .replacingOccurrences(of: "+", with: "%2B")
+        guard let requestURL = components.url else {
+            throw SpendriftBackendError.invalidBaseURL
+        }
+
+        var request = URLRequest(url: requestURL)
+        request.httpMethod = "GET"
+
+        let data = try await perform(request: request, expectsAuth: true)
+        return try decode(InboundEmailsPayload.self, from: data)
     }
 
     // MARK: - Request helpers

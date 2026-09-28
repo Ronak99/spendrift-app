@@ -76,6 +76,24 @@ struct MessageParseRequestItem: Encodable {
     let id: String
     let body: String
     let capturedAtIso: String?
+    /// "sms" (default when nil) or "email".
+    var source: String? = nil
+    /// Email subject line; nil for SMS.
+    var subject: String? = nil
+}
+
+/// One email forwarded to this device's expense address, as stored by the backend.
+struct InboundEmailItem: Decodable, Equatable {
+    let id: String
+    let fromEmail: String
+    let subject: String?
+    let sentAtIso: String?
+    let receivedAtIso: String
+    let bodyText: String
+}
+
+struct InboundEmailsPayload: Decodable {
+    let emails: [InboundEmailItem]
 }
 
 enum AIServiceError: LocalizedError, Equatable {

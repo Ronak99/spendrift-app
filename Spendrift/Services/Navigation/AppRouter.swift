@@ -17,6 +17,7 @@ final class AppRouter {
     enum SettingsDestination: Hashable {
         case feedback
         case explore
+        case emailReceipts
     }
 
     var settingsPath: [SettingsDestination] = []

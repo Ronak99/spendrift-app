@@ -26,6 +26,8 @@
 	<string>$(SPENDRIFT_BACKEND_BASE_URL)</string>
 	<key>SpendriftBackendClientToken</key>
 	<string>$(SPENDRIFT_BACKEND_CLIENT_TOKEN)</string>
+	<key>SpendriftDeveloperPassword</key>
+	<string>$(DEVELOPER_PASSWORD)</string>
 	<key>SpendriftOneSignalAppID</key>
 	<string>$(SPENDRIFT_ONESIGNAL_APP_ID)</string>
 	<key>SpendriftPostHogAPIKey</key>

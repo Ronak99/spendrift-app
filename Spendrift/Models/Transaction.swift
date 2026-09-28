@@ -17,6 +17,7 @@ enum TransactionSource: String {
     case shortcut
     case widget
     case sms
+    case email
 }
 
 @Model

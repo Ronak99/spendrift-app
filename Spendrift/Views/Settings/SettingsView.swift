@@ -23,9 +23,11 @@ struct SettingsView: View {
     @AppStorage(DeveloperMode.defaultsKey, store: DeveloperMode.store) private
         var developerModeUnlocked = false
 
+    @State private var entitlement = ProEntitlement.shared
     @State private var showMessageInboxDebug = false
     @State private var showDebugSwift = false
     @State private var versionTapCount = 0
+    @State private var showDeveloperUnlock = false
     @State private var showReceiptScanOptions = false
     @State private var showStatementImport = false
     @State private var paywallContext: PaywallContext?
@@ -76,6 +78,8 @@ struct SettingsView: View {
                     FeedbackView()
                 case .explore:
                     ExploreSettingsView()
+                case .emailReceipts:
+                    EmailReceiptsSettingsView()
                 }
             }
         }
@@ -87,6 +91,11 @@ struct SettingsView: View {
         }
         .sheet(isPresented: $showMessageInboxDebug) {
             MessageInboxDebugView()
+        }
+        .sheet(isPresented: $showDeveloperUnlock) {
+            DeveloperUnlockSheet {
+                developerModeUnlocked = true
+            }
         }
         .proPaywall($paywallContext)
         .sheet(isPresented: $showStatementImport) {
@@ -150,9 +159,13 @@ struct SettingsView: View {
             || notificationAuthorization == .denied
     }
 
-    private var hubRowCount: Int { showsNotificationOptIn ? 5 : 4 }
+    // Rows actually rendered: Feedback, optional notification opt-in, Explore,
+    // Email receipts. The count drives the first/last padding, so it must not
+    // include the commented-out rows below.
+    private var hubRowCount: Int { showsNotificationOptIn ? 4 : 3 }
 
     private var exploreIndex: Int { showsNotificationOptIn ? 2 : 1 }
+    private var emailReceiptsIndex: Int { exploreIndex + 1 }
     private var receiptIndex: Int { showsNotificationOptIn ? 3 : 2 }
     private var statementIndex: Int { showsNotificationOptIn ? 4 : 3 }
 
@@ -179,6 +192,16 @@ struct SettingsView: View {
                     accent: accent
                 )
                 .listItemPositioned(index: exploreIndex, count: hubRowCount)
+            }
+
+            NavigationLink(value: AppRouter.SettingsDestination.emailReceipts) {
+                SettingsListItem(
+                    icon: "envelope.fill",
+                    title: "Email receipts",
+                    subtitle: "Forward receipts to your own address",
+                    accent: accent
+                )
+                .listItemPositioned(index: emailReceiptsIndex, count: hubRowCount)
             }
 
             // Button {
@@ -264,7 +287,7 @@ struct SettingsView: View {
     private var developerRowCount: Int {
         var count = 1
         #if DEBUG
-            count += 1
+            count += 2
         #endif
         if developerModeUnlocked { count += 1 }
         return count
@@ -287,6 +310,15 @@ struct SettingsView: View {
                     .listItemPositioned(index: 0, count: developerRowCount)
                 }
                 .buttonStyle(.plain)
+
+                SettingsListItem(
+                    icon: "crown.fill",
+                    title: "Force Pro",
+                    subtitle: "Act as a subscriber, however the app launches",
+                    accent: accent,
+                    accessory: .toggle(forcedProBinding)
+                )
+                .listItemPositioned(index: 1, count: developerRowCount)
             #endif
 
             Button {
@@ -318,9 +350,16 @@ struct SettingsView: View {
         }
     }
 
+    private var forcedProBinding: Binding<Bool> {
+        Binding(
+            get: { entitlement.isForcedPro },
+            set: { entitlement.setForcedPro($0) }
+        )
+    }
+
     private var messageInboxDeveloperOffset: Int {
         #if DEBUG
-            1
+            2
         #else
             0
         #endif
@@ -337,7 +376,7 @@ struct SettingsView: View {
                 .contentShape(Rectangle())
                 .onTapGesture { registerVersionTap() }
                 .accessibilityAddTraits(.isButton)
-                .accessibilityHint("Tap five times to reveal developer tools")
+                .accessibilityHint("Tap five times to unlock developer tools with a password")
         }
     }
 
@@ -345,14 +384,14 @@ struct SettingsView: View {
         developerModeUnlocked || DeveloperMode.isEnabled
     }
 
-    /// Hidden unlock from the design: five taps on the version label.
+    /// Hidden unlock: five taps on the version label open a password prompt;
+    /// only DEVELOPER_PASSWORD unlocks the developer section.
     private func registerVersionTap() {
         guard !developerModeUnlocked else { return }
         versionTapCount += 1
         guard versionTapCount >= Self.developerRevealTapCount else { return }
         versionTapCount = 0
-        developerModeUnlocked = true
-        UINotificationFeedbackGenerator().notificationOccurred(.success)
+        showDeveloperUnlock = true
     }
 
     private func processReceiptImage(_ image: UIImage) {

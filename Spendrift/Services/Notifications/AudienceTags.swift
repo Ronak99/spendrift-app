@@ -281,7 +281,7 @@ enum AudienceTags {
         switch entitlement.status {
         case .unknown:
             plan = nil
-            isPro = ProEntitlementCache.isPro
+            isPro = ProEntitlementCache.purchasedIsPro
         case .free:
             plan = "free"
             isPro = false

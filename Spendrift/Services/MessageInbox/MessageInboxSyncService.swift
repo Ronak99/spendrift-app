@@ -2,9 +2,11 @@
 //  MessageInboxSyncService.swift
 //  Spendrift
 //
-//  Drains the SMS inbox on app launch: parse via backend AI, insert ledger rows.
-//  Inbox rows are deleted only after HTTP 200 from parse-transactions, so a
-//  failed parse can still be retried on the next launch. Never logs message bodies.
+//  Drains the SMS inbox and forwarded emails on app launch: parse via backend AI,
+//  insert ledger rows. SMS rows are deleted only after HTTP 200 from
+//  parse-transactions, so a failed parse can still be retried on the next launch.
+//  Emails stay on the server; a cursor records how far the import got.
+//  Never logs message bodies.
 //
 
 import Foundation
@@ -26,41 +28,83 @@ struct MessageInboxImportBanner: Identifiable, Equatable {
     }
 }
 
+/// One unit of work for the drain: a bank SMS captured on this device, or an
+/// email forwarded to this device's expense address. Both go through the same
+/// parse call, so one launch produces one banner.
+private struct InboxDrainItem {
+    enum Origin {
+        case sms(CapturedTransactionMessage)
+        case email(InboundEmailItem)
+    }
+
+    let origin: Origin
+    let request: MessageParseRequestItem
+    /// Ledger date for the transaction: SMS capture time, or the email's sent time.
+    let capturedAt: Date
+
+    var id: String { request.id }
+
+    var smsRow: CapturedTransactionMessage? {
+        if case let .sms(row) = origin { return row }
+        return nil
+    }
+
+    var email: InboundEmailItem? {
+        if case let .email(item) = origin { return item }
+        return nil
+    }
+
+    var source: TransactionSource {
+        switch origin {
+        case .sms: .sms
+        case .email: .email
+        }
+    }
+
+    /// Key for the developer debug log; SMS rows already carry a body hash.
+    var fingerprint: String {
+        switch origin {
+        case let .sms(row): row.fingerprint
+        case let .email(item): "email:\(item.id)"
+        }
+    }
+
+    /// Transient failures leave SMS rows in the inbox with a bumped attempt count.
+    /// Emails need nothing: the cursor simply does not move past them.
+    func recordAttempt() {
+        guard let smsRow else { return }
+        smsRow.attemptCount += 1
+        smsRow.lastAttemptAt = Date()
+    }
+}
+
 enum MessageInboxSyncService {
     static let chunkSize = 40
 
-    /// Sends `rows` to the backend, merging any results into `resultsByID`.
+    /// Sends `items` to the backend, merging any results into `resultsByID`.
     ///
     /// When the backend rejects the payload outright (a 4xx that is not throttling or
     /// auth), the offending body cannot be identified from the response, so the batch
     /// is split in half and each half retried. Validation runs before the model call,
     /// so a rejected half costs no AI spend, and roughly log2(n) extra requests are
     /// enough to isolate the bad row while every good message still gets parsed.
-    /// A single row that is still rejected on its own is handed back in `quarantined`.
+    /// A single item that is still rejected on its own is handed back in `quarantined`.
     ///
     /// Returns false when the failure was transient or an auth problem -- those will
     /// hit every later chunk too, so the caller should stop rather than retry.
     @MainActor
     private static func parse(
-        rows: [CapturedTransactionMessage],
+        items: [InboxDrainItem],
         client: SpendriftBackendClient,
         categories: [TransactionCategory],
         resultsByID: inout [String: MessageParseResultItem],
-        quarantined: inout [CapturedTransactionMessage]
+        quarantined: inout [InboxDrainItem]
     ) async -> Bool {
-        guard !rows.isEmpty else { return true }
-
-        let requestItems = rows.map { row in
-            MessageParseRequestItem(
-                id: row.id.uuidString,
-                body: row.body,
-                capturedAtIso: fallbackISOFormatter.string(from: row.capturedAt)
-            )
-        }
+        guard !items.isEmpty else { return true }
 
         do {
             let payload = try await client.parseTransactionMessages(
-                messages: requestItems,
+                messages: items.map(\.request),
                 categories: categories,
                 clientTodayIso: SpendriftBackendClient.makeClientTodayIso(),
                 timezone: SpendriftBackendClient.makeTimezoneIdentifier()
@@ -74,30 +118,28 @@ enum MessageInboxSyncService {
             guard disposition == .rejectedPayload else {
                 // Network trouble, throttling, 5xx or bad credentials: keep the rows
                 // and let the next launch retry them untouched.
-                for row in rows {
-                    row.attemptCount += 1
-                    row.lastAttemptAt = Date()
+                for item in items {
+                    item.recordAttempt()
                 }
                 return false
             }
 
-            guard rows.count > 1 else {
-                rows[0].attemptCount += 1
-                rows[0].lastAttemptAt = Date()
-                quarantined.append(rows[0])
+            guard items.count > 1 else {
+                items[0].recordAttempt()
+                quarantined.append(items[0])
                 return true
             }
 
-            let mid = rows.count / 2
+            let mid = items.count / 2
             let firstHalf = await parse(
-                rows: Array(rows[..<mid]),
+                items: Array(items[..<mid]),
                 client: client,
                 categories: categories,
                 resultsByID: &resultsByID,
                 quarantined: &quarantined
             )
             let secondHalf = await parse(
-                rows: Array(rows[mid...]),
+                items: Array(items[mid...]),
                 client: client,
                 categories: categories,
                 resultsByID: &resultsByID,
@@ -142,12 +184,17 @@ enum MessageInboxSyncService {
         let descriptor = FetchDescriptor<CapturedTransactionMessage>(
             sortBy: [SortDescriptor(\.capturedAt, order: .forward)]
         )
-        var pending: [CapturedTransactionMessage]
+        let smsRows: [CapturedTransactionMessage]
         do {
-            pending = try inboxContext.fetch(descriptor)
+            smsRows = try inboxContext.fetch(descriptor)
         } catch {
             return nil
         }
+
+        // Emails come oldest first from the server and go after the SMS so the
+        // combined list stays in arrival order.
+        let emails = await fetchEmails(client: client)
+        var pending = smsRows.map(makeItem) + emails.map(makeItem)
         guard !pending.isEmpty else { return nil }
 
         // Free tier: spend only as many backend calls as the monthly allowance covers.
@@ -172,10 +219,22 @@ enum MessageInboxSyncService {
         let existing = (try? ledgerContext.fetch(existingDescriptor)) ?? []
 
         var createdIDs: [UUID] = []
-        var createdCount = 0
+        var createdBySource: [TransactionSource: Int] = [:]
         var parsedMessageCount = 0
         var rejectedCount = 0
         var skippedCount = 0
+        var resolvedEmailIDs = Set<String>()
+
+        /// The item reached a final outcome: SMS rows leave the inbox, emails become
+        /// eligible for the cursor to move past them.
+        func resolve(_ item: InboxDrainItem) {
+            if let row = item.smsRow {
+                inboxContext.delete(row)
+            }
+            if let email = item.email {
+                resolvedEmailIDs.insert(email.id)
+            }
+        }
 
         let chunks = stride(from: 0, to: pending.count, by: chunkSize).map {
             Array(pending[$0..<min($0 + chunkSize, pending.count)])
@@ -185,25 +244,25 @@ enum MessageInboxSyncService {
 
         for chunk in chunks {
             var resultsByID: [String: MessageParseResultItem] = [:]
-            var quarantined: [CapturedTransactionMessage] = []
+            var quarantined: [InboxDrainItem] = []
 
             let completed = await parse(
-                rows: chunk,
+                items: chunk,
                 client: client,
                 categories: categories,
                 resultsByID: &resultsByID,
                 quarantined: &quarantined
             )
 
-            // Bodies the backend will never accept. Deleting them is what stops one
-            // bad row from blocking the queue on every future launch.
-            for row in quarantined {
+            // Bodies the backend will never accept. Dropping them is what stops one
+            // bad item from blocking the queue on every future launch.
+            for item in quarantined {
                 MessageInboxDebugLog.recordLedgerOutcome(
-                    fingerprint: row.fingerprint,
-                    capturedAt: row.capturedAt,
+                    fingerprint: item.fingerprint,
+                    capturedAt: item.capturedAt,
                     outcome: .rejected
                 )
-                inboxContext.delete(row)
+                resolve(item)
             }
             if !quarantined.isEmpty {
                 rejectedCount += quarantined.count
@@ -233,64 +292,63 @@ enum MessageInboxSyncService {
             }
 
             // Credits track what the backend answered, not what became a transaction:
-            // an SMS correctly identified as "not a transaction" still cost a call.
+            // a message correctly identified as "not a transaction" still cost a call.
             parsedMessageCount += resultsByID.count
 
-            let liveRows = chunk.filter { !quarantined.contains($0) }
+            let quarantinedIDs = Set(quarantined.map(\.id))
+            let liveItems = chunk.filter { !quarantinedIDs.contains($0.id) }
 
-            for row in liveRows {
-                let key = row.id.uuidString
-                guard let result = resultsByID[key] else {
-                    row.attemptCount += 1
-                    row.lastAttemptAt = Date()
+            for item in liveItems {
+                guard let result = resultsByID[item.id] else {
+                    item.recordAttempt()
                     continue
                 }
 
                 let outcome = MessageTransactionCreator.createIfNeeded(
                     result: result,
-                    capturedAt: row.capturedAt,
+                    capturedAt: item.capturedAt,
                     accounts: accounts,
                     categories: categories,
                     existingTransactions: existing + createdTransactions(
                         ids: createdIDs,
                         in: ledgerContext
                     ),
-                    modelContext: ledgerContext
+                    modelContext: ledgerContext,
+                    source: item.source
                 )
 
                 switch outcome {
                 case let .created(id):
                     createdIDs.append(id)
-                    createdCount += 1
-                    inboxContext.delete(row)
+                    createdBySource[item.source, default: 0] += 1
+                    resolve(item)
                     MessageInboxDebugLog.recordLedgerOutcome(
-                        fingerprint: row.fingerprint,
-                        capturedAt: row.capturedAt,
+                        fingerprint: item.fingerprint,
+                        capturedAt: item.capturedAt,
                         outcome: .imported,
                         transactionID: id
                     )
                 case .skippedDuplicate:
                     skippedCount += 1
-                    inboxContext.delete(row)
+                    resolve(item)
                     MessageInboxDebugLog.recordLedgerOutcome(
-                        fingerprint: row.fingerprint,
-                        capturedAt: row.capturedAt,
+                        fingerprint: item.fingerprint,
+                        capturedAt: item.capturedAt,
                         outcome: .skippedDuplicate
                     )
                 case .rejected:
                     rejectedCount += 1
-                    inboxContext.delete(row)
+                    resolve(item)
                     MessageInboxDebugLog.recordLedgerOutcome(
-                        fingerprint: row.fingerprint,
-                        capturedAt: row.capturedAt,
+                        fingerprint: item.fingerprint,
+                        capturedAt: item.capturedAt,
                         outcome: .rejected
                     )
                 case .failed:
-                    row.attemptCount += 1
-                    row.lastAttemptAt = Date()
+                    item.recordAttempt()
                     MessageInboxDebugLog.recordLedgerOutcome(
-                        fingerprint: row.fingerprint,
-                        capturedAt: row.capturedAt,
+                        fingerprint: item.fingerprint,
+                        capturedAt: item.capturedAt,
                         outcome: .failed
                     )
                 }
@@ -302,15 +360,18 @@ enum MessageInboxSyncService {
             if abortDrain { break }
         }
 
+        advanceEmailCursor(emails: emails, resolved: resolvedEmailIDs)
+
         ProGate.recordUsage(.messageImport, count: parsedMessageCount)
 
-        if createdCount > 0 {
+        for (source, count) in createdBySource where count > 0 {
             Analytics.captureTransactionCreated(
-                method: "sms",
+                method: source.rawValue,
                 type: "mixed",
-                count: createdCount
+                count: count
             )
         }
+        let createdCount = createdIDs.count
         Analytics.capture(
             .messageInboxSynced,
             [
@@ -323,6 +384,94 @@ enum MessageInboxSyncService {
         guard !createdIDs.isEmpty || blockedCount > 0 else { return nil }
         return MessageInboxImportBanner(transactionIDs: createdIDs, blockedCount: blockedCount)
     }
+
+    // MARK: - Emails
+
+    /// Emails newer than the cursor for this device's address. A failed fetch
+    /// leaves the cursor alone and lets the SMS drain proceed on its own.
+    @MainActor
+    private static func fetchEmails(client: SpendriftBackendClient) async -> [InboundEmailItem] {
+        do {
+            let payload = try await client.fetchInboundEmails(
+                tag: EmailInboxAddress.tag,
+                since: EmailInboxSettings.lastReceivedAtIso
+            )
+            return payload.emails
+        } catch {
+            Diagnostics.breadcrumb(
+                category: .error,
+                message: "email_inbox_fetch_failed",
+                data: [
+                    Diagnostics.Tag.feature: Diagnostics.Feature.message.rawValue,
+                    Diagnostics.Tag.errorDomain: (error as NSError).domain,
+                    Diagnostics.Tag.errorCode: String((error as NSError).code),
+                ]
+            )
+            return []
+        }
+    }
+
+    /// Emails arrive oldest first. Move the cursor past every leading email that
+    /// reached a final outcome; the first unresolved one (transient failure, no
+    /// account yet) holds it so the next launch fetches from there again.
+    private static func advanceEmailCursor(emails: [InboundEmailItem], resolved: Set<String>) {
+        var cursor: String?
+        for email in emails {
+            guard resolved.contains(email.id) else { break }
+            cursor = email.receivedAtIso
+        }
+        guard let cursor else { return }
+        EmailInboxSettings.lastReceivedAtIso = cursor
+        EmailInboxSettings.lastImportedAt = Date()
+    }
+
+    private static func makeItem(_ row: CapturedTransactionMessage) -> InboxDrainItem {
+        InboxDrainItem(
+            origin: .sms(row),
+            request: MessageParseRequestItem(
+                id: row.id.uuidString,
+                body: row.body,
+                capturedAtIso: fallbackISOFormatter.string(from: row.capturedAt)
+            ),
+            capturedAt: row.capturedAt
+        )
+    }
+
+    private static func makeItem(_ email: InboundEmailItem) -> InboxDrainItem {
+        // The email's own date is the purchase date; receipt time is the fallback.
+        let capturedAt = parseServerDate(email.sentAtIso)
+            ?? parseServerDate(email.receivedAtIso)
+            ?? Date()
+        return InboxDrainItem(
+            origin: .email(email),
+            request: MessageParseRequestItem(
+                id: "email-\(email.id)",
+                body: email.bodyText,
+                capturedAtIso: fallbackISOFormatter.string(from: capturedAt),
+                source: "email",
+                subject: email.subject
+            ),
+            capturedAt: capturedAt
+        )
+    }
+
+    private static let serverDateFormatters: [ISO8601DateFormatter] = {
+        let fractional = ISO8601DateFormatter()
+        fractional.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        let whole = ISO8601DateFormatter()
+        whole.formatOptions = [.withInternetDateTime]
+        return [fractional, whole]
+    }()
+
+    private static func parseServerDate(_ iso: String?) -> Date? {
+        guard let iso, !iso.isEmpty else { return nil }
+        for formatter in serverDateFormatters {
+            if let date = formatter.date(from: iso) { return date }
+        }
+        return nil
+    }
+
+    // MARK: - Undo
 
     @MainActor
     static func undoImport(

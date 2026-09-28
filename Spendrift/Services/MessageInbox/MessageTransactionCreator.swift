@@ -2,7 +2,7 @@
 //  MessageTransactionCreator.swift
 //  Spendrift
 //
-//  Maps a parsed SMS AI result into a ledger Transaction on the primary account.
+//  Maps a parsed SMS or email AI result into a ledger Transaction on the primary account.
 //
 
 import Foundation
@@ -24,7 +24,8 @@ enum MessageTransactionCreator {
         accounts: [Account],
         categories: [TransactionCategory],
         existingTransactions: [Transaction],
-        modelContext: ModelContext
+        modelContext: ModelContext,
+        source: TransactionSource = .sms
     ) -> Outcome {
         guard result.status == "success", let data = result.transaction else {
             return .rejected
@@ -64,7 +65,7 @@ enum MessageTransactionCreator {
             transactionType: transactionType,
             category: category,
             account: account,
-            source: TransactionSource.sms.rawValue
+            source: source.rawValue
         )
         modelContext.insert(transaction)
         return .created(transaction.id)

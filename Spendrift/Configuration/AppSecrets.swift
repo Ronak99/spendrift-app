@@ -48,6 +48,13 @@ enum AppSecrets {
         return URL(string: trimmed + "/ingest")
     }
 
+    /// Unlocks the developer section for testers. Empty when not configured,
+    /// which keeps developer mode locked rather than matching an empty entry.
+    static var developerPassword: String {
+        (Bundle.main.infoDictionary?["SpendriftDeveloperPassword"] as? String ?? "")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
     static var oneSignalAppID: String {
         (Bundle.main.infoDictionary?["SpendriftOneSignalAppID"] as? String ?? "")
             .trimmingCharacters(in: .whitespacesAndNewlines)

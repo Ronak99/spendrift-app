@@ -37,8 +37,16 @@ enum ProEntitlementCache {
         defaultsOverride ?? UserDefaults(suiteName: IntentSwiftData.appGroupID) ?? .standard
     }
 
-    /// Last known entitlement. Treated as authoritative only until StoreKit answers.
+    /// Last known entitlement, or true while `ForcedPro` is on in a debug build.
+    /// Treated as authoritative only until StoreKit answers.
     static var isPro: Bool {
+        get { ForcedPro.isEnabled || purchasedIsPro }
+        set { suite.set(newValue, forKey: isProKey) }
+    }
+
+    /// Last known StoreKit entitlement, ignoring `ForcedPro`. Use where the answer
+    /// leaves the device (audience tags), so a debug override never mislabels a user.
+    static var purchasedIsPro: Bool {
         get {
             guard suite.bool(forKey: isProKey) else { return false }
             // A cached expiry in the past means the subscription lapsed while we were
@@ -47,7 +55,6 @@ enum ProEntitlementCache {
             guard expiry > 0 else { return true }
             return Date().timeIntervalSince1970 < expiry
         }
-        set { suite.set(newValue, forKey: isProKey) }
     }
 
     static func update(isPro: Bool, expiresAt: Date?) {
@@ -96,10 +103,14 @@ final class ProEntitlement {
 
     private var updatesTask: Task<Void, Never>?
 
+    /// Mirrors `ForcedPro.isEnabled` so views observing `isPro` update when it flips.
+    private(set) var isForcedPro = ForcedPro.isEnabled
+
     private init() {}
 
     var isPro: Bool {
-        switch status {
+        if isForcedPro { return true }
+        return switch status {
         case .trial, .subscribed: true
         case .free, .lapsed:      false
         case .unknown:            ProEntitlementCache.isPro
@@ -114,6 +125,11 @@ final class ProEntitlement {
     var trialEndsAt: Date? {
         if case .trial(let endsAt) = status { return endsAt }
         return nil
+    }
+
+    func setForcedPro(_ enabled: Bool) {
+        ForcedPro.isEnabled = enabled
+        isForcedPro = ForcedPro.isEnabled
     }
 
     func product(for plan: Plan) -> Product? {
