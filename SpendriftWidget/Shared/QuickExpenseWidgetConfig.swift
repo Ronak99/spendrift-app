@@ -11,7 +11,13 @@ struct QuickExpenseWidgetConfig: WidgetConfigurationIntent {
     static let title: LocalizedStringResource = "Quick Expense"
     static let description = IntentDescription("Configure your quick-add expense shortcut.")
 
-    @Parameter(title: "Amount", description: "The amount logged with a single tap.", default: 100.0)
+    @Parameter(
+        title: "Amount",
+        description: "The amount logged with a single tap.",
+        default: 100.0,
+        controlStyle: .field,
+        inclusiveRange: (0, 1_000_000_000)
+    )
     var amount: Double
 
     @Parameter(title: "Category", description: "Expense category to assign to the tap.")
