@@ -21,6 +21,8 @@ enum ProTrialReminder {
     private static let requestID = "spendrift.pro.trialEnding"
     /// Days before expiry that the reminder fires. Two leaves a full day to decide.
     private static let leadDays = 2
+    /// Reported on both `notification_scheduled` and `notification_opened`.
+    private static let kind = "trial_ending"
 
     /// Schedules (or re-schedules) the reminder. Idempotent — the stable identifier
     /// means repeated calls replace rather than stack.
@@ -39,6 +41,8 @@ enum ProTrialReminder {
         content.title = "Your Pro trial ends in \(leadDays) days"
         content.body = body(aiTransactionCount: aiTransactionCount)
         content.sound = .default
+        // No deep link to open, but a tap on it still has to be attributable.
+        content.userInfo = [NotificationManager.UserInfoKey.kind: kind]
 
         let components = calendar.dateComponents(
             [.year, .month, .day, .hour, .minute],
@@ -53,7 +57,7 @@ enum ProTrialReminder {
 
         UNUserNotificationCenter.current().add(request) { error in
             guard error == nil else { return }
-            Analytics.capture(.notificationScheduled, [Analytics.Key.kind: "trial_ending"])
+            Analytics.capture(.notificationScheduled, [Analytics.Key.kind: kind])
         }
     }
 

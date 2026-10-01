@@ -47,9 +47,16 @@ enum NotificationManager {
     private static let typeWeekdays = [1, 2, 4, 6]   // Sun, Mon, Wed, Fri
     private static let voiceWeekdays = [3, 5, 7]     // Tue, Thu, Sat
 
+    /// Keys stamped into a scheduled notification's `userInfo`. `kind` is what lets
+    /// a tap name the notification that fired it rather than inferring it from the
+    /// deep link, which several requests don't carry at all.
+    enum UserInfoKey {
+        static let deeplink = "deeplink"
+        static let kind = "kind"
+    }
+
     /// Deep-link destinations carried in each notification's `userInfo`.
     private enum DeepLink {
-        static let key = "deeplink"
         static let createTransaction = "spendrift://createTransaction"
         static let voiceExpense = "spendrift://voiceExpense"
         static let importStatement = "spendrift://importStatement"
@@ -59,6 +66,27 @@ enum NotificationManager {
         typeWeekdays.map { RequestID.typePrefix + String($0) }
             + voiceWeekdays.map { RequestID.voicePrefix + String($0) }
             + [RequestID.monthlyStatement]
+    }
+
+    // MARK: - Tap attribution
+
+    /// The deep link a tapped notification should open, if it carries one.
+    static func deeplink(userInfo: [AnyHashable: Any]) -> URL? {
+        guard let link = userInfo[UserInfoKey.deeplink] as? String else { return nil }
+        return URL(string: link)
+    }
+
+    /// Names the notification that was tapped. Requests scheduled by a build older
+    /// than the `kind` stamp are still pending on device, so fall back to the deep
+    /// link's host and then to `unknown` rather than dropping the open entirely.
+    static func openKind(userInfo: [AnyHashable: Any]) -> String {
+        if let kind = userInfo[UserInfoKey.kind] as? String, !kind.isEmpty {
+            return kind
+        }
+        if let host = deeplink(userInfo: userInfo)?.host, !host.isEmpty {
+            return host
+        }
+        return "unknown"
     }
 
     // MARK: - Permission
@@ -222,9 +250,11 @@ enum NotificationManager {
         content.title = title
         content.body = body
         content.sound = .default
+        var userInfo: [AnyHashable: Any] = [UserInfoKey.kind: kind]
         if let deeplink {
-            content.userInfo = [DeepLink.key: deeplink]
+            userInfo[UserInfoKey.deeplink] = deeplink
         }
+        content.userInfo = userInfo
 
         let request = UNNotificationRequest(identifier: identifier, content: content, trigger: trigger)
         UNUserNotificationCenter.current().add(request) { error in

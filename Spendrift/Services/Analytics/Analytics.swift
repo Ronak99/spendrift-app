@@ -76,6 +76,7 @@ enum Analytics {
         static let granted = "granted"
         static let path = "path"
         static let campaign = "campaign"
+        static let notificationID = "notification_id"
         static let removedCount = "removed_count"
         static let keptCount = "kept_count"
         static let feature = "feature"
@@ -141,6 +142,34 @@ enum Analytics {
     static func capture(_ event: Event, _ properties: [String: Any] = [:]) {
         guard didSetupPostHog, !isOptedOut else { return }
         PostHogSDK.shared.capture(event.rawValue, properties: properties)
+    }
+
+    /// Captures `app_opened`, attributing the open to a notification when the user
+    /// tapped one on the way in. `source` is `"notification"` or `"direct"`; a
+    /// notification-sourced open also carries `kind` (which notification),
+    /// plus `notification_id` / `campaign` where the tap handler had them.
+    ///
+    /// Best effort by design: iOS gives no ordering guarantee between the tap
+    /// callback and the first view appearing, so a cold start can still report
+    /// `source=direct`. `notification_opened` is the authoritative per-notification
+    /// event — this property is for splitting sessions, not for counting taps.
+    static func captureAppOpened() {
+        var properties: [String: Any] = [Key.daysSinceInstall: daysSinceInstall]
+
+        if let open = NotificationOpenAttribution.current() {
+            properties[Key.source] = "notification"
+            properties[Key.kind] = open.kind
+            if let notificationID = open.notificationID {
+                properties[Key.notificationID] = notificationID
+            }
+            if let campaign = open.campaign, !campaign.isEmpty {
+                properties[Key.campaign] = campaign
+            }
+        } else {
+            properties[Key.source] = "direct"
+        }
+
+        capture(.appOpened, properties)
     }
 
     /// Captures `transaction_created` and, on the very first transaction ever,

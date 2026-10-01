@@ -139,7 +139,17 @@ Custom event on appear and on every return to `.active`:
 
 | Event | Properties we set | Notes |
 | --- | --- | --- |
-| `app_opened` | `days_since_install` | Fires twice on a cold start: `onAppear` and `scenePhase == .active`. Treat unique users / unique days, not raw count, when measuring opens. |
+| `app_opened` | `days_since_install`, `source`, plus `kind` and `notification_id` / `campaign` when notification-sourced | Fires twice on a cold start: `onAppear` and `scenePhase == .active`. Treat unique users / unique days, not raw count, when measuring opens. |
+
+`source` is `notification` or `direct`. A tap recorded by either notification handler
+is held for 10 seconds (and dropped on backgrounding), so both halves of a cold
+start's double fire carry the same attribution.
+
+It is best effort: iOS does not order the tap callback against the first view
+appearing, so a cold start launched from a notification can still report
+`source=direct`. **Count notification-driven opens with `notification_opened`, not
+with `app_opened` where `source=notification`.** The property is for splitting a
+session's downstream behaviour, not for sizing the funnel.
 
 Every PostHog event, custom or autocaptured, also receives SDK and GeoIP fields from the ingest proxy.
 
@@ -525,9 +535,17 @@ PostHog events:
 | `notification_permission_requested` | System prompt shown | none |
 | `notification_permission_granted` | Prompt returned | `granted` bool |
 | `notification_scheduled` | Local request accepted | `kind` (`type`, `voice`, `statement`, `quota_refill`, `trial_ending`) |
-| `notification_opened` | Local tap | `kind` = URL host (`createTransaction`, `voiceExpense`, `importStatement`) |
-| `notification_opened` | Push tap | `kind=push`, `path`, `campaign` |
+| `notification_opened` | Local tap, deep link or not | `source=local`, `kind` (same vocabulary as `notification_scheduled`), `notification_id` (the `UNNotificationRequest` identifier) |
+| `notification_opened` | Push tap | `source=push`, `kind=push`, `path`, `campaign` |
 | `notification_reward_granted` | Bonus credits granted | none |
+
+`kind` on a local tap used to be the deep link's URL host, which meant the two
+reminders with no deep link — `quota_refill` and `trial_ending` — opened the app
+without logging anything. Scheduling now stamps `kind` into the request's
+`userInfo`, so a tap names the notification directly and every tap is logged.
+Requests scheduled by an older build are still pending on device and fall back to
+the URL host, then to `kind=unknown`; expect a tail of `createTransaction` /
+`voiceExpense` / `importStatement` values until those roll over.
 
 None of `notification_permission_*`, `notification_opened`, or `notification_reward_granted` have appeared in Spendrift-Prod in 30 days.
 Push is too new, and the permission prompt is rare.
