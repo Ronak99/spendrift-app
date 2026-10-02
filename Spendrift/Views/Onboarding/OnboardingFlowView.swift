@@ -18,75 +18,60 @@ struct OnboardingFlowView: View {
     @Binding var onboardingVersion: Int
     var onFinished: (() -> Void)? = nil
 
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Query(sort: \Account.createdOn) private var accounts: [Account]
     @Query(sort: \TransactionCategory.name) private var categories: [TransactionCategory]
 
-    @State private var step: OnboardingStep = .welcome
+    @State private var path: [OnboardingStep] = []
     @State private var voice = OnboardingVoiceDemoController()
 
     var body: some View {
+        NavigationStack(path: $path) {
+            screen(.welcome)
+                .navigationDestination(for: OnboardingStep.self) { step in
+                    screen(step)
+                }
+        }
+        .preferredColorScheme(.dark)
+        .onChange(of: path) { _, current in
+            // Leaving the voice screen, forward or back, drops a clip that is still open.
+            if (current.last ?? .welcome) != .voice { voice.cancel() }
+        }
+    }
+
+    /// One screen per step. The stack owns the push, the pop, and the back gesture.
+    @ViewBuilder
+    private func screen(_ step: OnboardingStep) -> some View {
         ZStack {
             OnboardingSheetAtmosphericBackground(tintColor: step.accent)
                 .ignoresSafeArea()
 
             OnboardingCornerWatermark(mark: step.watermark)
-                .washMotion(value: step)
 
-            page
+            switch step {
+            case .welcome:
+                OnboardingWelcomePage(onContinue: { push(.voice) })
+            case .voice:
+                OnboardingVoicePage(
+                    voice: voice,
+                    accounts: accounts,
+                    categories: categories,
+                    onContinue: { push(.pro) }
+                )
+            case .pro:
+                OnboardingProPage(onFinish: complete)
+            }
         }
-        .preferredColorScheme(.dark)
+        .navigationTitle("")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbarBackground(.hidden, for: .navigationBar)
+        .toolbarColorScheme(.dark, for: .navigationBar)
         .onAppear {
             Analytics.capture(.onboardingStepViewed, [Analytics.Key.step: step.analyticsName])
         }
-        .onChange(of: step) { previous, current in
-            if previous == .voice { voice.cancel() }
-            Analytics.capture(.onboardingStepViewed, [Analytics.Key.step: current.analyticsName])
-        }
     }
 
-    /// The transition sits on each branch rather than on the `switch` as a whole: SwiftUI
-    /// resolves it from the subtree that is actually inserted and removed.
-    @ViewBuilder
-    private var page: some View {
-        switch step {
-        case .welcome:
-            OnboardingWelcomePage(onContinue: advance)
-                .transition(pageTransition)
-        case .voice:
-            OnboardingVoicePage(
-                voice: voice,
-                accounts: accounts,
-                categories: categories,
-                onContinue: advance
-            )
-            .transition(pageTransition)
-        case .pro:
-            OnboardingProPage(onFinish: advance)
-                .transition(pageTransition)
-        }
-    }
-
-    /// Pages arrive from the right and leave to the left, so moving forward reads as one
-    /// continuous strip rather than a stack of modals.
-    private var pageTransition: AnyTransition {
-        guard !reduceMotion else { return .opacity }
-        return .asymmetric(
-            insertion: .move(edge: .trailing).combined(with: .opacity),
-            removal: .move(edge: .leading).combined(with: .opacity)
-        )
-    }
-
-    private var pageAnimation: Animation? {
-        reduceMotion ? nil : .spring(response: 0.5, dampingFraction: 0.92)
-    }
-
-    private func advance() {
-        guard let next = step.next else {
-            complete()
-            return
-        }
-        withAnimation(pageAnimation) { step = next }
+    private func push(_ step: OnboardingStep) {
+        path.append(step)
     }
 
     private func complete() {

@@ -14,7 +14,7 @@ import SwiftUI
 
 // MARK: - Steps
 
-enum OnboardingStep: Int, CaseIterable, Identifiable {
+enum OnboardingStep: Int, CaseIterable, Identifiable, Hashable {
     case welcome
     case voice
     case pro
@@ -28,7 +28,7 @@ enum OnboardingStep: Int, CaseIterable, Identifiable {
         // The tab bar's Speak control, so the plate the user is about to tap is already
         // the colour of the button they will look for afterwards.
         case .voice:   Color(hex: "#F57873")
-        case .pro:     OnboardingTheme.success
+        case .pro:     OnboardingTheme.accent
         }
     }
 
@@ -60,19 +60,12 @@ enum OnboardingStep: Int, CaseIterable, Identifiable {
 /// bottom; the focus slot takes whatever is left and centres its object there, so the
 /// only thing that ever moves is the object itself.
 ///
-/// The page also owns the entrance order: the copy is there from the first frame, the
-/// object arrives with it, then the capsule.
+/// Moving between pages is a navigation push, so the page is fully on screen as it
+/// arrives. Nothing here fades itself in on top of that.
 struct OnboardingPage<Narration: View, Focus: View, Action: View>: View {
-    /// How long the capsule waits after the object arrives. Longer on a page that wants
-    /// the object tried before the way out is offered.
-    var actionDelay: Duration = .milliseconds(220)
     @ViewBuilder var narration: Narration
     @ViewBuilder var focus: Focus
     @ViewBuilder var action: Action
-
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @State private var showsFocus = false
-    @State private var showsAction = false
 
     var body: some View {
         VStack(spacing: 0) {
@@ -85,35 +78,17 @@ struct OnboardingPage<Narration: View, Focus: View, Action: View>: View {
 
             focus
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .onboardingReveal(showsFocus, reduceMotion: reduceMotion)
 
             action
                 .frame(maxWidth: .infinity)
                 .layoutPriority(1)
-                .onboardingReveal(showsAction, reduceMotion: reduceMotion)
         }
         .padding(.horizontal, 28)
-        .padding(.top, 36)
+        // The navigation bar already clears the status area, so this is only the gap
+        // under the bar.
+        .padding(.top, 12)
         .padding(.bottom, 24)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-        .task {
-            // Guarded so a page that reappears, after a swipe back, does not replay it.
-            guard !showsFocus else { return }
-            let entrance: Animation? = reduceMotion ? nil : .spring(response: 0.5, dampingFraction: 0.9)
-            withAnimation(entrance) { showsFocus = true }
-            try? await Task.sleep(for: actionDelay)
-            withAnimation(entrance) { showsAction = true }
-        }
-    }
-}
-
-private extension View {
-    /// Rises and fades in when its turn in the page's entrance order comes up.
-    func onboardingReveal(_ isVisible: Bool, reduceMotion: Bool) -> some View {
-        opacity(isVisible ? 1 : 0)
-            .offset(y: isVisible || reduceMotion ? 0 : 18)
-            .scaleEffect(isVisible || reduceMotion ? 1 : 0.97)
-            .allowsHitTesting(isVisible)
     }
 }
 
