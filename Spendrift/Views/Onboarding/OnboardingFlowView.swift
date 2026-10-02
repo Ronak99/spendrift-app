@@ -311,13 +311,12 @@ private struct OnboardingProPage: View {
                 detail: "To receive 10 free voice notes."
             )
         } focus: {
-            VStack(spacing: 8) {
-                OnboardingHeroPlate(
-                    mark: .symbol(rewardSymbol),
-                    accent: accent,
-                    isBusy: reward == .asking,
-                    accessibilityLabel: rewardAccessibilityLabel
-                )
+            VStack(spacing: 16) {
+                Image(OnboardingVisualAsset.notificationPreview)
+                    .resizable()
+                    .scaledToFit()
+                    .frame(maxWidth: .infinity)
+                    .accessibilityLabel("Example notification. Your free AI credits are back.")
 
                 OnboardingTapHint(text: tapHint)
             }
@@ -357,25 +356,6 @@ private struct OnboardingProPage: View {
 
     private var hasAnswered: Bool {
         reward == .granted || reward == .declined
-    }
-
-    /// The plate stops offering once it has been answered, so the mark has to say which
-    /// answer it got rather than sitting there looking tappable.
-    private var rewardSymbol: String {
-        switch reward {
-        case .offered, .asking: "bell.badge.fill"
-        case .granted:          "checkmark.seal.fill"
-        case .declined:         "bell.slash.fill"
-        }
-    }
-
-    private var rewardAccessibilityLabel: String {
-        switch reward {
-        case .offered:  "Free top-up for turning on notifications"
-        case .asking:   "Turning on notifications"
-        case .granted:  "Notifications on. Free top-up added."
-        case .declined: "Notifications off"
-        }
     }
 
     private var tapHint: String? {
