@@ -199,7 +199,7 @@ private struct RootContainerView: View {
                 NotificationManager.refreshQuotaRefillReminder()
                 resolveActiveSheet()
             }
-            .fullScreenCover(isPresented: onboardingPresentation) {
+            .sheet(isPresented: onboardingPresentation) {
                 OnboardingFlowView(onboardingVersion: $onboardingVersion) {
                     finishedOnboardingThisLaunch = true
                     resolveActiveSheet()

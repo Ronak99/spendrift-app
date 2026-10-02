@@ -30,9 +30,8 @@ enum OnboardingVisualAsset {
 
 // MARK: - Sheet background
 
-/// Night Studio canvas with a light top-right pool of the page's CTA colour.
-/// The field stays airy; the hue in the corner is the button, lifted toward white
-/// so it reads as cyan / coral / green instead of a dark stain on the night fill.
+/// Night Studio canvas with a faint top-right pool of the page's CTA colour.
+/// Kept quiet so the corner reads as a hint of the button, not a second light source.
 struct OnboardingSheetAtmosphericBackground: View {
     var tintColor: Color
 
@@ -42,8 +41,8 @@ struct OnboardingSheetAtmosphericBackground: View {
 
             LinearGradient(
                 stops: [
-                    .init(color: tintColor.opacity(0.08), location: 0),
-                    .init(color: tintColor.opacity(0.03), location: 0.30),
+                    .init(color: tintColor.opacity(0.035), location: 0),
+                    .init(color: tintColor.opacity(0.012), location: 0.30),
                     .init(color: OnboardingTheme.background, location: 0.58)
                 ],
                 startPoint: .top,
@@ -52,7 +51,7 @@ struct OnboardingSheetAtmosphericBackground: View {
 
             RadialGradient(
                 colors: [
-                    Color.white.opacity(0.07),
+                    Color.white.opacity(0.03),
                     Color.clear
                 ],
                 center: UnitPoint(x: 0.88, y: 0.0),
@@ -62,8 +61,8 @@ struct OnboardingSheetAtmosphericBackground: View {
 
             RadialGradient(
                 colors: [
-                    tintColor.opacity(0.26),
-                    tintColor.opacity(0.10),
+                    tintColor.opacity(0.09),
+                    tintColor.opacity(0.035),
                     Color.clear
                 ],
                 center: UnitPoint(x: 0.88, y: 0.0),
@@ -86,23 +85,25 @@ fileprivate enum GlowingHeroIconContent {
 struct GlowingHeroGlow: View {
     var color: Color
     var size: CGFloat
+    /// 1 is the full bloom. The Pro mark uses a fraction so the disc stays the light.
+    var intensity: CGFloat = 1
 
     var body: some View {
         ZStack {
             Circle()
                 .fill(
                     RadialGradient(
-                        colors: [color.opacity(0.35), color.opacity(0)],
+                        colors: [color.opacity(0.35 * intensity), color.opacity(0)],
                         center: .center,
                         startRadius: size * 0.4,
                         endRadius: size
                     )
                 )
                 .frame(width: size * 2.2, height: size * 2.2)
-                .blur(radius: size * 0.2)
+                .blur(radius: size * 0.28)
 
             Circle()
-                .fill(color.opacity(0.15))
+                .fill(color.opacity(0.15 * intensity))
                 .frame(width: size * 1.35, height: size * 1.35)
         }
     }
@@ -441,6 +442,46 @@ struct OnboardingSharedHeroView: View {
     }
 }
 
+// MARK: - Welcome features
+
+/// The welcome page's own list. Separate from `ProFeature`, which is the paywall's
+/// catalogue of AI tools.
+enum OnboardingWelcomeFeature: CaseIterable, Identifiable {
+    case freeForever
+    case generousPremium
+    case intentionalAI
+    case beautifulAnalytics
+
+    var id: Self { self }
+
+    var title: String {
+        switch self {
+        case .freeForever:        "Free Forever"
+        case .generousPremium:    "Generous Premium"
+        case .intentionalAI:      "Intentional AI"
+        case .beautifulAnalytics: "Beautiful Analytics"
+        }
+    }
+
+    var subtitle: String {
+        switch self {
+        case .freeForever:        "No expense for tracking one."
+        case .generousPremium:    "Voice notes refill every month."
+        case .intentionalAI:      "AI on your terms, not in your way."
+        case .beautifulAnalytics: "Numbers should not be boring."
+        }
+    }
+
+    var symbolName: String {
+        switch self {
+        case .freeForever:        "infinity"
+        case .generousPremium:    "arrow.triangle.2.circlepath"
+        case .intentionalAI:      "brain.head.profile"
+        case .beautifulAnalytics: "chart.bar.xaxis"
+        }
+    }
+}
+
 // MARK: - FeatureRow
 
 struct OnboardingFeatureRow: View {
@@ -598,7 +639,7 @@ struct GlassHeroMark: View {
 
     var body: some View {
         ZStack {
-            GlowingHeroGlow(color: accent, size: size)
+            GlowingHeroGlow(color: accent, size: size, intensity: 0.35)
             GlowingHeroMark(
                 assetName: assetName,
                 color: accent,

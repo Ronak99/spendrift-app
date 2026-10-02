@@ -39,34 +39,47 @@ struct OnboardingFlowView: View {
     }
 
     /// One screen per step. The stack owns the push, the pop, and the back gesture.
+    ///
+    /// The bar stays visible and inline on every page, including the first, so it already
+    /// has its final height when a page is pushed. A hidden bar is laid out on the top
+    /// edge of the sheet during the push, then drops once the inset arrives.
     @ViewBuilder
     private func screen(_ step: OnboardingStep) -> some View {
-        ZStack {
-            OnboardingSheetAtmosphericBackground(tintColor: step.accent)
-                .ignoresSafeArea()
-
-            OnboardingCornerWatermark(mark: step.watermark)
-
-            switch step {
-            case .welcome:
-                OnboardingWelcomePage(onContinue: { push(.voice) })
-            case .voice:
-                OnboardingVoicePage(
-                    voice: voice,
-                    accounts: accounts,
-                    categories: categories,
-                    onContinue: { push(.pro) }
-                )
-            case .pro:
-                OnboardingProPage(onFinish: complete)
+        page(step)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .containerBackground(for: .navigation) {
+                ZStack {
+                    OnboardingSheetAtmosphericBackground(tintColor: step.accent)
+                    OnboardingCornerWatermark(mark: step.watermark)
+                }
             }
-        }
-        .navigationTitle("")
-        .navigationBarTitleDisplayMode(.inline)
-        .toolbarBackground(.hidden, for: .navigationBar)
-        .toolbarColorScheme(.dark, for: .navigationBar)
-        .onAppear {
-            Analytics.capture(.onboardingStepViewed, [Analytics.Key.step: step.analyticsName])
+            // A real title keeps the inline bar from collapsing on the first page.
+            // Zero-width, so it does not show, and the back button stays a chevron.
+            .navigationTitle("")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar(.visible, for: .navigationBar)
+            .toolbarBackground(.visible, for: .navigationBar)
+            .toolbarBackground(Color.clear, for: .navigationBar)
+            .toolbarColorScheme(.dark, for: .navigationBar)
+            .onAppear {
+                Analytics.capture(.onboardingStepViewed, [Analytics.Key.step: step.analyticsName])
+            }
+    }
+
+    @ViewBuilder
+    private func page(_ step: OnboardingStep) -> some View {
+        switch step {
+        case .welcome:
+            OnboardingWelcomePage(onContinue: { push(.voice) })
+        case .voice:
+            OnboardingVoicePage(
+                voice: voice,
+                accounts: accounts,
+                categories: categories,
+                onContinue: { push(.pro) }
+            )
+        case .pro:
+            OnboardingProPage(onFinish: complete)
         }
     }
 
@@ -94,16 +107,58 @@ struct OnboardingFlowView: View {
     static let currentVersion = 3
 }
 
+/// Keeps the system bar transparent without removing it. The button has to live in
+/// that bar; hiding the bar is what let it sit on the sheet edge and then jump.
+private struct OnboardingNavigationBarTransparency: UIViewControllerRepresentable {
+    func makeUIViewController(context: Context) -> Controller { Controller() }
+
+    func updateUIViewController(_ uiViewController: Controller, context: Context) {
+        uiViewController.apply()
+    }
+
+    final class Controller: UIViewController {
+        private var didApply = false
+
+        override func viewDidLoad() {
+            super.viewDidLoad()
+            view.backgroundColor = .clear
+            view.isUserInteractionEnabled = false
+        }
+
+        override func didMove(toParent parent: UIViewController?) {
+            super.didMove(toParent: parent)
+            apply()
+        }
+
+        override func viewWillAppear(_ animated: Bool) {
+            super.viewWillAppear(animated)
+            apply()
+        }
+
+        /// Once, before the first push. Touching the bar again mid-transition is what
+        /// makes the back button settle a second time.
+        func apply() {
+            guard !didApply, let bar = navigationController?.navigationBar else { return }
+            didApply = true
+            let appearance = UINavigationBarAppearance()
+            appearance.configureWithTransparentBackground()
+            appearance.shadowColor = .clear
+            appearance.backgroundColor = .clear
+            bar.standardAppearance = appearance
+            bar.scrollEdgeAppearance = appearance
+            bar.compactAppearance = appearance
+            bar.compactScrollEdgeAppearance = appearance
+            bar.isTranslucent = true
+        }
+    }
+}
+
 // MARK: - Page 1: Welcome
 
 private struct OnboardingWelcomePage: View {
     let onContinue: () -> Void
 
     private let accent = OnboardingStep.welcome.accent
-
-    /// The same features the Pro paywall leads with, so the offer later on is something
-    /// they have already been told about.
-    private static let features: [ProFeature] = [.voice, .messageImport]
 
     var body: some View {
         OnboardingPage {
@@ -125,10 +180,21 @@ private struct OnboardingWelcomePage: View {
             .frame(maxWidth: .infinity)
             .accessibilityElement(children: .combine)
         } focus: {
-            ProFeatureCard(features: Self.features, accent: accent)
+            OnboardingCard(themeTint: accent) {
+                VStack(alignment: .leading, spacing: 16) {
+                    ForEach(OnboardingWelcomeFeature.allCases) { feature in
+                        OnboardingFeatureRow(
+                            icon: feature.symbolName,
+                            color: accent,
+                            title: feature.title,
+                            description: feature.subtitle
+                        )
+                    }
+                }
+            }
         } action: {
             OnboardingActionButton(
-                title: "Show me how",
+                title: "Next",
                 fill: accent,
                 action: onContinue
             )
@@ -147,6 +213,8 @@ private struct OnboardingVoicePage: View {
     @Environment(\.modelContext) private var modelContext
     /// Picked fresh on every tap of the mic, so a second attempt offers a new idea.
     @State private var exampleScript: String?
+    /// After ten seconds of an open mic, the example gives way to how to stop.
+    @State private var showsStopHint = false
 
     private let accent = OnboardingStep.voice.accent
 
@@ -159,7 +227,7 @@ private struct OnboardingVoicePage: View {
         OnboardingPage {
             OnboardingNarration(
                 headline: "Just say it.",
-                detail: "One tap, one sentence. Done."
+                detail: "Track expenses by speaking them out loud."
             )
         } focus: {
             focus
@@ -170,7 +238,7 @@ private struct OnboardingVoicePage: View {
             // with the plate, which is still the thing to tap. One button throughout, so
             // it morphs into the filled capsule rather than being swapped for one.
             OnboardingActionButton(
-                title: hasHeard ? "Awesome, next" : "I'll do it later",
+                title: hasHeard ? "Next" : "I'll do it later",
                 fill: accent,
                 style: hasHeard ? .filled : .quiet,
                 action: onContinue
@@ -183,6 +251,13 @@ private struct OnboardingVoicePage: View {
         }
         // Stopping the clip is the user's job, but a clip that runs to the cap submits
         // itself rather than being thrown away.
+        .task(id: voice.startedAt) {
+            showsStopHint = false
+            guard voice.startedAt != nil else { return }
+            try? await Task.sleep(for: .seconds(7))
+            guard !Task.isCancelled, voice.isListening else { return }
+            showsStopHint = true
+        }
         .task(id: voice.startedAt) {
             guard let startedAt = voice.startedAt else { return }
             let remaining = VoiceAudioPolicy.maxClipDurationSeconds - Date().timeIntervalSince(startedAt)
@@ -239,10 +314,15 @@ private struct OnboardingVoicePage: View {
         switch voice.phase {
         case .idle:      "Tap me"
         // An example gives them something to say the moment the mic opens.
-        case .listening: exampleScript.map { "Try saying \"\($0)\"" }
-            ?? "Your language, your dialect. Say what you spent."
+        case .listening:
+            if showsStopHint {
+                "Tap me to stop recording."
+            } else {
+                exampleScript.map { "Try saying \"\($0)\"" }
+                    ?? "Your language, your dialect. Say what you spent."
+            }
         case .thinking:  nil
-        case .heard:     "Voila! An app that works for you."
+        case .heard:     "Magic, right? No typing required."
         case .failed:    "Give it another shot?"
         }
     }

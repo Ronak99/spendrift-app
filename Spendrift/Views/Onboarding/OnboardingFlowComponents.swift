@@ -214,7 +214,6 @@ struct OnboardingCornerWatermark: View {
             .foregroundStyle(OnboardingTheme.textPrimary.opacity(0.10))
             .offset(x: hang.width, y: hang.height)
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
-            .ignoresSafeArea()
             .allowsHitTesting(false)
             .accessibilityHidden(true)
             .contentTransition(.opacity)
@@ -524,7 +523,7 @@ struct OnboardingActionButton: View {
         OnboardingPage {
             OnboardingNarration(
                 headline: "Just say it.",
-                detail: "One tap, one sentence. Done."
+                detail: "Track expenses by speaking them out loud."
             )
         } focus: {
             VStack(spacing: 8) {
@@ -538,7 +537,7 @@ struct OnboardingActionButton: View {
             }
         } action: {
             OnboardingActionButton(
-                title: "Awesome, next",
+                title: "Next",
                 fill: OnboardingStep.voice.accent,
                 action: {}
             )
