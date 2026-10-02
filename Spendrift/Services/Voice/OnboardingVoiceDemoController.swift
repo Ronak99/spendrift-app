@@ -183,7 +183,7 @@ final class OnboardingVoiceDemoController {
                     phase = .failed
                     return
                 }
-                // Onboarding pitches Pro on the next page. Mark this feature done so the
+                // The next page asks for notifications. Mark this feature done so the
                 // celebration paywall does not cover the row they just created.
                 ProGate.markPitched(.voice)
                 UINotificationFeedbackGenerator().notificationOccurred(.success)

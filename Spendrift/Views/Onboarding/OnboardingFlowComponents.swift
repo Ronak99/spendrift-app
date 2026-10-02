@@ -17,7 +17,7 @@ import SwiftUI
 enum OnboardingStep: Int, CaseIterable, Identifiable, Hashable {
     case welcome
     case voice
-    case pro
+    case notifications
 
     var id: Int { rawValue }
 
@@ -28,7 +28,7 @@ enum OnboardingStep: Int, CaseIterable, Identifiable, Hashable {
         // The tab bar's Speak control, so the plate the user is about to tap is already
         // the colour of the button they will look for afterwards.
         case .voice:   Color(hex: "#F57873")
-        case .pro:     OnboardingTheme.accent
+        case .notifications: Color(hex: "#9B7BFF")
         }
     }
 
@@ -36,7 +36,7 @@ enum OnboardingStep: Int, CaseIterable, Identifiable, Hashable {
         switch self {
         case .welcome: "welcome"
         case .voice:   "voice"
-        case .pro:     "pro"
+        case .notifications: "notifications"
         }
     }
 
@@ -49,7 +49,7 @@ enum OnboardingStep: Int, CaseIterable, Identifiable, Hashable {
         switch self {
         case .welcome: .asset(OnboardingVisualAsset.heroMark)
         case .voice:   .symbol("mic.fill")
-        case .pro:     .symbol("bell.badge.fill")
+        case .notifications: .symbol("bell.badge.fill")
         }
     }
 }
@@ -241,6 +241,8 @@ private struct OnboardingEnamelAsset: View {
     let name: String
     let accent: Color
     let side: CGFloat
+    var showsShadow: Bool = true
+    var showGradient: Bool = true
 
     var body: some View {
         let radius = side * 0.33
@@ -252,19 +254,25 @@ private struct OnboardingEnamelAsset: View {
             .frame(width: side, height: side)
             .clipShape(shape)
             .overlay {
-                shape.fill(
-                    LinearGradient(
-                        colors: [.white.opacity(0.35), .clear],
-                        startPoint: .topLeading,
-                        endPoint: UnitPoint(x: 0.55, y: 0.7)
+                if showGradient {
+                    shape.fill(
+                        LinearGradient(
+                            colors: [.white.opacity(0.35), .clear],
+                            startPoint: .topLeading,
+                            endPoint: UnitPoint(x: 0.55, y: 0.7)
+                        )
                     )
-                )
-                .allowsHitTesting(false)
+                    .allowsHitTesting(false)
+                }  
             }
             .overlay {
                 shape.strokeBorder(.white.opacity(0.28), lineWidth: 0.8)
             }
-            .shadow(color: accent.opacity(0.32), radius: side * 0.12, y: side * 0.08)
+            .shadow(
+                color: showsShadow ? accent.opacity(0.32) : .clear,
+                radius: showsShadow ? side * 0.12 : 0,
+                y: showsShadow ? side * 0.08 : 0
+            )
             .accessibilityHidden(true)
     }
 }
@@ -360,6 +368,59 @@ private struct OnboardingBusyRing: View {
             )
         }
         .frame(width: ringSide, height: ringSide)
+    }
+}
+
+// MARK: - Notification tile
+
+/// The refill ping the opt-in page is asking for, drawn as a banner rather than a bitmap
+/// of one. Copy matches the scheduled quota-refill notification.
+///
+/// Wears the same card as `OnboardingHeardTransactionCard`, so the two payoff objects in
+/// the flow read as one family: card fill, hairline, padding, 44pt enamel squircle, and
+/// the ledger row's type scale.
+struct OnboardingNotificationTile: View {
+    private let title = "Your free AI credits are back"
+    private let message = "Voice notes, receipts, and a bank statement parse just refilled for the month."
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 14) {
+            OnboardingEnamelAsset(
+                name: OnboardingVisualAsset.heroMark,
+                accent: OnboardingStep.notifications.accent,
+                side: 44,
+                showsShadow: false,
+                showGradient: false
+            )
+
+            VStack(spacing: 4) {
+                Text(title)
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundStyle(OnboardingTheme.textPrimary)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.85)
+
+                Text(message)
+                    .font(.system(size: 12))
+                    .foregroundStyle(OnboardingTheme.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
+            Text("3m ago")
+                        .monospacedDigit()
+                .font(.system(size: 11))
+                .foregroundStyle(OnboardingTheme.textSecondary)
+                .lineLimit(1)
+        }
+        .padding(.horizontal, 18)
+        .padding(.vertical, 16)
+        .background(
+            RoundedRectangle(cornerRadius: 22, style: .continuous)
+                .fill(OnboardingTheme.card)
+                .strokeBorder(Color.white.opacity(0.08), lineWidth: 1)
+        )
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("Example notification. \(title). \(message)")
     }
 }
 
@@ -511,6 +572,16 @@ struct OnboardingActionButton: View {
             isBusy: true,
             accessibilityLabel: "Reading it back"
         )
+    }
+    .preferredColorScheme(.dark)
+}
+
+#Preview("Notification tile") {
+    ZStack {
+        OnboardingSheetAtmosphericBackground(tintColor: OnboardingStep.notifications.accent)
+            .ignoresSafeArea()
+        OnboardingNotificationTile()
+            .padding(.horizontal, 28)
     }
     .preferredColorScheme(.dark)
 }

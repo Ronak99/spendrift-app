@@ -76,10 +76,10 @@ struct OnboardingFlowView: View {
                 voice: voice,
                 accounts: accounts,
                 categories: categories,
-                onContinue: { push(.pro) }
+                onContinue: { push(.notifications) }
             )
-        case .pro:
-            OnboardingProPage(onFinish: complete)
+        case .notifications:
+            OnboardingNotificationsPage(onFinish: complete)
         }
     }
 
@@ -346,9 +346,9 @@ private struct OnboardingVoicePage: View {
     }
 }
 
-// MARK: - Page 3: Pro
+// MARK: - Page 3: Notifications
 
-private struct OnboardingProPage: View {
+private struct OnboardingNotificationsPage: View {
     let onFinish: () -> Void
 
     @AppStorage(NotificationManager.Keys.dailyReminderEnabled) private var dailyReminderEnabled = true
@@ -367,22 +367,17 @@ private struct OnboardingProPage: View {
         case declined
     }
 
-    private let accent = OnboardingStep.pro.accent
+    private let accent = OnboardingStep.notifications.accent
 
     var body: some View {
         OnboardingPage {
             OnboardingNarration(
                 headline: "Turn on notifications.",
-                detail: "To receive 10 free voice notes."
+                detail: "Never miss out on premium features."
             )
         } focus: {
             VStack(spacing: 16) {
-                Image(OnboardingVisualAsset.notificationPreview)
-                    .resizable()
-                    .scaledToFit()
-                    .frame(maxWidth: .infinity)
-                    .accessibilityLabel("Example notification. Your free AI credits are back.")
-
+                OnboardingNotificationTile()
                 OnboardingTapHint(text: tapHint)
             }
             .animation(.spring(response: 0.42, dampingFraction: 0.86), value: reward)

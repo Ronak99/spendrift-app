@@ -24,8 +24,6 @@ enum OnboardingVisualAsset {
     static let heroMark = "SpendriftIcon"
     /// Alternate wallet artwork used by the Pro paywall hero.
     static let proHeroMark = "SpendriftIconAlt"
-    /// Sample of the notification the opt-in page is asking for.
-    static let notificationPreview = "notificationImage"
 }
 
 // MARK: - Sheet background
