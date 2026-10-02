@@ -60,10 +60,9 @@ enum OnboardingStep: Int, CaseIterable, Identifiable {
 /// bottom; the focus slot takes whatever is left and centres its object there, so the
 /// only thing that ever moves is the object itself.
 ///
-/// The page also owns the entrance order: the line writes itself, then the object arrives,
-/// then the capsule. Pass `narrationFinished` from `OnboardingNarration`.
+/// The page also owns the entrance order: the copy is there from the first frame, the
+/// object arrives with it, then the capsule.
 struct OnboardingPage<Narration: View, Focus: View, Action: View>: View {
-    var narrationFinished: Bool
     /// How long the capsule waits after the object arrives. Longer on a page that wants
     /// the object tried before the way out is offered.
     var actionDelay: Duration = .milliseconds(220)
@@ -96,26 +95,11 @@ struct OnboardingPage<Narration: View, Focus: View, Action: View>: View {
         .padding(.top, 36)
         .padding(.bottom, 24)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-        .onChange(of: narrationFinished) { _, finished in
-            guard finished else { return }
-            reveal()
-        }
         .task {
-            // Backstop. Whatever happens to the narration, a page must never be left
-            // without a way forward.
-            try? await Task.sleep(for: .seconds(6))
-            guard !Task.isCancelled else { return }
-            reveal()
-        }
-    }
-
-    private func reveal() {
-        // Keyed to the focus, which flips at once, so the backstop firing during a long
-        // action delay does not schedule the capsule a second time.
-        guard !showsFocus else { return }
-        let entrance: Animation? = reduceMotion ? nil : .spring(response: 0.5, dampingFraction: 0.9)
-        withAnimation(entrance) { showsFocus = true }
-        Task { @MainActor in
+            // Guarded so a page that reappears, after a swipe back, does not replay it.
+            guard !showsFocus else { return }
+            let entrance: Animation? = reduceMotion ? nil : .spring(response: 0.5, dampingFraction: 0.9)
+            withAnimation(entrance) { showsFocus = true }
             try? await Task.sleep(for: actionDelay)
             withAnimation(entrance) { showsAction = true }
         }
@@ -136,63 +120,30 @@ private extension View {
 
 /// Copy in two voices. The headline is the one white line that carries the idea; the
 /// detail is smaller and quieter. Page state speaks through the hint under the hero
-/// plate, not here, so the copy stays put once written.
+/// plate, not here, so the copy never changes once the page is up.
 ///
-/// Both streamed blocks reserve their full size up front and the detail waits for the
-/// headline, so the copy writes itself without moving the object underneath it.
+/// All of it is on screen from the first frame. Nobody should wait to read a page.
 struct OnboardingNarration: View {
     /// White, large, one idea.
     let headline: String
-    /// Everything the headline does not have to carry. Written once the headline lands.
+    /// Everything the headline does not have to carry.
     var detail: String?
-    /// Called when the last block of copy has finished writing itself.
-    var onFinished: (() -> Void)?
-
-    @State private var headlineFinished = false
-
-    private static let detailFont = Font.system(size: 16)
-
-    /// The detail picks up the moment the headline's last glyph lands. The headline's
-    /// own lead-in already let the screen settle, so a second one reads as a stall.
-    private static let detailCadence: StreamingTextCadence = {
-        var cadence = StreamingTextCadence.natural
-        cadence.leadingDelayMilliseconds = 0
-        return cadence
-    }()
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            StreamingText(
-                text: headline,
-                cadence: .slow,
-                font: .system(size: 30, weight: .bold),
-                textColor: OnboardingTheme.textPrimary,
-                multilineTextAlignment: .leading,
-                contentAlignment: .leading,
-                tracking: -0.7,
-                reservesSpace: true,
-                onFinished: handleHeadlineFinished
-            )
+            Text(headline)
+                .font(.system(size: 30, weight: .bold))
+                .tracking(-0.7)
+                .foregroundStyle(OnboardingTheme.textPrimary)
 
             if let detail {
-                StreamingText(
-                    text: detail,
-                    cadence: Self.detailCadence,
-                    font: Self.detailFont,
-                    textColor: OnboardingTheme.textSecondary,
-                    multilineTextAlignment: .leading,
-                    contentAlignment: .leading,
-                    reservesSpace: true,
-                    startsWriting: headlineFinished,
-                    onFinished: { onFinished?() }
-                )
+                Text(detail)
+                    .font(.system(size: 16))
+                    .foregroundStyle(OnboardingTheme.textSecondary)
             }
         }
-    }
-
-    private func handleHeadlineFinished() {
-        headlineFinished = true
-        if detail == nil { onFinished?() }
+        .multilineTextAlignment(.leading)
+        .fixedSize(horizontal: false, vertical: true)
     }
 }
 
@@ -594,7 +545,7 @@ struct OnboardingActionButton: View {
         OnboardingSheetAtmosphericBackground(tintColor: OnboardingStep.voice.accent)
             .ignoresSafeArea()
 
-        OnboardingPage(narrationFinished: true) {
+        OnboardingPage {
             OnboardingNarration(
                 headline: "Just say it.",
                 detail: "One tap, one sentence. Done."

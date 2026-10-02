@@ -114,14 +114,12 @@ struct OnboardingFlowView: View {
 private struct OnboardingWelcomePage: View {
     let onContinue: () -> Void
 
-    @State private var narrationFinished = false
 
     var body: some View {
-        OnboardingPage(narrationFinished: narrationFinished) {
+        OnboardingPage {
             OnboardingNarration(
                 headline: "Welcome to Spendrift.",
-                detail: "I built this app as a cure to my own laziness.",
-                onFinished: { narrationFinished = true }
+                detail: "I built this app as a cure to my own laziness."
             )
         } focus: {
             OnboardingHeroPlate(
@@ -148,7 +146,6 @@ private struct OnboardingVoicePage: View {
     let onContinue: () -> Void
 
     @Environment(\.modelContext) private var modelContext
-    @State private var narrationFinished = false
     /// Picked fresh on every tap of the mic, so a second attempt offers a new idea.
     @State private var exampleScript: String?
 
@@ -162,11 +159,10 @@ private struct OnboardingVoicePage: View {
     private var hasFailed: Bool { voice.phase == .failed }
 
     var body: some View {
-        OnboardingPage(narrationFinished: narrationFinished) {
+        OnboardingPage {
             OnboardingNarration(
                 headline: "Just say it.",
-                detail: "One tap, one sentence. Done.",
-                onFinished: { narrationFinished = true }
+                detail: "One tap, one sentence. Done."
             )
         } focus: {
             focus
@@ -291,7 +287,6 @@ private struct OnboardingProPage: View {
     @AppStorage(NotificationManager.Keys.dailyReminderHour) private var dailyReminderHour = NotificationManager.defaultHour
     @AppStorage(NotificationManager.Keys.dailyReminderMinute) private var dailyReminderMinute = NotificationManager.defaultMinute
 
-    @State private var narrationFinished = false
     @State private var reward: RewardState = .offered
 
     private enum RewardState {
@@ -306,11 +301,10 @@ private struct OnboardingProPage: View {
 
     var body: some View {
         // "Fin." holds back so the bell gets a moment to be tapped first.
-        OnboardingPage(narrationFinished: narrationFinished, actionDelay: .seconds(2)) {
+        OnboardingPage(actionDelay: .seconds(2)) {
             OnboardingNarration(
                 headline: "Tap the bell icon.",
-                detail: "To receive 10 free voice notes.",
-                onFinished: { narrationFinished = true }
+                detail: "To receive 10 free voice notes."
             )
         } focus: {
             VStack(spacing: 8) {
