@@ -156,8 +156,6 @@ private struct OnboardingVoicePage: View {
         return false
     }
 
-    private var hasFailed: Bool { voice.phase == .failed }
-
     var body: some View {
         OnboardingPage {
             OnboardingNarration(
@@ -168,30 +166,21 @@ private struct OnboardingVoicePage: View {
             focus
                 .animation(.spring(response: 0.42, dampingFraction: 0.86), value: voice.phase)
         } action: {
-            if hasHeard {
-                OnboardingActionButton(
-                    title: "Awesome, next",
-                    fill: accent,
-                    action: onContinue
-                )
-            } else if hasFailed {
-                // The demo did not work out. Rather than diagnosing why - no microphone,
-                // no network, nothing heard - the page hands them the door. Quiet, so it
-                // does not compete with the plate, which is still the thing to tap.
-                OnboardingActionButton(
-                    title: "I'll try later",
-                    fill: accent,
-                    style: .quiet,
-                    action: onContinue
-                )
-            } else {
-                // The real capsule, invisible: the floor slot keeps the exact height it
-                // will have once the button arrives, so nothing shifts when it does.
-                OnboardingActionButton(title: "Awesome, next", fill: accent, action: {})
-                    .hidden()
-                    .allowsHitTesting(false)
-                    .accessibilityHidden(true)
-            }
+            // The demo is an offer, not a gate, so the way past it is there from the
+            // first frame. Quiet until they have heard it work, so it does not compete
+            // with the plate, which is still the thing to tap. One button throughout, so
+            // it morphs into the filled capsule rather than being swapped for one.
+            OnboardingActionButton(
+                title: hasHeard ? "Awesome, next" : "I'll do it later",
+                fill: accent,
+                style: hasHeard ? .filled : .quiet,
+                action: onContinue
+            )
+            // A clip already being read will still land in the ledger, so the page
+            // holds for the moment it takes to show them the result.
+            .disabled(voice.phase == .thinking)
+            .opacity(voice.phase == .thinking ? 0.4 : 1)
+            .animation(.easeInOut(duration: 0.2), value: voice.phase == .thinking)
         }
         // Stopping the clip is the user's job, but a clip that runs to the cap submits
         // itself rather than being thrown away.
@@ -246,7 +235,7 @@ private struct OnboardingVoicePage: View {
 
     /// An invitation first time round, what is happening while they speak, the payoff
     /// under the heard card, and an offer of a second go after a run that did not work
-    /// out - no blame and no diagnosis, the capsule below is the other way forward.
+    /// out - no blame and no diagnosis, the button below is always the other way forward.
     private var tapHint: String? {
         switch voice.phase {
         case .idle:      "Tap me"
@@ -288,6 +277,8 @@ private struct OnboardingProPage: View {
     @AppStorage(NotificationManager.Keys.dailyReminderMinute) private var dailyReminderMinute = NotificationManager.defaultMinute
 
     @State private var reward: RewardState = .offered
+    /// "I'll do it later" holds back so "Notify Me." gets a moment to be read first.
+    @State private var showsLater = false
 
     private enum RewardState {
         case offered
@@ -300,10 +291,9 @@ private struct OnboardingProPage: View {
     private let accent = OnboardingStep.pro.accent
 
     var body: some View {
-        // "Fin." holds back so the bell gets a moment to be tapped first.
-        OnboardingPage(actionDelay: .seconds(2)) {
+        OnboardingPage {
             OnboardingNarration(
-                headline: "Tap the bell icon.",
+                headline: "Turn on notifications.",
                 detail: "To receive 10 free voice notes."
             )
         } focus: {
@@ -312,20 +302,47 @@ private struct OnboardingProPage: View {
                     mark: .symbol(rewardSymbol),
                     accent: accent,
                     isBusy: reward == .asking,
-                    accessibilityLabel: rewardAccessibilityLabel,
-                    action: reward == .offered ? requestNotifications : nil
+                    accessibilityLabel: rewardAccessibilityLabel
                 )
 
                 OnboardingTapHint(text: tapHint)
             }
             .animation(.spring(response: 0.42, dampingFraction: 0.86), value: reward)
         } action: {
-            OnboardingActionButton(
-                title: "Let's go.",
-                fill: accent,
-                action: onFinish
-            )
+            VStack(spacing: 4) {
+                // One button throughout, so it morphs from the offer into the way out
+                // once the offer has been answered.
+                OnboardingActionButton(
+                    title: hasAnswered ? "Let's go." : "Notify Me.",
+                    fill: accent,
+                    action: hasAnswered ? onFinish : requestNotifications
+                )
+                .disabled(reward == .asking)
+
+                // Always laid out, so "Notify Me." sits where it will stay when this
+                // fades in, and does not move when it fades out again.
+                OnboardingActionButton(
+                    title: "I'll do it later",
+                    fill: accent,
+                    style: .quiet,
+                    action: onFinish
+                )
+                .opacity(showsLater && reward == .offered ? 1 : 0)
+                .allowsHitTesting(showsLater && reward == .offered)
+                .accessibilityHidden(!(showsLater && reward == .offered))
+                .animation(.easeInOut(duration: 0.32), value: showsLater)
+                .animation(.easeInOut(duration: 0.32), value: reward)
+            }
         }
+        .task {
+            try? await Task.sleep(for: .seconds(2))
+            guard !Task.isCancelled else { return }
+            showsLater = true
+        }
+    }
+
+    private var hasAnswered: Bool {
+        reward == .granted || reward == .declined
     }
 
     /// The plate stops offering once it has been answered, so the mark has to say which
@@ -340,16 +357,16 @@ private struct OnboardingProPage: View {
 
     private var rewardAccessibilityLabel: String {
         switch reward {
-        case .offered:  "Turn on notifications for a free top-up"
+        case .offered:  "Free top-up for turning on notifications"
         case .asking:   "Turning on notifications"
         case .granted:  "Notifications on. Free top-up added."
         case .declined: "Notifications off"
         }
     }
 
-    private var tapHint: String {
+    private var tapHint: String? {
         switch reward {
-        case .offered:  "Tap me"
+        case .offered:  nil
         case .asking:   "One moment."
         case .granted:  "Done. Ten voice notes, five receipts and a statement, on us."
         // Free credits wait for next month unless they change their mind in Settings.
