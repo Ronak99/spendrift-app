@@ -114,23 +114,37 @@ struct OnboardingFlowView: View {
 private struct OnboardingWelcomePage: View {
     let onContinue: () -> Void
 
+    private let accent = OnboardingStep.welcome.accent
+
+    /// The same features the Pro paywall leads with, so the offer later on is something
+    /// they have already been told about.
+    private static let features: [ProFeature] = [.voice, .messageImport]
 
     var body: some View {
         OnboardingPage {
-            OnboardingNarration(
-                headline: "Welcome to Spendrift.",
-                detail: "I built this app as a cure to my own laziness."
-            )
+            // The paywall's hero section: glass mark, name, one line under it.
+            VStack(spacing: 20) {
+                GlassHeroMark(assetName: OnboardingVisualAsset.proHeroMark, accent: accent)
+
+                VStack(spacing: 10) {
+                    Text("Spendrift")
+                        .font(.title2.bold())
+                        .foregroundStyle(OnboardingTheme.textPrimary)
+
+                    Text("Simplifying personal finance.")
+                        .font(.subheadline)
+                        .foregroundStyle(OnboardingTheme.textSecondary)
+                }
+                .multilineTextAlignment(.center)
+            }
+            .frame(maxWidth: .infinity)
+            .accessibilityElement(children: .combine)
         } focus: {
-            OnboardingHeroPlate(
-                mark: .asset(OnboardingVisualAsset.heroMark),
-                accent: Color(hex: "#000"),
-                accessibilityLabel: "Spendrift"
-            )
+            ProFeatureCard(features: Self.features, accent: accent)
         } action: {
             OnboardingActionButton(
                 title: "Show me how",
-                fill: OnboardingStep.welcome.accent,
+                fill: accent,
                 action: onContinue
             )
         }

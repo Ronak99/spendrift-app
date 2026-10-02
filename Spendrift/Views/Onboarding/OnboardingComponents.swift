@@ -545,38 +545,90 @@ struct OnboardingCard<Content: View>: View {
     }
 
     var body: some View {
+        // The content sizes the card and the surface is drawn behind it. Shapes take
+        // all the room they are offered, so as siblings in a stack they would stretch
+        // the card to fill any flexible slot it sits in.
+        content
+            .padding(20)
+            .background {
+                ZStack {
+                    RoundedRectangle(cornerRadius: 24, style: .continuous)
+                        .fill(OnboardingTheme.card)
+
+                    RoundedRectangle(cornerRadius: 24, style: .continuous)
+                        .fill(
+                            LinearGradient(
+                                colors: [
+                                    themeTint.opacity(0.12),
+                                    themeTint.opacity(0.06),
+                                    themeTint.opacity(0.02)
+                                ],
+                                startPoint: .top,
+                                endPoint: .bottom
+                            )
+                        )
+
+                    RoundedRectangle(cornerRadius: 24, style: .continuous)
+                        .strokeBorder(
+                            LinearGradient(
+                                colors: [
+                                    themeTint.opacity(0.35),
+                                    themeTint.opacity(0.12)
+                                ],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            ),
+                            lineWidth: 0.65
+                        )
+                }
+            }
+    }
+}
+
+// MARK: - Glass hero
+
+/// An asset on the glowing glass disc. The face the Pro paywall and the welcome page
+/// share, so first run and the offer it leads to read as one product.
+struct GlassHeroMark: View {
+    let assetName: String
+    var accent: Color = OnboardingTheme.accent
+    var size: CGFloat = 45
+
+    var body: some View {
         ZStack {
-            RoundedRectangle(cornerRadius: 24, style: .continuous)
-                .fill(OnboardingTheme.card)
+            GlowingHeroGlow(color: accent, size: size)
+            GlowingHeroMark(
+                assetName: assetName,
+                color: accent,
+                size: size,
+                liquidGlassTint: accent
+            )
+        }
+        .accessibilityHidden(true)
+    }
+}
 
-            RoundedRectangle(cornerRadius: 24, style: .continuous)
-                .fill(
-                    LinearGradient(
-                        colors: [
-                            themeTint.opacity(0.12),
-                            themeTint.opacity(0.06),
-                            themeTint.opacity(0.02)
-                        ],
-                        startPoint: .top,
-                        endPoint: .bottom
+// MARK: - Pro feature card
+
+/// What Spendrift's AI features do, one row each, in the paywall's card.
+struct ProFeatureCard: View {
+    let features: [ProFeature]
+    var accent: Color = OnboardingTheme.accent
+    /// Drawn in `accent`; every other row is drawn in the success green.
+    var highlighted: ProFeature?
+
+    var body: some View {
+        OnboardingCard(themeTint: accent) {
+            VStack(alignment: .leading, spacing: 16) {
+                ForEach(features) { feature in
+                    OnboardingFeatureRow(
+                        icon: feature.symbolName,
+                        color: feature == highlighted ? accent : OnboardingTheme.success,
+                        title: feature.displayName,
+                        description: feature.summary
                     )
-                )
-
-            RoundedRectangle(cornerRadius: 24, style: .continuous)
-                .strokeBorder(
-                    LinearGradient(
-                        colors: [
-                            themeTint.opacity(0.35),
-                            themeTint.opacity(0.12)
-                        ],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    ),
-                    lineWidth: 0.65
-                )
-
-            content
-                .padding(20)
+                }
+            }
         }
     }
 }

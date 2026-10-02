@@ -81,14 +81,15 @@ struct OnboardingPage<Narration: View, Focus: View, Action: View>: View {
             // so neither the headline nor the button shifts as a page plays out.
             narration
                 .frame(maxWidth: .infinity, alignment: .topLeading)
+                .layoutPriority(1)
 
             focus
-                .frame(maxWidth: .infinity, minHeight: 128)
-                .frame(maxHeight: .infinity)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .onboardingReveal(showsFocus, reduceMotion: reduceMotion)
 
             action
                 .frame(maxWidth: .infinity)
+                .layoutPriority(1)
                 .onboardingReveal(showsAction, reduceMotion: reduceMotion)
         }
         .padding(.horizontal, 28)
