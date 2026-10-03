@@ -37,7 +37,7 @@ enum ProEntitlementCache {
         defaultsOverride ?? UserDefaults(suiteName: IntentSwiftData.appGroupID) ?? .standard
     }
 
-    /// Last known entitlement, or true while `ForcedPro` is on in a debug build.
+    /// Last known entitlement, or true while the developer Force Pro switch is on.
     /// Treated as authoritative only until StoreKit answers.
     static var isPro: Bool {
         get { ForcedPro.isEnabled || purchasedIsPro }
