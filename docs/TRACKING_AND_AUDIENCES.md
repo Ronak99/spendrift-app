@@ -139,7 +139,17 @@ Custom event on appear and on every return to `.active`:
 
 | Event | Properties we set | Notes |
 | --- | --- | --- |
-| `app_opened` | `days_since_install` | Fires twice on a cold start: `onAppear` and `scenePhase == .active`. Treat unique users / unique days, not raw count, when measuring opens. |
+| `app_opened` | `days_since_install`, `source`, plus `kind` and `notification_id` / `campaign` when notification-sourced | Fires twice on a cold start: `onAppear` and `scenePhase == .active`. Treat unique users / unique days, not raw count, when measuring opens. |
+
+`source` is `notification` or `direct`. A tap recorded by either notification handler
+is held for 10 seconds (and dropped on backgrounding), so both halves of a cold
+start's double fire carry the same attribution.
+
+It is best effort: iOS does not order the tap callback against the first view
+appearing, so a cold start launched from a notification can still report
+`source=direct`. **Count notification-driven opens with `notification_opened`, not
+with `app_opened` where `source=notification`.** The property is for splitting a
+session's downstream behaviour, not for sizing the funnel.
 
 Every PostHog event, custom or autocaptured, also receives SDK and GeoIP fields from the ingest proxy.
 

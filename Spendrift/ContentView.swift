@@ -186,16 +186,23 @@ struct ContentView: View {
             handlePendingReceiptShareIfNeeded()
             drainMessageInboxIfNeeded()
             drainPendingRoute()
-            Analytics.capture(.appOpened, [Analytics.Key.daysSinceInstall: Analytics.daysSinceInstall])
+            Analytics.captureAppOpened()
         }
         .onChange(of: scenePhase) { _, newPhase in
+            if newPhase == .background {
+                // The tap that brought the app forward belongs to this activation
+                // only; drop it so the next open isn't credited to a notification
+                // the user tapped a while ago.
+                NotificationOpenAttribution.clear()
+                return
+            }
             guard newPhase == .active else { return }
             handleVoiceIntentLaunchIfNeeded()
             handlePendingReceiptShareIfNeeded()
             drainMessageInboxIfNeeded()
             drainPendingRoute()
             PushNotifications.handleForeground()
-            Analytics.capture(.appOpened, [Analytics.Key.daysSinceInstall: Analytics.daysSinceInstall])
+            Analytics.captureAppOpened()
         }
         .onChange(of: selectedTab) { _, newTab in
             Analytics.capture(.screenViewed, [Analytics.Key.tab: Self.tabName(for: newTab)])

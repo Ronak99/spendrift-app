@@ -94,7 +94,12 @@ enum PushNotifications {
 
     @MainActor
     static func handleClick(path: String?, campaign: String?) {
+        // `campaign` is what names a remote notification; a push has no scheduled
+        // kind the way a local reminder does.
+        NotificationOpenAttribution.record(kind: "push", campaign: campaign)
+
         let properties: [String: Any] = [
+            Analytics.Key.source: "push",
             Analytics.Key.kind: "push",
             Analytics.Key.path: path ?? "unknown",
             Analytics.Key.campaign: campaign ?? "",

@@ -69,8 +69,13 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
 
     // MARK: - UNUserNotificationCenterDelegate
 
-    /// Routes a tapped reminder into the matching quick-add flow by opening its
-    /// `spendrift://` deep link, reusing ContentView's existing `.onOpenURL` path.
+    /// Logs the open and routes a tapped reminder into the matching quick-add flow
+    /// by opening its `spendrift://` deep link, reusing ContentView's existing
+    /// `.onOpenURL` path.
+    ///
+    /// The analytics half runs for every tap, including reminders with no deep link
+    /// (the quota refill and the Pro trial reminder) — those used to open the app
+    /// without logging anything at all.
     func userNotificationCenter(
         _ center: UNUserNotificationCenter,
         didReceive response: UNNotificationResponse,
@@ -78,12 +83,18 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
     ) {
         defer { completionHandler() }
 
-        guard
-            let link = response.notification.request.content.userInfo["deeplink"] as? String,
-            let url = URL(string: link)
-        else { return }
+        let request = response.notification.request
+        let userInfo = request.content.userInfo
+        let kind = NotificationManager.openKind(userInfo: userInfo)
 
-        Analytics.capture(.notificationOpened, [Analytics.Key.kind: url.host ?? "open"])
+        NotificationOpenAttribution.record(kind: kind, notificationID: request.identifier)
+        Analytics.capture(.notificationOpened, [
+            Analytics.Key.source: "local",
+            Analytics.Key.kind: kind,
+            Analytics.Key.notificationID: request.identifier,
+        ])
+
+        guard let url = NotificationManager.deeplink(userInfo: userInfo) else { return }
 
         DispatchQueue.main.async {
             UIApplication.shared.open(url)
