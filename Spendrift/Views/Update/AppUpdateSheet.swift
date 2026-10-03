@@ -40,6 +40,14 @@ struct AppUpdateSheet: View {
                     .padding(.bottom, 48)
             }
         }
+        // Mandatory updates block the app on purpose, so they get no escape hatch.
+        .overlay(alignment: .topLeading) {
+            if kind == .optional {
+                SheetDismissToolbarButton()
+                    .padding(.leading, 12)
+                    .padding(.top, 8)
+            }
+        }
         .preferredColorScheme(.dark)
         .interactiveDismissDisabled(kind == .mandatory)
     }

@@ -116,6 +116,7 @@ struct UpdateCategorySheet: View {
             .toolbarBackground(.hidden, for: .navigationBar)
             .toolbarColorScheme(isDark ? .dark : .light, for: .navigationBar)
             .toolbar {
+                SheetDismissToolbarItem()
                 if #available(iOS 26.0, *) {
                     ToolbarItem(placement: .confirmationAction) {
                         saveButton

@@ -421,6 +421,16 @@ final class TransactionIntegrationTests: SpendriftUITestBase {
         waitForTransactionEditor()
     }
 
+    // MARK: Dismiss
+
+    func testTransactionEditor_closeDismissesSheet() {
+        navigateToTransactions()
+        openTransactionsManualEntryForm()
+
+        app.navigationBars.buttons["xmark"].tap()
+        XCTAssertTrue(app.staticTexts["No Transactions"].waitForExistence(timeout: 3))
+    }
+
     // MARK: Create
 
     func testCreateExpenseTransaction_appearsInList() {
@@ -544,6 +554,21 @@ final class TransactionIntegrationTests: SpendriftUITestBase {
         app.buttons["Account"].tap()
         XCTAssertTrue(app.staticTexts["SBI Savings"].waitForExistence(timeout: 3))
         XCTAssertTrue(app.staticTexts["HDFC Current"].exists)
+    }
+
+    func testAccountPicker_closeReturnsToEditor() {
+        createAccount(name: "SBI Savings", balance: "10000")
+
+        navigateToTransactions()
+        openTransactionsManualEntryForm()
+
+        app.buttons["Account"].tap()
+        let pickerBar = app.navigationBars["Select Account"]
+        XCTAssertTrue(pickerBar.waitForExistence(timeout: 3))
+
+        pickerBar.buttons["xmark"].tap()
+        waitForTransactionEditor()
+        XCTAssertFalse(pickerBar.exists)
     }
 
     // MARK: Category Picker

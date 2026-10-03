@@ -75,14 +75,7 @@ struct AccountIconPickerView: View {
             .navigationBarTitleDisplayMode(.inline)
             .searchable(text: $query, prompt: "Search \(AccountIcon.selectable.count) icons")
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button {
-                        dismiss()
-                    } label: {
-                        Image(systemName: "chevron.left")
-                    }
-                    .accessibilityLabel("Close")
-                }
+                SheetDismissToolbarItem()
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Done") {
                         onDone?()

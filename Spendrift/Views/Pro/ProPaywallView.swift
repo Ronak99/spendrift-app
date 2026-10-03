@@ -111,6 +111,13 @@ struct ProPaywallView: View {
 
             actionStack
         }
+        // No navigation bar to hang a toolbar item off, so the close plate is pinned
+        // to the same leading corner a sheet toolbar would put it in.
+        .overlay(alignment: .topLeading) {
+            SheetDismissToolbarButton()
+                .padding(.leading, 12)
+                .padding(.top, 8)
+        }
         .preferredColorScheme(.dark)
         .task {
             await entitlement.loadProducts()

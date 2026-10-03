@@ -39,10 +39,7 @@ struct MessageInboxDebugView: View {
             .navigationTitle("Message inbox")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
-                    SheetDismissToolbarButton()
-                        .foregroundStyle(accent)
-                }
+                SheetDismissToolbarItem()
                 ToolbarItem(placement: .topBarTrailing) {
                     HStack(spacing: 16) {
                         Button {

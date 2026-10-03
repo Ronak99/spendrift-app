@@ -345,8 +345,30 @@ Onboarding / Pro CTAs are the night-family exception: full-width capsule, 16pt v
 
 ### 5.4 Close
 
-`SheetDismissToolbarButton`: `xmark`, 14pt semibold, system toolbar placement, accessibility "Close".
-Do not draw a custom circular close on editor heroes.
+Circular chrome plate. Same geometry as Plus, secondary weight, because Close never
+competes with the confirm action.
+
+- Glyph: `xmark`, 14pt semibold.
+- Frame: **32 × 32**.
+- Shape: `Circle()`.
+- Fill: Hero Ink 8% in light, white 14% in dark.
+- Glyph colour: Hero Ink 70% in light, white 80% in dark.
+- Placement: `.cancellationAction`, leading navigation bar.
+- iOS 26: `.sharedBackgroundVisibility(.hidden)`, same as Plus and Save.
+
+Accessibility label is "Close"; the identifier stays `xmark` for UI tests.
+
+Every dismissible sheet carries one, because drag-to-dismiss is unreliable on current
+iOS. Use `SheetDismissToolbarItem()` inside `.toolbar { }` — it owns the placement and
+the iOS 26 branch, so no call site repeats them. Sheets with no navigation bar
+(`ProPaywallView`, `AppUpdateSheet`) overlay `SheetDismissToolbarButton` in the top
+leading corner instead.
+
+Blocking presentations are the exception and stay closeless: onboarding, and mandatory
+update. UIKit pickers (photo library, camera, mail, share) keep their own system chrome.
+
+Do not draw a second close on editor heroes.
+Do not use `xmark.circle.fill`, and do not give Close the inverted Plus fill.
 
 ### 5.5 Segmented picker
 
@@ -535,6 +557,7 @@ A 3-up category tray is correct here. It is a tray of enamel objects, not a mark
 | Analytics card | 20 continuous | Summary / chart cards |
 | Screenshot clip | 14 continuous | Feature Request image |
 | Plus | Circle 32 | Toolbar add |
+| Close | Circle 32 | Sheet dismiss |
 | Save / primary / date | Capsule | Confirm, empty CTA, date selector |
 
 Do not add a new radius without a job.
@@ -543,7 +566,7 @@ Do not add a new radius without a job.
 
 - `.scrollEdgeEffectStyle(.soft)` on scrolling content (`softScrollEdge()`).
 - `.safeAreaBar` for pinned headers (date capsule, account summary). Pre-26: `safeAreaInset` plus `.bar`.
-- Hide shared toolbar backgrounds on Plus and Save so inverted chrome is the only plate.
+- Hide shared toolbar backgrounds on Plus, Save, and Close so the custom plate is the only one.
 
 ---
 
@@ -743,6 +766,7 @@ Documented so new work closes them instead of copying the wrong variant.
 - [ ] Watermark is ultra-light 160/176, 8-10% hero ink, top-trailing, not in VoiceOver.
 - [ ] Icons sit in `CategoryEnamelTile` (33% continuous radius, sheen, white hairline, `#0A0A0B` glyph).
 - [ ] Plus is a 32pt inverted circle. Save / primary is an inverted capsule. Same ink/paper pair.
+- [ ] Every dismissible sheet has `SheetDismissToolbarItem()`, unless it blocks on purpose.
 - [ ] iOS 26 toolbar shared background is hidden on those controls.
 - [ ] Type control is `ChromeSegmentedPicker`, not `.segmented`.
 - [ ] Row titles are 16 semibold. Money is tabular.
