@@ -369,15 +369,46 @@ private struct OnboardingNotificationsPage: View {
 
     private let accent = OnboardingStep.notifications.accent
 
+    /// Example pings, most useful first. Another banner is another entry.
+    private static let notifications: [OnboardingNotification] = [
+        OnboardingNotification(
+            title: "Premium Refilled",
+            message: "Your 10 voice notes are ready for the month. Let's track!",
+            time: "3m ago",
+            hint: "We'll tell you when your voice notes are back."
+        ),
+        OnboardingNotification(
+            title: "Budget Alert",
+            message: "You've reached 80% of your Dining Out limit for this month.",
+            time: "Yesterday",
+            hint: "Get a heads-up as you get close to a budget limit."
+        ),
+        OnboardingNotification(
+            title: "Weekly Win!",
+            message: "You spent 12% less on groceries this week compared to last.",
+            time: "2d ago",
+            hint: "A quick note each week when you're spending less."
+        ),
+        OnboardingNotification(
+            title: "Your Quarterly Review is In",
+            message: "See where your money went this quarter and unlock smart insights.",
+            time: "1h ago",
+            hint: "Your spending review, ready every three months."
+        ),
+    ]
+
+    /// The banner at the front of the deck, whose line sits under it.
+    @State private var frontNotification = 0
+
     var body: some View {
         OnboardingPage {
-            OnboardingNarration(
-                headline: "Turn on notifications.",
-                detail: "Never miss out on premium features."
-            )
+            OnboardingNarration(headline: "Turn on notifications.")
         } focus: {
-            VStack(spacing: 16) {
-                OnboardingNotificationTile()
+            VStack(spacing: 8) {
+                OnboardingNotificationDeck(
+                    notifications: Self.notifications,
+                    front: $frontNotification
+                )
                 OnboardingTapHint(text: tapHint)
             }
             .animation(.spring(response: 0.42, dampingFraction: 0.86), value: reward)
@@ -420,7 +451,8 @@ private struct OnboardingNotificationsPage: View {
 
     private var tapHint: String? {
         switch reward {
-        case .offered:  nil
+        // Why the banner up front is worth a ping, until the offer is answered.
+        case .offered:  Self.notifications[frontNotification].hint
         case .asking:   "One moment."
         case .granted:  "Done. Ten voice notes, five receipts and a statement, on us."
         // Free credits wait for next month unless they change their mind in Settings.

@@ -474,7 +474,7 @@ enum OnboardingWelcomeFeature: CaseIterable, Identifiable {
         switch self {
         case .freeForever:        "infinity"
         case .generousPremium:    "arrow.triangle.2.circlepath"
-        case .intentionalAI:      "brain.head.profile"
+        case .intentionalAI:      "sparkles.2"
         case .beautifulAnalytics: "chart.bar.xaxis"
         }
     }

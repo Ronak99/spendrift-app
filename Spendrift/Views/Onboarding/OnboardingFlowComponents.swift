@@ -373,18 +373,29 @@ private struct OnboardingBusyRing: View {
 
 // MARK: - Notification tile
 
-/// The refill ping the opt-in page is asking for, drawn as a banner rather than a bitmap
-/// of one. Copy matches the scheduled quota-refill notification.
+/// One example notification. The page owns the list, so adding another is another value.
+struct OnboardingNotification: Identifiable, Hashable {
+    let title: String
+    let message: String
+    /// Relative stamp, such as "3m ago".
+    var time: String
+    /// The line under the deck while this one is up front: why it is worth a ping.
+    var hint: String? = nil
+
+    var id: String { title }
+}
+
+/// A banner drawn the same way as `OnboardingHeardTransactionCard`: card fill, hairline,
+/// padding, 44pt enamel squircle, and the ledger row's type scale.
 ///
-/// Wears the same card as `OnboardingHeardTransactionCard`, so the two payoff objects in
-/// the flow read as one family: card fill, hairline, padding, 44pt enamel squircle, and
-/// the ledger row's type scale.
+/// Fills the height it is offered, so banners of different lengths can share one size.
 struct OnboardingNotificationTile: View {
-    private let title = "Your free AI credits are back"
-    private let message = "Voice notes, receipts, and a bank statement parse just refilled for the month."
+    let notification: OnboardingNotification
+    /// Banners waiting behind the front one are blank cards, so only one reads at a time.
+    var showsContent = true
 
     var body: some View {
-        HStack(alignment: .top, spacing: 14) {
+        HStack(alignment: .center, spacing: 14) {
             OnboardingEnamelAsset(
                 name: OnboardingVisualAsset.heroMark,
                 accent: OnboardingStep.notifications.accent,
@@ -393,34 +404,173 @@ struct OnboardingNotificationTile: View {
                 showGradient: false
             )
 
-            VStack(spacing: 4) {
-                Text(title)
-                    .font(.system(size: 16, weight: .semibold))
-                    .foregroundStyle(OnboardingTheme.textPrimary)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.85)
+            HStack(alignment: .top, spacing: 14) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(notification.title)
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundStyle(OnboardingTheme.textPrimary)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.85)
+    
+                    Text(notification.message)
+                        .font(.system(size: 12))
+                        .foregroundStyle(OnboardingTheme.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
 
-                Text(message)
-                    .font(.system(size: 12))
+                Text(notification.time)
+                    .monospacedDigit()
+                    .font(.system(size: 11))
                     .foregroundStyle(OnboardingTheme.textSecondary)
-                    .fixedSize(horizontal: false, vertical: true)
+                    .lineLimit(1)
             }
-
-            Text("3m ago")
-                        .monospacedDigit()
-                .font(.system(size: 11))
-                .foregroundStyle(OnboardingTheme.textSecondary)
-                .lineLimit(1)
         }
+        .opacity(showsContent ? 1 : 0)
+        .frame(maxHeight: .infinity)
         .padding(.horizontal, 18)
-        .padding(.vertical, 16)
+        .padding(.vertical, 14)
         .background(
             RoundedRectangle(cornerRadius: 22, style: .continuous)
                 .fill(OnboardingTheme.card)
                 .strokeBorder(Color.white.opacity(0.08), lineWidth: 1)
         )
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel("Example notification. \(title). \(message)")
+        .accessibilityLabel("Example notification. \(notification.title). \(notification.message)")
+    }
+}
+
+/// The notifications page's deck: one banner up front and two more hinted behind it.
+/// Every few seconds the front one is swiped away and the rest move up, and the user can
+/// swipe it away themselves. A banner that leaves rejoins at the back.
+///
+/// Needs more banners than it shows, so the one that just left has somewhere to wait
+/// off screen before it fades back in behind the others.
+struct OnboardingNotificationDeck: View {
+    let notifications: [OnboardingNotification]
+    /// The banner up front. The page reads it to put that banner's line under the deck.
+    @Binding var front: Int
+
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    /// Horizontal travel of the front banner while it is being dragged.
+    @State private var drag: CGFloat = 0
+    /// Which way the last banner left, so one flicked right does not exit to the left.
+    @State private var exitDirection: CGFloat = -1
+    /// Bumped by a swipe, so the next automatic one waits a full interval again.
+    @State private var swipes = 0
+    @State private var width: CGFloat = 0
+
+    private static let interval: Duration = .seconds(3)
+    /// Banners on screen at once: the front one and the two peeking under it.
+    private static let visible = 3
+    /// How far each banner behind the front one drops.
+    private static let peek: CGFloat = 14
+    /// How much each banner behind the front one shrinks.
+    private static let shrink: CGFloat = 0.07
+    private static let depthOpacity: [Double] = [1, 0.8, 0.5]
+
+    var body: some View {
+        // Every banner, laid out once and hidden, so the deck is as tall as its longest
+        // banner and all of them share that height.
+        ZStack {
+            ForEach(notifications) { notification in
+                OnboardingNotificationTile(notification: notification)
+            }
+        }
+        .fixedSize(horizontal: false, vertical: true)
+        .hidden()
+        .accessibilityHidden(true)
+        .overlay(alignment: .top) {
+            ZStack(alignment: .top) {
+                ForEach(Array(notifications.enumerated()), id: \.element.id) { index, notification in
+                    card(notification, depth: depth(of: index))
+                }
+            }
+        }
+        // Room for the banners peeking under the front one.
+        .padding(.bottom, Self.peek * CGFloat(Self.visible - 1))
+        .onGeometryChange(for: CGFloat.self, of: \.size.width) { width = $0 }
+        .sensoryFeedback(.impact(weight: .light), trigger: swipes)
+        .task(id: swipes) {
+            guard !reduceMotion, notifications.count > Self.visible else { return }
+            while !Task.isCancelled {
+                try? await Task.sleep(for: Self.interval)
+                // Never pull a banner out from under a finger.
+                guard !Task.isCancelled, drag == 0 else { continue }
+                advance(toward: -1)
+            }
+        }
+    }
+
+    /// 0 is the front. Anything at `visible` or beyond has left and is waiting off screen.
+    private func depth(of index: Int) -> Int {
+        (index - front + notifications.count) % notifications.count
+    }
+
+    private func card(_ notification: OnboardingNotification, depth: Int) -> some View {
+        let isGone = depth >= Self.visible
+        let slot = CGFloat(min(depth, Self.visible - 1))
+
+        return OnboardingNotificationTile(notification: notification, showsContent: depth == 0)
+            .shadow(color: .black.opacity(depth == 0 || isGone ? 0.45 : 0), radius: 20, y: 20)
+            .scaleEffect(isGone ? 1 : 1 - Self.shrink * slot, anchor: .top)
+            .offset(
+                x: isGone ? exitDirection * width * 1.25 : (depth == 0 ? drag : 0),
+                y: isGone ? 0 : Self.peek * slot
+            )
+            .animation(moveAnimation(depth), value: depth)
+            .opacity(isGone ? 0 : Self.depthOpacity[depth])
+            .animation(fadeAnimation(depth), value: depth)
+            // A leaving banner slides over the ones moving up into its place.
+            .zIndex(isGone ? Double(notifications.count) : Double(notifications.count - depth - 1))
+            .allowsHitTesting(depth == 0)
+            .accessibilityHidden(depth != 0)
+            .accessibilityAction(named: "Next example") {
+                swipes += 1
+                advance(toward: -1)
+            }
+    }
+
+    /// The front banner flicks out fast. The rest wait a beat for it to clear, then
+    /// settle into their new places. One arriving at the back jumps there unseen.
+    private func moveAnimation(_ depth: Int) -> Animation? {
+        if depth >= Self.visible {
+            return .timingCurve(0.55, 0, 0.9, 0.4, duration: 0.28)
+        }
+        if depth == Self.visible - 1 { return nil }
+        return .timingCurve(0.2, 0.8, 0.2, 1, duration: 0.45).delay(0.12)
+    }
+
+    /// Opacity follows the move, except at the ends: a leaving banner vanishes only once
+    /// it is off screen, and one arriving at the back fades in after the others settle.
+    private func fadeAnimation(_ depth: Int) -> Animation? {
+        if depth >= Self.visible { return .linear(duration: 0.04).delay(0.26) }
+        if depth == Self.visible - 1 { return .easeInOut(duration: 0.5).delay(0.3) }
+        return moveAnimation(depth)
+    }
+
+    private var swipe: some Gesture {
+        DragGesture(minimumDistance: 10)
+            .onChanged { drag = $0.translation.width }
+            .onEnded { value in
+                let projected = value.predictedEndTranslation.width
+                guard abs(projected) > width * 0.35 else {
+                    withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) { drag = 0 }
+                    return
+                }
+                swipes += 1
+                advance(toward: projected < 0 ? -1 : 1)
+            }
+    }
+
+    /// Sends the front banner out to one side. The card animations key off depth, so
+    /// changing `front` is all it takes, and the leaving banner starts from wherever
+    /// the finger left it.
+    private func advance(toward direction: CGFloat) {
+        exitDirection = direction
+        front = (front + 1) % notifications.count
+        drag = 0
     }
 }
 
@@ -580,7 +730,14 @@ struct OnboardingActionButton: View {
     ZStack {
         OnboardingSheetAtmosphericBackground(tintColor: OnboardingStep.notifications.accent)
             .ignoresSafeArea()
-        OnboardingNotificationTile()
+        OnboardingNotificationTile(
+            notification: OnboardingNotification(
+                title: "Premium Refilled",
+                message: "Your 10 voice notes are ready for the month. Let's track!",
+                time: "3m ago"
+            )
+        )
+            .fixedSize(horizontal: false, vertical: true)
             .padding(.horizontal, 28)
     }
     .preferredColorScheme(.dark)
