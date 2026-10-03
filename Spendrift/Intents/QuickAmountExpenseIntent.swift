@@ -34,7 +34,13 @@ struct QuickAmountExpenseIntent: AppIntent {
     )
     static let openAppWhenRun: Bool = false
 
-    @Parameter(title: "Amount", description: "Expense amount (greater than zero).")
+    // Non-negative range keeps the system's value prompt from offering a sign toggle.
+    @Parameter(
+        title: "Amount",
+        description: "Expense amount (greater than zero).",
+        controlStyle: .field,
+        inclusiveRange: (0, 1_000_000_000)
+    )
     var amount: Double
 
     @Parameter(title: "Notes", description: "Optional note for the transaction.", default: "")
@@ -112,6 +118,8 @@ struct PromptedQuickExpenseIntent: AppIntent {
     @Parameter(
         title: "Amount",
         description: "Expense amount (greater than zero).",
+        controlStyle: .field,
+        inclusiveRange: (0, 1_000_000_000),
         requestValueDialog: "Amount"
     )
     var amount: Double

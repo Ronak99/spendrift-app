@@ -62,8 +62,8 @@ struct SettingsView: View {
 
         NavigationStack(path: $router.settingsPath) {
             SettingsScreen(title: "Settings") {
-                hubSection
                 proSection
+                hubSection
                 supportSection
 
                 if showsDeveloperTools {
@@ -160,9 +160,14 @@ struct SettingsView: View {
     }
 
     // Rows actually rendered: Feedback, optional notification opt-in, Explore,
-    // Email receipts. The count drives the first/last padding, so it must not
-    // include the commented-out rows below.
-    private var hubRowCount: Int { showsNotificationOptIn ? 4 : 3 }
+    // and Email receipts while developer mode is on. The count drives the
+    // first/last padding, so it must not include the commented-out rows below.
+    private var hubRowCount: Int {
+        var count = 2
+        if showsNotificationOptIn { count += 1 }
+        if showsDeveloperTools { count += 1 }
+        return count
+    }
 
     private var exploreIndex: Int { showsNotificationOptIn ? 2 : 1 }
     private var emailReceiptsIndex: Int { exploreIndex + 1 }
@@ -194,14 +199,16 @@ struct SettingsView: View {
                 .listItemPositioned(index: exploreIndex, count: hubRowCount)
             }
 
-            NavigationLink(value: AppRouter.SettingsDestination.emailReceipts) {
-                SettingsListItem(
-                    icon: "envelope.fill",
-                    title: "Email receipts",
-                    subtitle: "Forward receipts to your own address",
-                    accent: accent
-                )
-                .listItemPositioned(index: emailReceiptsIndex, count: hubRowCount)
+            if showsDeveloperTools {
+                NavigationLink(value: AppRouter.SettingsDestination.emailReceipts) {
+                    SettingsListItem(
+                        icon: "envelope.fill",
+                        title: "Email receipts",
+                        subtitle: "Forward receipts to your own address",
+                        accent: accent
+                    )
+                    .listItemPositioned(index: emailReceiptsIndex, count: hubRowCount)
+                }
             }
 
             // Button {
@@ -255,7 +262,7 @@ struct SettingsView: View {
         SettingsListItem(
             icon: "bell.badge.fill",
             title: "Turn on notifications",
-            subtitle: "Get a free top-up: 10 voice notes, 5 receipts, and 1 bank statement.",
+            subtitle: "Budget alerts, weekly notes, and refill reminders.",
             accent: accent,
             accessory: .toggle(notificationToggle)
         )

@@ -18,75 +18,76 @@ struct OnboardingFlowView: View {
     @Binding var onboardingVersion: Int
     var onFinished: (() -> Void)? = nil
 
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Query(sort: \Account.createdOn) private var accounts: [Account]
     @Query(sort: \TransactionCategory.name) private var categories: [TransactionCategory]
 
-    @State private var step: OnboardingStep = .welcome
+    @State private var path: [OnboardingStep] = []
     @State private var voice = OnboardingVoiceDemoController()
 
     var body: some View {
-        ZStack {
-            OnboardingSheetAtmosphericBackground(tintColor: step.accent)
-                .ignoresSafeArea()
-
-            OnboardingCornerWatermark(mark: step.watermark)
-                .washMotion(value: step)
-
-            page
+        NavigationStack(path: $path) {
+            screen(.welcome)
+                .navigationDestination(for: OnboardingStep.self) { step in
+                    screen(step)
+                }
         }
         .preferredColorScheme(.dark)
-        .onAppear {
-            Analytics.capture(.onboardingStepViewed, [Analytics.Key.step: step.analyticsName])
-        }
-        .onChange(of: step) { previous, current in
-            if previous == .voice { voice.cancel() }
-            Analytics.capture(.onboardingStepViewed, [Analytics.Key.step: current.analyticsName])
+        // The sheet stays up until `complete()`. A swipe must not drop the user into the app.
+        .interactiveDismissDisabled(true)
+        .presentationDragIndicator(.hidden)
+        .onChange(of: path) { _, current in
+            // Leaving the voice screen, forward or back, drops a clip that is still open.
+            if (current.last ?? .welcome) != .voice { voice.cancel() }
         }
     }
 
-    /// The transition sits on each branch rather than on the `switch` as a whole: SwiftUI
-    /// resolves it from the subtree that is actually inserted and removed.
+    /// One screen per step. The stack owns the push, the pop, and the back gesture.
+    ///
+    /// The bar stays visible and inline on every page, including the first, so it already
+    /// has its final height when a page is pushed. A hidden bar is laid out on the top
+    /// edge of the sheet during the push, then drops once the inset arrives.
     @ViewBuilder
-    private var page: some View {
+    private func screen(_ step: OnboardingStep) -> some View {
+        page(step)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .containerBackground(for: .navigation) {
+                ZStack {
+                    OnboardingSheetAtmosphericBackground(tintColor: step.accent)
+                    OnboardingCornerWatermark(mark: step.watermark)
+                }
+            }
+            // A real title keeps the inline bar from collapsing on the first page.
+            // Zero-width, so it does not show, and the back button stays a chevron.
+            .navigationTitle("")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar(.visible, for: .navigationBar)
+            .toolbarBackground(.visible, for: .navigationBar)
+            .toolbarBackground(Color.clear, for: .navigationBar)
+            .toolbarColorScheme(.dark, for: .navigationBar)
+            .onAppear {
+                Analytics.capture(.onboardingStepViewed, [Analytics.Key.step: step.analyticsName])
+            }
+    }
+
+    @ViewBuilder
+    private func page(_ step: OnboardingStep) -> some View {
         switch step {
         case .welcome:
-            OnboardingWelcomePage(onContinue: advance)
-                .transition(pageTransition)
+            OnboardingWelcomePage(onContinue: { push(.voice) })
         case .voice:
             OnboardingVoicePage(
                 voice: voice,
                 accounts: accounts,
                 categories: categories,
-                onContinue: advance
+                onContinue: { push(.notifications) }
             )
-            .transition(pageTransition)
-        case .pro:
-            OnboardingProPage(onFinish: advance)
-                .transition(pageTransition)
+        case .notifications:
+            OnboardingNotificationsPage(onFinish: complete)
         }
     }
 
-    /// Pages arrive from the right and leave to the left, so moving forward reads as one
-    /// continuous strip rather than a stack of modals.
-    private var pageTransition: AnyTransition {
-        guard !reduceMotion else { return .opacity }
-        return .asymmetric(
-            insertion: .move(edge: .trailing).combined(with: .opacity),
-            removal: .move(edge: .leading).combined(with: .opacity)
-        )
-    }
-
-    private var pageAnimation: Animation? {
-        reduceMotion ? nil : .spring(response: 0.5, dampingFraction: 0.92)
-    }
-
-    private func advance() {
-        guard let next = step.next else {
-            complete()
-            return
-        }
-        withAnimation(pageAnimation) { step = next }
+    private func push(_ step: OnboardingStep) {
+        path.append(step)
     }
 
     private func complete() {
@@ -109,30 +110,95 @@ struct OnboardingFlowView: View {
     static let currentVersion = 3
 }
 
+/// Keeps the system bar transparent without removing it. The button has to live in
+/// that bar; hiding the bar is what let it sit on the sheet edge and then jump.
+private struct OnboardingNavigationBarTransparency: UIViewControllerRepresentable {
+    func makeUIViewController(context: Context) -> Controller { Controller() }
+
+    func updateUIViewController(_ uiViewController: Controller, context: Context) {
+        uiViewController.apply()
+    }
+
+    final class Controller: UIViewController {
+        private var didApply = false
+
+        override func viewDidLoad() {
+            super.viewDidLoad()
+            view.backgroundColor = .clear
+            view.isUserInteractionEnabled = false
+        }
+
+        override func didMove(toParent parent: UIViewController?) {
+            super.didMove(toParent: parent)
+            apply()
+        }
+
+        override func viewWillAppear(_ animated: Bool) {
+            super.viewWillAppear(animated)
+            apply()
+        }
+
+        /// Once, before the first push. Touching the bar again mid-transition is what
+        /// makes the back button settle a second time.
+        func apply() {
+            guard !didApply, let bar = navigationController?.navigationBar else { return }
+            didApply = true
+            let appearance = UINavigationBarAppearance()
+            appearance.configureWithTransparentBackground()
+            appearance.shadowColor = .clear
+            appearance.backgroundColor = .clear
+            bar.standardAppearance = appearance
+            bar.scrollEdgeAppearance = appearance
+            bar.compactAppearance = appearance
+            bar.compactScrollEdgeAppearance = appearance
+            bar.isTranslucent = true
+        }
+    }
+}
+
 // MARK: - Page 1: Welcome
 
 private struct OnboardingWelcomePage: View {
     let onContinue: () -> Void
 
-    @State private var narrationFinished = false
+    private let accent = OnboardingStep.welcome.accent
 
     var body: some View {
-        OnboardingPage(narrationFinished: narrationFinished) {
-            OnboardingNarration(
-                headline: "Welcome to Spendrift.",
-                detail: "I built this app as a cure to my own laziness.",
-                onFinished: { narrationFinished = true }
-            )
+        OnboardingPage {
+            // The paywall's hero section: glass mark, name, one line under it.
+            VStack(spacing: 20) {
+                GlassHeroMark(assetName: OnboardingVisualAsset.proHeroMark, accent: accent)
+
+                VStack(spacing: 10) {
+                    Text("Spendrift")
+                        .font(.title2.bold())
+                        .foregroundStyle(OnboardingTheme.textPrimary)
+
+                    Text("Simplifying personal finance.")
+                        .font(.subheadline)
+                        .foregroundStyle(OnboardingTheme.textSecondary)
+                }
+                .multilineTextAlignment(.center)
+            }
+            .frame(maxWidth: .infinity)
+            .accessibilityElement(children: .combine)
         } focus: {
-            OnboardingHeroPlate(
-                mark: .asset(OnboardingVisualAsset.heroMark),
-                accent: Color(hex: "#000"),
-                accessibilityLabel: "Spendrift"
-            )
+            OnboardingCard(themeTint: accent) {
+                VStack(alignment: .leading, spacing: 16) {
+                    ForEach(OnboardingWelcomeFeature.allCases) { feature in
+                        OnboardingFeatureRow(
+                            icon: feature.symbolName,
+                            color: accent,
+                            title: feature.title,
+                            description: feature.subtitle
+                        )
+                    }
+                }
+            }
         } action: {
             OnboardingActionButton(
-                title: "Show me how",
-                fill: OnboardingStep.welcome.accent,
+                title: "Next",
+                fill: accent,
                 action: onContinue
             )
         }
@@ -148,9 +214,10 @@ private struct OnboardingVoicePage: View {
     let onContinue: () -> Void
 
     @Environment(\.modelContext) private var modelContext
-    @State private var narrationFinished = false
     /// Picked fresh on every tap of the mic, so a second attempt offers a new idea.
     @State private var exampleScript: String?
+    /// After ten seconds of an open mic, the example gives way to how to stop.
+    @State private var showsStopHint = false
 
     private let accent = OnboardingStep.voice.accent
 
@@ -159,46 +226,41 @@ private struct OnboardingVoicePage: View {
         return false
     }
 
-    private var hasFailed: Bool { voice.phase == .failed }
-
     var body: some View {
-        OnboardingPage(narrationFinished: narrationFinished) {
+        OnboardingPage {
             OnboardingNarration(
                 headline: "Just say it.",
-                detail: "One tap, one sentence. Done.",
-                onFinished: { narrationFinished = true }
+                detail: "Track expenses by speaking them out loud."
             )
         } focus: {
             focus
                 .animation(.spring(response: 0.42, dampingFraction: 0.86), value: voice.phase)
         } action: {
-            if hasHeard {
-                OnboardingActionButton(
-                    title: "Awesome, next",
-                    fill: accent,
-                    action: onContinue
-                )
-            } else if hasFailed {
-                // The demo did not work out. Rather than diagnosing why - no microphone,
-                // no network, nothing heard - the page hands them the door. Quiet, so it
-                // does not compete with the plate, which is still the thing to tap.
-                OnboardingActionButton(
-                    title: "I'll try later",
-                    fill: accent,
-                    style: .quiet,
-                    action: onContinue
-                )
-            } else {
-                // The real capsule, invisible: the floor slot keeps the exact height it
-                // will have once the button arrives, so nothing shifts when it does.
-                OnboardingActionButton(title: "Awesome, next", fill: accent, action: {})
-                    .hidden()
-                    .allowsHitTesting(false)
-                    .accessibilityHidden(true)
-            }
+            // The demo is an offer, not a gate, so the way past it is there from the
+            // first frame. Quiet until they have heard it work, so it does not compete
+            // with the plate, which is still the thing to tap. One button throughout, so
+            // it morphs into the filled capsule rather than being swapped for one.
+            OnboardingActionButton(
+                title: hasHeard ? "Next" : "I'll do it later",
+                fill: accent,
+                style: hasHeard ? .filled : .quiet,
+                action: onContinue
+            )
+            // A clip already being read will still land in the ledger, so the page
+            // holds for the moment it takes to show them the result.
+            .disabled(voice.phase == .thinking)
+            .opacity(voice.phase == .thinking ? 0.4 : 1)
+            .animation(.easeInOut(duration: 0.2), value: voice.phase == .thinking)
         }
         // Stopping the clip is the user's job, but a clip that runs to the cap submits
         // itself rather than being thrown away.
+        .task(id: voice.startedAt) {
+            showsStopHint = false
+            guard voice.startedAt != nil else { return }
+            try? await Task.sleep(for: .seconds(7))
+            guard !Task.isCancelled, voice.isListening else { return }
+            showsStopHint = true
+        }
         .task(id: voice.startedAt) {
             guard let startedAt = voice.startedAt else { return }
             let remaining = VoiceAudioPolicy.maxClipDurationSeconds - Date().timeIntervalSince(startedAt)
@@ -250,15 +312,20 @@ private struct OnboardingVoicePage: View {
 
     /// An invitation first time round, what is happening while they speak, the payoff
     /// under the heard card, and an offer of a second go after a run that did not work
-    /// out - no blame and no diagnosis, the capsule below is the other way forward.
+    /// out - no blame and no diagnosis, the button below is always the other way forward.
     private var tapHint: String? {
         switch voice.phase {
         case .idle:      "Tap me"
         // An example gives them something to say the moment the mic opens.
-        case .listening: exampleScript.map { "Try saying \"\($0)\"" }
-            ?? "Your language, your dialect. Say what you spent."
+        case .listening:
+            if showsStopHint {
+                "Tap me to stop recording."
+            } else {
+                exampleScript.map { "Try saying \"\($0)\"" }
+                    ?? "Your language, your dialect. Say what you spent."
+            }
         case .thinking:  nil
-        case .heard:     "Voila! An app that works for you."
+        case .heard:     "Magic, right? No typing required."
         case .failed:    "Give it another shot?"
         }
     }
@@ -282,19 +349,20 @@ private struct OnboardingVoicePage: View {
     }
 }
 
-// MARK: - Page 3: Pro
+// MARK: - Page 3: Notifications
 
-private struct OnboardingProPage: View {
+private struct OnboardingNotificationsPage: View {
     let onFinish: () -> Void
 
     @AppStorage(NotificationManager.Keys.dailyReminderEnabled) private var dailyReminderEnabled = true
     @AppStorage(NotificationManager.Keys.dailyReminderHour) private var dailyReminderHour = NotificationManager.defaultHour
     @AppStorage(NotificationManager.Keys.dailyReminderMinute) private var dailyReminderMinute = NotificationManager.defaultMinute
 
-    @State private var narrationFinished = false
-    @State private var reward: RewardState = .offered
+    @State private var permission: PermissionState = .offered
+    /// "I'll do it later" holds back so "Notify Me." gets a moment to be read first.
+    @State private var showsLater = false
 
-    private enum RewardState {
+    private enum PermissionState {
         case offered
         case asking
         case granted
@@ -302,77 +370,104 @@ private struct OnboardingProPage: View {
         case declined
     }
 
-    private let accent = OnboardingStep.pro.accent
+    private let accent = OnboardingStep.notifications.accent
+
+    /// Example pings, most useful first. Another banner is another entry.
+    private static let notifications: [OnboardingNotification] = [
+        OnboardingNotification(
+            title: "Premium Refilled",
+            message: "Your 10 voice notes are ready for the month. Let's track!",
+            time: "3m ago",
+            hint: "We'll tell you when your voice notes are back."
+        ),
+        OnboardingNotification(
+            title: "Budget Alert",
+            message: "You've reached 80% of your Dining Out limit for this month.",
+            time: "Yesterday",
+            hint: "Get a heads-up as you get close to a budget limit."
+        ),
+        OnboardingNotification(
+            title: "Weekly Win!",
+            message: "You spent 12% less on groceries this week compared to last.",
+            time: "2d ago",
+            hint: "A quick note each week when you're spending less."
+        ),
+        OnboardingNotification(
+            title: "Your Quarterly Review is In",
+            message: "See where your money went this quarter and unlock smart insights.",
+            time: "1h ago",
+            hint: "Your spending review, ready every three months."
+        ),
+    ]
+
+    /// The banner at the front of the deck, whose line sits under it.
+    @State private var frontNotification = 0
 
     var body: some View {
-        // "Fin." holds back so the bell gets a moment to be tapped first.
-        OnboardingPage(narrationFinished: narrationFinished, actionDelay: .seconds(2)) {
-            OnboardingNarration(
-                headline: "Tap the bell icon.",
-                detail: "To receive 10 free voice notes.",
-                onFinished: { narrationFinished = true }
-            )
+        OnboardingPage {
+            OnboardingNarration(headline: "Turn on notifications.")
         } focus: {
             VStack(spacing: 8) {
-                OnboardingHeroPlate(
-                    mark: .symbol(rewardSymbol),
-                    accent: accent,
-                    isBusy: reward == .asking,
-                    accessibilityLabel: rewardAccessibilityLabel,
-                    action: reward == .offered ? requestNotifications : nil
+                OnboardingNotificationDeck(
+                    notifications: Self.notifications,
+                    front: $frontNotification
                 )
-
                 OnboardingTapHint(text: tapHint)
             }
-            .animation(.spring(response: 0.42, dampingFraction: 0.86), value: reward)
+            .animation(.spring(response: 0.42, dampingFraction: 0.86), value: permission)
         } action: {
-            OnboardingActionButton(
-                title: "Let's go.",
-                fill: accent,
-                action: onFinish
-            )
+            VStack(spacing: 4) {
+                // One button throughout, so it morphs from the offer into the way out
+                // once the offer has been answered.
+                OnboardingActionButton(
+                    title: hasAnswered ? "Let's go." : "Notify Me.",
+                    fill: accent,
+                    action: hasAnswered ? onFinish : requestNotifications
+                )
+                .disabled(permission == .asking)
+
+                // Always laid out, so "Notify Me." sits where it will stay when this
+                // fades in, and does not move when it fades out again.
+                OnboardingActionButton(
+                    title: "I'll do it later",
+                    fill: accent,
+                    style: .quiet,
+                    action: onFinish
+                )
+                .opacity(showsLater && permission == .offered ? 1 : 0)
+                .allowsHitTesting(showsLater && permission == .offered)
+                .accessibilityHidden(!(showsLater && permission == .offered))
+                .animation(.easeInOut(duration: 0.32), value: showsLater)
+                .animation(.easeInOut(duration: 0.32), value: permission)
+            }
+        }
+        .task {
+            try? await Task.sleep(for: .seconds(2))
+            guard !Task.isCancelled else { return }
+            showsLater = true
         }
     }
 
-    /// The plate stops offering once it has been answered, so the mark has to say which
-    /// answer it got rather than sitting there looking tappable.
-    private var rewardSymbol: String {
-        switch reward {
-        case .offered, .asking: "bell.badge.fill"
-        case .granted:          "checkmark.seal.fill"
-        case .declined:         "bell.slash.fill"
-        }
+    private var hasAnswered: Bool {
+        permission == .granted || permission == .declined
     }
 
-    private var rewardAccessibilityLabel: String {
-        switch reward {
-        case .offered:  "Turn on notifications for a free top-up"
-        case .asking:   "Turning on notifications"
-        case .granted:  "Notifications on. Free top-up added."
-        case .declined: "Notifications off"
-        }
-    }
-
-    private var tapHint: String {
-        switch reward {
-        case .offered:  "Tap me"
+    private var tapHint: String? {
+        switch permission {
+        // Why the banner up front is worth a ping, until the prompt is answered.
+        case .offered:  Self.notifications[frontNotification].hint
         case .asking:   "One moment."
-        case .granted:  "Done. Ten voice notes, five receipts and a statement, on us."
-        // Free credits wait for next month unless they change their mind in Settings.
-        case .declined: "No bother. Free credits start \(nextRefillText), or sooner from Settings."
+        case .granted:  "Done. We'll ping you when something's worth a look."
+        case .declined: "No bother. You can turn them on anytime in Settings."
         }
-    }
-
-    private var nextRefillText: String {
-        AIQuotaStore.nextResetDate().formatted(.dateTime.day().month(.abbreviated))
     }
 
     private func requestNotifications() {
-        reward = .asking
+        permission = .asking
         Task { @MainActor in
             guard await PushNotifications.enableFromSettings() else {
                 withAnimation(.spring(response: 0.42, dampingFraction: 0.86)) {
-                    reward = .declined
+                    permission = .declined
                 }
                 return
             }
@@ -388,7 +483,7 @@ private struct OnboardingProPage: View {
 
             UINotificationFeedbackGenerator().notificationOccurred(.success)
             withAnimation(.spring(response: 0.42, dampingFraction: 0.86)) {
-                reward = .granted
+                permission = .granted
             }
         }
     }

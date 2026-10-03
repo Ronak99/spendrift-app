@@ -194,8 +194,8 @@ enum NotificationManager {
         let trigger = UNCalendarNotificationTrigger(dateMatching: components, repeats: true)
         add(
             identifier: RequestID.quotaRefill,
-            title: "Your free AI credits are back",
-            body: "Voice notes, receipts, and a bank statement parse just refilled for the month.",
+            title: "Premium Refilled",
+            body: "Your 10 voice notes are ready for the month. Let's track!",
             deeplink: nil,
             kind: "quota_refill",
             trigger: trigger

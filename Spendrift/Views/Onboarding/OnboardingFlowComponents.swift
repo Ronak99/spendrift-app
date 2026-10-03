@@ -14,10 +14,10 @@ import SwiftUI
 
 // MARK: - Steps
 
-enum OnboardingStep: Int, CaseIterable, Identifiable {
+enum OnboardingStep: Int, CaseIterable, Identifiable, Hashable {
     case welcome
     case voice
-    case pro
+    case notifications
 
     var id: Int { rawValue }
 
@@ -28,7 +28,7 @@ enum OnboardingStep: Int, CaseIterable, Identifiable {
         // The tab bar's Speak control, so the plate the user is about to tap is already
         // the colour of the button they will look for afterwards.
         case .voice:   Color(hex: "#F57873")
-        case .pro:     OnboardingTheme.success
+        case .notifications: Color(hex: "#9B7BFF")
         }
     }
 
@@ -36,7 +36,7 @@ enum OnboardingStep: Int, CaseIterable, Identifiable {
         switch self {
         case .welcome: "welcome"
         case .voice:   "voice"
-        case .pro:     "pro"
+        case .notifications: "notifications"
         }
     }
 
@@ -49,7 +49,7 @@ enum OnboardingStep: Int, CaseIterable, Identifiable {
         switch self {
         case .welcome: .asset(OnboardingVisualAsset.heroMark)
         case .voice:   .symbol("mic.fill")
-        case .pro:     .symbol("bell.badge.fill")
+        case .notifications: .symbol("bell.badge.fill")
         }
     }
 }
@@ -60,20 +60,12 @@ enum OnboardingStep: Int, CaseIterable, Identifiable {
 /// bottom; the focus slot takes whatever is left and centres its object there, so the
 /// only thing that ever moves is the object itself.
 ///
-/// The page also owns the entrance order: the line writes itself, then the object arrives,
-/// then the capsule. Pass `narrationFinished` from `OnboardingNarration`.
+/// Moving between pages is a navigation push, so the page is fully on screen as it
+/// arrives. Nothing here fades itself in on top of that.
 struct OnboardingPage<Narration: View, Focus: View, Action: View>: View {
-    var narrationFinished: Bool
-    /// How long the capsule waits after the object arrives. Longer on a page that wants
-    /// the object tried before the way out is offered.
-    var actionDelay: Duration = .milliseconds(220)
     @ViewBuilder var narration: Narration
     @ViewBuilder var focus: Focus
     @ViewBuilder var action: Action
-
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @State private var showsFocus = false
-    @State private var showsAction = false
 
     var body: some View {
         VStack(spacing: 0) {
@@ -82,53 +74,21 @@ struct OnboardingPage<Narration: View, Focus: View, Action: View>: View {
             // so neither the headline nor the button shifts as a page plays out.
             narration
                 .frame(maxWidth: .infinity, alignment: .topLeading)
+                .layoutPriority(1)
 
             focus
-                .frame(maxWidth: .infinity, minHeight: 128)
-                .frame(maxHeight: .infinity)
-                .onboardingReveal(showsFocus, reduceMotion: reduceMotion)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
 
             action
                 .frame(maxWidth: .infinity)
-                .onboardingReveal(showsAction, reduceMotion: reduceMotion)
+                .layoutPriority(1)
         }
         .padding(.horizontal, 28)
-        .padding(.top, 36)
+        // The navigation bar already clears the status area, so this is only the gap
+        // under the bar.
+        .padding(.top, 12)
         .padding(.bottom, 24)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-        .onChange(of: narrationFinished) { _, finished in
-            guard finished else { return }
-            reveal()
-        }
-        .task {
-            // Backstop. Whatever happens to the narration, a page must never be left
-            // without a way forward.
-            try? await Task.sleep(for: .seconds(6))
-            guard !Task.isCancelled else { return }
-            reveal()
-        }
-    }
-
-    private func reveal() {
-        // Keyed to the focus, which flips at once, so the backstop firing during a long
-        // action delay does not schedule the capsule a second time.
-        guard !showsFocus else { return }
-        let entrance: Animation? = reduceMotion ? nil : .spring(response: 0.5, dampingFraction: 0.9)
-        withAnimation(entrance) { showsFocus = true }
-        Task { @MainActor in
-            try? await Task.sleep(for: actionDelay)
-            withAnimation(entrance) { showsAction = true }
-        }
-    }
-}
-
-private extension View {
-    /// Rises and fades in when its turn in the page's entrance order comes up.
-    func onboardingReveal(_ isVisible: Bool, reduceMotion: Bool) -> some View {
-        opacity(isVisible ? 1 : 0)
-            .offset(y: isVisible || reduceMotion ? 0 : 18)
-            .scaleEffect(isVisible || reduceMotion ? 1 : 0.97)
-            .allowsHitTesting(isVisible)
     }
 }
 
@@ -136,63 +96,30 @@ private extension View {
 
 /// Copy in two voices. The headline is the one white line that carries the idea; the
 /// detail is smaller and quieter. Page state speaks through the hint under the hero
-/// plate, not here, so the copy stays put once written.
+/// plate, not here, so the copy never changes once the page is up.
 ///
-/// Both streamed blocks reserve their full size up front and the detail waits for the
-/// headline, so the copy writes itself without moving the object underneath it.
+/// All of it is on screen from the first frame. Nobody should wait to read a page.
 struct OnboardingNarration: View {
     /// White, large, one idea.
     let headline: String
-    /// Everything the headline does not have to carry. Written once the headline lands.
+    /// Everything the headline does not have to carry.
     var detail: String?
-    /// Called when the last block of copy has finished writing itself.
-    var onFinished: (() -> Void)?
-
-    @State private var headlineFinished = false
-
-    private static let detailFont = Font.system(size: 16)
-
-    /// The detail picks up the moment the headline's last glyph lands. The headline's
-    /// own lead-in already let the screen settle, so a second one reads as a stall.
-    private static let detailCadence: StreamingTextCadence = {
-        var cadence = StreamingTextCadence.natural
-        cadence.leadingDelayMilliseconds = 0
-        return cadence
-    }()
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            StreamingText(
-                text: headline,
-                cadence: .slow,
-                font: .system(size: 30, weight: .bold),
-                textColor: OnboardingTheme.textPrimary,
-                multilineTextAlignment: .leading,
-                contentAlignment: .leading,
-                tracking: -0.7,
-                reservesSpace: true,
-                onFinished: handleHeadlineFinished
-            )
+            Text(headline)
+                .font(.system(size: 30, weight: .bold))
+                .tracking(-0.7)
+                .foregroundStyle(OnboardingTheme.textPrimary)
 
             if let detail {
-                StreamingText(
-                    text: detail,
-                    cadence: Self.detailCadence,
-                    font: Self.detailFont,
-                    textColor: OnboardingTheme.textSecondary,
-                    multilineTextAlignment: .leading,
-                    contentAlignment: .leading,
-                    reservesSpace: true,
-                    startsWriting: headlineFinished,
-                    onFinished: { onFinished?() }
-                )
+                Text(detail)
+                    .font(.system(size: 16))
+                    .foregroundStyle(OnboardingTheme.textSecondary)
             }
         }
-    }
-
-    private func handleHeadlineFinished() {
-        headlineFinished = true
-        if detail == nil { onFinished?() }
+        .multilineTextAlignment(.leading)
+        .fixedSize(horizontal: false, vertical: true)
     }
 }
 
@@ -287,7 +214,6 @@ struct OnboardingCornerWatermark: View {
             .foregroundStyle(OnboardingTheme.textPrimary.opacity(0.10))
             .offset(x: hang.width, y: hang.height)
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
-            .ignoresSafeArea()
             .allowsHitTesting(false)
             .accessibilityHidden(true)
             .contentTransition(.opacity)
@@ -315,6 +241,8 @@ private struct OnboardingEnamelAsset: View {
     let name: String
     let accent: Color
     let side: CGFloat
+    var showsShadow: Bool = true
+    var showGradient: Bool = true
 
     var body: some View {
         let radius = side * 0.33
@@ -326,19 +254,25 @@ private struct OnboardingEnamelAsset: View {
             .frame(width: side, height: side)
             .clipShape(shape)
             .overlay {
-                shape.fill(
-                    LinearGradient(
-                        colors: [.white.opacity(0.35), .clear],
-                        startPoint: .topLeading,
-                        endPoint: UnitPoint(x: 0.55, y: 0.7)
+                if showGradient {
+                    shape.fill(
+                        LinearGradient(
+                            colors: [.white.opacity(0.35), .clear],
+                            startPoint: .topLeading,
+                            endPoint: UnitPoint(x: 0.55, y: 0.7)
+                        )
                     )
-                )
-                .allowsHitTesting(false)
+                    .allowsHitTesting(false)
+                }  
             }
             .overlay {
                 shape.strokeBorder(.white.opacity(0.28), lineWidth: 0.8)
             }
-            .shadow(color: accent.opacity(0.32), radius: side * 0.12, y: side * 0.08)
+            .shadow(
+                color: showsShadow ? accent.opacity(0.32) : .clear,
+                radius: showsShadow ? side * 0.12 : 0,
+                y: showsShadow ? side * 0.08 : 0
+            )
             .accessibilityHidden(true)
     }
 }
@@ -434,6 +368,209 @@ private struct OnboardingBusyRing: View {
             )
         }
         .frame(width: ringSide, height: ringSide)
+    }
+}
+
+// MARK: - Notification tile
+
+/// One example notification. The page owns the list, so adding another is another value.
+struct OnboardingNotification: Identifiable, Hashable {
+    let title: String
+    let message: String
+    /// Relative stamp, such as "3m ago".
+    var time: String
+    /// The line under the deck while this one is up front: why it is worth a ping.
+    var hint: String? = nil
+
+    var id: String { title }
+}
+
+/// A banner drawn the same way as `OnboardingHeardTransactionCard`: card fill, hairline,
+/// padding, 44pt enamel squircle, and the ledger row's type scale.
+///
+/// Fills the height it is offered, so banners of different lengths can share one size.
+struct OnboardingNotificationTile: View {
+    let notification: OnboardingNotification
+    /// Banners waiting behind the front one are blank cards, so only one reads at a time.
+    var showsContent = true
+
+    var body: some View {
+        HStack(alignment: .center, spacing: 14) {
+            OnboardingEnamelAsset(
+                name: OnboardingVisualAsset.heroMark,
+                accent: OnboardingStep.notifications.accent,
+                side: 44,
+                showsShadow: false,
+                showGradient: false
+            )
+
+            HStack(alignment: .top, spacing: 14) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(notification.title)
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundStyle(OnboardingTheme.textPrimary)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.85)
+    
+                    Text(notification.message)
+                        .font(.system(size: 12))
+                        .foregroundStyle(OnboardingTheme.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+
+                Text(notification.time)
+                    .monospacedDigit()
+                    .font(.system(size: 11))
+                    .foregroundStyle(OnboardingTheme.textSecondary)
+                    .lineLimit(1)
+            }
+        }
+        .opacity(showsContent ? 1 : 0)
+        .frame(maxHeight: .infinity)
+        .padding(.horizontal, 18)
+        .padding(.vertical, 14)
+        .background(
+            RoundedRectangle(cornerRadius: 22, style: .continuous)
+                .fill(OnboardingTheme.card)
+                .strokeBorder(Color.white.opacity(0.08), lineWidth: 1)
+        )
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("Example notification. \(notification.title). \(notification.message)")
+    }
+}
+
+/// The notifications page's deck: one banner up front and two more hinted behind it.
+/// Every few seconds the front one is swiped away and the rest move up, and the user can
+/// swipe it away themselves. A banner that leaves rejoins at the back.
+///
+/// Needs more banners than it shows, so the one that just left has somewhere to wait
+/// off screen before it fades back in behind the others.
+struct OnboardingNotificationDeck: View {
+    let notifications: [OnboardingNotification]
+    /// The banner up front. The page reads it to put that banner's line under the deck.
+    @Binding var front: Int
+
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    /// Horizontal travel of the front banner while it is being dragged.
+    @State private var drag: CGFloat = 0
+    /// Which way the last banner left, so one flicked right does not exit to the left.
+    @State private var exitDirection: CGFloat = -1
+    /// Bumped by a swipe, so the next automatic one waits a full interval again.
+    @State private var swipes = 0
+    @State private var width: CGFloat = 0
+
+    private static let interval: Duration = .seconds(3)
+    /// Banners on screen at once: the front one and the two peeking under it.
+    private static let visible = 3
+    /// How far each banner behind the front one drops.
+    private static let peek: CGFloat = 14
+    /// How much each banner behind the front one shrinks.
+    private static let shrink: CGFloat = 0.07
+    private static let depthOpacity: [Double] = [1, 0.8, 0.5]
+
+    var body: some View {
+        // Every banner, laid out once and hidden, so the deck is as tall as its longest
+        // banner and all of them share that height.
+        ZStack {
+            ForEach(notifications) { notification in
+                OnboardingNotificationTile(notification: notification)
+            }
+        }
+        .fixedSize(horizontal: false, vertical: true)
+        .hidden()
+        .accessibilityHidden(true)
+        .overlay(alignment: .top) {
+            ZStack(alignment: .top) {
+                ForEach(Array(notifications.enumerated()), id: \.element.id) { index, notification in
+                    card(notification, depth: depth(of: index))
+                }
+            }
+        }
+        // Room for the banners peeking under the front one.
+        .padding(.bottom, Self.peek * CGFloat(Self.visible - 1))
+        .onGeometryChange(for: CGFloat.self, of: \.size.width) { width = $0 }
+        .sensoryFeedback(.impact(weight: .light), trigger: swipes)
+        .task(id: swipes) {
+            guard !reduceMotion, notifications.count > Self.visible else { return }
+            while !Task.isCancelled {
+                try? await Task.sleep(for: Self.interval)
+                // Never pull a banner out from under a finger.
+                guard !Task.isCancelled, drag == 0 else { continue }
+                advance(toward: -1)
+            }
+        }
+    }
+
+    /// 0 is the front. Anything at `visible` or beyond has left and is waiting off screen.
+    private func depth(of index: Int) -> Int {
+        (index - front + notifications.count) % notifications.count
+    }
+
+    private func card(_ notification: OnboardingNotification, depth: Int) -> some View {
+        let isGone = depth >= Self.visible
+        let slot = CGFloat(min(depth, Self.visible - 1))
+
+        return OnboardingNotificationTile(notification: notification, showsContent: depth == 0)
+            .shadow(color: .black.opacity(depth == 0 || isGone ? 0.45 : 0), radius: 20, y: 20)
+            .scaleEffect(isGone ? 1 : 1 - Self.shrink * slot, anchor: .top)
+            .offset(
+                x: isGone ? exitDirection * width * 1.25 : (depth == 0 ? drag : 0),
+                y: isGone ? 0 : Self.peek * slot
+            )
+            .animation(moveAnimation(depth), value: depth)
+            .opacity(isGone ? 0 : Self.depthOpacity[depth])
+            .animation(fadeAnimation(depth), value: depth)
+            // A leaving banner slides over the ones moving up into its place.
+            .zIndex(isGone ? Double(notifications.count) : Double(notifications.count - depth - 1))
+            .allowsHitTesting(depth == 0)
+            .accessibilityHidden(depth != 0)
+            .accessibilityAction(named: "Next example") {
+                swipes += 1
+                advance(toward: -1)
+            }
+    }
+
+    /// The front banner flicks out fast. The rest wait a beat for it to clear, then
+    /// settle into their new places. One arriving at the back jumps there unseen.
+    private func moveAnimation(_ depth: Int) -> Animation? {
+        if depth >= Self.visible {
+            return .timingCurve(0.55, 0, 0.9, 0.4, duration: 0.28)
+        }
+        if depth == Self.visible - 1 { return nil }
+        return .timingCurve(0.2, 0.8, 0.2, 1, duration: 0.45).delay(0.12)
+    }
+
+    /// Opacity follows the move, except at the ends: a leaving banner vanishes only once
+    /// it is off screen, and one arriving at the back fades in after the others settle.
+    private func fadeAnimation(_ depth: Int) -> Animation? {
+        if depth >= Self.visible { return .linear(duration: 0.04).delay(0.26) }
+        if depth == Self.visible - 1 { return .easeInOut(duration: 0.5).delay(0.3) }
+        return moveAnimation(depth)
+    }
+
+    private var swipe: some Gesture {
+        DragGesture(minimumDistance: 10)
+            .onChanged { drag = $0.translation.width }
+            .onEnded { value in
+                let projected = value.predictedEndTranslation.width
+                guard abs(projected) > width * 0.35 else {
+                    withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) { drag = 0 }
+                    return
+                }
+                swipes += 1
+                advance(toward: projected < 0 ? -1 : 1)
+            }
+    }
+
+    /// Sends the front banner out to one side. The card animations key off depth, so
+    /// changing `front` is all it takes, and the leaving banner starts from wherever
+    /// the finger left it.
+    private func advance(toward direction: CGFloat) {
+        exitDirection = direction
+        front = (front + 1) % notifications.count
+        drag = 0
     }
 }
 
@@ -589,15 +726,32 @@ struct OnboardingActionButton: View {
     .preferredColorScheme(.dark)
 }
 
+#Preview("Notification tile") {
+    ZStack {
+        OnboardingSheetAtmosphericBackground(tintColor: OnboardingStep.notifications.accent)
+            .ignoresSafeArea()
+        OnboardingNotificationTile(
+            notification: OnboardingNotification(
+                title: "Premium Refilled",
+                message: "Your 10 voice notes are ready for the month. Let's track!",
+                time: "3m ago"
+            )
+        )
+            .fixedSize(horizontal: false, vertical: true)
+            .padding(.horizontal, 28)
+    }
+    .preferredColorScheme(.dark)
+}
+
 #Preview("Page scaffold") {
     ZStack {
         OnboardingSheetAtmosphericBackground(tintColor: OnboardingStep.voice.accent)
             .ignoresSafeArea()
 
-        OnboardingPage(narrationFinished: true) {
+        OnboardingPage {
             OnboardingNarration(
                 headline: "Just say it.",
-                detail: "One tap, one sentence. Done."
+                detail: "Track expenses by speaking them out loud."
             )
         } focus: {
             VStack(spacing: 8) {
@@ -611,7 +765,7 @@ struct OnboardingActionButton: View {
             }
         } action: {
             OnboardingActionButton(
-                title: "Awesome, next",
+                title: "Next",
                 fill: OnboardingStep.voice.accent,
                 action: {}
             )

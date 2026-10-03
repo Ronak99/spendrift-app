@@ -129,15 +129,7 @@ struct ProPaywallView: View {
 
     private var heroSection: some View {
         VStack(spacing: 20) {
-            ZStack {
-                GlowingHeroGlow(color: accent, size: 45)
-                GlowingHeroMark(
-                    assetName: OnboardingVisualAsset.proHeroMark,
-                    color: accent,
-                    size: 45,
-                    liquidGlassTint: accent
-                )
-            }
+            GlassHeroMark(assetName: OnboardingVisualAsset.proHeroMark, accent: accent)
 
             VStack(spacing: 10) {
                 if entitlement.isEligibleForTrial {
@@ -172,18 +164,7 @@ struct ProPaywallView: View {
     // MARK: - Features
 
     private var featureCard: some View {
-        OnboardingCard(themeTint: accent) {
-            VStack(alignment: .leading, spacing: 16) {
-                ForEach(orderedFeatures) { feature in
-                    OnboardingFeatureRow(
-                        icon: feature.symbolName,
-                        color: feature == context.feature ? accent : OnboardingTheme.success,
-                        title: feature.displayName,
-                        description: feature.summary
-                    )
-                }
-            }
-        }
+        ProFeatureCard(features: orderedFeatures, accent: accent, highlighted: context.feature)
     }
 
     /// The feature the user just experienced leads the list — the paywall should
