@@ -110,10 +110,6 @@ struct TransactionsView: View {
         isDark ? Color(hex: "#0A0A0B") : AppTheme.listBackground
     }
 
-    private var washColor: Color {
-        AppTheme.atmosphere
-    }
-
     private var addBackground: Color {
         isDark ? Color.white.opacity(0.92) : Color(hex: "#111111")
     }
@@ -210,7 +206,7 @@ struct TransactionsView: View {
                     }
                 }
             }
-            .background { ledgerAtmosphere }
+            .background { canvas.ignoresSafeArea() }
             .navigationTitle(showingAnalytics ? "Analytics" : "Transactions")
             .navigationBarTitleDisplayMode(.inline)
             .toolbarBackground(.hidden, for: .navigationBar)
@@ -390,20 +386,6 @@ struct TransactionsView: View {
             ])
             voiceInline.beginCapture()
         }
-    }
-
-    // MARK: Atmosphere
-
-    private var ledgerAtmosphere: some View {
-        ZStack(alignment: .top) {
-            canvas
-
-            ColorWashBackground(color: washColor, isDark: isDark)
-                .frame(height: 280)
-                .frame(maxHeight: .infinity, alignment: .top)
-        }
-        .ignoresSafeArea()
-        .animation(.spring(response: 0.42, dampingFraction: 0.86), value: savings >= 0)
     }
 
     private var emptyLedger: some View {

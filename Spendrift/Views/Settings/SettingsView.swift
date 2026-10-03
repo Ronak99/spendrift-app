@@ -2,8 +2,8 @@
 //  SettingsView.swift
 //  Spendrift
 //
-//  Colour-wash settings hub. Atmosphere, enamel rows, and capsule
-//  controls match Transactions and Categories so the tabs feel like one box.
+//  Settings hub. Enamel rows and capsule controls match Transactions
+//  and Categories so the tabs feel like one box.
 //
 
 import SwiftData
@@ -61,7 +61,7 @@ struct SettingsView: View {
         @Bindable var router = router
 
         NavigationStack(path: $router.settingsPath) {
-            SettingsScreen(title: "Settings") {
+            SettingsScreen(title: "Settings", showsAtmosphere: false) {
                 proSection
                 hubSection
                 supportSection

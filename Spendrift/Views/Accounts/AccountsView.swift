@@ -2,8 +2,8 @@
 //  AccountsView.swift
 //  Spendrift
 //
-//  Colour-wash ledger of accounts. Atmosphere, empty state, and add
-//  control match Transactions and Categories so the tabs feel like one box.
+//  Ledger of accounts. Empty state and add control match Transactions
+//  and Categories so the tabs feel like one box.
 //
 
 import SwiftUI
@@ -60,8 +60,8 @@ struct AccountsView: View {
         isDark ? Color(hex: "#111111") : .white
     }
 
-    private var washColor: Color {
-        AccountEnamel.atmosphere(in: accounts)
+    private var canvas: Color {
+        isDark ? Color(hex: "#0A0A0B") : AppTheme.listBackground
     }
 
     var body: some View {
@@ -102,7 +102,7 @@ struct AccountsView: View {
                     }
                 }
             }
-            .background { atmosphere }
+            .background { canvas.ignoresSafeArea() }
             .navigationTitle("Accounts")
             .navigationBarTitleDisplayMode(.inline)
             .toolbarBackground(.hidden, for: .navigationBar)
@@ -122,14 +122,6 @@ struct AccountsView: View {
                 }
             }
         }
-    }
-
-    // MARK: Atmosphere
-
-    private var atmosphere: some View {
-        CategoryTrayAtmosphere(washColor: washColor)
-            .ignoresSafeArea()
-            .animation(.spring(response: 0.42, dampingFraction: 0.86), value: washColor)
     }
 
     // MARK: Empty

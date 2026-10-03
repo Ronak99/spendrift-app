@@ -149,13 +149,20 @@ struct SettingsPrimaryButton: View {
 struct SettingsScreen<Content: View>: View {
     let title: String
     var watermarkIcon: String?
+    var showsAtmosphere: Bool
     let content: Content
 
     @Environment(\.colorScheme) private var colorScheme
 
-    init(title: String, watermarkIcon: String? = nil, @ViewBuilder content: () -> Content) {
+    init(
+        title: String,
+        watermarkIcon: String? = nil,
+        showsAtmosphere: Bool = true,
+        @ViewBuilder content: () -> Content
+    ) {
         self.title = title
         self.watermarkIcon = watermarkIcon
+        self.showsAtmosphere = showsAtmosphere
         self.content = content()
     }
 
@@ -169,10 +176,15 @@ struct SettingsScreen<Content: View>: View {
         .scrollContentBackground(.hidden)
         .softScrollEdge()
         .background {
-            SettingsAtmosphere(
-                washColor: AppTheme.atmosphere,
-                watermarkIcon: watermarkIcon
-            )
+            if showsAtmosphere {
+                SettingsAtmosphere(
+                    washColor: AppTheme.atmosphere,
+                    watermarkIcon: watermarkIcon
+                )
+            } else {
+                SettingsChrome.canvas(isDark: isDark)
+                    .ignoresSafeArea()
+            }
         }
         .navigationTitle(title)
         .navigationBarTitleDisplayMode(.inline)

@@ -2,7 +2,7 @@
 //  CategoriesView.swift
 //  Spendrift
 //
-//  Colour-wash tray of enamel category chips. Search sits beside the
+//  Tray of enamel category chips. Search sits beside the
 //  type picker; opening it swaps the picker for a find field and
 //  searches every category.
 //
@@ -67,8 +67,8 @@ struct CategoriesView: View {
         reduceMotion ? nil : .spring(response: 0.42, dampingFraction: 0.86)
     }
 
-    private var washColor: Color {
-        CategoryEnamel.atmosphere(in: allCategories, type: selectedType)
+    private var canvas: Color {
+        isDark ? Color(hex: "#0A0A0B") : AppTheme.listBackground
     }
 
     var body: some View {
@@ -92,7 +92,7 @@ struct CategoriesView: View {
             .scrollDismissesKeyboard(.interactively)
             .scrollIndicators(.hidden)
             .softScrollEdge()
-            .background { atmosphere }
+            .background { canvas.ignoresSafeArea() }
             .navigationTitle("Categories")
             .navigationBarTitleDisplayMode(.inline)
             .toolbarBackground(.hidden, for: .navigationBar)
@@ -132,14 +132,6 @@ struct CategoriesView: View {
                 Text("Deleting a category also deletes all transactions assigned to it.")
             }
         }
-    }
-
-    // MARK: Atmosphere
-
-    private var atmosphere: some View {
-        CategoryTrayAtmosphere(washColor: washColor)
-            .ignoresSafeArea()
-            .animation(typeMotion, value: selectedType)
     }
 
     // MARK: Chrome
