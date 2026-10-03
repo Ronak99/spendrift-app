@@ -135,7 +135,9 @@ private struct RootContainerView: View {
         Binding(
             get: { activeSheet == .onboarding },
             set: { isPresented in
-                guard !isPresented, activeSheet == .onboarding else { return }
+                // Completion clears the sheet through `resolveActiveSheet`. A system
+                // dismiss before that must not drop `.onboarding`.
+                guard !isPresented, activeSheet == .onboarding, !needsOnboarding else { return }
                 activeSheet = nil
             }
         )

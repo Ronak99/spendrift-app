@@ -32,6 +32,9 @@ struct OnboardingFlowView: View {
                 }
         }
         .preferredColorScheme(.dark)
+        // The sheet stays up until `complete()`. A swipe must not drop the user into the app.
+        .interactiveDismissDisabled(true)
+        .presentationDragIndicator(.hidden)
         .onChange(of: path) { _, current in
             // Leaving the voice screen, forward or back, drops a clip that is still open.
             if (current.last ?? .welcome) != .voice { voice.cancel() }
