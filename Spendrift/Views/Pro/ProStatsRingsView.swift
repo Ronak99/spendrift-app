@@ -117,7 +117,7 @@ struct ProStatsRingsView: View {
 struct ProStat: Identifiable {
     let feature: ProFeature
     let used: Int
-    /// This month's allowance: zero in the signup month until notifications are on.
+    /// This month's free allowance, available from the first launch.
     let quota: Int
     let color: Color
 
@@ -132,8 +132,7 @@ struct ProStat: Identifiable {
     }
 
     var remainingLabel: String {
-        guard quota > 0 else { return "Turn on notifications to unlock" }
-        return "\(remaining) of \(quota) left"
+        "\(remaining) of \(quota) left"
     }
 
     /// Fixed hues from the app palette rather than the user's accent: shades of one

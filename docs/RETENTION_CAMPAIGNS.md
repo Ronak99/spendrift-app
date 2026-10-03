@@ -148,14 +148,14 @@ For "6 or more", you need two filters OR'd together:
 This also means **you cannot personalize copy with a raw transaction count**.
 See section 7.3 for what to add if you want that.
 
-### 2.4 Quota tags start at zero for new users without notifications
+### 2.4 Quota tags start at the full free allowance
 
 ```swift
 remaining(feature) = max(0, monthlyAllowance(feature) - used)
 ```
 
-In the signup month, `monthlyAllowance` is 0 until the user grants notification permission, then the full free quota.
-From the next month on, it is always the full free quota.
+`monthlyAllowance` is the full free quota from the first launch.
+Notification permission does not change it.
 
 | Feature | Free monthly | Max `sd_quota_*` |
 | --- | --- | --- |
@@ -164,7 +164,7 @@ From the next month on, it is always the full free quota.
 | Receipt | 5 | 5 |
 | Statement | 1 | 1 |
 
-`sd_quota_voice = 0` therefore also matches new users who declined notifications and have never used voice.
+`sd_quota_voice = 0` means the voice allowance for this month is spent.
 Pair it with `sd_used_voice = true` when you mean "hit the wall".
 
 Your live segment `Voice Quota Less Than 18` filters `sd_quota_voice < 18`.

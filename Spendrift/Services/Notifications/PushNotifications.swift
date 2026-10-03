@@ -22,7 +22,7 @@ enum PushNotifications {
     // MARK: - Lifecycle
 
     /// Initialise OneSignal and attach the click listener. Does not request
-    /// notification permission — that happens from the Settings row.
+    /// notification permission. That happens from onboarding or the Settings row.
     static func bootstrap(launchOptions: [UIApplication.LaunchOptionsKey: Any]?) {
         guard !didSetup else { return }
 
@@ -63,9 +63,9 @@ enum PushNotifications {
 
     // MARK: - Permission grant
 
-    /// Called after the Settings toggle. Requests permission if needed, unlocks the
-    /// signup month's free credits on success, registers for remote notifications,
-    /// and syncs.
+    /// Called after the Settings toggle or the onboarding prompt. Requests permission
+    /// if needed, registers for remote notifications, and syncs. Granting permission
+    /// does not change the free quota.
     @MainActor
     static func enableFromSettings() async -> Bool {
         let status = await NotificationManager.authorizationStatus()
@@ -112,12 +112,6 @@ enum PushNotifications {
         guard !ProcessInfo.processInfo.arguments.contains("-UITesting") else { return }
 
         let status = await NotificationManager.authorizationStatus()
-        // Permission granted anywhere - the onboarding bell, Settings, the post-entry
-        // prompt, or the iOS Settings app - releases the signup month's free credits.
-        if NotificationManager.isPermissionGranted(status),
-           AIQuotaStore.unlockWithNotificationsIfNeeded() {
-            Analytics.capture(.notificationRewardGranted)
-        }
         let subscriptionID = didSetup ? OneSignal.User.pushSubscription.id : nil
 
         do {
@@ -127,7 +121,9 @@ enum PushNotifications {
                 appVersion: AppInfo.appVersionLabel(),
                 permissionStatus: NotificationManager.permissionStatusName(status),
                 onesignalSubscriptionID: subscriptionID,
-                rewardGranted: AIQuotaStore.didUnlockWithNotifications
+                // Free credits start on install. The column stays so existing rows
+                // keep a value, and every install reports the reward as already given.
+                rewardGranted: true
             )
         } catch {
             Diagnostics.log(

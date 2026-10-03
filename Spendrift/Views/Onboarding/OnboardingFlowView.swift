@@ -358,11 +358,11 @@ private struct OnboardingNotificationsPage: View {
     @AppStorage(NotificationManager.Keys.dailyReminderHour) private var dailyReminderHour = NotificationManager.defaultHour
     @AppStorage(NotificationManager.Keys.dailyReminderMinute) private var dailyReminderMinute = NotificationManager.defaultMinute
 
-    @State private var reward: RewardState = .offered
+    @State private var permission: PermissionState = .offered
     /// "I'll do it later" holds back so "Notify Me." gets a moment to be read first.
     @State private var showsLater = false
 
-    private enum RewardState {
+    private enum PermissionState {
         case offered
         case asking
         case granted
@@ -414,7 +414,7 @@ private struct OnboardingNotificationsPage: View {
                 )
                 OnboardingTapHint(text: tapHint)
             }
-            .animation(.spring(response: 0.42, dampingFraction: 0.86), value: reward)
+            .animation(.spring(response: 0.42, dampingFraction: 0.86), value: permission)
         } action: {
             VStack(spacing: 4) {
                 // One button throughout, so it morphs from the offer into the way out
@@ -424,7 +424,7 @@ private struct OnboardingNotificationsPage: View {
                     fill: accent,
                     action: hasAnswered ? onFinish : requestNotifications
                 )
-                .disabled(reward == .asking)
+                .disabled(permission == .asking)
 
                 // Always laid out, so "Notify Me." sits where it will stay when this
                 // fades in, and does not move when it fades out again.
@@ -434,11 +434,11 @@ private struct OnboardingNotificationsPage: View {
                     style: .quiet,
                     action: onFinish
                 )
-                .opacity(showsLater && reward == .offered ? 1 : 0)
-                .allowsHitTesting(showsLater && reward == .offered)
-                .accessibilityHidden(!(showsLater && reward == .offered))
+                .opacity(showsLater && permission == .offered ? 1 : 0)
+                .allowsHitTesting(showsLater && permission == .offered)
+                .accessibilityHidden(!(showsLater && permission == .offered))
                 .animation(.easeInOut(duration: 0.32), value: showsLater)
-                .animation(.easeInOut(duration: 0.32), value: reward)
+                .animation(.easeInOut(duration: 0.32), value: permission)
             }
         }
         .task {
@@ -449,30 +449,25 @@ private struct OnboardingNotificationsPage: View {
     }
 
     private var hasAnswered: Bool {
-        reward == .granted || reward == .declined
+        permission == .granted || permission == .declined
     }
 
     private var tapHint: String? {
-        switch reward {
-        // Why the banner up front is worth a ping, until the offer is answered.
+        switch permission {
+        // Why the banner up front is worth a ping, until the prompt is answered.
         case .offered:  Self.notifications[frontNotification].hint
         case .asking:   "One moment."
-        case .granted:  "Done. Ten voice notes, five receipts and a statement, on us."
-        // Free credits wait for next month unless they change their mind in Settings.
-        case .declined: "No bother. Free credits start \(nextRefillText), or sooner from Settings."
+        case .granted:  "Done. We'll ping you when something's worth a look."
+        case .declined: "No bother. You can turn them on anytime in Settings."
         }
     }
 
-    private var nextRefillText: String {
-        AIQuotaStore.nextResetDate().formatted(.dateTime.day().month(.abbreviated))
-    }
-
     private func requestNotifications() {
-        reward = .asking
+        permission = .asking
         Task { @MainActor in
             guard await PushNotifications.enableFromSettings() else {
                 withAnimation(.spring(response: 0.42, dampingFraction: 0.86)) {
-                    reward = .declined
+                    permission = .declined
                 }
                 return
             }
@@ -488,7 +483,7 @@ private struct OnboardingNotificationsPage: View {
 
             UINotificationFeedbackGenerator().notificationOccurred(.success)
             withAnimation(.spring(response: 0.42, dampingFraction: 0.86)) {
-                reward = .granted
+                permission = .granted
             }
         }
     }

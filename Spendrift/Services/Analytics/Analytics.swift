@@ -39,7 +39,6 @@ enum Analytics {
         case notificationPermissionGranted = "notification_permission_granted"
         case notificationScheduled = "notification_scheduled"
         case notificationOpened = "notification_opened"
-        case notificationRewardGranted = "notification_reward_granted"
         case messageInboxSynced = "message_inbox_synced"
 
         // Spendrift Pro

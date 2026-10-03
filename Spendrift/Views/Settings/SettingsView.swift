@@ -262,7 +262,7 @@ struct SettingsView: View {
         SettingsListItem(
             icon: "bell.badge.fill",
             title: "Turn on notifications",
-            subtitle: "Get a free top-up: 10 voice notes, 5 receipts, and 1 bank statement.",
+            subtitle: "Budget alerts, weekly notes, and refill reminders.",
             accent: accent,
             accessory: .toggle(notificationToggle)
         )

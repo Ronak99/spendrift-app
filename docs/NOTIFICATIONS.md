@@ -15,7 +15,7 @@ This document specifies remote push: an API we can call to reach every install t
 
 1. **OneSignal** as the push gateway, wired to APNs with our own `.p8` auth key.
 2. A **`device_notifications` table** in Supabase keyed by `device_id`, so we can count how many installs have notifications on.
-3. A **permission row in Settings** directly below Feedback, shown only while permission is missing, offering bonus AI credits as the incentive.
+3. A **permission row in Settings** directly below Feedback, shown only while permission is missing.
 4. A **monthly quota-refill notification**, scheduled locally, for free-tier users.
 5. A **campaign API** on the backend that we call to broadcast a notification carrying a page path such as `/feedback`.
 
@@ -230,7 +230,7 @@ Status is read asynchronously on appear and re-read when the scene becomes activ
 `SettingsListItem` already supports `.toggle(Binding<Bool>)`, so no new component is needed.
 
 - **`.notDetermined`**: flipping the toggle on calls `NotificationManager.requestAuthorization()`.
-  On grant, register with OneSignal, unlock the signup month's free credits, sync state to the backend, and let the row disappear.
+  On grant, register with OneSignal, sync state to the backend, and let the row disappear.
   On refusal, the toggle springs back off and the row stays.
 - **`.denied`**: the row opens `UIApplication.openSettingsURLString` instead of prompting, because iOS will not show the system prompt a second time.
   A toggle that does nothing is worse than no toggle.
@@ -240,46 +240,35 @@ Status is read asynchronously on appear and re-read when the scene becomes activ
 The original idea was "Get 1 day of Pro usage".
 That does not survive contact with the code: `ProEntitlement.isPro` is derived from StoreKit and `ProEntitlementCache` only mirrors it, so a fake 24-hour Pro window would have the app claiming a subscription the user does not have, in the paywall and in the Pro settings section.
 
-Free credits say the same thing honestly and need no new entitlement concept.
-See [Signup-month unlock](#signup-month-unlock) for how they are released.
+Free credits are given on install and are not an incentive for notification permission.
+See [Free credits](#free-credits).
 
 ---
 
-## Signup-month unlock
+## Free credits
 
-Notification permission no longer adds bonus credits on top of the free tier.
-Instead, it is what releases the free tier in the user's first month.
+Every free user gets the full monthly allowance from the first time `AIQuotaStore` sees the install.
+Notification permission does not change that allowance.
 
 ### Rules
 
-- The signup month is the first calendar month `AIQuotaStore` sees the install.
-  For installs from before this rule, that is the month they updated, so the rule applies to everyone.
-- In the signup month, every feature's free allowance is 0 until notification permission is granted.
-- Granting permission at any point in the signup month releases the full `monthlyFreeQuota` immediately.
-  That covers the onboarding bell, the Settings row, the post-entry prompt, and the iOS Settings app, because `PushNotifications.syncState()` checks the status at launch and on every foreground.
-- From the following month on, every free user gets the full monthly allowance whether or not they granted permission.
+- `monthlyAllowance` is `monthlyFreeQuota` from the first launch.
+- Granting or declining notifications, in onboarding or in Settings, does not add or withhold credits.
 - The voice demo in onboarding is exempt from the quota (`QuotaPolicy.exempt`): it runs before the notification page, needs no credit, and does not spend one.
-
-### Storage
-
-- `aiQuota.signupPeriod` holds the signup month, stamped on first touch.
-- `aiQuota.notificationRewardGranted` records the unlock.
-  It keeps its original name so installs that took the old reward count as unlocked.
-- Leftover `aiQuota.bonus.<feature>` balances from the old reward are cleared when the signup month is stamped.
 
 ### Arithmetic
 
 ```
-monthlyAllowance(feature) = signup month and not unlocked ? 0 : monthlyFreeQuota
+monthlyAllowance(feature) = monthlyFreeQuota
 remaining(feature) = max(0, monthlyAllowance(feature) - used)
 ```
 
-`consume` clamps stored usage at the allowance, so nothing spent while locked carries into the unlock.
+`consume` clamps stored usage at the allowance.
 
 ### Surfacing
 
-`ProStatsRingsView` computes against `monthlyAllowance`, and shows "Turn on notifications to unlock" while the allowance is 0.
-The onboarding notification page tells a decliner when their free credits start.
+`ProStatsRingsView` computes against `monthlyAllowance` and always shows remaining credits.
+The onboarding notification page only asks for permission.
 
 ---
 
@@ -458,11 +447,8 @@ Reuse it for push, with `kind: "push"` plus two new property keys on `Analytics.
 - `path`
 - `campaign`
 
-New events on `Analytics.Event`:
-
-- `notification_reward_granted`, with the credits granted
-
-`notification_permission_requested` and `notification_permission_granted` already exist and cover the Settings toggle without change.
+`notification_permission_requested` and `notification_permission_granted` already exist and cover the permission prompt without change.
+Free credits are not a notification event.
 
 ### The funnel that matters
 

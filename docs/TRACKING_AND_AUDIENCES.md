@@ -223,7 +223,7 @@ Body:
   "app_version": "1.4.1 (2)",
   "permission_status": "authorized",
   "onesignal_subscription_id": "optional",
-  "reward_granted": false
+  "reward_granted": true
 }
 ```
 
@@ -241,7 +241,7 @@ Body:
 | `permission_status` | Current `UNAuthorizationStatus` |
 | `permission_granted_at` | Set to `now()` whenever status is granted. Overwritten on every granted sync, so it is "last seen granted", not "first granted". |
 | `onesignal_subscription_id` | OneSignal push subscription id, or `null` if SDK did not set up |
-| `reward_granted` | Whether this install has unlocked its signup month's free credits by granting notification permission |
+| `reward_granted` | Always `true` on sync. Free credits start on install and are not tied to notification permission. |
 | `reward_granted_at` | Same overwrite behavior as `permission_granted_at` |
 | `app_version` | Updated on every sync |
 | `created_at` / `updated_at` | Row timestamps |
@@ -527,9 +527,8 @@ PostHog events:
 | `notification_scheduled` | Local request accepted | `kind` (`type`, `voice`, `statement`, `quota_refill`, `trial_ending`) |
 | `notification_opened` | Local tap | `kind` = URL host (`createTransaction`, `voiceExpense`, `importStatement`) |
 | `notification_opened` | Push tap | `kind=push`, `path`, `campaign` |
-| `notification_reward_granted` | Bonus credits granted | none |
 
-None of `notification_permission_*`, `notification_opened`, or `notification_reward_granted` have appeared in Spendrift-Prod in 30 days.
+None of `notification_permission_*` or `notification_opened` have appeared in Spendrift-Prod in 30 days.
 Push is too new, and the permission prompt is rare.
 
 OneSignal, not PostHog, owns sent / confirmed delivered / clicked for remote campaigns.
@@ -573,7 +572,6 @@ The Notification Service Extension is what makes confirmed delivery real.
 | `notification_permission_granted` | yes | no | Permission |
 | `notification_scheduled` | yes | 5 / 2 | Local schedule |
 | `notification_opened` | yes | no | Local + push tap |
-| `notification_reward_granted` | yes | no | Bonus credits |
 | `feedback_submitted` | yes | no | Feedback |
 
 `$rageclick` has also appeared (session replay / autocapture).
