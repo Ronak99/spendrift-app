@@ -68,6 +68,33 @@ struct ProPaywallView: View {
     private let termsURL = URL(string: "https://www.apple.com/legal/internet-services/itunes/dev/stdeula/")!
 
     var body: some View {
+        NavigationStack {
+            paywall
+                // An empty title keeps the inline bar from collapsing, which is
+                // what gives the system close button a place to live.
+                .navigationTitle("")
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar(.visible, for: .navigationBar)
+                .toolbarBackground(.visible, for: .navigationBar)
+                .toolbarBackground(Color.clear, for: .navigationBar)
+                .toolbarColorScheme(.dark, for: .navigationBar)
+                .toolbar { closeToolbar }
+        }
+        .preferredColorScheme(.dark)
+        .task {
+            await entitlement.loadProducts()
+        }
+        .onAppear {
+            PaywallSeenStore.markSeen()
+            Analytics.capturePro(.paywallViewed, analyticsProperties)
+        }
+        .onDisappear {
+            guard !entitlement.isPro else { return }
+            Analytics.capturePro(.paywallDismissed, analyticsProperties)
+        }
+    }
+
+    private var paywall: some View {
         ZStack(alignment: .bottom) {
             OnboardingSheetAtmosphericBackground(tintColor: accent)
                 .ignoresSafeArea()
@@ -75,7 +102,7 @@ struct ProPaywallView: View {
             ScrollView {
                 VStack(spacing: 0) {
                     heroSection
-                        .padding(.top, 40)
+                        .padding(.top, 8)
                         .padding(.bottom, 28)
 
                     featureCard
@@ -111,24 +138,26 @@ struct ProPaywallView: View {
 
             actionStack
         }
-        // No navigation bar to hang a toolbar item off, so the close plate is pinned
-        // to the same leading corner a sheet toolbar would put it in.
-        .overlay(alignment: .topLeading) {
-            SheetDismissToolbarButton()
-                .padding(.leading, 12)
-                .padding(.top, 8)
-        }
-        .preferredColorScheme(.dark)
-        .task {
-            await entitlement.loadProducts()
-        }
-        .onAppear {
-            PaywallSeenStore.markSeen()
-            Analytics.capturePro(.paywallViewed, analyticsProperties)
-        }
-        .onDisappear {
-            guard !entitlement.isPro else { return }
-            Analytics.capturePro(.paywallDismissed, analyticsProperties)
+    }
+
+    /// System close control. On iOS 26 the `.close` role draws the glass cross.
+    @ToolbarContentBuilder
+    private var closeToolbar: some ToolbarContent {
+        ToolbarItem(placement: .cancellationAction) {
+            if #available(iOS 26.0, *) {
+                Button(role: .close) {
+                    dismiss()
+                }
+                .accessibilityIdentifier("xmark")
+            } else {
+                Button {
+                    dismiss()
+                } label: {
+                    Image(systemName: "xmark")
+                }
+                .accessibilityLabel("Close")
+                .accessibilityIdentifier("xmark")
+            }
         }
     }
 
