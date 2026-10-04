@@ -2,9 +2,9 @@
 //  CategoryFindField.swift
 //  Spendrift
 //
-//  Find chrome for category trays. Same track-fill well as
-//  ChromeSegmentedPicker, so search sits in the tray instead of a
-//  second system search bar.
+//  Find chrome for category trays. On iOS 26 this is the same Liquid Glass
+//  capsule as ChromeSegmentedPicker, so search sits in the tray instead of a
+//  second system search bar. Earlier systems keep the flat track-fill well.
 //
 
 import SwiftUI
@@ -63,15 +63,30 @@ struct CategoryFindField: View {
         }
         .frame(minHeight: 44)
         .padding(.horizontal, 14)
-        .background(
-            RoundedRectangle(cornerRadius: 13, style: .continuous)
-                .fill(Color.black.opacity(isDark ? 0.3 : 0.08))
-        )
+        .modifier(FindFieldGlassModifier(isDark: isDark))
         .onAppear {
             guard autoFocus else { return }
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
                 isFocused = true
             }
+        }
+    }
+}
+
+/// Liquid Glass capsule on iOS 26, matching ChromeSegmentedPicker.
+/// Earlier systems keep the flat track-fill well.
+private struct FindFieldGlassModifier: ViewModifier {
+    var isDark: Bool
+
+    @ViewBuilder
+    func body(content: Content) -> some View {
+        if #available(iOS 26.0, *) {
+            content.glassEffect(.regular.interactive(), in: .capsule)
+        } else {
+            content.background(
+                RoundedRectangle(cornerRadius: 13, style: .continuous)
+                    .fill(Color.black.opacity(isDark ? 0.3 : 0.08))
+            )
         }
     }
 }

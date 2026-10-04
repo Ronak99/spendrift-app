@@ -25,6 +25,7 @@ struct ChromeSegmentedPicker<Option: Hashable>: View {
         }
         .pickerStyle(.segmented)
         .modifier(SegmentedGlassModifier())
+        .frame(height: 44)
         .onChange(of: selection) { _, newValue in
             onSelect?(newValue)
         }
