@@ -55,10 +55,15 @@ Used as:
 - Supabase `device_notifications.device_id`
 - Supabase `feedback.device_id`
 
-Intended, but **not currently landing**, as a PostHog super property.
-`Analytics.bootstrap()` calls `PostHogSDK.shared.register(["device_id": DeviceIdentity.current])`.
-In Spendrift-Prod, `0` of `1,211` `app_opened` events in the last 30 days carry `properties.device_id`.
-Until that is fixed, PostHog cannot be joined to OneSignal by `device_id` directly.
+PostHog event super property and the only PostHog person property.
+`Analytics.bootstrap()` registers it on events and, unless analytics is opted out, calls `identify` with this id.
+
+### PostHog distinct id
+
+`personProfiles` is `.identifiedOnly`.
+`identify(DeviceIdentity.current)` runs at the start of each release launch that is not opted out, and again if the user opts back in.
+After that call, `getDistinctId()` is the Keychain device id, and the person has a single property, `device_id`.
+A reinstall generates a new anonymous PostHog id, then `identify` aliases it to the surviving Keychain id.
 The working join is:
 
 ```
@@ -67,15 +72,6 @@ PostHog distinct_id
     -> public.devices.device_id
       -> OneSignal external_id
 ```
-
-### PostHog distinct id
-
-Anonymous, SDK-persisted id.
-Never replaced by `identify()`.
-`Analytics.personProfiles` is `.identifiedOnly`, so Spendrift does **not** write person profiles.
-Funnels and retention still work per device because events share a stable `distinct_id`.
-Person properties in PostHog are effectively empty.
-Do not plan OneSignal audiences on PostHog person properties.
 
 `devices.posthog_id` is written on first successful launch insert.
 If that insert raced ahead of PostHog setup and stored `null`, a later launch patches it once.

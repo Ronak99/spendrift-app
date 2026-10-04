@@ -5,10 +5,12 @@
 //  Centralized analytics facade. Keeps PostHog out of feature code, enforces a
 //  stable low-cardinality event taxonomy, and respects the user's opt-out.
 //
-//  No authentication: PostHog's iOS SDK persists an anonymous `distinct_id`, so
-//  funnels and retention work per-device. We never call `identify()`.
-//  A stable `device_id` super property (Keychain-backed) joins events to Sentry
-//  and Supabase feedback without creating identified person profiles.
+//  No user accounts. Each install is one PostHog person, identified by the
+//  Keychain `device_id`. `personProfiles` stays `.identifiedOnly`, so a profile
+//  is created only when `identify` runs. A reinstall keeps that Keychain id;
+//  PostHog aliases the new anonymous distinct id back to the same person.
+//  `device_id` is the only person property, and the same value is registered as
+//  an event super property so events can be grouped before the profile exists.
 //
 //  PostHog runs only in release builds, and only when a real API key and backend
 //  URL are configured. Debug builds never start the SDK: there is no dev project,
@@ -88,6 +90,7 @@ enum Analytics {
         static let plan = "plan"
         static let remaining = "remaining"
         static let skippedToNotes = "skipped_to_notes"
+        static let deviceID = "device_id"
     }
 
     private static let optOutDefaultsKey = "analyticsOptOut"
@@ -134,15 +137,27 @@ enum Analytics {
         // so capture screenshots instead.
         config.sessionReplayConfig.screenshotMode = true
         PostHogSDK.shared.setup(config)
-        PostHogSDK.shared.register(["device_id": DeviceIdentity.current])
+        PostHogSDK.shared.register([Key.deviceID: DeviceIdentity.current])
         didSetupPostHog = true
 
         if isOptedOut {
             PostHogSDK.shared.optOut()
+        } else {
+            identifyCurrentInstall()
         }
     }
 
-    /// PostHog's anonymous distinct id, when the SDK was initialized this launch.
+    /// Links this install's PostHog person to the Keychain device id.
+    /// Called on every launch and again on opt-in. The same id is idempotent, and
+    /// a reinstall's new anonymous distinct id is aliased back to this person.
+    /// Skipped while opted out so an opted-out launch does not create a profile.
+    private static func identifyCurrentInstall() {
+        let deviceID = DeviceIdentity.current
+        PostHogSDK.shared.identify(deviceID, userProperties: [Key.deviceID: deviceID])
+    }
+
+    /// PostHog distinct id for this install. After `identify`, this is the Keychain
+    /// device id. Nil until the SDK has been set up this launch.
     static var posthogDistinctId: String? {
         guard didSetupPostHog else { return nil }
         return PostHogSDK.shared.getDistinctId()
@@ -223,6 +238,7 @@ enum Analytics {
                 PostHogSDK.shared.optOut()
             } else {
                 PostHogSDK.shared.optIn()
+                identifyCurrentInstall()
             }
         }
     }
