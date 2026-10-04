@@ -61,9 +61,9 @@ struct ContentView: View {
     /// Wash of the visible tab, used as TabView tint and the selected ledger icon colour.
     private var selectedTabWash: Color {
         switch selectedTab {
-        case 0: AppTheme.atmosphere
-        case 1: AccountEnamel.atmosphere(in: accounts)
-        case 2: CategoryEnamel.atmosphere(in: categories, type: categoryTabType)
+//        case 0: AppTheme.atmosphere
+//        case 1: AccountEnamel.atmosphere(in: accounts)
+//        case 2: CategoryEnamel.atmosphere(in: categories, type: categoryTabType)
         default: AppTheme.atmosphere
         }
     }
