@@ -47,7 +47,7 @@ struct TransactionListItem: View {
     }
 
     private var amountColor: Color {
-        transaction.isExpense ? Color.primary : CategoryEnamel.income
+        transaction.isExpense ? CategoryEnamel.expense : CategoryEnamel.income
     }
 
     var body: some View {

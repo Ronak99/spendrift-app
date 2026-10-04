@@ -20,7 +20,9 @@ struct AccountListItem: View {
     }
 
     private var balanceColor: Color {
-        account.currentBalance < 0 ? .red : .primary
+        if account.currentBalance > 0 { return CategoryEnamel.income }
+        if account.currentBalance < 0 { return CategoryEnamel.expense }
+        return .primary
     }
 
     var body: some View {
