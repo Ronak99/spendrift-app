@@ -2,9 +2,9 @@
 //  CategoriesView.swift
 //  Spendrift
 //
-//  Tray of enamel category chips. Search sits beside the
-//  type picker; opening it swaps the picker for a find field and
-//  searches every category.
+//  Tray of enamel category chips. Search lives in the leading
+//  navigation-bar slot; opening it swaps the type picker for a find
+//  field and searches every category.
 //
 
 import SwiftUI
@@ -137,21 +137,17 @@ struct CategoriesView: View {
     // MARK: Chrome
 
     private var trayChrome: some View {
-        HStack(spacing: 10) {
-            Group {
-                if isSearchActive {
-                    CategoryFindField(query: $query, autoFocus: true)
-                } else {
-                    ChromeSegmentedPicker(
-                        selection: $selectedType,
-                        accessibilityLabel: "Category type"
-                    )
-                }
+        Group {
+            if isSearchActive {
+                CategoryFindField(query: $query, autoFocus: true)
+            } else {
+                ChromeSegmentedPicker(
+                    selection: $selectedType,
+                    accessibilityLabel: "Category type"
+                )
             }
-            .frame(maxWidth: .infinity)
-
-            searchButton
         }
+        .frame(maxWidth: .infinity)
         .animation(typeMotion, value: isSearchActive)
     }
 
@@ -236,32 +232,42 @@ struct CategoriesView: View {
     @ToolbarContentBuilder
     private var toolbarContent: some ToolbarContent {
         if #available(iOS 26.0, *) {
+            ToolbarItem(placement: .navigationBarLeading) {
+                searchButton
+            }
+            .sharedBackgroundVisibility(.hidden)
             ToolbarItem(placement: .navigationBarTrailing) {
                 addButton
             }
             .sharedBackgroundVisibility(.hidden)
         } else {
+            ToolbarItem(placement: .navigationBarLeading) {
+                searchButton
+            }
             ToolbarItem(placement: .navigationBarTrailing) {
                 addButton
             }
         }
     }
 
-    private var searchButton: some View {
+    private var searchButton: some View { 
         Button(action: toggleSearch) {
             Image(systemName: isSearchActive ? "xmark" : "magnifyingglass")
                 .font(.system(size: 15, weight: .semibold))
-                .foregroundStyle(heroPrimary)
-                .frame(width: 44, height: 44)
-                .background(
-                    Circle().fill(Color.black.opacity(isDark ? 0.3 : 0.08))
-                )
-                .contentTransition(.symbolEffect(.replace))
+                .foregroundStyle(searchGlyph)
+                .frame(width: 32, height: 32)
+                .background(searchPlate, in: Circle())
         }
-        .accessibilityLabel(isSearchActive ? "Close search" : "Search categories")
-        .accessibilityIdentifier("Search categories")
-        .accessibilityAddTraits(isSearchActive ? .isSelected : [])
         .sensoryFeedback(.selection, trigger: isSearchActive)
+        .accessibilityLabel(isSearchActive ? "Close search" : "Search categories")
+    }
+
+    private var searchPlate: Color {
+        isDark ? Color.white.opacity(0.14) : Color.black.opacity(0.08)
+    }
+
+    private var searchGlyph: Color {
+        isDark ? Color.white.opacity(0.8) : Color(hex: "#111111").opacity(0.7)
     }
 
     private var addButton: some View {
