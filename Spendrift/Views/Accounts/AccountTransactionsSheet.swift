@@ -4,7 +4,7 @@
 //
 //  Colour-wash ledger of one account's transactions. Atmosphere, date
 //  capsule, enamel empty state, and row chrome match the Accounts tab
-//  and the Transactions list so this sheet feels like the same box.
+//  and the Transactions list. Pushed from the account editor.
 //
 
 import SwiftData
@@ -49,40 +49,35 @@ struct AccountTransactionsSheet: View {
 
     var body: some View {
         @Bindable var viewModel = viewModel
-        NavigationStack {
-            Group {
-                if transactions.isEmpty {
-                    emptyLedger
-                } else {
-                    transactionList
-                }
+        Group {
+            if transactions.isEmpty {
+                emptyLedger
+            } else {
+                transactionList
             }
-            .background { atmosphere }
-            .scrollingHeaderBar {
-                CapsuleDateSelector(
-                    period: $viewModel.periodGranularity,
-                    title: viewModel.capsuleTitle,
-                    date: viewModel.selectedDate,
-                    isCurrentPeriod: viewModel.isCurrentPeriod,
-                    onPrevious: { viewModel.decrementPeriod() },
-                    onNext: { viewModel.incrementPeriod() },
-                    onToday: { viewModel.goToCurrentPeriod() },
-                    onJumpToDate: { viewModel.goToDate($0) }
-                )
-                .padding(.horizontal, 20)
-                .padding(.top, 8)
-                .padding(.bottom, 12)
-            }
-            .navigationTitle(account.name)
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbarBackground(.hidden, for: .navigationBar)
-            .toolbarColorScheme(isDark ? .dark : .light, for: .navigationBar)
-            .toolbar {
-                SheetDismissToolbarItem()
-            }
-            .sheet(item: $selectedTransaction) { transaction in
-                UpdateTransactionSheet(transaction: transaction)
-            }
+        }
+        .background { atmosphere }
+        .scrollingHeaderBar {
+            CapsuleDateSelector(
+                period: $viewModel.periodGranularity,
+                title: viewModel.capsuleTitle,
+                date: viewModel.selectedDate,
+                isCurrentPeriod: viewModel.isCurrentPeriod,
+                onPrevious: { viewModel.decrementPeriod() },
+                onNext: { viewModel.incrementPeriod() },
+                onToday: { viewModel.goToCurrentPeriod() },
+                onJumpToDate: { viewModel.goToDate($0) }
+            )
+            .padding(.horizontal, 20)
+            .padding(.top, 8)
+            .padding(.bottom, 12)
+        }
+        .navigationTitle(account.name)
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbarBackground(.hidden, for: .navigationBar)
+        .toolbarColorScheme(isDark ? .dark : .light, for: .navigationBar)
+        .sheet(item: $selectedTransaction) { transaction in
+            UpdateTransactionSheet(transaction: transaction)
         }
     }
 
@@ -159,13 +154,15 @@ struct AccountTransactionsSheet: View {
 }
 
 #Preview {
-    AccountTransactionsSheet(
-        account: Account(
-            name: "SBI Savings",
-            balance: 50000,
-            icon: .bankAccountOne,
-            isPrimary: true
+    NavigationStack {
+        AccountTransactionsSheet(
+            account: Account(
+                name: "SBI Savings",
+                balance: 50000,
+                icon: .bankAccountOne,
+                isPrimary: true
+            )
         )
-    )
+    }
     .modelContainer(for: [Transaction.self, Account.self, TransactionCategory.self], inMemory: true)
 }

@@ -5,7 +5,7 @@
 //  Color-wash sheet for creating, viewing, and updating accounts. Name lives
 //  in the hero so the preview is the header; balance and icon sit below it the
 //  way the category editor places colour and icon, and the transactions link
-//  closes the sheet. An existing account opens as a plain detail view: Save
+//  pushes the ledger. An existing account opens as a plain detail view: Save
 //  only shows up once a field differs from what is stored.
 //
 
@@ -30,7 +30,6 @@ struct UpdateAccountSheet: View {
     @State private var isPrimary: Bool
     @State private var saveAlertMessage: String?
     @State private var showIconPicker = false
-    @State private var showTransactions = false
     @State private var showPrimaryHelp = false
 
     init(account: Account?, onCreated: ((Account) -> Void)? = nil) {
@@ -131,11 +130,6 @@ struct UpdateAccountSheet: View {
             }
             .sheet(isPresented: $showIconPicker) {
                 AccountIconPickerView(selectedIcon: $icon, accentHex: icon.enamelHex)
-            }
-            .sheet(isPresented: $showTransactions) {
-                if let account {
-                    AccountTransactionsSheet(account: account)
-                }
             }
         }
     }
@@ -260,8 +254,8 @@ struct UpdateAccountSheet: View {
 
                 iconSection
 
-                if !isCreating {
-                    transactionsLink
+                if let account {
+                    transactionsLink(for: account)
                 }
             }
             .padding(.horizontal, 20)
@@ -304,12 +298,10 @@ struct UpdateAccountSheet: View {
         }
     }
 
-    /// Styled as a navigation row, but opens the ledger as a sheet rather than pushing it.
-    private var transactionsLink: some View {
-        Button {
-            nameFieldFocused = false
-            balanceFieldFocused = false
-            showTransactions = true
+    /// Pushes the account ledger onto this sheet's navigation stack.
+    private func transactionsLink(for account: Account) -> some View {
+        NavigationLink {
+            AccountTransactionsSheet(account: account)
         } label: {
             HStack(spacing: 8) {
                 Text("View Transactions")
@@ -336,6 +328,10 @@ struct UpdateAccountSheet: View {
         .accessibilityIdentifier("View Transactions")
         .accessibilityLabel("View Transactions")
         .accessibilityValue(transactionsValueText)
+        .simultaneousGesture(TapGesture().onEnded { _ in
+            nameFieldFocused = false
+            balanceFieldFocused = false
+        })
     }
 
     private var iconSection: some View {
