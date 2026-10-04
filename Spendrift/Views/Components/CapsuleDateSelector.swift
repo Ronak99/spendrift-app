@@ -7,6 +7,46 @@
 
 import SwiftUI
 
+// MARK: - Liquid Glass surfaces
+
+/// Groups the floating chrome so nearby glass surfaces sample and blend as one
+/// layer instead of stacking two independent ones. Plain passthrough before iOS 26.
+private struct GlassGroup<Content: View>: View {
+    var spacing: CGFloat
+    @ViewBuilder var content: Content
+
+    var body: some View {
+        if #available(iOS 26.0, *) {
+            GlassEffectContainer(spacing: spacing) { content }
+        } else {
+            content
+        }
+    }
+}
+
+private extension View {
+    /// Liquid Glass capsule on iOS 26, falling back to the flat raised surface
+    /// fill everywhere else.
+    @ViewBuilder
+    func glassCapsule() -> some View {
+        if #available(iOS 26.0, *) {
+            self.glassEffect(.regular, in: .capsule)
+        } else {
+            self.background(Capsule().fill(AppTheme.listGroupBackground))
+        }
+    }
+
+    /// Liquid Glass rounded card on iOS 26, falling back to the flat grey fill.
+    @ViewBuilder
+    func glassCard(cornerRadius: CGFloat) -> some View {
+        if #available(iOS 26.0, *) {
+            self.glassEffect(.regular, in: .rect(cornerRadius: cornerRadius))
+        } else {
+            self.background(Color(.systemGray6), in: RoundedRectangle(cornerRadius: cornerRadius))
+        }
+    }
+}
+
 struct CapsuleDateSelector: View {
     @Binding var period: TransactionPeriod
     let title: String
@@ -25,72 +65,71 @@ struct CapsuleDateSelector: View {
     @State private var showGestureHint = false
 
     var body: some View {
-        VStack(spacing: 8) {
-            HStack {
-                periodMenuButton
-                
-                Spacer().frame(width: 16)
+        GlassGroup(spacing: 8) {
+            VStack(spacing: 8) {
+                HStack {
+                    periodMenuButton
 
-                Button(action: onPrevious) {
-                    Image(systemName: "chevron.left")
-                        .font(.headline)
-                        .foregroundColor(.primary)
-                }
+                    Spacer().frame(width: 16)
 
-                Spacer(minLength: 0)
-
-                Text(title)
-                    .font(.headline)
-                    .fontWeight(.semibold)
-                    .multilineTextAlignment(.center)
-                    .lineLimit(2)
-                    .minimumScaleFactor(0.75)
-                    .scaleEffect(isPressing ? 0.94 : 1)
-                    .animation(.spring(response: 0.25, dampingFraction: 0.6), value: isPressing)
-                    .onTapGesture(count: 2) {
-                        UINotificationFeedbackGenerator().notificationOccurred(.success)
-                        onToday?()
+                    Button(action: onPrevious) {
+                        Image(systemName: "chevron.left")
+                            .font(.headline)
+                            .foregroundColor(.primary)
                     }
-                    .onLongPressGesture(minimumDuration: 0.4, pressing: { pressing in
-                        isPressing = pressing
-                        if pressing { UIImpactFeedbackGenerator(style: .medium).impactOccurred() }
-                    }, perform: {
-                        isPressing = false
-                        showJumpSheet = true
-                    })
 
-                Spacer(minLength: 0)
+                    Spacer(minLength: 0)
 
-                Button(action: onNext) {
-                    Image(systemName: "chevron.right")
+                    Text(title)
                         .font(.headline)
-                        .foregroundColor(.primary)
-                }
-                
-                Spacer().frame(width: 16)
+                        .fontWeight(.semibold)
+                        .multilineTextAlignment(.center)
+                        .lineLimit(2)
+                        .minimumScaleFactor(0.75)
+                        .scaleEffect(isPressing ? 0.94 : 1)
+                        .animation(.spring(response: 0.25, dampingFraction: 0.6), value: isPressing)
+                        .onTapGesture(count: 2) {
+                            UINotificationFeedbackGenerator().notificationOccurred(.success)
+                            onToday?()
+                        }
+                        .onLongPressGesture(minimumDuration: 0.4, pressing: { pressing in
+                            isPressing = pressing
+                            if pressing { UIImpactFeedbackGenerator(style: .medium).impactOccurred() }
+                        }, perform: {
+                            isPressing = false
+                            showJumpSheet = true
+                        })
 
-                if let onAnalyticsToggle {
-                    analyticsToggleButton(action: onAnalyticsToggle)
-                }
-            }
-            .padding(.vertical, 16)
-            .padding(.horizontal, 20)
-            .background(
-                Capsule()
-                    .fill(AppTheme.listGroupBackground)
-            )
+                    Spacer(minLength: 0)
 
-            if showGestureHint {
-                GestureHintTooltip(period: period)
-                    .transition(
-                        .asymmetric(
-                            insertion: .push(from: .top).combined(with: .opacity),
-                            removal: .opacity
+                    Button(action: onNext) {
+                        Image(systemName: "chevron.right")
+                            .font(.headline)
+                            .foregroundColor(.primary)
+                    }
+
+                    Spacer().frame(width: 16)
+
+                    if let onAnalyticsToggle {
+                        analyticsToggleButton(action: onAnalyticsToggle)
+                    }
+                }
+                .padding(.vertical, 16)
+                .padding(.horizontal, 20)
+                .glassCapsule()
+
+                if showGestureHint {
+                    GestureHintTooltip(period: period)
+                        .transition(
+                            .asymmetric(
+                                insertion: .push(from: .top).combined(with: .opacity),
+                                removal: .opacity
+                            )
                         )
-                    )
-                    .onTapGesture {
-                        withAnimation(.easeOut(duration: 0.2)) { showGestureHint = false }
-                    }
+                        .onTapGesture {
+                            withAnimation(.easeOut(duration: 0.2)) { showGestureHint = false }
+                        }
+                }
             }
         }
         .animation(.spring(response: 0.4, dampingFraction: 0.78), value: showGestureHint)
@@ -438,7 +477,7 @@ private struct GestureHintTooltip: View {
         .padding(.horizontal, 16)
         .padding(.vertical, 10)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color(.systemGray6), in: RoundedRectangle(cornerRadius: 12))
+        .glassCard(cornerRadius: 12)
     }
 
     private var doubleTapLabel: String {
@@ -474,4 +513,14 @@ private struct GestureHintTooltip: View {
         onJumpToDate: { _ in }
     )
     .padding()
+    .frame(maxWidth: .infinity, maxHeight: .infinity)
+    .background {
+        // Glass only reads against something; mirror the ledger wash behind it.
+        LinearGradient(
+            colors: [AppTheme.atmosphere.opacity(0.55), AppTheme.listBackground],
+            startPoint: .top,
+            endPoint: .bottom
+        )
+        .ignoresSafeArea()
+    }
 }
