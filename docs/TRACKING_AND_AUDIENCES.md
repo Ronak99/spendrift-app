@@ -583,6 +583,8 @@ The Notification Service Extension is what makes confirmed delivery real.
 | `notification_scheduled` | yes | 5 / 2 | Local schedule |
 | `notification_opened` | yes | no | Local + push tap |
 | `feedback_submitted` | yes | no | Feedback |
+| `backup_created` | yes | no | Backup & restore, `count` = transactions saved |
+| `backup_restored` | yes | no | Backup & restore, `count` = transactions restored |
 
 `$rageclick` has also appeared (session replay / autocapture).
 Ignore `$ai_*`, `$mcp_*`, `$workflows_*`, and `$pageview` in this project.

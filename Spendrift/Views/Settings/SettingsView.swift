@@ -80,6 +80,8 @@ struct SettingsView: View {
                     ExploreSettingsView()
                 case .emailReceipts:
                     EmailReceiptsSettingsView()
+                case .backup:
+                    BackupSettingsView()
                 }
             }
         }
@@ -160,17 +162,19 @@ struct SettingsView: View {
     }
 
     // Rows actually rendered: Feedback, optional notification opt-in, Explore,
-    // and Email receipts while developer mode is on. The count drives the
-    // first/last padding, so it must not include the commented-out rows below.
+    // Backup & restore, and Email receipts while developer mode is on. The count
+    // drives the first/last padding, so it must not include the commented-out
+    // rows below.
     private var hubRowCount: Int {
-        var count = 2
+        var count = 3
         if showsNotificationOptIn { count += 1 }
         if showsDeveloperTools { count += 1 }
         return count
     }
 
     private var exploreIndex: Int { showsNotificationOptIn ? 2 : 1 }
-    private var emailReceiptsIndex: Int { exploreIndex + 1 }
+    private var backupIndex: Int { exploreIndex + 1 }
+    private var emailReceiptsIndex: Int { backupIndex + 1 }
     private var receiptIndex: Int { showsNotificationOptIn ? 3 : 2 }
     private var statementIndex: Int { showsNotificationOptIn ? 4 : 3 }
 
@@ -197,6 +201,15 @@ struct SettingsView: View {
                     accent: accent
                 )
                 .listItemPositioned(index: exploreIndex, count: hubRowCount)
+            }
+
+            NavigationLink(value: AppRouter.SettingsDestination.backup) {
+                SettingsListItem(
+                    icon: "icloud.and.arrow.up.fill",
+                    title: "Backup & restore",
+                    accent: accent
+                )
+                .listItemPositioned(index: backupIndex, count: hubRowCount)
             }
 
             if showsDeveloperTools {
