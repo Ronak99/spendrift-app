@@ -303,7 +303,79 @@ struct SpendriftBackendClient {
         return try decode(InboundEmailsPayload.self, from: data)
     }
 
+    /// `POST /v1/backups`
+    func createBackup(
+        deviceID: String,
+        appVersion: String,
+        snapshot: BackupSnapshot
+    ) async throws -> BackupSummary {
+        let body = BackupCreateRequest(
+            deviceID: deviceID,
+            appVersion: appVersion,
+            schemaVersion: BackupSnapshot.schemaVersion,
+            accounts: snapshot.accounts,
+            categories: snapshot.categories,
+            transactions: snapshot.transactions
+        )
+        guard let bodyData = try? BackupCoding.makeEncoder().encode(body) else {
+            throw SpendriftBackendError.failedToBuildRequest
+        }
+
+        let url = try endpoint(path: "/v1/backups")
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.timeoutInterval = Self.backupTimeout
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.httpBody = bodyData
+
+        let data = try await perform(request: request, expectsAuth: true)
+        return try decodeBackup(BackupCreateResponse.self, from: data).backup
+    }
+
+    /// `GET /v1/backups`
+    func fetchBackups(deviceID: String) async throws -> [BackupSummary] {
+        var request = URLRequest(url: try backupURL(path: "/v1/backups", deviceID: deviceID))
+        request.httpMethod = "GET"
+
+        let data = try await perform(request: request, expectsAuth: true)
+        return try decodeBackup(BackupListResponse.self, from: data).backups
+    }
+
+    /// `GET /v1/backups/{id}`
+    func fetchBackup(id: UUID, deviceID: String) async throws -> BackupDetailResponse {
+        let url = try backupURL(path: "/v1/backups/\(id.uuidString)", deviceID: deviceID)
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
+        request.timeoutInterval = Self.backupTimeout
+
+        let data = try await perform(request: request, expectsAuth: true)
+        return try decodeBackup(BackupDetailResponse.self, from: data)
+    }
+
     // MARK: - Request helpers
+
+    /// A full ledger takes longer to move than the default 60s allows on a slow link.
+    private static let backupTimeout: TimeInterval = 180
+
+    private func backupURL(path: String, deviceID: String) throws -> URL {
+        let url = try endpoint(path: path)
+        guard var components = URLComponents(url: url, resolvingAgainstBaseURL: false) else {
+            throw SpendriftBackendError.invalidBaseURL
+        }
+        components.queryItems = [URLQueryItem(name: "device_id", value: deviceID)]
+        guard let requestURL = components.url else {
+            throw SpendriftBackendError.invalidBaseURL
+        }
+        return requestURL
+    }
+
+    private func decodeBackup<T: Decodable>(_ type: T.Type, from data: Data) throws -> T {
+        do {
+            return try BackupCoding.makeDecoder().decode(type, from: data)
+        } catch {
+            throw SpendriftBackendError.decodingFailed
+        }
+    }
 
     private func endpoint(path: String) throws -> URL {
         guard let url = URL(string: path, relativeTo: baseURL)?.absoluteURL else {

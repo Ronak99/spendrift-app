@@ -46,6 +46,7 @@ enum Diagnostics {
         case cloudkit
         case seeding
         case notifications
+        case backup
         case app
     }
 

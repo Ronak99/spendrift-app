@@ -18,6 +18,7 @@ final class AppRouter {
         case feedback
         case explore
         case emailReceipts
+        case backup
     }
 
     var settingsPath: [SettingsDestination] = []

@@ -10,8 +10,11 @@
 //  A stable `device_id` super property (Keychain-backed) joins events to Sentry
 //  and Supabase feedback without creating identified person profiles.
 //
-//  PostHog runs in every build configuration whenever a real API key and backend
-//  URL are configured. Every call below is a no-op until `bootstrap()` has set it up.
+//  PostHog runs only in release builds, and only when a real API key and backend
+//  URL are configured. Debug builds never start the SDK: there is no dev project,
+//  and a fake key still makes the client poll remote config and feature flags
+//  through the local `/ingest` proxy. Every call below is a no-op until
+//  `bootstrap()` has set it up.
 //
 
 import Foundation
@@ -52,6 +55,8 @@ enum Analytics {
         case quotaExhausted = "quota_exhausted"
         case proFeatureBlocked = "pro_feature_blocked"
         case feedbackSubmitted = "feedback_submitted"
+        case backupCreated = "backup_created"
+        case backupRestored = "backup_restored"
     }
 
     /// Property keys. Keep flat and free of PII — never send transaction amounts or notes.
@@ -95,6 +100,13 @@ enum Analytics {
 
     static func bootstrap() {
         stampInstallDateIfNeeded()
+
+        // Debug builds stay off PostHog. A non-placeholder key still initializes
+        // the SDK, which then retries `/array/.../config` and `/flags` forever
+        // when that key is rejected.
+        #if DEBUG
+        return
+        #endif
 
         let apiKey = AppSecrets.posthogAPIKey
         // A missing or placeholder key means analytics isn't configured for this build.

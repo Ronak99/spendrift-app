@@ -32,7 +32,7 @@ struct AccountListItem: View {
             )
             .frame(width: enamelSize, height: enamelSize)
             .overlay {
-                RoundedRectangle(cornerRadius: enamelSize * 0.33 + 4, style: .continuous)
+                    RoundedRectangle(cornerRadius: enamelSize * 0.33 + 4, style: .continuous)
                     .strokeBorder(enamelColor, lineWidth: 2)
                     .padding(-4)
                     .opacity(isSelected ? 1 : 0)
