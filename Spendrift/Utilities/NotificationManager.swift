@@ -2,10 +2,12 @@
 //  NotificationManager.swift
 //  Spendrift
 //
-//  Opt-in local notifications that nudge users to log their spending. No backend
-//  or push entitlement required - everything is scheduled on-device via
-//  UNUserNotificationCenter. Taps deep-link into the existing quick-add flows
-//  through the registered `spendrift://` URL scheme.
+//  Opt-in local notifications. No backend or push entitlement required -
+//  everything is scheduled on-device via UNUserNotificationCenter. Taps deep-link
+//  into the existing flows through the registered `spendrift://` URL scheme.
+//
+//  Daily "log today's spending" reminders are no longer scheduled. `cancelDailySpendReminders`
+//  clears any that an older build already queued.
 //
 //  Remote campaigns go through OneSignal. This type only owns on-device requests.
 //
@@ -16,25 +18,13 @@ import UserNotifications
 enum NotificationManager {
     /// AppStorage-mirrored defaults keys for the user's reminder preferences.
     enum Keys {
-        static let dailyReminderEnabled = "dailyReminderEnabled"
         static let dailyReminderHour = "dailyReminderHour"
         static let dailyReminderMinute = "dailyReminderMinute"
-        static let dailyReminderTimeInterval = "dailyReminderTimeInterval"
     }
 
-    /// Default reminder time (evening) when the user first opts in.
+    /// Clock time used by the monthly statement reminder.
     static let defaultHour = 18
     static let defaultMinute = 39
-
-    static var defaultReminderDate: Date {
-        Calendar.current.date(
-            from: DateComponents(hour: defaultHour, minute: defaultMinute)
-        ) ?? Date()
-    }
-
-    static var defaultReminderTimeInterval: Double {
-        defaultReminderDate.timeIntervalSince1970
-    }
 
     /// Stable identifiers so rescheduling is idempotent.
     private enum RequestID {
@@ -57,15 +47,16 @@ enum NotificationManager {
 
     /// Deep-link destinations carried in each notification's `userInfo`.
     private enum DeepLink {
-        static let createTransaction = "spendrift://createTransaction"
-        static let voiceExpense = "spendrift://voiceExpense"
         static let importStatement = "spendrift://importStatement"
     }
 
-    private static var reminderIdentifiers: [String] {
+    private static var dailySpendReminderIdentifiers: [String] {
         typeWeekdays.map { RequestID.typePrefix + String($0) }
             + voiceWeekdays.map { RequestID.voicePrefix + String($0) }
-            + [RequestID.monthlyStatement]
+    }
+
+    private static var reminderIdentifiers: [String] {
+        dailySpendReminderIdentifiers + [RequestID.monthlyStatement]
     }
 
     // MARK: - Tap attribution
@@ -126,9 +117,19 @@ enum NotificationManager {
 
     // MARK: - Scheduling
 
-    /// Clears Spendrift spend reminders and, when `enabled`, reschedules the daily
-    /// spend reminders (alternating type/voice across weekdays) plus the monthly
-    /// bank-statement nudge, all at the user's chosen `hour`/`minute`.
+    /// Drops the retired daily spend reminders ("Log today's spending" /
+    /// "Speak today's spending"), including any already sitting in Notification Center.
+    /// Safe to call on every launch.
+    static func cancelDailySpendReminders() {
+        let center = UNUserNotificationCenter.current()
+        center.removePendingNotificationRequests(withIdentifiers: dailySpendReminderIdentifiers)
+        center.removeDeliveredNotifications(withIdentifiers: dailySpendReminderIdentifiers)
+    }
+
+    /// Clears Spendrift spend reminders and, when `enabled`, reschedules the monthly
+    /// bank-statement nudge at the user's chosen `hour`/`minute`.
+    ///
+    /// Daily spend nags are always removed and never put back.
     ///
     /// Only removes identifiers this function owns. A blanket
     /// `removeAllPendingNotificationRequests()` would also wipe the Pro trial
@@ -136,34 +137,9 @@ enum NotificationManager {
     static func reschedule(enabled: Bool, hour: Int, minute: Int) {
         let center = UNUserNotificationCenter.current()
         center.removePendingNotificationRequests(withIdentifiers: reminderIdentifiers)
+        center.removeDeliveredNotifications(withIdentifiers: dailySpendReminderIdentifiers)
 
         guard enabled else { return }
-
-        for weekday in typeWeekdays {
-            scheduleWeekly(
-                identifier: RequestID.typePrefix + String(weekday),
-                weekday: weekday,
-                hour: hour,
-                minute: minute,
-                title: "Log today's spending",
-                body: "Tap to quickly add an expense before the day's done.",
-                deeplink: DeepLink.createTransaction,
-                kind: "type"
-            )
-        }
-
-        for weekday in voiceWeekdays {
-            scheduleWeekly(
-                identifier: RequestID.voicePrefix + String(weekday),
-                weekday: weekday,
-                hour: hour,
-                minute: minute,
-                title: "Speak today's spending",
-                body: "Tap and say what you spent - Spendrift handles the rest.",
-                deeplink: DeepLink.voiceExpense,
-                kind: "voice"
-            )
-        }
 
         scheduleMonthlyStatement(hour: hour, minute: minute)
     }
@@ -200,24 +176,6 @@ enum NotificationManager {
             kind: "quota_refill",
             trigger: trigger
         )
-    }
-
-    private static func scheduleWeekly(
-        identifier: String,
-        weekday: Int,
-        hour: Int,
-        minute: Int,
-        title: String,
-        body: String,
-        deeplink: String,
-        kind: String
-    ) {
-        var components = DateComponents()
-        components.weekday = weekday
-        components.hour = hour
-        components.minute = minute
-        let trigger = UNCalendarNotificationTrigger(dateMatching: components, repeats: true)
-        add(identifier: identifier, title: title, body: body, deeplink: deeplink, kind: kind, trigger: trigger)
     }
 
     private static func scheduleMonthlyStatement(hour: Int, minute: Int) {

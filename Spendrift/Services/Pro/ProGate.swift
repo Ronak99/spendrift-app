@@ -22,11 +22,6 @@ extension Notification.Name {
     /// Posted when a feature was refused because its free monthly quota is spent.
     /// Same `userInfo` shape as `proMomentReached`.
     static let proQuotaExhausted = Notification.Name("Spendrift.proQuotaExhausted")
-
-    /// The notification opt-in alert appeared / went away. The paywall listens so it
-    /// can queue behind the alert instead of swallowing it.
-    static let reminderOptInShown = Notification.Name("Spendrift.reminderOptInShown")
-    static let reminderOptInDismissed = Notification.Name("Spendrift.reminderOptInDismissed")
 }
 
 /// Whether a backend call is gated by, and counted against, the free-tier quota.

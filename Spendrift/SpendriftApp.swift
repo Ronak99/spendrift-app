@@ -109,10 +109,9 @@ private struct RootContainerView: View {
     @State private var didStartSeeding = false
 
     /// A Pro moment that has been earned but not yet shown. Held rather than presented
-    /// immediately so it can queue behind the notification opt-in alert and behind the
-    /// success animation of whichever feature just ran.
+    /// immediately so it can queue behind the success animation of whichever feature
+    /// just ran.
     @State private var pendingPaywall: PaywallContext?
-    @State private var isReminderAlertVisible = false
     /// One paywall per launch. Four celebrations plus quota walls could otherwise
     /// stack up in a single session and read as nagging.
     @State private var didPresentPaywallThisSession = false
@@ -158,6 +157,7 @@ private struct RootContainerView: View {
             .preferredColorScheme(.dark)
             .environment(AppRouter.shared)
             .task {
+                NotificationManager.cancelDailySpendReminders()
                 entitlement.start()
                 await checker.check()
                 resolveActiveSheet()
@@ -186,15 +186,6 @@ private struct RootContainerView: View {
                 guard let raw = note.userInfo?[ProGate.featureUserInfoKey] as? String,
                       let feature = ProFeature(rawValue: raw) else { return }
                 queuePaywall(.quotaExhausted(feature))
-            }
-            // The notification opt-in is a plain alert on ContentView. Presenting a
-            // sheet over it would swallow the alert, so the paywall waits its turn.
-            .onReceive(NotificationCenter.default.publisher(for: .reminderOptInShown)) { _ in
-                isReminderAlertVisible = true
-            }
-            .onReceive(NotificationCenter.default.publisher(for: .reminderOptInDismissed)) { _ in
-                isReminderAlertVisible = false
-                resolveActiveSheet()
             }
             .onChange(of: entitlement.status) { _, _ in
                 refreshTrialReminder()
@@ -247,7 +238,6 @@ private struct RootContainerView: View {
 
     private var canPresentPaywall: Bool {
         pendingPaywall != nil
-            && !isReminderAlertVisible
             && !didPresentPaywallThisSession
             && !entitlement.isPro
             && !isUITesting

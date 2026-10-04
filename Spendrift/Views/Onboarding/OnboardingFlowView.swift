@@ -354,7 +354,6 @@ private struct OnboardingVoicePage: View {
 private struct OnboardingNotificationsPage: View {
     let onFinish: () -> Void
 
-    @AppStorage(NotificationManager.Keys.dailyReminderEnabled) private var dailyReminderEnabled = true
     @AppStorage(NotificationManager.Keys.dailyReminderHour) private var dailyReminderHour = NotificationManager.defaultHour
     @AppStorage(NotificationManager.Keys.dailyReminderMinute) private var dailyReminderMinute = NotificationManager.defaultMinute
 
@@ -472,9 +471,8 @@ private struct OnboardingNotificationsPage: View {
                 return
             }
 
-            // The user has just said yes to being notified, so schedule the daily spend
-            // reminders here rather than asking a second time after their first entry.
-            dailyReminderEnabled = true
+            // Permission is for budget alerts and the monthly statement nudge.
+            // Daily spend reminders are not scheduled.
             NotificationManager.reschedule(
                 enabled: true,
                 hour: dailyReminderHour,

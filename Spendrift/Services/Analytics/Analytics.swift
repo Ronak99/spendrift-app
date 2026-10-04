@@ -201,10 +201,6 @@ enum Analytics {
         guard !defaults.bool(forKey: firstTransactionKey) else { return }
         defaults.set(true, forKey: firstTransactionKey)
         capture(.firstTransactionCreated, [Key.method: method])
-
-        // Surface the contextual notification opt-in prompt (after first transaction,
-        // never at cold start). UI lives in the view layer, so just broadcast.
-        NotificationCenter.default.post(name: .firstTransactionCreated, object: nil)
     }
 
     /// Captures a Spendrift Pro event with `days_since_install` attached, so paywall

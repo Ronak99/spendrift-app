@@ -14,10 +14,6 @@ extension Notification.Name {
     /// Posted when the host app is opened via `spendrift://importReceipt` (Share Extension handoff).
     static let receiptShareImportTriggered = Notification.Name("Spendrift.receiptShareImportTriggered")
 
-    /// Posted the first time a transaction is ever created, so the UI can offer a
-    /// contextual notification opt-in (see `NotificationManager`).
-    static let firstTransactionCreated = Notification.Name("Spendrift.firstTransactionCreated")
-
     /// Posted when the already-selected Home tab is tapped again, so the home screen can
     /// collapse the analytics view back to the transactions list (see `TransactionsView`).
     static let homeTabReselected = Notification.Name("Spendrift.homeTabReselected")

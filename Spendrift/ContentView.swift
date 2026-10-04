@@ -19,11 +19,7 @@ struct ContentView: View {
     @Environment(AppRouter.self) private var router
     @Query(sort: \Account.createdOn) private var accounts: [Account]
     @Query(sort: \TransactionCategory.name) private var categories: [TransactionCategory]
-    @AppStorage(NotificationManager.Keys.dailyReminderEnabled) private var dailyReminderEnabled = true
-    @AppStorage(NotificationManager.Keys.dailyReminderHour) private var dailyReminderHour = NotificationManager.defaultHour
-    @AppStorage(NotificationManager.Keys.dailyReminderMinute) private var dailyReminderMinute = NotificationManager.defaultMinute
     @AppStorage("spendriftOnboardingVersion") private var onboardingVersion = 0
-    @State private var showReminderOptIn = false
     @State private var selectedTab = 0
     @State private var categoryTabType: CategoryType = .expense
     @State private var showCreateTransaction = false
@@ -218,29 +214,11 @@ struct ContentView: View {
         .onReceive(NotificationCenter.default.publisher(for: .receiptShareImportTriggered)) { _ in
             handlePendingReceiptShareIfNeeded()
         }
-        .onReceive(NotificationCenter.default.publisher(for: .firstTransactionCreated)) { _ in
-            guard !dailyReminderEnabled else { return }
-            showReminderOptIn = true
-        }
         .onOpenURL { url in
             handleQuickAction(url: url)
         }
         .onChange(of: router.pending) { _, _ in
             drainPendingRoute()
-        }
-        // The Pro paywall queues behind this alert; without the broadcast a sheet
-        // presented at the same moment would swallow it.
-        .onChange(of: showReminderOptIn) { _, isVisible in
-            NotificationCenter.default.post(
-                name: isVisible ? .reminderOptInShown : .reminderOptInDismissed,
-                object: nil
-            )
-        }
-        .alert("Stay on top of your spending?", isPresented: $showReminderOptIn) {
-            Button("Enable reminders") { enableDailyReminders() }
-            Button("Not now", role: .cancel) {}
-        } message: {
-            Text("Get a daily nudge to log your spending and keep your budget accurate.")
         }
         .proPaywall($paywallContext)
         .sheet(isPresented: $showCreateTransaction) {
@@ -282,19 +260,6 @@ struct ContentView: View {
         case 2: "categories"
         case 3: "settings"
         default: "unknown"
-        }
-    }
-
-    private func enableDailyReminders() {
-        Task {
-            let granted = await NotificationManager.requestAuthorization()
-            guard granted else { return }
-            dailyReminderEnabled = true
-            NotificationManager.reschedule(
-                enabled: true,
-                hour: dailyReminderHour,
-                minute: dailyReminderMinute
-            )
         }
     }
 
