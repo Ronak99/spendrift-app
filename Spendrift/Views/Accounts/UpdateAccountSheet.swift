@@ -29,6 +29,7 @@ struct UpdateAccountSheet: View {
     @State private var saveAlertMessage: String?
     @State private var showIconPicker = false
     @State private var showTransactions = false
+    @State private var showPrimaryHelp = false
 
     init(account: Account?, onCreated: ((Account) -> Void)? = nil) {
         self.account = account
@@ -147,26 +148,16 @@ struct UpdateAccountSheet: View {
                     metaLine
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
+
+                primaryControls
             }
             .padding(.top, 8)
-
-            rolePicker
-                .padding(.top, 26)
-
-            if isPrimary {
-                Text("Voice and Shortcuts create transactions on this account.")
-                    .font(.system(size: 12.5))
-                    .foregroundStyle(heroPrimary.opacity(0.55))
-                    .padding(.top, 10)
-                    .transition(.opacity)
-            }
         }
         .padding(.horizontal, 20)
         .padding(.bottom, 26)
-        .animation(.easeInOut(duration: 0.2), value: isPrimary)
         .background(alignment: .top) {
             ZStack(alignment: .topTrailing) {
-                ColorWashBackground(color: accentColor, isDark: isDark)
+                ColorWashBackground(color: accentColor, isDark: isDark, bottomRadius: 0)
                 Image(systemName: icon.systemImageName)
                     .font(.system(size: 160, weight: .ultraLight))
                     .foregroundStyle(heroPrimary.opacity(0.08))
@@ -200,17 +191,50 @@ struct UpdateAccountSheet: View {
         icon.pickerLabel
     }
 
-    private var rolePicker: some View {
-        ChromeSegmentedPicker(
-            selection: $isPrimary,
-            options: [false, true],
-            accessibilityContainerLabel: "Account role",
-            accessibilityContainerIdentifier: "account-role-picker",
-            title: { $0 ? "Primary" : "Standard" }
-        ) { _ in
-            nameFieldFocused = false
-            balanceFieldFocused = false
+    private var primaryControls: some View {
+        HStack(spacing: 2) {
+            Button(action: togglePrimary) {
+                Image(systemName: isPrimary ? "star.fill" : "star")
+                    .font(.system(size: 20, weight: .semibold))
+                    .foregroundStyle(isPrimary ? primaryStar : heroPrimary.opacity(0.38))
+                    .contentTransition(.symbolEffect(.replace))
+                    .frame(width: 36, height: 44)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityIdentifier("primary-account-star")
+            .accessibilityLabel("Primary account")
+            .accessibilityValue(isPrimary ? "On" : "Off")
+            .accessibilityAddTraits(isPrimary ? .isSelected : [])
+            .sensoryFeedback(.selection, trigger: isPrimary)
+
+            Button {
+                nameFieldFocused = false
+                balanceFieldFocused = false
+                showPrimaryHelp = true
+            } label: {
+                Image(systemName: "questionmark.circle")
+                    .font(.system(size: 16, weight: .regular))
+                    .foregroundStyle(heroPrimary.opacity(0.45))
+                    .frame(width: 32, height: 44)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("About the primary account star")
+            .popover(isPresented: $showPrimaryHelp, arrowEdge: .top) {
+                Text("The star marks your primary account. Voice and Shortcuts create transactions on it.")
+                    .font(.system(size: 14, weight: .regular))
+                    .foregroundStyle(.primary)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .padding(16)
+                    .frame(width: 248)
+                    .presentationCompactAdaptation(.popover)
+            }
         }
+    }
+
+    private var primaryStar: Color {
+        AccountEnamel.primaryStar(isDark: isDark)
     }
 
     // MARK: Details
@@ -376,6 +400,12 @@ struct UpdateAccountSheet: View {
     }
 
     // MARK: Behaviour
+
+    private func togglePrimary() {
+        nameFieldFocused = false
+        balanceFieldFocused = false
+        isPrimary.toggle()
+    }
 
     /// Focuses the name field shortly after the sheet appears so the keyboard comes up immediately.
     private func focusNameFieldSoon() {

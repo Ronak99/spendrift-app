@@ -11,13 +11,12 @@ import SwiftUI
 struct ColorWashBackground: View {
     let color: Color
     let isDark: Bool
+    /// Bottom corner radius. Editors with a short hero pass `0` so the wash
+    /// meets the canvas in a straight edge instead of curving in.
+    var bottomRadius: CGFloat = 32
 
     var body: some View {
-        UnevenRoundedRectangle(
-            bottomLeadingRadius: 32,
-            bottomTrailingRadius: 32,
-            style: .continuous
-        )
+        washShape
         .fill(
             LinearGradient(
                 colors: [
@@ -36,14 +35,16 @@ struct ColorWashBackground: View {
                 startRadius: 8,
                 endRadius: 260
             )
-            .clipShape(
-                UnevenRoundedRectangle(
-                    bottomLeadingRadius: 32,
-                    bottomTrailingRadius: 32,
-                    style: .continuous
-                )
-            )
+            .clipShape(washShape)
         }
         .washMotion(value: AppMotion.colorToken(color))
+    }
+
+    private var washShape: UnevenRoundedRectangle {
+        UnevenRoundedRectangle(
+            bottomLeadingRadius: bottomRadius,
+            bottomTrailingRadius: bottomRadius,
+            style: .continuous
+        )
     }
 }
