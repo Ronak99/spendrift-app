@@ -1,3 +1,4 @@
 *.xcconfig
 build/
 *.p8
+xcuserdata/
