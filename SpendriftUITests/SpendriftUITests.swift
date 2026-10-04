@@ -202,7 +202,7 @@ final class AccountIntegrationTests: SpendriftUITestBase {
     func testAccountsEmptyState_addButtonOpensCreateSheet() {
         navigateToAccounts()
         app.buttons["accountsEmptyAddButton"].tap()
-        XCTAssertTrue(app.navigationBars["New Account"].waitForExistence(timeout: 3))
+        XCTAssertTrue(app.textFields["Enter account name"].waitForExistence(timeout: 3))
     }
 
     // MARK: Create
@@ -246,7 +246,7 @@ final class AccountIntegrationTests: SpendriftUITestBase {
     func testCreateAccount_cancelDismissesSheet() {
         navigateToAccounts()
         openNewAccountSheet()
-        XCTAssertTrue(app.navigationBars["New Account"].waitForExistence(timeout: 3))
+        XCTAssertTrue(app.textFields["Enter account name"].waitForExistence(timeout: 3))
 
         app.navigationBars.buttons["xmark"].tap()
         XCTAssertTrue(app.navigationBars["Accounts"].waitForExistence(timeout: 3))
@@ -269,7 +269,7 @@ final class AccountIntegrationTests: SpendriftUITestBase {
         XCTAssertTrue(cell.waitForExistence(timeout: 3))
         cell.tap()
 
-        XCTAssertTrue(app.navigationBars["Edit Account"].waitForExistence(timeout: 3))
+        XCTAssertTrue(app.textFields["Enter account name"].waitForExistence(timeout: 3))
 
         let nameField = app.textFields["Enter account name"]
         nameField.tap()

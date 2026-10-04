@@ -2,9 +2,11 @@
 //  UpdateAccountSheet.swift
 //  Spendrift
 //
-//  Color-wash editor for creating and updating accounts. Name lives in the
-//  hero so the preview is the header; balance, transactions, and icon sit
-//  below it the way the category editor places colour and icon.
+//  Color-wash sheet for creating, viewing, and updating accounts. Name lives
+//  in the hero so the preview is the header; balance and icon sit below it the
+//  way the category editor places colour and icon, and the transactions link
+//  closes the sheet. An existing account opens as a plain detail view: Save
+//  only shows up once a field differs from what is stored.
 //
 
 import SwiftUI
@@ -41,6 +43,17 @@ struct UpdateAccountSheet: View {
     }
 
     private var isCreating: Bool { account == nil }
+
+    /// Whether any field differs from the stored account. Always `false` while creating.
+    private var hasChanges: Bool {
+        guard let account else { return false }
+        return name.trimmingCharacters(in: .whitespacesAndNewlines) != account.name
+            || balance != account.balance.wholeAmountDisplayString
+            || icon != account.icon
+            || isPrimary != account.isPrimary
+    }
+
+    private var showsSaveButton: Bool { isCreating || hasChanges }
 
     /// First reason Save cannot complete, or `nil` when the form is ready to write.
     private var saveBlockedReason: String? {
@@ -83,20 +96,21 @@ struct UpdateAccountSheet: View {
                 detailsScroll
             }
             .background(canvas.ignoresSafeArea())
-            .navigationTitle(isCreating ? "New Account" : "Edit Account")
             .navigationBarTitleDisplayMode(.inline)
             .toolbarBackground(.hidden, for: .navigationBar)
             .toolbarColorScheme(isDark ? .dark : .light, for: .navigationBar)
             .toolbar {
                 SheetDismissToolbarItem()
-                if #available(iOS 26.0, *) {
-                    ToolbarItem(placement: .confirmationAction) {
-                        saveButton
-                    }
-                    .sharedBackgroundVisibility(.hidden)
-                } else {
-                    ToolbarItem(placement: .confirmationAction) {
-                        saveButton
+                if showsSaveButton {
+                    if #available(iOS 26.0, *) {
+                        ToolbarItem(placement: .confirmationAction) {
+                            saveButton
+                        }
+                        .sharedBackgroundVisibility(.hidden)
+                    } else {
+                        ToolbarItem(placement: .confirmationAction) {
+                            saveButton
+                        }
                     }
                 }
             }
@@ -242,14 +256,13 @@ struct UpdateAccountSheet: View {
     private var detailsScroll: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 28) {
-                VStack(spacing: 0) {
-                    balanceRow
-                    if !isCreating {
-                        transactionsRow
-                    }
-                }
+                balanceRow
 
                 iconSection
+
+                if !isCreating {
+                    transactionsLink
+                }
             }
             .padding(.horizontal, 20)
             .padding(.top, 8)
@@ -270,7 +283,7 @@ struct UpdateAccountSheet: View {
     }
 
     private var balanceRow: some View {
-        AccountMetaRow(title: isCreating ? "Opening" : "Balance", showsBottomDivider: !isCreating) {
+        AccountMetaRow(title: isCreating ? "Opening" : "Balance", showsBottomDivider: false) {
             HStack(alignment: .firstTextBaseline, spacing: 6) {
                 Text(currencySymbol)
                     .font(.system(size: 14, weight: .semibold))
@@ -291,27 +304,37 @@ struct UpdateAccountSheet: View {
         }
     }
 
-    private var transactionsRow: some View {
+    /// Styled as a navigation row, but opens the ledger as a sheet rather than pushing it.
+    private var transactionsLink: some View {
         Button {
             nameFieldFocused = false
             balanceFieldFocused = false
             showTransactions = true
         } label: {
-            AccountMetaRow(title: "Transactions", showsBottomDivider: false) {
-                HStack(spacing: 6) {
-                    Text(transactionsValueText)
-                        .font(.system(size: 14, weight: .regular))
-                        .monospacedDigit()
-                        .foregroundStyle(heroPrimary)
-                    Image(systemName: "chevron.right")
-                        .font(.system(size: 11, weight: .semibold))
-                        .foregroundStyle(heroPrimary.opacity(0.28))
-                }
+            HStack(spacing: 8) {
+                Text("View Transactions")
+                    .font(.system(size: 15, weight: .medium))
+                    .foregroundStyle(heroPrimary)
+                Spacer(minLength: 12)
+                Text(transactionsValueText)
+                    .font(.system(size: 14, weight: .regular))
+                    .monospacedDigit()
+                    .foregroundStyle(.secondary)
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(heroPrimary.opacity(0.28))
             }
+            .padding(.horizontal, 16)
+            .frame(minHeight: 52)
+            .background(
+                Color.primary.opacity(isDark ? 0.08 : 0.05),
+                in: RoundedRectangle(cornerRadius: 14, style: .continuous)
+            )
+            .contentShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
         }
         .buttonStyle(.plain)
-        .accessibilityIdentifier("Transactions")
-        .accessibilityLabel("Transactions")
+        .accessibilityIdentifier("View Transactions")
+        .accessibilityLabel("View Transactions")
         .accessibilityValue(transactionsValueText)
     }
 

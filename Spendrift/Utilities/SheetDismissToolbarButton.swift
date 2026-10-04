@@ -64,3 +64,35 @@ struct SheetDismissToolbarItem: ToolbarContent {
         }
     }
 }
+
+
+/// System close control for sheets that should carry the native chrome rather
+/// than the custom plate. On iOS 26 the `.close` role draws the glass cross.
+struct SheetCloseToolbarItem: ToolbarContent {
+    var body: some ToolbarContent {
+        ToolbarItem(placement: .cancellationAction) {
+            SheetCloseToolbarButton()
+        }
+    }
+}
+
+private struct SheetCloseToolbarButton: View {
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        if #available(iOS 26.0, *) {
+            Button(role: .close) {
+                dismiss()
+            }
+            .accessibilityIdentifier("xmark")
+        } else {
+            Button {
+                dismiss()
+            } label: {
+                Image(systemName: "xmark")
+            }
+            .accessibilityLabel("Close")
+            .accessibilityIdentifier("xmark")
+        }
+    }
+}
