@@ -247,8 +247,6 @@ struct UpdateCategorySheet: View {
             .padding(.horizontal, 20)
             .padding(.top, isCreating ? 28 : 8)
             .padding(.bottom, 44)
-            .opacity(nameFieldFocused ? 0.45 : 1)
-            .animation(.easeInOut(duration: 0.2), value: nameFieldFocused)
         }
         .scrollDismissesKeyboard(.interactively)
         .scrollIndicators(.hidden)

@@ -287,8 +287,6 @@ struct UpdateAccountSheet: View {
             .padding(.horizontal, 20)
             .padding(.top, 16)
             .padding(.bottom, 44)
-            .opacity(heroFieldsFocused ? 0.45 : 1)
-            .animation(.easeInOut(duration: 0.2), value: heroFieldsFocused)
         }
         .scrollDismissesKeyboard(.interactively)
         .scrollIndicators(.hidden)
@@ -300,10 +298,6 @@ struct UpdateAccountSheet: View {
 
     private var transactionsValueText: String {
         persistedTransactionCount == 0 ? "None" : "\(persistedTransactionCount)"
-    }
-
-    private var heroFieldsFocused: Bool {
-        nameFieldFocused || balanceFieldFocused
     }
 
     private var balanceSection: some View {

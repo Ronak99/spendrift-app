@@ -323,8 +323,6 @@ struct UpdateTransactionSheet: View {
             .padding(.horizontal, 20)
             .padding(.top, 8)
             .padding(.bottom, 44)
-            .opacity(amountFieldFocused ? 0.45 : 1)
-            .animation(.easeInOut(duration: 0.2), value: amountFieldFocused)
         }
         .scrollDismissesKeyboard(.interactively)
         .scrollIndicators(.hidden)
