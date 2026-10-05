@@ -27,7 +27,7 @@ struct DeveloperUnlockSheet: View {
 
     var body: some View {
         NavigationStack {
-            SettingsScreen(title: "Developer mode", watermarkIcon: "lock.fill") {
+            SettingsScreen(title: "Developer mode") {
                 Section {
                     HStack(spacing: 14) {
                         CategoryEnamelTile(

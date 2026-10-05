@@ -173,18 +173,8 @@ struct UpdateAccountSheet: View {
         .padding(.horizontal, 20)
         .padding(.bottom, 22)
         .background(alignment: .top) {
-            ZStack(alignment: .topTrailing) {
-                ColorWashBackground(color: accentColor, isDark: isDark, bottomRadius: 0)
-                Image(systemName: icon.systemImageName)
-                    .font(.system(size: 160, weight: .ultraLight))
-                    .foregroundStyle(heroPrimary.opacity(0.08))
-                    .offset(x: 36, y: 8)
-                    .allowsHitTesting(false)
-                    .accessibilityHidden(true)
-                    .contentTransition(.opacity)
-                    .washMotion(value: icon)
-            }
-            .padding(.top, -120)
+            ColorWashBackground(color: accentColor, isDark: isDark, bottomRadius: 0)
+                .padding(.top, -120)
         }
     }
 
@@ -278,11 +268,11 @@ struct UpdateAccountSheet: View {
     private var detailsScroll: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 22) {
+                iconSection
+                
                 if let account {
                     transactionsLink(for: account)
                 }
-
-                iconSection
             }
             .padding(.horizontal, 20)
             .padding(.top, 16)

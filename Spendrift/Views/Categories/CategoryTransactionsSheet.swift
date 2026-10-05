@@ -39,10 +39,6 @@ struct CategoryTransactionsSheet: View {
         CategoryEnamel.color(for: category)
     }
 
-    private var watermarkIcon: String {
-        category.icon.systemImageName
-    }
-
     private var transactions: [Transaction] {
         allTransactions.filter { transaction in
             transaction.isPersisted &&
@@ -98,9 +94,8 @@ struct CategoryTransactionsSheet: View {
     // MARK: Atmosphere
 
     private var atmosphere: some View {
-        CategoryTrayAtmosphere(washColor: washColor, watermarkIcon: watermarkIcon)
+        CategoryTrayAtmosphere(washColor: washColor)
             .ignoresSafeArea()
-            .animation(.spring(response: 0.42, dampingFraction: 0.86), value: watermarkIcon)
     }
 
     // MARK: List

@@ -197,18 +197,8 @@ struct UpdateCategorySheet: View {
         .padding(.horizontal, 20)
         .padding(.bottom, 26)
         .background(alignment: .top) {
-            ZStack(alignment: .topTrailing) {
-                ColorWashBackground(color: selectedColor, isDark: isDark)
-                Image(systemName: icon.systemImageName)
-                    .font(.system(size: 160, weight: .ultraLight))
-                    .foregroundStyle(heroPrimary.opacity(0.08))
-                    .offset(x: 36, y: 8)
-                    .allowsHitTesting(false)
-                    .accessibilityHidden(true)
-                    .contentTransition(.opacity)
-                    .washMotion(value: icon)
-            }
-            .padding(.top, -120)
+            ColorWashBackground(color: selectedColor, isDark: isDark)
+                .padding(.top, -120)
         }
     }
 

@@ -133,16 +133,8 @@ struct FeatureRequestView: View {
         .padding(.horizontal, 20)
         .padding(.bottom, 26)
         .background(alignment: .top) {
-            ZStack(alignment: .topTrailing) {
-                ColorWashBackground(color: accent, isDark: isDark)
-                Image(systemName: "lightbulb.fill")
-                    .font(.system(size: 160, weight: .ultraLight))
-                    .foregroundStyle(heroPrimary.opacity(0.08))
-                    .offset(x: 36, y: 8)
-                    .allowsHitTesting(false)
-                    .accessibilityHidden(true)
-            }
-            .padding(.top, -120)
+            ColorWashBackground(color: accent, isDark: isDark)
+                .padding(.top, -120)
         }
     }
 

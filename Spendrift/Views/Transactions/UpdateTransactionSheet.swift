@@ -240,18 +240,8 @@ struct UpdateTransactionSheet: View {
         .padding(.horizontal, 20)
         .padding(.bottom, 26)
         .background(alignment: .top) {
-            ZStack(alignment: .topTrailing) {
-                ColorWashBackground(color: accentColor, isDark: isDark)
-                Image(systemName: heroIcon.systemImageName)
-                    .font(.system(size: 160, weight: .ultraLight))
-                    .foregroundStyle(heroPrimary.opacity(0.08))
-                    .offset(x: 36, y: 8)
-                    .allowsHitTesting(false)
-                    .accessibilityHidden(true)
-                    .contentTransition(.opacity)
-                    .washMotion(value: heroIcon)
-            }
-            .padding(.top, -120)
+            ColorWashBackground(color: accentColor, isDark: isDark)
+                .padding(.top, -120)
         }
     }
 
@@ -678,16 +668,6 @@ struct AccountPickerSheet: View {
         return AccountEnamel.fallback
     }
 
-    private var watermarkIcon: String {
-        if let selectedAccount {
-            return selectedAccount.icon.systemImageName
-        }
-        if let first = accounts.first {
-            return first.icon.systemImageName
-        }
-        return "building.columns"
-    }
-
     var body: some View {
         NavigationStack {
             Group {
@@ -698,7 +678,7 @@ struct AccountPickerSheet: View {
                 }
             }
             .background {
-                CategoryTrayAtmosphere(washColor: washColor, watermarkIcon: watermarkIcon)
+                CategoryTrayAtmosphere(washColor: washColor)
                     .ignoresSafeArea()
             }
             .navigationTitle("Select Account")
@@ -854,16 +834,6 @@ struct CategoryPickerSheet: View {
         return Color(hex: CategoryPalette.defaultHex(for: defaultTypeForNewCategory))
     }
 
-    private var watermarkIcon: String {
-        if let selectedCategory {
-            return selectedCategory.icon.systemImageName
-        }
-        if let first = categories.first {
-            return first.icon.systemImageName
-        }
-        return CategoryPalette.defaultIcon(for: defaultTypeForNewCategory).systemImageName
-    }
-
     var body: some View {
         NavigationStack {
             ScrollView {
@@ -888,7 +858,7 @@ struct CategoryPickerSheet: View {
             .scrollIndicators(.hidden)
             .softScrollEdge()
             .background {
-                CategoryTrayAtmosphere(washColor: washColor, watermarkIcon: watermarkIcon)
+                CategoryTrayAtmosphere(washColor: washColor)
                     .ignoresSafeArea()
             }
             .navigationTitle(title)
