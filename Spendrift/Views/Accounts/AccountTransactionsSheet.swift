@@ -70,8 +70,15 @@ struct AccountTransactionsSheet: View {
         }
         .navigationTitle(account.name)
         .navigationBarTitleDisplayMode(.inline)
+        .navigationBarBackButtonHidden(true)
         .toolbarBackground(.hidden, for: .navigationBar)
         .toolbarColorScheme(isDark ? .dark : .light, for: .navigationBar)
+        .toolbar {
+            CustomSheetCloseToolbarItem(
+                systemImage: "chevron.left",
+                accessibilityLabel: "Back"
+            )
+        }
         .sheet(item: $selectedTransaction) { transaction in
             UpdateTransactionSheet(transaction: transaction)
         }

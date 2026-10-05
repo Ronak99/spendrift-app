@@ -12,6 +12,8 @@ import SwiftUI
 /// Save own the inverted chrome, Close sits behind them.
 struct CustomSheetCloseButton: View {
     var action: (() -> Void)?
+    var systemImage: String = "xmark"
+    var accessibilityLabel: String = "Close"
 
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.dismiss) private var dismiss
@@ -26,15 +28,15 @@ struct CustomSheetCloseButton: View {
                 dismiss()
             }
         } label: {
-            Image(systemName: "xmark")
+            Image(systemName: systemImage)
                 .font(.system(size: 14, weight: .semibold))
                 .foregroundStyle(glyph)
                 .frame(width: 32, height: 32)
                 .background(plate, in: Circle())
         }
         .buttonStyle(.plain)
-        .accessibilityLabel("Close")
-        .accessibilityIdentifier("xmark")
+        .accessibilityLabel(accessibilityLabel)
+        .accessibilityIdentifier(systemImage == "xmark" ? "xmark" : accessibilityLabel)
     }
 
     private var plate: Color {
@@ -48,20 +50,31 @@ struct CustomSheetCloseButton: View {
 
 /// Drop-in `.cancellationAction` slot that draws the custom close plate.
 ///
-/// Hides the iOS 26 shared toolbar background so Liquid Glass does not wrap a
-/// second plate around the custom chrome.
+/// Pass `systemImage` and `accessibilityLabel` when the same plate should read
+/// as Back on a pushed screen. Hides the iOS 26 shared toolbar background so
+/// Liquid Glass does not wrap a second plate around the custom chrome.
 struct CustomSheetCloseToolbarItem: ToolbarContent {
     var action: (() -> Void)?
+    var systemImage: String = "xmark"
+    var accessibilityLabel: String = "Close"
 
     var body: some ToolbarContent {
         if #available(iOS 26.0, *) {
             ToolbarItem(placement: .cancellationAction) {
-                CustomSheetCloseButton(action: action)
+                CustomSheetCloseButton(
+                    action: action,
+                    systemImage: systemImage,
+                    accessibilityLabel: accessibilityLabel
+                )
             }
             .sharedBackgroundVisibility(.hidden)
         } else {
             ToolbarItem(placement: .cancellationAction) {
-                CustomSheetCloseButton(action: action)
+                CustomSheetCloseButton(
+                    action: action,
+                    systemImage: systemImage,
+                    accessibilityLabel: accessibilityLabel
+                )
             }
         }
     }
