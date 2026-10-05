@@ -95,7 +95,7 @@ struct CategoryCustomColorSheet: View {
             .navigationTitle("Custom Colour")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                SheetDismissToolbarItem()
+                CustomSheetCloseToolbarItem()
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Use") {
                         onUse(previewHex)

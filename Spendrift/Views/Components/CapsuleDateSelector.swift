@@ -241,7 +241,7 @@ private struct WeekJumpSheet: View {
             .navigationTitle("Jump to week")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                SheetDismissToolbarItem()
+                CustomSheetCloseToolbarItem()
                 ToolbarItem(placement: .topBarTrailing) {
                     Button("Go") {
                         onSelect(picked)

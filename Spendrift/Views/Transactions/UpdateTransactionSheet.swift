@@ -156,7 +156,7 @@ struct UpdateTransactionSheet: View {
             .toolbarBackground(.hidden, for: .navigationBar)
             .toolbarColorScheme(isDark ? .dark : .light, for: .navigationBar)
             .toolbar {
-                SheetCloseToolbarItem()
+                CustomSheetCloseToolbarItem()
                 if #available(iOS 26.0, *) {
                     ToolbarItem(placement: .confirmationAction) {
                         saveButton
@@ -753,7 +753,7 @@ struct AccountPickerSheet: View {
 
     @ToolbarContentBuilder
     private var toolbarContent: some ToolbarContent {
-        SheetCloseToolbarItem()
+        LiquidGlassSheetCloseToolbarItem()
         if #available(iOS 26.0, *) {
             ToolbarItem(placement: .navigationBarTrailing) {
                 addButton
@@ -942,7 +942,7 @@ struct CategoryPickerSheet: View {
 
     @ToolbarContentBuilder
     private var toolbarContent: some ToolbarContent {
-        SheetCloseToolbarItem()
+        LiquidGlassSheetCloseToolbarItem()
         if #available(iOS 26.0, *) {
             ToolbarItem(placement: .navigationBarTrailing) {
                 addButton

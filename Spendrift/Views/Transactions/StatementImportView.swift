@@ -56,7 +56,7 @@ struct StatementImportView: View {
             .navigationTitle(didFinishParsing ? "Preview Transactions" : "Import Statement")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                SheetDismissToolbarItem()
+                CustomSheetCloseToolbarItem()
                 if didFinishParsing && !importedRows.isEmpty {
                     ToolbarItem(placement: .confirmationAction) {
                         Button("Save") { saveAll() }
@@ -206,7 +206,7 @@ struct StatementImportView: View {
             .navigationTitle("Unlock PDF")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                SheetDismissToolbarItem {
+                CustomSheetCloseToolbarItem {
                     showPasswordSheet = false
                 }
                 ToolbarItem(placement: .confirmationAction) {

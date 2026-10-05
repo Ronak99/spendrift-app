@@ -359,10 +359,11 @@ competes with the confirm action.
 Accessibility label is "Close"; the identifier stays `xmark` for UI tests.
 
 Every dismissible sheet carries one, because drag-to-dismiss is unreliable on current
-iOS. Use `SheetDismissToolbarItem()` inside `.toolbar { }` — it owns the placement and
+iOS. Use `CustomSheetCloseToolbarItem()` inside `.toolbar { }` - it owns the placement and
 the iOS 26 branch, so no call site repeats them. Sheets with no navigation bar
-(`ProPaywallView`, `AppUpdateSheet`) overlay `SheetDismissToolbarButton` in the top
-leading corner instead.
+(`ProPaywallView`, `AppUpdateSheet`) overlay `CustomSheetCloseButton` in the top
+leading corner instead. Sheets that should carry the native glass cross use
+`LiquidGlassSheetCloseToolbarItem()` instead. The transaction editor is the current case.
 
 Blocking presentations are the exception and stay closeless: onboarding, and mandatory
 update. UIKit pickers (photo library, camera, mail, share) keep their own system chrome.
@@ -739,7 +740,7 @@ Change tokens here, not by restyling one screen.
 | Category search matching | `Utilities/CategorySearch.swift` |
 | Row padding | `Views/Components/ListItemPositionedModifier.swift` |
 | Soft scroll edge / pinned headers | `Views/Components/ScrollEdgeStyle.swift` |
-| Close | `Utilities/SheetDismissToolbarButton.swift` |
+| Close | `Utilities/SheetCloseButtons.swift` |
 | Onboarding / Pro night family | `Views/Onboarding/OnboardingComponents.swift` |
 
 ---
@@ -766,7 +767,7 @@ Documented so new work closes them instead of copying the wrong variant.
 - [ ] Watermark is ultra-light 160/176, 8-10% hero ink, top-trailing, not in VoiceOver.
 - [ ] Icons sit in `CategoryEnamelTile` (33% continuous radius, sheen, white hairline, `#0A0A0B` glyph).
 - [ ] Plus is a 32pt inverted circle. Save / primary is an inverted capsule. Same ink/paper pair.
-- [ ] Every dismissible sheet has `SheetDismissToolbarItem()`, unless it blocks on purpose.
+- [ ] Every dismissible sheet has `CustomSheetCloseToolbarItem()`, unless it blocks on purpose.
 - [ ] iOS 26 toolbar shared background is hidden on those controls.
 - [ ] Type control is `ChromeSegmentedPicker`, not `.segmented`.
 - [ ] Row titles are 16 semibold. Money is tabular.

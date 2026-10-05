@@ -83,7 +83,7 @@ struct CategoryTransactionsSheet: View {
             .toolbarBackground(.hidden, for: .navigationBar)
             .toolbarColorScheme(isDark ? .dark : .light, for: .navigationBar)
             .toolbar {
-                SheetDismissToolbarItem()
+                CustomSheetCloseToolbarItem()
             }
             .sheet(item: $selectedTransaction) { transaction in
                 UpdateTransactionSheet(transaction: transaction)

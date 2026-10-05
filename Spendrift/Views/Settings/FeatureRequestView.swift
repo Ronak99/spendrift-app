@@ -53,7 +53,7 @@ struct FeatureRequestView: View {
             .toolbarBackground(.hidden, for: .navigationBar)
             .toolbarColorScheme(isDark ? .dark : .light, for: .navigationBar)
             .toolbar {
-                SheetDismissToolbarItem()
+                CustomSheetCloseToolbarItem()
                 if #available(iOS 26.0, *) {
                     ToolbarItem(placement: .confirmationAction) {
                         sendButton

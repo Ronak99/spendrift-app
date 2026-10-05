@@ -76,7 +76,7 @@ struct CategoryIconPickerView: View {
             .navigationBarTitleDisplayMode(.inline)
             .searchable(text: $query, prompt: "Search \(CategoryIcon.selectable.count) icons")
             .toolbar {
-                SheetDismissToolbarItem()
+                CustomSheetCloseToolbarItem()
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Done") {
                         onDone?()

@@ -100,7 +100,7 @@ struct UpdateAccountSheet: View {
             .toolbarBackground(.hidden, for: .navigationBar)
             .toolbarColorScheme(isDark ? .dark : .light, for: .navigationBar)
             .toolbar {
-                SheetCloseToolbarItem()
+                CustomSheetCloseToolbarItem()
                 if showsSaveButton {
                     if #available(iOS 26.0, *) {
                         ToolbarItem(placement: .confirmationAction) {

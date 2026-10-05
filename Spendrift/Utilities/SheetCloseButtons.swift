@@ -1,16 +1,16 @@
 //
-//  SheetDismissToolbarButton.swift
+//  SheetCloseButtons.swift
 //  Spendrift
 //
 
 import SwiftUI
 
-/// Standard leading toolbar control for dismissing a sheet.
+/// Custom close plate for dismissing a sheet.
 ///
-/// Circular chrome plate so the cross stays tappable on iOS versions where the
+/// Circular chrome so the cross stays tappable on iOS versions where the
 /// drag-to-dismiss gesture is unreliable. Secondary weight on purpose: Plus and
 /// Save own the inverted chrome, Close sits behind them.
-struct SheetDismissToolbarButton: View {
+struct CustomSheetCloseButton: View {
     var action: (() -> Void)?
 
     @Environment(\.colorScheme) private var colorScheme
@@ -46,37 +46,40 @@ struct SheetDismissToolbarButton: View {
     }
 }
 
-/// Drop-in `.cancellationAction` slot for every sheet presented inside a
-/// `NavigationStack`, so the Close plate is the only chrome under Liquid Glass.
-struct SheetDismissToolbarItem: ToolbarContent {
+/// Drop-in `.cancellationAction` slot that draws the custom close plate.
+///
+/// Hides the iOS 26 shared toolbar background so Liquid Glass does not wrap a
+/// second plate around the custom chrome.
+struct CustomSheetCloseToolbarItem: ToolbarContent {
     var action: (() -> Void)?
 
     var body: some ToolbarContent {
         if #available(iOS 26.0, *) {
             ToolbarItem(placement: .cancellationAction) {
-                SheetDismissToolbarButton(action: action)
+                CustomSheetCloseButton(action: action)
             }
             .sharedBackgroundVisibility(.hidden)
         } else {
             ToolbarItem(placement: .cancellationAction) {
-                SheetDismissToolbarButton(action: action)
+                CustomSheetCloseButton(action: action)
             }
         }
     }
 }
 
-
-/// System close control for sheets that should carry the native chrome rather
-/// than the custom plate. On iOS 26 the `.close` role draws the glass cross.
-struct SheetCloseToolbarItem: ToolbarContent {
+/// Drop-in `.cancellationAction` slot that uses the system Liquid Glass close.
+///
+/// On iOS 26 the `.close` role draws the glass cross. Older systems fall back
+/// to a plain white `xmark`.
+struct LiquidGlassSheetCloseToolbarItem: ToolbarContent {
     var body: some ToolbarContent {
         ToolbarItem(placement: .cancellationAction) {
-            SheetCloseToolbarButton()
+            LiquidGlassSheetCloseButton()
         }
     }
 }
 
-private struct SheetCloseToolbarButton: View {
+private struct LiquidGlassSheetCloseButton: View {
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
