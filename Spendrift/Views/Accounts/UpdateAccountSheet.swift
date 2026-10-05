@@ -2,11 +2,12 @@
 //  UpdateAccountSheet.swift
 //  Spendrift
 //
-//  Color-wash sheet for creating, viewing, and updating accounts. Name lives
-//  in the hero so the preview is the header; balance and icon sit below it the
-//  way the category editor places colour and icon, and the transactions link
-//  pushes the ledger. An existing account opens as a plain detail view: Save
-//  only shows up once a field differs from what is stored.
+//  Color-wash sheet for creating, viewing, and updating accounts. Name and
+//  opening balance are banded together in the hero, split by a hairline, so
+//  those two fields are the first things to fill in. On an existing account
+//  the transactions link sits right under the hero because it is the main
+//  action there; the icon grid follows. An existing account opens as a plain
+//  detail view: Save only shows up once a field differs from what is stored.
 //
 
 import SwiftUI
@@ -137,11 +138,11 @@ struct UpdateAccountSheet: View {
     // MARK: Hero
 
     private var hero: some View {
-        VStack(alignment: .leading, spacing: 0) {
+        VStack(alignment: .leading, spacing: 18) {
             HStack(alignment: .center, spacing: 16) {
                 iconTile
 
-                VStack(alignment: .leading, spacing: 2) {
+                VStack(alignment: .leading, spacing: 4) {
                     TextField("Account name", text: $name)
                         .font(.system(size: 28, weight: .bold))
                         .tracking(-0.8)
@@ -149,7 +150,8 @@ struct UpdateAccountSheet: View {
                         .tint(AppTheme.cursor)
                         .focused($nameFieldFocused)
                         .textInputAutocapitalization(.words)
-                        .submitLabel(.done)
+                        .submitLabel(.next)
+                        .onSubmit { balanceFieldFocused = true }
                         .accessibilityIdentifier("Enter account name")
                         .accessibilityLabel("Enter account name")
 
@@ -160,9 +162,16 @@ struct UpdateAccountSheet: View {
                 primaryControls
             }
             .padding(.top, 8)
+
+            Rectangle()
+                .fill(heroPrimary.opacity(0.1))
+                .frame(height: 1)
+                .accessibilityHidden(true)
+
+            balanceSection
         }
         .padding(.horizontal, 20)
-        .padding(.bottom, 26)
+        .padding(.bottom, 22)
         .background(alignment: .top) {
             ZStack(alignment: .topTrailing) {
                 ColorWashBackground(color: accentColor, isDark: isDark, bottomRadius: 0)
@@ -184,13 +193,13 @@ struct UpdateAccountSheet: View {
             systemImage: icon.systemImageName,
             color: accentColor
         )
-        .frame(width: 70, height: 70)
+        .frame(width: 72, height: 72)
         .accessibilityHidden(true)
     }
 
     private var metaLine: some View {
         Text(metaLineText)
-            .font(.system(size: 13, weight: .regular))
+            .font(.system(size: 15, weight: .regular))
             .foregroundStyle(heroPrimary.opacity(0.6))
             .lineLimit(1)
     }
@@ -268,20 +277,18 @@ struct UpdateAccountSheet: View {
 
     private var detailsScroll: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 28) {
-                balanceRow
-
-                iconSection
-
+            VStack(alignment: .leading, spacing: 22) {
                 if let account {
                     transactionsLink(for: account)
                 }
+
+                iconSection
             }
             .padding(.horizontal, 20)
-            .padding(.top, 8)
+            .padding(.top, 16)
             .padding(.bottom, 44)
-            .opacity(nameFieldFocused ? 0.45 : 1)
-            .animation(.easeInOut(duration: 0.2), value: nameFieldFocused)
+            .opacity(heroFieldsFocused ? 0.45 : 1)
+            .animation(.easeInOut(duration: 0.2), value: heroFieldsFocused)
         }
         .scrollDismissesKeyboard(.interactively)
         .scrollIndicators(.hidden)
@@ -295,25 +302,55 @@ struct UpdateAccountSheet: View {
         persistedTransactionCount == 0 ? "None" : "\(persistedTransactionCount)"
     }
 
-    private var balanceRow: some View {
-        AccountMetaRow(title: isCreating ? "Opening" : "Balance", showsBottomDivider: false) {
+    private var heroFieldsFocused: Bool {
+        nameFieldFocused || balanceFieldFocused
+    }
+
+    private var balanceSection: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            HStack(alignment: .firstTextBaseline) {
+                Text(isCreating ? "Opening balance" : "Balance")
+                    .font(.system(size: 13, weight: .semibold))
+                    .tracking(0.8)
+                    .textCase(.uppercase)
+                    .foregroundStyle(heroPrimary.opacity(0.78))
+
+                Spacer(minLength: 12)
+
+                if isCreating {
+                    Text("Required")
+                        .font(.system(size: 13, weight: .regular))
+                        .foregroundStyle(accentColor)
+                }
+            }
+
             HStack(alignment: .firstTextBaseline, spacing: 6) {
                 Text(currencySymbol)
-                    .font(.system(size: 14, weight: .semibold))
-                    .foregroundStyle(heroPrimary.opacity(0.42))
+                    .font(.system(size: 34, weight: .semibold))
+                    .foregroundStyle(heroPrimary.opacity(0.55))
                     .accessibilityHidden(true)
 
                 TextField("0", text: $balance)
-                    .font(.system(size: 16, weight: .semibold))
+                    .font(.system(size: 44, weight: .bold))
+                    .tracking(-0.8)
                     .monospacedDigit()
                     .foregroundStyle(heroPrimary)
                     .tint(AppTheme.cursor)
-                    .multilineTextAlignment(.trailing)
                     .keyboardType(.decimalPad)
                     .textFieldStyle(.plain)
                     .focused($balanceFieldFocused)
+                    .minimumScaleFactor(0.45)
+                    .lineLimit(1)
+                    .frame(maxWidth: .infinity, alignment: .leading)
                     .accessibilityIdentifier("0")
                     .accessibilityLabel("Enter balance")
+            }
+
+            if isCreating {
+                Text("What's in this account today. Enter 0 if it's new.")
+                    .font(.system(size: 13, weight: .regular))
+                    .foregroundStyle(heroPrimary.opacity(0.55))
+                    .fixedSize(horizontal: false, vertical: true)
             }
         }
     }
@@ -500,32 +537,6 @@ struct UpdateAccountSheet: View {
         } else {
             ledger.normalizePrimary()
         }
-    }
-}
-
-private struct AccountMetaRow<Trailing: View>: View {
-    let title: String
-    var showsBottomDivider: Bool = true
-    @ViewBuilder var trailing: () -> Trailing
-
-    var body: some View {
-        HStack(spacing: 12) {
-            Text(title)
-                .font(.system(size: 14, weight: .regular))
-                .foregroundStyle(.secondary)
-            Spacer(minLength: 12)
-            trailing()
-                .font(.system(size: 14, weight: .regular))
-        }
-        .frame(minHeight: 46)
-        .overlay(alignment: .bottom) {
-            if showsBottomDivider {
-                Rectangle()
-                    .fill(Color.primary.opacity(0.08))
-                    .frame(height: 1)
-            }
-        }
-        .contentShape(Rectangle())
     }
 }
 
