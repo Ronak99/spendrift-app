@@ -262,7 +262,7 @@ private struct AccountLedgerSummary: View {
                 Text(income)
                     .font(.headline)
                     .monospacedDigit()
-                    .foregroundStyle(.green)
+                    .foregroundStyle(CategoryEnamel.income)
                     .lineLimit(1)
                     .minimumScaleFactor(0.7)
             }
@@ -276,7 +276,7 @@ private struct AccountLedgerSummary: View {
                 Text(expenses)
                     .font(.headline)
                     .monospacedDigit()
-                    .foregroundStyle(.red)
+                    .foregroundStyle(CategoryEnamel.expense)
                     .lineLimit(1)
                     .minimumScaleFactor(0.7)
             }
