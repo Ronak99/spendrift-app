@@ -124,8 +124,8 @@ struct AccountTransactionsSheet: View {
     private var emptyLedger: some View {
         VStack(spacing: 16) {
             CategoryEnamelTile(
-                systemImage: account.icon.systemImageName,
-                color: washColor
+                systemImage: "tray.fill",
+                color: CategoryEnamel.uncategorized
             )
             .frame(width: 88, height: 88)
             .padding(.top, 28)

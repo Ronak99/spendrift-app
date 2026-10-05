@@ -23,6 +23,16 @@ struct AccountIconTests {
     }
 
     @Test
+    func everyIconHasAPaletteEnamel() {
+        for icon in AccountIcon.allCases {
+            #expect(CategoryPalette.contains(icon.enamelHex), "\(icon.rawValue) enamel is off-palette")
+            #expect(AccountEnamel.hex(for: icon) == icon.enamelHex)
+        }
+        #expect(AccountIcon.visa.enamelHex == "#9B7BFF")
+        #expect(AccountIcon.wallet.enamelHex == "#FF9F6B")
+    }
+
+    @Test
     func everySelectableIconHasPickerMetadata() {
         for icon in AccountIcon.selectable {
             #expect(!icon.systemImageName.isEmpty, "\(icon.rawValue) has no symbol")
