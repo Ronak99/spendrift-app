@@ -16,6 +16,9 @@ enum AppTheme {
     /// Fixed accent for Settings enamel, toggles, and other app-wide highlights.
     static let accent = atmosphere
 
+    /// Insertion caret. The app is dark-only, so one white caret stays visible on every field.
+    static let cursor = Color.white
+
     /// Gray canvas behind grouped lists, empty states, and summary headers.
     static let listBackground = Color(uiColor: .systemGroupedBackground)
 

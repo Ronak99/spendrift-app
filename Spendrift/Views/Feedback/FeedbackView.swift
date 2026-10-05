@@ -205,7 +205,7 @@ struct FeedbackView: View {
                         .scrollContentBackground(.hidden)
                         .frame(minHeight: 88)
                         .focused($notesFocused)
-                        .tint(accent)
+                        .tint(AppTheme.cursor)
                         .padding(.horizontal, 12)
                         .padding(.vertical, 10)
 

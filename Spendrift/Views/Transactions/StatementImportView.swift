@@ -191,6 +191,7 @@ struct StatementImportView: View {
 
                 Section {
                     SecureField("PDF password", text: $passwordAttempt)
+                        .tint(AppTheme.cursor)
                         .textContentType(.password)
                         .textInputAutocapitalization(.never)
                         .autocorrectionDisabled()

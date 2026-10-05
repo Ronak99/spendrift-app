@@ -176,7 +176,7 @@ struct UpdateCategorySheet: View {
                         .font(.system(size: 28, weight: .bold))
                         .tracking(-0.8)
                         .foregroundStyle(heroPrimary)
-                        .tint(heroPrimary)
+                        .tint(AppTheme.cursor)
                         .focused($nameFieldFocused)
                         .textInputAutocapitalization(.words)
                         .submitLabel(.done)

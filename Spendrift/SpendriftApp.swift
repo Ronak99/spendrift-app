@@ -18,6 +18,10 @@ struct SpendriftApp: App {
     private let sharedContainer: ModelContainer
 
     init() {
+        let cursor = UIColor.white
+        UITextField.appearance().tintColor = cursor
+        UITextView.appearance().tintColor = cursor
+
         _ = DeviceIdentity.current
         Analytics.bootstrap()
         Diagnostics.bootstrap()

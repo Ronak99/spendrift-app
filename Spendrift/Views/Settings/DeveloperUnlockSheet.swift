@@ -39,6 +39,7 @@ struct DeveloperUnlockSheet: View {
 
                         SecureField("Password", text: $password)
                             .font(.system(size: 16, weight: .semibold))
+                            .tint(AppTheme.cursor)
                             .textContentType(.password)
                             .textInputAutocapitalization(.never)
                             .autocorrectionDisabled()

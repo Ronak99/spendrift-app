@@ -157,7 +157,7 @@ struct FeatureRequestView: View {
                     .scrollContentBackground(.hidden)
                     .frame(minHeight: 140)
                     .focused($ideaFieldFocused)
-                    .tint(heroPrimary)
+                    .tint(AppTheme.cursor)
                     .overlay(alignment: .topLeading) {
                         if requestText.isEmpty {
                             Text("Describe the feature you'd like to see")

@@ -34,7 +34,7 @@ struct CategoryFindField: View {
             TextField(prompt, text: $query)
                 .font(.system(size: 14, weight: .regular))
                 .foregroundStyle(heroPrimary)
-                .tint(heroPrimary)
+                .tint(AppTheme.cursor)
                 .textFieldStyle(.plain)
                 .focused($isFocused)
                 .submitLabel(.search)
