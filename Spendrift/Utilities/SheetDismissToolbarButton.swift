@@ -84,12 +84,14 @@ private struct SheetCloseToolbarButton: View {
             Button(role: .close) {
                 dismiss()
             }
+            .tint(.white)
             .accessibilityIdentifier("xmark")
         } else {
             Button {
                 dismiss()
             } label: {
                 Image(systemName: "xmark")
+                    .foregroundStyle(.white)
             }
             .accessibilityLabel("Close")
             .accessibilityIdentifier("xmark")
