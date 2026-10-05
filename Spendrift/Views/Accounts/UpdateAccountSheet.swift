@@ -269,7 +269,7 @@ struct UpdateAccountSheet: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 22) {
                 iconSection
-                
+
                 if let account {
                     transactionsLink(for: account)
                 }
@@ -328,13 +328,6 @@ struct UpdateAccountSheet: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .accessibilityIdentifier("0")
                     .accessibilityLabel("Enter balance")
-            }
-
-            if isCreating {
-                Text("What's in this account today. Enter 0 if it's new.")
-                    .font(.system(size: 13, weight: .regular))
-                    .foregroundStyle(heroPrimary.opacity(0.55))
-                    .fixedSize(horizontal: false, vertical: true)
             }
         }
     }
