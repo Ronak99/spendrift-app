@@ -16,18 +16,50 @@ struct AccountIconPickerView: View {
     private var accent: Color { Color(hex: accentHex) }
 
     private var filteredGroups: [(title: String, icons: [AccountIcon])] {
-        let needle = query.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        let needle = query.trimmingCharacters(in: .whitespacesAndNewlines)
+            .lowercased()
         let groups = AccountIcon.pickerGroups
         guard !needle.isEmpty else { return groups }
         return groups.compactMap { group in
             let icons = group.icons.filter { icon in
-                (icon.pickerLabel + " " + icon.searchKeywords + " " + icon.rawValue)
+                (icon.pickerLabel + " " + icon.searchKeywords + " "
+                    + icon.rawValue)
                     .lowercased()
                     .contains(needle)
             }
             guard !icons.isEmpty else { return nil }
             return (group.title, icons)
         }
+    }
+
+    private var saveBackground: Color {
+        Color.white.opacity(0.92)
+    }
+
+    private var saveForeground: Color {
+        Color(hex: "#111111")
+    }
+
+    private var saveButton: some View {
+        Button {
+            onDone?()
+            dismiss()
+        } label: {
+            Text("Save")
+                .font(.system(size: 14, weight: .semibold))
+                .lineLimit(1)
+                .padding(.horizontal, 16)
+                .padding(.vertical, 8)
+                .background(saveBackground, in: Capsule())
+                .foregroundStyle(saveForeground)
+                // A bare `Text` is the one thing in a toolbar item the navigation bar is
+                // willing to compress, so on narrow iPhones — and at larger Dynamic Type,
+                // where the inline title claims more of the bar — the label truncated to
+                // "S…". Pinning the capsule at its ideal width makes the bar shrink the
+                // title instead, the same way the pickers' `addButton` holds a fixed frame.
+                .fixedSize(horizontal: true, vertical: false)
+        }
+        .buttonStyle(.plain)
     }
 
     var body: some View {
@@ -50,7 +82,13 @@ struct AccountIconPickerView: View {
                                     .foregroundStyle(.secondary)
 
                                 LazyVGrid(
-                                    columns: Array(repeating: GridItem(.flexible(), spacing: 12), count: 5),
+                                    columns: Array(
+                                        repeating: GridItem(
+                                            .flexible(),
+                                            spacing: 12
+                                        ),
+                                        count: 5
+                                    ),
                                     spacing: 12
                                 ) {
                                     ForEach(group.icons, id: \.self) { icon in
@@ -73,16 +111,22 @@ struct AccountIconPickerView: View {
             .background(AppTheme.listBackground.ignoresSafeArea())
             .navigationTitle("Choose Icon")
             .navigationBarTitleDisplayMode(.inline)
-            .searchable(text: $query, prompt: "Search \(AccountIcon.selectable.count) icons")
+            .searchable(
+                text: $query,
+                prompt: "Search \(AccountIcon.selectable.count) icons"
+            )
             .toolbar {
                 CustomSheetCloseToolbarItem()
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Done") {
-                        onDone?()
-                        dismiss()
+
+                if #available(iOS 26.0, *) {
+                    ToolbarItem(placement: .confirmationAction) {
+                        saveButton
                     }
-                    .fontWeight(.semibold)
-                    .foregroundStyle(accent)
+                    .sharedBackgroundVisibility(.hidden)
+                } else {
+                    ToolbarItem(placement: .confirmationAction) {
+                        saveButton
+                    }
                 }
             }
         }
@@ -103,18 +147,27 @@ struct AccountIconCell: View {
         Button(action: action) {
             Image(systemName: icon.systemImageName)
                 .font(.system(size: 22, weight: .regular))
-                .foregroundStyle(isSelected ? accent : Color.primary.opacity(0.62))
+                .foregroundStyle(
+                    isSelected ? accent : Color.primary.opacity(0.62)
+                )
                 .frame(height: 24)
                 .frame(maxWidth: .infinity)
                 .padding(.top, 16)
                 .padding(.bottom, 16)
                 .background(
                     RoundedRectangle(cornerRadius: 18, style: .continuous)
-                        .fill(isSelected ? accent.opacity(0.15) : Color.primary.opacity(0.06))
+                        .fill(
+                            isSelected
+                                ? accent.opacity(0.15)
+                                : Color.primary.opacity(0.06)
+                        )
                 )
                 .overlay {
                     RoundedRectangle(cornerRadius: 18, style: .continuous)
-                        .strokeBorder(isSelected ? accent : Color.clear, lineWidth: 1.5)
+                        .strokeBorder(
+                            isSelected ? accent : Color.clear,
+                            lineWidth: 1.5
+                        )
                 }
         }
         .buttonStyle(.plain)
