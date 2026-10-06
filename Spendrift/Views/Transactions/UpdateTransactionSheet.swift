@@ -658,14 +658,8 @@ struct AccountPickerSheet: View {
         isDark ? .white : Color(hex: "#111111")
     }
 
-    private var washColor: Color {
-        if let selectedAccount {
-            return AccountEnamel.color(for: selectedAccount.icon)
-        }
-        if let first = accounts.first {
-            return AccountEnamel.color(for: first.icon)
-        }
-        return AccountEnamel.fallback
+    private var canvas: Color {
+        isDark ? Color(hex: "#0A0A0B") : AppTheme.listBackground
     }
 
     var body: some View {
@@ -677,10 +671,7 @@ struct AccountPickerSheet: View {
                     accountList
                 }
             }
-            .background {
-                CategoryTrayAtmosphere(washColor: washColor)
-                    .ignoresSafeArea()
-            }
+            .background(canvas.ignoresSafeArea())
             .navigationTitle("Select Account")
             .navigationBarTitleDisplayMode(.inline)
             .toolbarBackground(.hidden, for: .navigationBar)
@@ -753,7 +744,7 @@ struct AccountPickerSheet: View {
 
     @ToolbarContentBuilder
     private var toolbarContent: some ToolbarContent {
-        LiquidGlassSheetCloseToolbarItem()
+        CustomSheetCloseToolbarItem()
         if #available(iOS 26.0, *) {
             ToolbarItem(placement: .navigationBarTrailing) {
                 addButton
