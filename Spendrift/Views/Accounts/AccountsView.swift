@@ -16,6 +16,7 @@ struct AccountsView: View {
     @Query(sort: \Transaction.date, order: .reverse) private var allTransactions: [Transaction]
     @State private var showCreateSheet = false
     @State private var accountToEdit: Account?
+    @State private var showLastAccountAlert = false
 
     private var totalBalanceAllAccounts: Double {
         accounts.reduce(0) { $0 + $1.currentBalance }
@@ -108,6 +109,12 @@ struct AccountsView: View {
             .toolbarBackground(.hidden, for: .navigationBar)
             .toolbarColorScheme(isDark ? .dark : .light, for: .navigationBar)
             .toolbar { toolbarContent }
+            .onAppear { healPrimaryAccount() }
+            .alert("Keep at least one account", isPresented: $showLastAccountAlert) {
+                Button("OK", role: .cancel) {}
+            } message: {
+                Text("Spendrift records transactions against an account. Add another one before deleting this.")
+            }
             .sheet(isPresented: $showCreateSheet) {
                 UpdateAccountSheet(account: nil)
             }
@@ -189,27 +196,30 @@ struct AccountsView: View {
         .accessibilityIdentifier("accountsAddButton")
     }
 
-    private func deleteAccounts(at offsets: IndexSet) {
-        let deleteIndices = Set(offsets)
-        let toDelete: [Account] = offsets.sorted().map { accounts[$0] }
+    /// A ledger can lose its star to an older build or a restored backup. Hand
+    /// it to an account on open so Voice and Shortcuts always have a target.
+    private func healPrimaryAccount() {
+        guard accounts.normalizePrimary() else { return }
+        try? modelContext.save()
+    }
 
-        if let primaryIndex = accounts.firstIndex(where: { $0.isPrimary }),
-           deleteIndices.contains(primaryIndex) {
-            let remainingIndices = (0..<accounts.count).filter { !deleteIndices.contains($0) }
-            let newPrimaryIndex = remainingIndices.filter { $0 > primaryIndex }.min()
-                ?? remainingIndices.filter { $0 < primaryIndex }.max()
-            if let newIdx = newPrimaryIndex {
-                let newId = accounts[newIdx].id
-                for a in accounts {
-                    a.isPrimary = (a.id == newId)
-                }
-            }
+    private func deleteAccounts(at offsets: IndexSet) {
+        let toDelete = accounts.deletable(at: offsets)
+        guard !toDelete.isEmpty else {
+            showLastAccountAlert = true
+            return
         }
+
+        let deletedIDs = Set(toDelete.map(\.id))
+        let survivors = accounts.filter { !deletedIDs.contains($0.id) }
 
         for account in toDelete {
             Analytics.capture(.accountDeleted, [Analytics.Key.name: account.name])
             modelContext.delete(account)
         }
+
+        // Deleting the primary passes the star to an account that is left.
+        survivors.normalizePrimary()
 
         Task { @MainActor in
             try? await Task.sleep(for: .milliseconds(450))

@@ -170,6 +170,7 @@ enum BackupService {
             }
 
             var accountsByID: [UUID: Account] = [:]
+            var restoredAccounts: [Account] = []
             for record in snapshot.accounts {
                 let account = Account(
                     id: record.id,
@@ -182,7 +183,14 @@ enum BackupService {
                 account.lastUsedAt = record.lastUsedAt
                 modelContext.insert(account)
                 accountsByID[record.id] = account
+                restoredAccounts.append(account)
             }
+
+            // A snapshot taken before the star was guaranteed can carry none, or
+            // more than one. The restored ledger still ends up with exactly one.
+            restoredAccounts
+                .sorted { $0.createdOn < $1.createdOn }
+                .normalizePrimary()
 
             var categoriesByID: [UUID: TransactionCategory] = [:]
             for record in snapshot.categories {

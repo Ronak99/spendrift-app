@@ -164,6 +164,35 @@ struct BackupServiceTests {
     }
 
     @Test
+    func applyStarsAnAccountWhenTheSnapshotCarriesNoPrimary() throws {
+        let context = try makeContext()
+        func record(_ name: String, createdOn: TimeInterval) -> BackupAccountRecord {
+            BackupAccountRecord(
+                id: UUID(),
+                name: name,
+                balance: 0,
+                icon: AccountIcon.cash.rawValue,
+                isPrimary: false,
+                createdOn: Date(timeIntervalSince1970: createdOn),
+                lastUsedAt: nil
+            )
+        }
+        let snapshot = BackupSnapshot(
+            accounts: [
+                record("Salary", createdOn: 1_790_000_100),
+                record("Savings", createdOn: 1_790_000_000),
+            ],
+            categories: [],
+            transactions: []
+        )
+
+        try BackupService.apply(snapshot, to: context)
+
+        let accounts = try context.fetch(FetchDescriptor<Account>())
+        #expect(accounts.filter(\.isPrimary).map(\.name) == ["Savings"])
+    }
+
+    @Test
     func snapshotDropsNulCharactersTheServerCannotStore() throws {
         let context = try makeContext()
         context.insert(Transaction(notes: "Lun\0ch", amount: 1, transactionType: .expense))
