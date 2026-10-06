@@ -201,20 +201,7 @@ struct UpdateAccountSheet: View {
 
     private var primaryControls: some View {
         HStack(spacing: 2) {
-            Button(action: togglePrimary) {
-                Image(systemName: isPrimary ? "star.fill" : "star")
-                    .font(.system(size: 20, weight: .semibold))
-                    .foregroundStyle(isPrimary ? primaryStar : heroPrimary.opacity(0.38))
-                    .contentTransition(.symbolEffect(.replace))
-                    .frame(width: 36, height: 44)
-                    .contentShape(Rectangle())
-            }
-            .buttonStyle(.plain)
-            .accessibilityIdentifier("primary-account-star")
-            .accessibilityLabel("Primary account")
-            .accessibilityValue(isPrimary ? "On" : "Off")
-            .accessibilityAddTraits(isPrimary ? .isSelected : [])
-            .sensoryFeedback(.selection, trigger: isPrimary)
+            primaryStarControl
 
             Button {
                 nameFieldFocused = false
@@ -230,7 +217,7 @@ struct UpdateAccountSheet: View {
             .buttonStyle(.plain)
             .accessibilityLabel("About the primary account star")
             .popover(isPresented: $showPrimaryHelp, arrowEdge: .top) {
-                Text("The star marks your primary account. Voice and Shortcuts create transactions on it.")
+                Text("The star marks your primary account. Voice and Shortcuts create transactions on it. One account always holds it — to move it, star another account.")
                     .font(.system(size: 14, weight: .regular))
                     .foregroundStyle(.primary)
                     .fixedSize(horizontal: false, vertical: true)
@@ -238,6 +225,38 @@ struct UpdateAccountSheet: View {
                     .frame(width: 248)
                     .presentationCompactAdaptation(.popover)
             }
+        }
+        .sensoryFeedback(.selection, trigger: isPrimary)
+    }
+
+    /// The star only ever *sets* primary. An account that already holds it
+    /// shows a plain badge instead of a button: unstarring would leave the
+    /// ledger without a primary, so the star moves by starring another account.
+    @ViewBuilder
+    private var primaryStarControl: some View {
+        if isPrimary {
+            Image(systemName: "star.fill")
+                .font(.system(size: 20, weight: .semibold))
+                .foregroundStyle(primaryStar)
+                .contentTransition(.symbolEffect(.replace))
+                .frame(width: 36, height: 44)
+                .accessibilityIdentifier("primary-account-star")
+                .accessibilityLabel("Primary account")
+                .accessibilityValue("On")
+                .accessibilityAddTraits(.isSelected)
+        } else {
+            Button(action: markPrimary) {
+                Image(systemName: "star")
+                    .font(.system(size: 20, weight: .semibold))
+                    .foregroundStyle(heroPrimary.opacity(0.38))
+                    .contentTransition(.symbolEffect(.replace))
+                    .frame(width: 36, height: 44)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityIdentifier("primary-account-star")
+            .accessibilityLabel("Make primary account")
+            .accessibilityValue("Off")
         }
     }
 
@@ -420,10 +439,10 @@ struct UpdateAccountSheet: View {
 
     // MARK: Behaviour
 
-    private func togglePrimary() {
+    private func markPrimary() {
         nameFieldFocused = false
         balanceFieldFocused = false
-        isPrimary.toggle()
+        isPrimary = true
     }
 
     /// Focuses the name field shortly after the sheet appears so the keyboard comes up immediately.
@@ -448,17 +467,11 @@ struct UpdateAccountSheet: View {
         guard !resolvedName.isEmpty, let balanceValue = Double(balance) else { return }
 
         if let account {
-            if isPrimary {
-                clearExistingPrimary(except: account)
-            }
             account.name = resolvedName
             account.balance = balanceValue
             account.icon = icon
-            account.isPrimary = isPrimary
+            resolvePrimary(in: allAccounts, starring: isPrimary ? account : nil)
         } else {
-            if isPrimary {
-                clearExistingPrimary(except: nil)
-            }
             let newAccount = Account(
                 name: resolvedName,
                 balance: balanceValue,
@@ -466,6 +479,7 @@ struct UpdateAccountSheet: View {
                 isPrimary: isPrimary
             )
             modelContext.insert(newAccount)
+            resolvePrimary(in: allAccounts + [newAccount], starring: isPrimary ? newAccount : nil)
             Analytics.capture(.accountCreated, [
                 Analytics.Key.name: resolvedName,
                 Analytics.Key.initialBalance: balanceValue,
@@ -477,12 +491,13 @@ struct UpdateAccountSheet: View {
         dismiss()
     }
 
-    private func clearExistingPrimary(except account: Account?) {
-        for existing in allAccounts {
-            if let account, existing.id == account.id { continue }
-            if existing.isPrimary {
-                existing.isPrimary = false
-            }
+    /// Moves the star to `account`, or just guarantees the ledger still has
+    /// one, so saving can never leave every account unstarred.
+    private func resolvePrimary(in ledger: [Account], starring account: Account?) {
+        if let account {
+            ledger.makePrimary(account)
+        } else {
+            ledger.normalizePrimary()
         }
     }
 }

@@ -52,6 +52,41 @@ final class Account {
 }
 
 extension Array where Element == Account {
+    /// The starred account. Voice, Shortcuts, and the widget post to it.
+    var primary: Account? {
+        first(where: { $0.isPrimary })
+    }
+
+    /// Stars `account` and clears every other one, so exactly one account is
+    /// primary. Returns `true` when anything actually changed.
+    @discardableResult
+    func makePrimary(_ account: Account) -> Bool {
+        var changed = false
+        for existing in self {
+            let shouldStar = existing.id == account.id
+            guard existing.isPrimary != shouldStar else { continue }
+            existing.isPrimary = shouldStar
+            changed = true
+        }
+        return changed
+    }
+
+    /// A ledger holding any account holds exactly one primary: the stored star
+    /// when there is one, otherwise the first account. Call after deleting,
+    /// restoring, or saving accounts. Returns `true` when anything changed.
+    @discardableResult
+    func normalizePrimary() -> Bool {
+        guard let anchor = primary ?? first else { return false }
+        return makePrimary(anchor)
+    }
+
+    /// The accounts a delete at `offsets` is allowed to drop. Empty when the
+    /// request covers every row, because one account must always remain.
+    func deletable(at offsets: IndexSet) -> [Account] {
+        let targets = offsets.sorted().filter { indices.contains($0) }.map { self[$0] }
+        return targets.count < count ? targets : []
+    }
+
     /// Most recently used first; never-used at the end, preserving order from `@Query(sort: \.name)`.
     func sortedByLastUsage() -> [Account] {
         sorted { a, b in
