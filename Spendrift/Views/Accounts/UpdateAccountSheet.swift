@@ -4,10 +4,12 @@
 //
 //  Color-wash sheet for creating, viewing, and updating accounts. Name and
 //  opening balance are banded together in the hero, split by a hairline, so
-//  those two fields are the first things to fill in. On an existing account
-//  the transactions link sits right under the hero because it is the main
-//  action there; the icon grid follows. An existing account opens as a plain
-//  detail view: Save only shows up once a field differs from what is stored.
+//  those two fields are the first things to fill in. Under the name, "Set as
+//  primary" promotes this account, and "Primary" hands the star to another
+//  one. An info mark explains what primary means. On an existing account the
+//  transactions link sits right under the hero because it is the main action
+//  there; the icon grid follows. An existing account opens as a plain detail
+//  view: Save only shows up once a field differs from what is stored.
 //
 
 import SwiftUI
@@ -31,14 +33,15 @@ struct UpdateAccountSheet: View {
     @State private var isPrimary: Bool
     @State private var saveAlertMessage: String?
     @State private var showIconPicker = false
-    @State private var showPrimaryHelp = false
-    @State private var showPrimaryLockedAlert = false
+    @State private var showPrimaryInfo = false
 
     init(account: Account?, onCreated: ((Account) -> Void)? = nil) {
         self.account = account
         self.onCreated = onCreated
         _name = State(initialValue: account?.name ?? "")
-        _balance = State(initialValue: account.map { $0.balance.wholeAmountDisplayString } ?? "")
+        _balance = State(
+            initialValue: account.map { $0.balance.wholeAmountDisplayString
+            } ?? "")
         _icon = State(initialValue: account?.icon ?? .bankAccountOne)
         _isPrimary = State(initialValue: account?.isPrimary ?? false)
     }
@@ -48,10 +51,11 @@ struct UpdateAccountSheet: View {
     /// Whether any field differs from the stored account. Always `false` while creating.
     private var hasChanges: Bool {
         guard let account else { return false }
-        return name.trimmingCharacters(in: .whitespacesAndNewlines) != account.name
-            || balance != account.balance.wholeAmountDisplayString
-            || icon != account.icon
-            || isPrimary != account.isPrimary
+        return name
+            .trimmingCharacters(in: .whitespacesAndNewlines) != account.name
+        || balance != account.balance.wholeAmountDisplayString
+        || icon != account.icon
+        || isPrimary != account.isPrimary
     }
 
     private var showsSaveButton: Bool { isCreating || hasChanges }
@@ -124,11 +128,6 @@ struct UpdateAccountSheet: View {
             ) {
                 Button("OK", role: .cancel) {}
             }
-            .alert("This account stays primary", isPresented: $showPrimaryLockedAlert) {
-                Button("OK", role: .cancel) {}
-            } message: {
-                Text("This is your only account, so it has to stay primary. Add another account to move the star.")
-            }
             .onAppear {
                 if isCreating {
                     isPrimary = allAccounts.isEmpty
@@ -136,7 +135,10 @@ struct UpdateAccountSheet: View {
                 }
             }
             .sheet(isPresented: $showIconPicker) {
-                AccountIconPickerView(selectedIcon: $icon, accentHex: icon.enamelHex)
+                AccountIconPickerView(
+                    selectedIcon: $icon,
+                    accentHex: icon.enamelHex
+                )
             }
         }
     }
@@ -161,11 +163,30 @@ struct UpdateAccountSheet: View {
                         .accessibilityIdentifier("Enter account name")
                         .accessibilityLabel("Enter account name")
 
-                    metaLine
+                    primaryControl
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
-
-                primaryControls
+                
+                Spacer(minLength: 8)
+                
+                Button {
+                    showPrimaryInfo = true
+                } label: {
+                    Image(systemName: "info.circle")
+                        .font(.system(size: 24, weight: .regular))
+                        .foregroundStyle(heroPrimary.opacity(0.45))
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("About primary accounts")
+                .popover(isPresented: $showPrimaryInfo, arrowEdge: .bottom) {
+                    Text("The primary account is where the AI, shortcuts and widgets create a transaction.")
+                        .font(.system(size: 15))
+                        .foregroundStyle(.primary)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .padding(16)
+                        .frame(maxWidth: 260)
+                        .presentationCompactAdaptation(.popover)
+                }
             }
             .padding(.top, 8)
 
@@ -179,8 +200,12 @@ struct UpdateAccountSheet: View {
         .padding(.horizontal, 20)
         .padding(.bottom, 22)
         .background(alignment: .top) {
-            ColorWashBackground(color: accentColor, isDark: isDark, bottomRadius: 0)
-                .padding(.top, -120)
+            ColorWashBackground(
+                color: accentColor,
+                isDark: isDark,
+                bottomRadius: 0
+            )
+            .padding(.top, -120)
         }
     }
 
@@ -193,67 +218,25 @@ struct UpdateAccountSheet: View {
         .accessibilityHidden(true)
     }
 
-    private var metaLine: some View {
-        Text(metaLineText)
-            .font(.system(size: 15, weight: .regular))
-            .foregroundStyle(heroPrimary.opacity(0.6))
-            .lineLimit(1)
-    }
-
-    private var metaLineText: String {
-        icon.pickerLabel
-    }
-
-    private var primaryControls: some View {
-        HStack(spacing: 2) {
-            primaryStarControl
-
-            Button {
-                nameFieldFocused = false
-                balanceFieldFocused = false
-                showPrimaryHelp = true
-            } label: {
-                Image(systemName: "questionmark.circle")
-                    .font(.system(size: 16, weight: .regular))
-                    .foregroundStyle(heroPrimary.opacity(0.45))
-                    .frame(width: 32, height: 44)
-                    .contentShape(Rectangle())
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel("About the primary account star")
-            .popover(isPresented: $showPrimaryHelp, arrowEdge: .top) {
-                Text("The star marks your primary account. Voice and Shortcuts create transactions on it. Tap the star to move it to another account.")
-                    .font(.system(size: 14, weight: .regular))
-                    .foregroundStyle(.primary)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .padding(16)
-                    .frame(width: 248)
-                    .presentationCompactAdaptation(.popover)
-            }
-        }
-        .sensoryFeedback(.selection, trigger: isPrimary)
-    }
-
-    /// Always a button. Tapping stars this account, or moves the star onto
-    /// another account. The only account in the ledger cannot give it up.
-    private var primaryStarControl: some View {
+    /// Plain label under the name. Tapping promotes this account, or, when it
+    /// is already primary, hands the star to another account. The info mark
+    /// explains the concept and does not change anything.
+    private var primaryControl: some View {
         Button(action: togglePrimary) {
-            Image(systemName: isPrimary ? "star.fill" : "star")
-                .font(.system(size: 20, weight: .semibold))
-                .foregroundStyle(isPrimary ? primaryStar : heroPrimary.opacity(0.38))
-                .contentTransition(.symbolEffect(.replace))
-                .frame(width: 36, height: 44)
-                .contentShape(Rectangle())
+            Text(isPrimary ? "Primary" : "Set as primary")
+                .font(.system(size: 15, weight: .semibold))
+                .foregroundStyle(setPrimaryLabel)
+                .lineLimit(1)
         }
         .buttonStyle(.plain)
-        .accessibilityIdentifier("primary-account-star")
-        .accessibilityLabel(isPrimary ? "Primary account" : "Make primary account")
-        .accessibilityValue(isPrimary ? "On" : "Off")
-        .accessibilityAddTraits(isPrimary ? .isSelected : [])
+        .accessibilityIdentifier("make-primary")
+        .accessibilityLabel(isPrimary ? "Primary" : "Set as primary")
+        .sensoryFeedback(.selection, trigger: isPrimary)
+        .washMotion(value: icon.enamelHex)
     }
 
-    private var primaryStar: Color {
-        AccountEnamel.primaryStar(isDark: isDark)
+    private var setPrimaryLabel: Color {
+        isDark ? accentColor.mix(with: .white, by: 0.42) : accentColor
     }
 
     // MARK: Details
@@ -349,7 +332,9 @@ struct UpdateAccountSheet: View {
                 Color.primary.opacity(isDark ? 0.08 : 0.05),
                 in: RoundedRectangle(cornerRadius: 14, style: .continuous)
             )
-            .contentShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+            .contentShape(
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
+            )
         }
         .buttonStyle(.plain)
         .accessibilityIdentifier("View Transactions")
@@ -390,7 +375,10 @@ struct UpdateAccountSheet: View {
             }
 
             LazyVGrid(
-                columns: Array(repeating: GridItem(.flexible(), spacing: 11), count: 4),
+                columns: Array(
+                    repeating: GridItem(.flexible(), spacing: 11),
+                    count: 4
+                ),
                 spacing: 11
             ) {
                 ForEach(featuredIcons, id: \.self) { item in
@@ -427,11 +415,11 @@ struct UpdateAccountSheet: View {
                 .padding(.vertical, 8)
                 .background(saveBackground, in: Capsule())
                 .foregroundStyle(saveForeground)
-                // A bare `Text` is the one thing in a toolbar item the navigation bar is
-                // willing to compress, so on narrow iPhones — and at larger Dynamic Type,
-                // where the inline title claims more of the bar — the label truncated to
-                // "S…". Pinning the capsule at its ideal width makes the bar shrink the
-                // title instead, the same way the pickers' `addButton` holds a fixed frame.
+            // A bare `Text` is the one thing in a toolbar item the navigation bar is
+            // willing to compress, so on narrow iPhones — and at larger Dynamic Type,
+            // where the inline title claims more of the bar — the label truncated to
+            // "S…". Pinning the capsule at its ideal width makes the bar shrink the
+            // title instead, the same way the pickers' `addButton` holds a fixed frame.
                 .fixedSize(horizontal: true, vertical: false)
         }
         .buttonStyle(.plain)
@@ -456,18 +444,17 @@ struct UpdateAccountSheet: View {
         return !allAccounts.isEmpty
     }
 
+    /// Promotes this account, or hands the star to another one. The only
+    /// account stays primary, because the ledger always keeps exactly one.
     private func togglePrimary() {
         nameFieldFocused = false
         balanceFieldFocused = false
-        if !isPrimary {
+        if isPrimary {
+            guard canMovePrimary else { return }
+            isPrimary = false
+        } else {
             isPrimary = true
-            return
         }
-        guard canMovePrimary else {
-            showPrimaryLockedAlert = true
-            return
-        }
-        isPrimary = false
     }
 
     /// Focuses the name field shortly after the sheet appears so the keyboard comes up immediately.
@@ -489,7 +476,9 @@ struct UpdateAccountSheet: View {
 
     private func saveAccount() {
         let resolvedName = name.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !resolvedName.isEmpty, let balanceValue = Double(balance) else { return }
+        guard !resolvedName.isEmpty, let balanceValue = Double(balance) else {
+            return
+        }
 
         if let account {
             account.name = resolvedName
@@ -538,6 +527,18 @@ struct UpdateAccountSheet: View {
             balance: 85420,
             icon: .bankAccountOne,
             isPrimary: true
+        )
+    )
+    .modelContainer(for: [Account.self], inMemory: true)
+}
+
+#Preview("Make primary") {
+    UpdateAccountSheet(
+        account: Account(
+            name: "Fi",
+            balance: 550,
+            icon: .bankAccountOne,
+            isPrimary: false
         )
     )
     .modelContainer(for: [Account.self], inMemory: true)

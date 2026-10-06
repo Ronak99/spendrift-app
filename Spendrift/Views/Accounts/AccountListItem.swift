@@ -2,16 +2,14 @@
 //  AccountListItem.swift
 //  Spendrift
 //
-//  Ledger row for an account: enamel icon chip, name, a star when the
-//  account is primary, and a tabular balance. Matches TransactionListItem
-//  so the Accounts list feels like the same box.
+//  Ledger row for an account: enamel icon chip, name, a Primary subtitle
+//  when the account is primary, and a tabular balance. Matches
+//  TransactionListItem so the Accounts list feels like the same box.
 //
 
 import SwiftUI
 
 struct AccountListItem: View {
-    @Environment(\.colorScheme) private var colorScheme
-
     let account: Account
     var isSelected: Bool = false
 
@@ -42,17 +40,17 @@ struct AccountListItem: View {
                     .opacity(isSelected ? 1 : 0)
             }
 
-            HStack(alignment: .center, spacing: 5) {
+            VStack(alignment: .leading, spacing: 3) {
                 Text(account.name)
                     .font(.system(size: 16, weight: isSelected ? .bold : .semibold))
                     .foregroundStyle(.primary)
                     .lineLimit(1)
 
                 if account.isPrimary {
-                    Image(systemName: "star.fill")
-                        .font(.system(size: 11, weight: .semibold))
-                        .foregroundStyle(AccountEnamel.primaryStar(isDark: colorScheme == .dark))
-                        .accessibilityLabel("Primary account")
+                    Text("Primary")
+                        .font(.system(size: 12))
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
                 }
             }
 
@@ -81,11 +79,6 @@ enum AccountEnamel {
 
     static func color(for icon: AccountIcon) -> Color {
         Color(hex: hex(for: icon))
-    }
-
-    /// Gold used for the primary-account star in the editor and the list.
-    static func primaryStar(isDark: Bool) -> Color {
-        Color(hex: isDark ? "#F5C451" : "#C99212")
     }
 
     /// Wash on the Accounts tab: primary account, else the first, else Periwinkle.
