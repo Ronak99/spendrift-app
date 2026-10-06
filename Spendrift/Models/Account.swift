@@ -80,6 +80,15 @@ extension Array where Element == Account {
         return makePrimary(anchor)
     }
 
+    /// Moves the star off `account` onto the first other account in this array.
+    /// No-op when `account` is not primary, or it is the only account.
+    @discardableResult
+    func handPrimary(awayFrom account: Account) -> Bool {
+        guard account.isPrimary, count > 1 else { return false }
+        guard let successor = first(where: { $0.id != account.id }) else { return false }
+        return makePrimary(successor)
+    }
+
     /// The accounts a delete at `offsets` is allowed to drop. Empty when the
     /// request covers every row, because one account must always remain.
     func deletable(at offsets: IndexSet) -> [Account] {

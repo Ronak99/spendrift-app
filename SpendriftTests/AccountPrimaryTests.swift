@@ -91,6 +91,34 @@ struct AccountPrimaryTests {
     }
 
     @Test
+    func handPrimaryMovesTheStarToTheNextAccount() throws {
+        let context = try makeContext()
+        let accounts = insertAccounts(context, ["Savings", "Salary", "Cash"], primary: "Savings")
+
+        #expect(accounts.handPrimary(awayFrom: accounts[0]))
+        #expect(accounts.map(\.isPrimary) == [false, true, false])
+        #expect(accounts.primary?.name == "Salary")
+    }
+
+    @Test
+    func handPrimaryDoesNothingForTheOnlyAccount() throws {
+        let context = try makeContext()
+        let accounts = insertAccounts(context, ["Savings"], primary: "Savings")
+
+        #expect(!accounts.handPrimary(awayFrom: accounts[0]))
+        #expect(accounts[0].isPrimary)
+    }
+
+    @Test
+    func handPrimaryDoesNothingWhenTheAccountIsNotPrimary() throws {
+        let context = try makeContext()
+        let accounts = insertAccounts(context, ["Savings", "Salary"], primary: "Salary")
+
+        #expect(!accounts.handPrimary(awayFrom: accounts[0]))
+        #expect(accounts.primary?.name == "Salary")
+    }
+
+    @Test
     func deletableKeepsTheLastAccount() throws {
         let context = try makeContext()
         let accounts = insertAccounts(context, ["Savings"], primary: "Savings")
