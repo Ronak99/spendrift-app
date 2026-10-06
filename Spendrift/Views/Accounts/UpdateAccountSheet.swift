@@ -15,6 +15,13 @@
 import SwiftUI
 import SwiftData
 
+/// Fields the account sheet walks in order. One focus value so Next on the
+/// name keyboard moves to the balance field instead of activating Save.
+private enum AccountField: Hashable {
+    case name
+    case balance
+}
+
 struct UpdateAccountSheet: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
@@ -24,8 +31,7 @@ struct UpdateAccountSheet: View {
     var onCreated: ((Account) -> Void)? = nil
 
     @Query(sort: \Account.createdOn) private var allAccounts: [Account]
-    @FocusState private var nameFieldFocused: Bool
-    @FocusState private var balanceFieldFocused: Bool
+    @FocusState private var focusedField: AccountField?
 
     @State private var name: String
     @State private var balance: String
@@ -156,10 +162,11 @@ struct UpdateAccountSheet: View {
                         .tracking(-0.8)
                         .foregroundStyle(heroPrimary)
                         .tint(AppTheme.cursor)
-                        .focused($nameFieldFocused)
+                        .focused($focusedField, equals: .name)
                         .textInputAutocapitalization(.words)
                         .submitLabel(.next)
-                        .onSubmit { balanceFieldFocused = true }
+                        .onSubmit(focusBalanceField)
+                        .submitScope()
                         .accessibilityIdentifier("Enter account name")
                         .accessibilityLabel("Enter account name")
 
@@ -298,7 +305,7 @@ struct UpdateAccountSheet: View {
                     .tint(AppTheme.cursor)
                     .keyboardType(.decimalPad)
                     .textFieldStyle(.plain)
-                    .focused($balanceFieldFocused)
+                    .focused($focusedField, equals: .balance)
                     .minimumScaleFactor(0.45)
                     .lineLimit(1)
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -341,8 +348,7 @@ struct UpdateAccountSheet: View {
         .accessibilityLabel("View Transactions")
         .accessibilityValue(transactionsValueText)
         .simultaneousGesture(TapGesture().onEnded { _ in
-            nameFieldFocused = false
-            balanceFieldFocused = false
+            focusedField = nil
         })
     }
 
@@ -358,8 +364,7 @@ struct UpdateAccountSheet: View {
                 Spacer()
 
                 Button {
-                    nameFieldFocused = false
-                    balanceFieldFocused = false
+                    focusedField = nil
                     showIconPicker = true
                 } label: {
                     HStack(spacing: 3) {
@@ -388,8 +393,7 @@ struct UpdateAccountSheet: View {
                         accent: accentColor
                     ) {
                         icon = item
-                        nameFieldFocused = false
-                        balanceFieldFocused = false
+                        focusedField = nil
                     }
                 }
             }
@@ -447,8 +451,7 @@ struct UpdateAccountSheet: View {
     /// Promotes this account, or hands the star to another one. The only
     /// account stays primary, because the ledger always keeps exactly one.
     private func togglePrimary() {
-        nameFieldFocused = false
-        balanceFieldFocused = false
+        focusedField = nil
         if isPrimary {
             guard canMovePrimary else { return }
             isPrimary = false
@@ -460,13 +463,21 @@ struct UpdateAccountSheet: View {
     /// Focuses the name field shortly after the sheet appears so the keyboard comes up immediately.
     private func focusNameFieldSoon() {
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-            nameFieldFocused = true
+            focusedField = .name
+        }
+    }
+
+    /// Moves from the name field to opening balance. Deferred so the decimal pad
+    /// can take over after the text keyboard resigns; a same-turn focus change
+    /// is dropped and the toolbar Save button handles the key instead.
+    private func focusBalanceField() {
+        DispatchQueue.main.async {
+            focusedField = .balance
         }
     }
 
     private func attemptSave() {
-        nameFieldFocused = false
-        balanceFieldFocused = false
+        focusedField = nil
         if let message = saveBlockedReason {
             saveAlertMessage = message
             return
