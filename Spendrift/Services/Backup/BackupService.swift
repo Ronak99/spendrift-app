@@ -25,6 +25,11 @@ enum BackupError: LocalizedError, Equatable {
 }
 
 enum BackupService {
+    /// How many backups the server keeps per device. Storing one more removes
+    /// the oldest. Matches the backend's `MAX_BACKUPS_PER_DEVICE` default; the
+    /// app only uses it to tell the user what will happen.
+    static let retainedBackupCount = 5
+
     // MARK: - Backend
 
     /// Uploads a snapshot of the current store and returns the stored backup.
@@ -68,6 +73,18 @@ enum BackupService {
             Analytics.capture(.backupRestored, [Analytics.Key.count: detail.transactions.count])
         } catch {
             report(error, stage: .persist)
+            throw error
+        }
+    }
+
+    /// Removes the backup from the server. Nothing on this device changes.
+    static func deleteBackup(_ backup: BackupSummary) async throws {
+        do {
+            let client = try SpendriftBackendClient()
+            try await client.deleteBackup(id: backup.id, deviceID: DeviceIdentity.current)
+            Analytics.capture(.backupDeleted, [Analytics.Key.count: backup.transactionCount])
+        } catch {
+            report(error, stage: .delete)
             throw error
         }
     }

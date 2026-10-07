@@ -581,6 +581,7 @@ The Notification Service Extension is what makes confirmed delivery real.
 | `feedback_submitted` | yes | no | Feedback |
 | `backup_created` | yes | no | Backup & restore, `count` = transactions saved |
 | `backup_restored` | yes | no | Backup & restore, `count` = transactions restored |
+| `backup_deleted` | yes | no | Backup & restore, `count` = transactions in the deleted backup |
 
 `$rageclick` has also appeared (session replay / autocapture).
 Ignore `$ai_*`, `$mcp_*`, `$workflows_*`, and `$pageview` in this project.

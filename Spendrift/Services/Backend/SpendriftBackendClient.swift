@@ -352,6 +352,15 @@ struct SpendriftBackendClient {
         return try decodeBackup(BackupDetailResponse.self, from: data)
     }
 
+    /// `DELETE /v1/backups/{id}`
+    func deleteBackup(id: UUID, deviceID: String) async throws {
+        let url = try backupURL(path: "/v1/backups/\(id.uuidString)", deviceID: deviceID)
+        var request = URLRequest(url: url)
+        request.httpMethod = "DELETE"
+
+        _ = try await perform(request: request, expectsAuth: true, allowsEmptyBody: true)
+    }
+
     // MARK: - Request helpers
 
     /// A full ledger takes longer to move than the default 60s allows on a slow link.
@@ -388,7 +397,13 @@ struct SpendriftBackendClient {
         request.setValue("Bearer \(clientToken)", forHTTPHeaderField: "Authorization")
     }
 
-    private func perform(request: URLRequest, expectsAuth: Bool) async throws -> Data {
+    /// `allowsEmptyBody` is for routes that answer 204 No Content; every other
+    /// route must return a body, so an empty one is treated as a broken reply.
+    private func perform(
+        request: URLRequest,
+        expectsAuth: Bool,
+        allowsEmptyBody: Bool = false
+    ) async throws -> Data {
         var req = request
         if expectsAuth {
             applyAuth(&req)
@@ -404,7 +419,7 @@ struct SpendriftBackendClient {
             throw parseAPIError(statusCode: http.statusCode, data: data)
         }
 
-        guard !data.isEmpty else {
+        guard allowsEmptyBody || !data.isEmpty else {
             throw SpendriftBackendError.invalidResponseBody
         }
 

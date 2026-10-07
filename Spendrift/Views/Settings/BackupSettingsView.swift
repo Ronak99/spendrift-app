@@ -2,8 +2,10 @@
 //  BackupSettingsView.swift
 //  Spendrift
 //
-//  Drill-in for backups: save a snapshot of the ledger to the server, and
-//  pick an earlier one to replace everything on this device.
+//  Drill-in for backups: save a snapshot of the ledger to the server, pick an
+//  earlier one to replace everything on this device, or delete one. The server
+//  keeps `BackupService.retainedBackupCount` per device and drops the oldest
+//  when a new one arrives.
 //
 
 import SwiftData
@@ -28,12 +30,14 @@ struct BackupSettingsView: View {
     @State private var loadState: LoadState = .loading
     @State private var isBackingUp = false
     @State private var restoringID: UUID?
+    @State private var deletingID: UUID?
     @State private var pendingRestore: BackupSummary?
     @State private var notice: Notice?
     @State private var successCount = 0
 
     private var accent: Color { AppTheme.accent }
-    private var isBusy: Bool { isBackingUp || restoringID != nil }
+    private var isBusy: Bool { isBackingUp || restoringID != nil || deletingID != nil }
+    private var isAtLimit: Bool { backups.count >= BackupService.retainedBackupCount }
 
     private var lastBackupLabel: String {
         switch loadState {
@@ -187,11 +191,25 @@ struct BackupSettingsView: View {
             Text("Restore")
         } footer: {
             if loadState == .loaded, !backups.isEmpty {
-                Text("Restoring replaces all existing data on this device.")
+                Text(restoreFooter)
                     .font(.system(size: 13))
                     .foregroundStyle(SettingsTokens.textSecondary)
             }
         }
+    }
+
+    private var restoreFooter: String {
+        let limit = BackupService.retainedBackupCount
+        var lines = [
+            "Restoring replaces all existing data on this device.",
+            "Swipe left on a backup to delete it.",
+        ]
+        if isAtLimit {
+            lines.append("Spendrift keeps your \(limit) most recent backups, so the next backup replaces the oldest one.")
+        } else {
+            lines.append("Spendrift keeps your \(limit) most recent backups.")
+        }
+        return lines.joined(separator: " ")
     }
 
     private func backupRow(_ backup: BackupSummary) -> some View {
@@ -203,12 +221,31 @@ struct BackupSettingsView: View {
                 title: Self.dateFormatter.string(from: backup.createdAt),
                 subtitle: Self.contentsLabel(for: backup),
                 accent: accent,
-                accessory: restoringID == backup.id ? .progress : .chevron
+                accessory: rowAccessory(for: backup)
             )
         }
         .buttonStyle(.plain)
         .disabled(isBusy)
         .accessibilityHint("Replaces the data on this device with this backup")
+        .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+            Button("Delete", systemImage: "trash", role: .destructive) {
+                Task { await delete(backup) }
+            }
+            .tint(.red)
+            .disabled(isBusy)
+        }
+        .contextMenu {
+            Button("Restore", systemImage: "arrow.counterclockwise") {
+                pendingRestore = backup
+            }
+            Button("Delete", systemImage: "trash", role: .destructive) {
+                Task { await delete(backup) }
+            }
+        }
+    }
+
+    private func rowAccessory(for backup: BackupSummary) -> SettingsListItem.Accessory {
+        restoringID == backup.id || deletingID == backup.id ? .progress : .chevron
     }
 
     private func statusText(_ text: String) -> some View {
@@ -260,6 +297,30 @@ struct BackupSettingsView: View {
             )
         } catch {
             notice = Notice(title: "Couldn't restore", message: Self.message(for: error))
+        }
+    }
+
+    private func delete(_ backup: BackupSummary) async {
+        guard !isBusy else { return }
+        deletingID = backup.id
+        defer { deletingID = nil }
+
+        do {
+            try await BackupService.deleteBackup(backup)
+            successCount += 1
+            withAnimation {
+                backups.removeAll { $0.id == backup.id }
+            }
+        } catch {
+            // Gone already (deleted from another session, or pruned by a newer
+            // backup): the user got what they asked for, so just drop the row.
+            if case let SpendriftBackendError.apiError(statusCode, _, _, _) = error, statusCode == 404 {
+                withAnimation {
+                    backups.removeAll { $0.id == backup.id }
+                }
+                return
+            }
+            notice = Notice(title: "Couldn't delete", message: Self.message(for: error))
         }
     }
 

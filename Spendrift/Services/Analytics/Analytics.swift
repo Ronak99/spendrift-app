@@ -59,6 +59,7 @@ enum Analytics {
         case feedbackSubmitted = "feedback_submitted"
         case backupCreated = "backup_created"
         case backupRestored = "backup_restored"
+        case backupDeleted = "backup_deleted"
     }
 
     /// Property keys. Keep flat and free of PII — never send transaction amounts or notes.

@@ -58,6 +58,7 @@ enum Diagnostics {
         case parse
         case persist
         case upload
+        case delete
         case reconcile
     }
 
