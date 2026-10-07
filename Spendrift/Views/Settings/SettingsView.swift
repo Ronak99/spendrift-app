@@ -181,14 +181,14 @@ struct SettingsView: View {
     @ViewBuilder
     private var hubSection: some View {
         Section {
-            NavigationLink(value: AppRouter.SettingsDestination.feedback) {
-                SettingsListItem(
-                    icon: "bubble.left.and.text.bubble.right.fill",
-                    title: "Feedback",
-                    accent: accent
-                )
-                .listItemPositioned(index: 0, count: hubRowCount)
-            }
+            // NavigationLink(value: AppRouter.SettingsDestination.feedback) {
+            //     SettingsListItem(
+            //         icon: "bubble.left.and.text.bubble.right.fill",
+            //         title: "Feedback",
+            //         accent: accent
+            //     )
+            //     .listItemPositioned(index: 0, count: hubRowCount)
+            // }
 
             if showsNotificationOptIn {
                 notificationOptInRow
@@ -275,7 +275,7 @@ struct SettingsView: View {
         SettingsListItem(
             icon: "bell.badge.fill",
             title: "Turn on notifications",
-            subtitle: "Budget alerts, weekly notes, and refill reminders.",
+            subtitle: "Receive AI refill reminders.",
             accent: accent,
             accessory: .toggle(notificationToggle)
         )
