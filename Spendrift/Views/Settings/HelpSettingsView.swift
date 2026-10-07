@@ -7,7 +7,6 @@ import SwiftUI
 
 struct HelpSettingsRows: View {
     @Environment(\.openURL) private var openURL
-    @State private var showInviteSheet = false
 
     private let privacyPolicyURL = URL(string: "https://spendrift.ronakpunase.dev/privacy_policy")
 
@@ -47,23 +46,37 @@ struct HelpSettingsRows: View {
 
     var body: some View {
         ForEach(Array(Row.allCases)) { row in
+            rowControl(row)
+                .buttonStyle(.plain)
+        }
+        .tint(accent)
+    }
+
+    /// Invite uses `ShareLink` so the system share sheet is presented by the row itself.
+    /// A `.sheet` hosting `UIActivityViewController` on this list appears, then dismisses, on the first tap.
+    @ViewBuilder
+    private func rowControl(_ row: Row) -> some View {
+        if row == .invite {
+            ShareLink(item: AppShareContent.fullShareText) {
+                rowLabel(row)
+            }
+        } else {
             Button {
                 handleTap(row)
             } label: {
-                SettingsListItem(
-                    icon: row.icon,
-                    title: row.title,
-                    accent: accent,
-                    accessory: row.accessory
-                )
-                .listItemPositioned(index: row.rawValue, count: Row.allCases.count)
+                rowLabel(row)
             }
-            .buttonStyle(.plain)
         }
-        .tint(accent)
-        .sheet(isPresented: $showInviteSheet) {
-            ShareSheet(items: [AppShareContent.fullShareText])
-        }
+    }
+
+    private func rowLabel(_ row: Row) -> some View {
+        SettingsListItem(
+            icon: row.icon,
+            title: row.title,
+            accent: accent,
+            accessory: row.accessory
+        )
+        .listItemPositioned(index: row.rawValue, count: Row.allCases.count)
     }
 
     private func handleTap(_ row: Row) {
@@ -71,7 +84,8 @@ struct HelpSettingsRows: View {
         case .privacy:
             open(privacyPolicyURL)
         case .invite:
-            showInviteSheet = true
+            // Presented by ShareLink in `rowControl`.
+            break
         case .rate:
             AppStoreReviewRequest.requestIfFirstTime(forKey: AppStoreReviewRequest.Keys.settingsRateTap)
         }

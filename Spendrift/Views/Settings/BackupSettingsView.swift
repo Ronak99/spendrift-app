@@ -82,31 +82,69 @@ struct BackupSettingsView: View {
 
     private var backupSection: some View {
         Section {
-            SettingsListItem(
-                icon: "clock.arrow.circlepath",
-                title: "Last backup",
-                accent: accent,
-                accessory: .value(lastBackupLabel)
-            )
-            .listItemPositioned(.only)
+            VStack(alignment: .leading, spacing: 20) {
+                HStack(alignment: .center, spacing: 16) {
+                    backupStatusIcon
 
-            SettingsPrimaryButton(
-                title: isBackingUp ? "Backing up" : "Back up now",
-                systemImage: isBackingUp ? nil : "icloud.and.arrow.up"
-            ) {
-                Task { await backUp() }
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Last backup")
+                            .font(.system(size: 13))
+                            .foregroundStyle(SettingsTokens.textSecondary)
+                        Text(lastBackupLabel)
+                            .font(.system(size: 18, weight: .semibold))
+                            .foregroundStyle(.primary)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.7)
+                    }
+                }
+                .accessibilityElement(children: .combine)
+
+                backupButton
             }
-            .disabled(isBusy)
-            .opacity(isBusy ? 0.5 : 1)
-            .listRowBackground(Color.clear)
+            .listRowInsets(EdgeInsets(top: 20, leading: 20, bottom: 20, trailing: 20))
             .listRowSeparator(.hidden)
-            .listItemPositioned(.only)
-        } footer: {
-            Text("Saves every account, category and transaction on this device. Backups belong to this device.")
-                .font(.system(size: 13))
-                .foregroundStyle(SettingsTokens.textSecondary)
         }
     }
+
+    private var backupStatusIcon: some View {
+        ZStack {
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .fill(accent.opacity(0.14))
+            Image(systemName: "clock.arrow.circlepath")
+                .font(.system(size: 18, weight: .semibold))
+                .foregroundStyle(accent)
+        }
+        .frame(width: 48, height: 48)
+        .accessibilityHidden(true)
+    }
+
+    private var backupButton: some View {
+        Button {
+            Task { await backUp() }
+        } label: {
+            HStack(spacing: 8) {
+                if isBackingUp {
+                    ProgressView()
+                        .controlSize(.small)
+                        .tint(backupButtonInk)
+                } else {
+                    Image(systemName: "square.and.arrow.up")
+                        .font(.system(size: 15, weight: .semibold))
+                }
+                Text(isBackingUp ? "Backing up" : "Back up now")
+                    .font(.system(size: 16, weight: .semibold))
+            }
+            .foregroundStyle(backupButtonInk)
+            .frame(maxWidth: .infinity)
+            .frame(height: 50)
+            .background(accent, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+        }
+        .buttonStyle(.plain)
+        .disabled(isBusy)
+        .opacity(isBusy && !isBackingUp ? 0.5 : 1)
+    }
+
+    private var backupButtonInk: Color { Color(hex: "#111111") }
 
     // MARK: - Restore
 
@@ -149,7 +187,7 @@ struct BackupSettingsView: View {
             Text("Restore")
         } footer: {
             if loadState == .loaded, !backups.isEmpty {
-                Text("Restoring replaces everything on this device with the backup you pick. Only your most recent backups are kept.")
+                Text("Restoring replaces all existing data on this device.")
                     .font(.system(size: 13))
                     .foregroundStyle(SettingsTokens.textSecondary)
             }
