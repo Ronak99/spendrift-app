@@ -933,7 +933,7 @@ struct CategoryPickerSheet: View {
 
     @ToolbarContentBuilder
     private var toolbarContent: some ToolbarContent {
-        LiquidGlassSheetCloseToolbarItem()
+        CustomSheetCloseToolbarItem()
         if #available(iOS 26.0, *) {
             ToolbarItem(placement: .navigationBarTrailing) {
                 addButton

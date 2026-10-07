@@ -158,10 +158,10 @@ struct CategorySearchMiss: View {
     var body: some View {
         VStack(spacing: 16) {
             CategoryEnamelTile(
-                systemImage: CategoryPalette.defaultIcon(for: otherType ?? type).systemImageName,
-                color: Color(hex: CategoryPalette.defaultHex(for: otherType ?? type))
+                systemImage: "tray.fill",
+                color: CategoryEnamel.uncategorized
             )
-            .frame(width: 88, height: 88)
+            .frame(width: 72, height: 72)
             .padding(.top, 28)
 
             Text(title)
