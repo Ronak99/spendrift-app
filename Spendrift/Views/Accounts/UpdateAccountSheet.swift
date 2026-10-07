@@ -104,7 +104,7 @@ struct UpdateAccountSheet: View {
         NavigationStack {
             VStack(spacing: 0) {
                 hero
-                detailsScroll
+                details
             }
             .background(canvas.ignoresSafeArea())
             .navigationBarTitleDisplayMode(.inline)
@@ -248,21 +248,17 @@ struct UpdateAccountSheet: View {
 
     // MARK: Details
 
-    private var detailsScroll: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 22) {
-                iconSection
+    private var details: some View {
+        VStack(alignment: .leading, spacing: 24) {
+            iconSection
 
-                if let account {
-                    transactionsLink(for: account)
-                }
+            if let account {
+                transactionsLink(for: account)
             }
-            .padding(.horizontal, 20)
-            .padding(.top, 16)
-            .padding(.bottom, 44)
         }
-        .scrollDismissesKeyboard(.interactively)
-        .scrollIndicators(.hidden)
+        .padding(.horizontal, 20)
+        .padding(.bottom, 44)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
     }
 
     private var persistedTransactionCount: Int {
