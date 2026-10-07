@@ -3,8 +3,10 @@
 //  Spendrift
 //
 //  Color-wash editor for creating and updating categories. Name lives in the
-//  hero so the preview is the header; colour and icon sit below it. On an
-//  existing category, View Transactions pushes the ledger onto this sheet.
+//  hero so the preview is the header; the type sits under it as a quiet
+//  subtitle that pulls down a custom Expense / Income menu. Colour and icon
+//  sit below. On an existing category, View Transactions pushes the ledger
+//  onto this sheet.
 //
 
 import SwiftUI
@@ -14,6 +16,7 @@ struct UpdateCategorySheet: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
     @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     @Query(sort: \TransactionCategory.name) private var allCategories: [TransactionCategory]
 
@@ -67,6 +70,7 @@ struct UpdateCategorySheet: View {
     @State private var saveAlertMessage: String?
     @State private var showIconPicker = false
     @State private var showCustomColor = false
+    @State private var showTypeMenu = false
 
     private var isCreating: Bool { category == nil }
 
@@ -112,6 +116,9 @@ struct UpdateCategorySheet: View {
                 categoryMetaDetails
             }
             .background(canvas.ignoresSafeArea())
+            .overlayPreferenceValue(TypeMenuAnchorKey.self) { anchor in
+                typeMenuLayer(anchor: anchor)
+            }
             .navigationBarTitleDisplayMode(.inline)
             .toolbarBackground(.hidden, for: .navigationBar)
             .toolbarColorScheme(isDark ? .dark : .light, for: .navigationBar)
@@ -201,16 +208,141 @@ struct UpdateCategorySheet: View {
         .accessibilityHidden(true)
     }
 
+    /// Quiet subtitle that doubles as the type picker: label plus a chevron
+    /// that flips while the pull-down menu is open.
     private var metaLine: some View {
-        Text(type.rawValue.capitalized)
-            .font(.system(size: 13, weight: .regular))
-            .foregroundStyle(heroPrimary.opacity(0.6))
+        Button {
+            nameFieldFocused = false
+            withAnimation(typeMenuMotion) {
+                showTypeMenu.toggle()
+            }
+        } label: {
+            HStack(spacing: 3) {
+                Text(type.displayName)
+                    .font(.system(size: 14, weight: .regular))
+                Image(systemName: "chevron.down")
+                    .font(.system(size: 11, weight: .semibold))
+                    .rotationEffect(.degrees(showTypeMenu ? 180 : 0))
+            }
+            .foregroundStyle(heroPrimary.opacity(showTypeMenu ? 0.85 : 0.6))
+            .padding(.vertical, 2)
+            .contentShape(Rectangle())
+            .anchorPreference(key: TypeMenuAnchorKey.self, value: .bounds) { $0 }
+        }
+        .buttonStyle(.plain)
+        .accessibilityIdentifier("Category type")
+        .accessibilityLabel("Category type")
+        .accessibilityValue(type.displayName)
+        .accessibilityHint("Switches between expense and income")
     }
 
-    private var metaDot: some View {
-        Circle()
-            .fill(heroPrimary.opacity(0.35))
-            .frame(width: 3, height: 3)
+    // MARK: Type menu
+
+    private let typeMenuWidth: CGFloat = 244
+
+    private var typeMenuMotion: Animation? {
+        reduceMotion ? nil : .spring(response: 0.32, dampingFraction: 0.78)
+    }
+
+    /// Scrim plus the pull-down card, anchored just below the subtitle. Lives in
+    /// an overlay on the whole sheet so it floats above the colour and icon grids.
+    @ViewBuilder
+    private func typeMenuLayer(anchor: Anchor<CGRect>?) -> some View {
+        ZStack(alignment: .topLeading) {
+            if showTypeMenu {
+                Color.black.opacity(isDark ? 0.35 : 0.18)
+                    .ignoresSafeArea()
+                    .onTapGesture(perform: closeTypeMenu)
+                    .transition(.opacity)
+                    .accessibilityHidden(true)
+
+                if let anchor {
+                    GeometryReader { proxy in
+                        let bounds = proxy[anchor]
+                        let maxX = proxy.size.width - typeMenuWidth - 16
+                        typeMenu
+                            .offset(x: min(max(16, bounds.minX), maxX), y: bounds.maxY + 6)
+                    }
+                    // Grows out of the chevron's corner like the design's transform-origin.
+                    .transition(
+                        .scale(scale: 0.4, anchor: UnitPoint(x: 24 / typeMenuWidth, y: 0))
+                            .combined(with: .opacity)
+                    )
+                }
+            }
+        }
+    }
+
+    private var typeMenu: some View {
+        VStack(spacing: 0) {
+            ForEach(Array(CategoryType.allCases.enumerated()), id: \.element) { index, option in
+                if index > 0 {
+                    Rectangle()
+                        .fill(heroPrimary.opacity(0.12))
+                        .frame(height: 0.5)
+                }
+                typeMenuRow(option)
+            }
+        }
+        .frame(width: typeMenuWidth)
+        .background {
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .fill(.ultraThinMaterial)
+                .overlay {
+                    RoundedRectangle(cornerRadius: 16, style: .continuous)
+                        .fill(typeMenuFill)
+                }
+        }
+        .overlay {
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .strokeBorder(heroPrimary.opacity(0.1), lineWidth: 0.5)
+        }
+        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .compositingGroup()
+        .shadow(color: .black.opacity(isDark ? 0.6 : 0.22), radius: 24, y: 14)
+        .accessibilityIdentifier("Category type menu")
+    }
+
+    private func typeMenuRow(_ option: CategoryType) -> some View {
+        let isSelected = option == type
+        return Button {
+            selectType(option)
+        } label: {
+            HStack(spacing: 12) {
+                Image(systemName: "checkmark")
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundStyle(heroPrimary)
+                    .frame(width: 18)
+                    .opacity(isSelected ? 1 : 0)
+
+                VStack(alignment: .leading, spacing: 1) {
+                    Text(option.displayName)
+                        .font(.system(size: 16, weight: .regular))
+                        .foregroundStyle(heroPrimary)
+                    Text(option.menuSubtitle)
+                        .font(.system(size: 12, weight: .regular))
+                        .foregroundStyle(heroPrimary.opacity(0.6))
+                }
+
+                Spacer(minLength: 12)
+
+                Image(systemName: option.flowSymbolName)
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundStyle(heroPrimary.opacity(0.6))
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 11)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(TypeMenuRowStyle(highlight: heroPrimary.opacity(0.08)))
+        .accessibilityIdentifier("Category type \(option.displayName)")
+        .accessibilityLabel(option.displayName)
+        .accessibilityValue(option.menuSubtitle)
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
+    }
+
+    private var typeMenuFill: Color {
+        isDark ? Color(hex: "#2A2A2C").opacity(0.88) : Color.white.opacity(0.9)
     }
 
     // MARK: Pickers
@@ -445,6 +577,28 @@ struct UpdateCategorySheet: View {
         }
     }
 
+    private func closeTypeMenu() {
+        withAnimation(typeMenuMotion) {
+            showTypeMenu = false
+        }
+    }
+
+    private func selectType(_ newType: CategoryType) {
+        let previous = type
+        type = newType
+        closeTypeMenu()
+        guard isCreating, previous != newType else { return }
+        // A fresh category keeps the type's starter icon and colour until the user
+        // picks their own or the name suggests one, same as the initial seed.
+        guard CategoryNameSuggestion.match(name: trimmedName) == nil else { return }
+        if !didManuallyPickIcon {
+            icon = CategoryPalette.defaultIcon(for: newType)
+        }
+        if !didManuallyPickColor {
+            selectedHex = CategoryPalette.defaultHex(for: newType)
+        }
+    }
+
     private func attemptSave() {
         nameFieldFocused = false
         if let message = saveBlockedReason {
@@ -487,6 +641,42 @@ struct UpdateCategorySheet: View {
 
         try? modelContext.save()
         dismiss()
+    }
+}
+
+private struct TypeMenuAnchorKey: PreferenceKey {
+    static let defaultValue: Anchor<CGRect>? = nil
+
+    static func reduce(value: inout Anchor<CGRect>?, nextValue: () -> Anchor<CGRect>?) {
+        value = nextValue() ?? value
+    }
+}
+
+/// Flat highlight on press, like a system pull-down row, without the tile scale.
+private struct TypeMenuRowStyle: ButtonStyle {
+    let highlight: Color
+
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .background(configuration.isPressed ? highlight : Color.clear)
+    }
+}
+
+private extension CategoryType {
+    var displayName: String { rawValue.capitalized }
+
+    var menuSubtitle: String {
+        switch self {
+        case .expense: return "Money going out"
+        case .income: return "Money coming in"
+        }
+    }
+
+    var flowSymbolName: String {
+        switch self {
+        case .expense: return "arrow.up.right"
+        case .income: return "arrow.down.left"
+        }
     }
 }
 
