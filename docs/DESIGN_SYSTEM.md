@@ -201,20 +201,18 @@ If a new screen is missing any of them, it is not in the system yet.
 
 Implemented by `ColorWashBackground`.
 
-Shape: `UnevenRoundedRectangle` with **32pt continuous** corners on the bottom leading and trailing edges.
-The top edge is square so the wash can sit under a hidden navigation bar.
+Shape: a plain rectangle. The tint dies out in the gradient, so there is no corner radius.
 
 Paint, back to front:
 
 1. Linear gradient, top to bottom:
    - Enamel colour at 22% (light) / 30% (dark).
    - Enamel colour at 8% (light) / 10% (dark).
-   - Canvas (`Ledger Canvas Light` or `Night Canvas`) at 96%.
+   - The same enamel at 0% opacity, so the wash fades into whatever canvas sits behind it.
 2. Radial spotlight:
    - Center `UnitPoint(x: 0.85, y: 0.0)` (top-right).
    - Start radius 8, end radius 260.
-   - Enamel colour at 28% (light) / 42% (dark) fading to clear.
-   - Clipped to the same uneven squircle.
+   - Enamel colour at 28% (light) / 42% (dark) fading to the same enamel at 0% opacity.
 
 Heights:
 
@@ -553,8 +551,7 @@ A 3-up category tray is correct here. It is a tray of enamel objects, not a mark
 | Icon cell | 18 continuous | Icon pickers |
 | Colour chip | 14 continuous | Palette grid |
 | Picker well / thumb | 13 / 10 continuous | ChromeSegmentedPicker |
-| Wash footer | 32 continuous | ColorWashBackground |
-| Voice plate | 24 continuous | Recording bar |
+| Wash | none | ColorWashBackground fades to transparent || Voice plate | 24 continuous | Recording bar |
 | Analytics card | 20 continuous | Summary / chart cards |
 | Screenshot clip | 14 continuous | Feature Request image |
 | Plus | Circle 32 | Toolbar add |

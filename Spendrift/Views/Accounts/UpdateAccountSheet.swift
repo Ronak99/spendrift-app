@@ -207,11 +207,7 @@ struct UpdateAccountSheet: View {
         .padding(.horizontal, 20)
         .padding(.bottom, 22)
         .background(alignment: .top) {
-            ColorWashBackground(
-                color: accentColor,
-                isDark: isDark,
-                bottomRadius: 0
-            )
+            ColorWashBackground(color: accentColor, isDark: isDark)
             .padding(.top, -120)
         }
     }

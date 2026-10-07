@@ -15,6 +15,36 @@ struct CategoryIconPickerView: View {
 
     private var accent: Color { Color(hex: accentHex) }
 
+    private var saveBackground: Color {
+        Color.white.opacity(0.92)
+    }
+
+    private var saveForeground: Color {
+        Color(hex: "#111111")
+    }
+
+    private var saveButton: some View {
+        Button {
+            onDone?()
+            dismiss()
+        } label: {
+            Text("Save")
+                .font(.system(size: 14, weight: .semibold))
+                .lineLimit(1)
+                .padding(.horizontal, 16)
+                .padding(.vertical, 8)
+                .background(saveBackground, in: Capsule())
+                .foregroundStyle(saveForeground)
+                // A bare `Text` is the one thing in a toolbar item the navigation bar is
+                // willing to compress, so on narrow iPhones - and at larger Dynamic Type,
+                // where the inline title claims more of the bar - the label truncated to
+                // "S…". Pinning the capsule at its ideal width makes the bar shrink the
+                // title instead, the same way the pickers' `addButton` holds a fixed frame.
+                .fixedSize(horizontal: true, vertical: false)
+        }
+        .buttonStyle(.plain)
+    }
+
     private var filteredGroups: [(title: String, icons: [CategoryIcon])] {
         let needle = query.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
         let groups = CategoryIcon.pickerGroups
@@ -77,13 +107,16 @@ struct CategoryIconPickerView: View {
             .searchable(text: $query, prompt: "Search \(CategoryIcon.selectable.count) icons")
             .toolbar {
                 CustomSheetCloseToolbarItem()
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Done") {
-                        onDone?()
-                        dismiss()
+
+                if #available(iOS 26.0, *) {
+                    ToolbarItem(placement: .confirmationAction) {
+                        saveButton
                     }
-                    .fontWeight(.semibold)
-                    .foregroundStyle(accent)
+                    .sharedBackgroundVisibility(.hidden)
+                } else {
+                    ToolbarItem(placement: .confirmationAction) {
+                        saveButton
+                    }
                 }
             }
         }

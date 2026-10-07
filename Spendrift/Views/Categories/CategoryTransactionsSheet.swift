@@ -5,6 +5,7 @@
 //  Colour-wash ledger of one category's transactions. Atmosphere, date
 //  capsule, enamel empty state, and row chrome match the Categories tab
 //  and the account transactions sheet so this surface feels like the same box.
+//  Pushed from the category editor. Presented as its own sheet from Analytics.
 //
 
 import SwiftData
@@ -16,14 +17,18 @@ struct CategoryTransactionsSheet: View {
     @Query(sort: \Transaction.date, order: .reverse) private var allTransactions: [Transaction]
 
     let category: TransactionCategory
+    /// `true` when this ledger is pushed onto the category editor. Analytics
+    /// still presents it as a sheet, which keeps its own navigation stack.
+    let isPushed: Bool
 
     @State private var viewModel: TransactionViewModel
     @State private var selectedTransaction: Transaction?
 
     /// `initialDate` seeds the period window so drill-downs (for example from
     /// Analytics) open on the same range the caller was viewing.
-    init(category: TransactionCategory, initialDate: Date = Date()) {
+    init(category: TransactionCategory, initialDate: Date = Date(), isPushed: Bool = false) {
         self.category = category
+        self.isPushed = isPushed
         let viewModel = TransactionViewModel()
         viewModel.selectedDate = initialDate
         _viewModel = State(initialValue: viewModel)
@@ -53,41 +58,57 @@ struct CategoryTransactionsSheet: View {
     }
 
     var body: some View {
+        if isPushed {
+            ledger
+        } else {
+            NavigationStack {
+                ledger
+            }
+        }
+    }
+
+    private var ledger: some View {
         @Bindable var viewModel = viewModel
-        NavigationStack {
-            Group {
-                if transactions.isEmpty {
-                    emptyLedger
-                } else {
-                    transactionList
-                }
+        return Group {
+            if transactions.isEmpty {
+                emptyLedger
+            } else {
+                transactionList
             }
-            .background { atmosphere }
-            .scrollingHeaderBar {
-                CapsuleDateSelector(
-                    period: $viewModel.periodGranularity,
-                    title: viewModel.capsuleTitle,
-                    date: viewModel.selectedDate,
-                    isCurrentPeriod: viewModel.isCurrentPeriod,
-                    onPrevious: { viewModel.decrementPeriod() },
-                    onNext: { viewModel.incrementPeriod() },
-                    onToday: { viewModel.goToCurrentPeriod() },
-                    onJumpToDate: { viewModel.goToDate($0) }
+        }
+        .background { atmosphere }
+        .scrollingHeaderBar {
+            CapsuleDateSelector(
+                period: $viewModel.periodGranularity,
+                title: viewModel.capsuleTitle,
+                date: viewModel.selectedDate,
+                isCurrentPeriod: viewModel.isCurrentPeriod,
+                onPrevious: { viewModel.decrementPeriod() },
+                onNext: { viewModel.incrementPeriod() },
+                onToday: { viewModel.goToCurrentPeriod() },
+                onJumpToDate: { viewModel.goToDate($0) }
+            )
+            .padding(.horizontal, 20)
+            .padding(.top, 8)
+            .padding(.bottom, 12)
+        }
+        .navigationTitle(category.name)
+        .navigationBarTitleDisplayMode(.inline)
+        .navigationBarBackButtonHidden(isPushed)
+        .toolbarBackground(.hidden, for: .navigationBar)
+        .toolbarColorScheme(isDark ? .dark : .light, for: .navigationBar)
+        .toolbar {
+            if isPushed {
+                CustomSheetCloseToolbarItem(
+                    systemImage: "chevron.left",
+                    accessibilityLabel: "Back"
                 )
-                .padding(.horizontal, 20)
-                .padding(.top, 8)
-                .padding(.bottom, 12)
-            }
-            .navigationTitle(category.name)
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbarBackground(.hidden, for: .navigationBar)
-            .toolbarColorScheme(isDark ? .dark : .light, for: .navigationBar)
-            .toolbar {
+            } else {
                 CustomSheetCloseToolbarItem()
             }
-            .sheet(item: $selectedTransaction) { transaction in
-                UpdateTransactionSheet(transaction: transaction)
-            }
+        }
+        .sheet(item: $selectedTransaction) { transaction in
+            UpdateTransactionSheet(transaction: transaction)
         }
     }
 
@@ -131,8 +152,8 @@ struct CategoryTransactionsSheet: View {
     private var emptyLedger: some View {
         VStack(spacing: 16) {
             CategoryEnamelTile(
-                systemImage: category.icon.systemImageName,
-                color: washColor
+                systemImage: "tray.fill",
+                color: CategoryEnamel.uncategorized
             )
             .frame(width: 88, height: 88)
             .padding(.top, 28)

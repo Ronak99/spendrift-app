@@ -3,7 +3,8 @@
 //  Spendrift
 //
 //  Color-wash editor for creating and updating categories. Name lives in the
-//  hero so the preview is the header; colour and icon sit below it.
+//  hero so the preview is the header; colour and icon sit below it. On an
+//  existing category, View Transactions pushes the ledger onto this sheet.
 //
 
 import SwiftUI
@@ -66,7 +67,6 @@ struct UpdateCategorySheet: View {
     @State private var saveAlertMessage: String?
     @State private var showIconPicker = false
     @State private var showCustomColor = false
-    @State private var showTransactions = false
 
     private var isCreating: Bool { category == nil }
 
@@ -109,7 +109,7 @@ struct UpdateCategorySheet: View {
         NavigationStack {
             VStack(spacing: 0) {
                 hero
-                pickerScroll
+                categoryMetaDetails
             }
             .background(canvas.ignoresSafeArea())
             .navigationBarTitleDisplayMode(.inline)
@@ -156,11 +156,6 @@ struct UpdateCategorySheet: View {
                     didManuallyPickColor = true
                 }
             }
-            .sheet(isPresented: $showTransactions) {
-                if let category {
-                    CategoryTransactionsSheet(category: category)
-                }
-            }
         }
     }
 
@@ -188,14 +183,9 @@ struct UpdateCategorySheet: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
             .padding(.top, 8)
-
-            ChromeSegmentedPicker(selection: $type) { _ in
-                nameFieldFocused = false
-            }
-            .padding(.top, 26)
         }
         .padding(.horizontal, 20)
-        .padding(.bottom, 26)
+        .padding(.bottom, 30)
         .background(alignment: .top) {
             ColorWashBackground(color: selectedColor, isDark: isDark)
                 .padding(.top, -120)
@@ -225,21 +215,18 @@ struct UpdateCategorySheet: View {
 
     // MARK: Pickers
 
-    private var pickerScroll: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 28) {
-                if !isCreating {
-                    transactionsRow
-                }
-                colorSection
-                iconSection
+    private var categoryMetaDetails: some View {
+        VStack(alignment: .leading, spacing: 28) {
+            colorSection
+            iconSection
+            if let category {
+                transactionsLink(for: category)
             }
-            .padding(.horizontal, 20)
-            .padding(.top, isCreating ? 28 : 8)
-            .padding(.bottom, 44)
         }
-        .scrollDismissesKeyboard(.interactively)
-        .scrollIndicators(.hidden)
+        .padding(.horizontal, 20)
+        .padding(.top, isCreating ? 28 : 8)
+        .padding(.bottom, 44)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
     }
 
     private var persistedTransactionCount: Int {
@@ -250,27 +237,41 @@ struct UpdateCategorySheet: View {
         persistedTransactionCount == 0 ? "None" : "\(persistedTransactionCount)"
     }
 
-    private var transactionsRow: some View {
-        Button {
-            nameFieldFocused = false
-            showTransactions = true
+    /// Pushes the category ledger onto this sheet's navigation stack.
+    private func transactionsLink(for category: TransactionCategory) -> some View {
+        NavigationLink {
+            CategoryTransactionsSheet(category: category, isPushed: true)
         } label: {
-            CategoryMetaRow(title: "Transactions", showsBottomDivider: false) {
-                HStack(spacing: 6) {
-                    Text(transactionsValueText)
-                        .font(.system(size: 14, weight: .regular))
-                        .monospacedDigit()
-                        .foregroundStyle(heroPrimary)
-                    Image(systemName: "chevron.right")
-                        .font(.system(size: 11, weight: .semibold))
-                        .foregroundStyle(heroPrimary.opacity(0.28))
-                }
+            HStack(spacing: 8) {
+                Text("View Transactions")
+                    .font(.system(size: 15, weight: .medium))
+                    .foregroundStyle(heroPrimary)
+                Spacer(minLength: 12)
+                Text(transactionsValueText)
+                    .font(.system(size: 14, weight: .regular))
+                    .monospacedDigit()
+                    .foregroundStyle(.secondary)
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(heroPrimary.opacity(0.28))
             }
+            .padding(.horizontal, 16)
+            .frame(minHeight: 52)
+            .background(
+                Color.primary.opacity(isDark ? 0.08 : 0.05),
+                in: RoundedRectangle(cornerRadius: 14, style: .continuous)
+            )
+            .contentShape(
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
+            )
         }
         .buttonStyle(.plain)
-        .accessibilityIdentifier("Transactions")
-        .accessibilityLabel("Transactions")
+        .accessibilityIdentifier("View Transactions")
+        .accessibilityLabel("View Transactions")
         .accessibilityValue(transactionsValueText)
+        .simultaneousGesture(TapGesture().onEnded { _ in
+            nameFieldFocused = false
+        })
     }
 
     private var colorSection: some View {
@@ -486,32 +487,6 @@ struct UpdateCategorySheet: View {
 
         try? modelContext.save()
         dismiss()
-    }
-}
-
-private struct CategoryMetaRow<Trailing: View>: View {
-    let title: String
-    var showsBottomDivider: Bool = true
-    @ViewBuilder var trailing: () -> Trailing
-
-    var body: some View {
-        HStack(spacing: 12) {
-            Text(title)
-                .font(.system(size: 14, weight: .regular))
-                .foregroundStyle(.secondary)
-            Spacer(minLength: 12)
-            trailing()
-                .font(.system(size: 14, weight: .regular))
-        }
-        .frame(minHeight: 46)
-        .overlay(alignment: .bottom) {
-            if showsBottomDivider {
-                Rectangle()
-                    .fill(Color.primary.opacity(0.08))
-                    .frame(height: 1)
-            }
-        }
-        .contentShape(Rectangle())
     }
 }
 
