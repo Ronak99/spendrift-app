@@ -39,8 +39,12 @@ struct TransactionsView: View {
     /// Drives the transient "Transaction added" confirmation after a shared receipt is created.
     @State private var showReceiptShareCreated = false
     @State private var selectedTransaction: Transaction?
-    @State private var showingAnalytics = false
+    @State private var showAnalyticsSheet = false
     @State private var drillCategory: TransactionCategory?
+
+    /// Content height of the summary card's list row, excluding its row insets.
+    /// Enough for the totals, the curve, and the legend without crowding any of them.
+    private static let analyticsCardHeight: CGFloat = 164
     /// Ids of the trigger payloads already handled, so a `.task(id:)` that restarts on
     /// tab reappearance does not reprocess the same (already-consumed) file and resurrect
     /// a previously dismissed error.
@@ -126,12 +130,10 @@ struct TransactionsView: View {
         return .hidden
     }
 
-    /// Same destination as the capsule's analytics toggle, reached by tapping the
-    /// summary card, so both entry points record the same audience tag.
+    /// Tapping the summary card is now the only way into the full analytics screen,
+    /// so this is where the audience tag is recorded.
     private func showAnalytics() {
-        withAnimation(.easeInOut(duration: 0.2)) {
-            showingAnalytics = true
-        }
+        showAnalyticsSheet = true
         AudienceTags.markSeenAnalytics()
     }
 
@@ -147,18 +149,14 @@ struct TransactionsView: View {
         @Bindable var periodViewModel = periodViewModel
         return NavigationStack {
             Group {
-                if showingAnalytics {
-                    TransactionAnalyticsContent(
-                        periodViewModel: periodViewModel,
-                        drillCategory: $drillCategory
-                    )
-                } else if transactions.isEmpty {
+                if transactions.isEmpty {
                     emptyLedger
                 } else {
                     List {
-                        // Leads the ledger and scrolls away with it. 40% of the visible
-                        // list height, so the curve is readable without the rows below
-                        // losing the majority of the screen.
+                        // Leads the ledger and scrolls away with it. The height is fixed
+                        // rather than a fraction of the screen: inside a List a relative
+                        // height resolves against the row, not the scroll view, which
+                        // collapsed the card and clipped its labels.
                         Section {
                             PeriodAnalyticsCard(
                                 transactions: transactions,
@@ -171,9 +169,7 @@ struct TransactionsView: View {
                                 onOpenAnalytics: { showAnalytics() }
                             )
                             .listRowInsets(EdgeInsets(top: 16, leading: 18, bottom: 16, trailing: 18))
-                            .containerRelativeFrame(.vertical) { height, _ in
-                                height * 0.4
-                            }
+                            .frame(height: Self.analyticsCardHeight)
                         } header: {
                             Text("Analytics")
                         }
@@ -213,16 +209,7 @@ struct TransactionsView: View {
                         onPrevious: { periodViewModel.decrementPeriod() },
                         onNext: { periodViewModel.incrementPeriod() },
                         onToday: { periodViewModel.goToCurrentPeriod() },
-                        onJumpToDate: { periodViewModel.goToDate($0) },
-                        isShowingAnalytics: showingAnalytics,
-                        onAnalyticsToggle: {
-                            withAnimation(.easeInOut(duration: 0.2)) {
-                                showingAnalytics.toggle()
-                            }
-                            if showingAnalytics {
-                                AudienceTags.markSeenAnalytics()
-                            }
-                        }
+                        onJumpToDate: { periodViewModel.goToDate($0) }
                     )
                     .padding(.horizontal)
                     .padding(.top, 8)
@@ -230,16 +217,13 @@ struct TransactionsView: View {
                 }
             }
             .background { canvas.ignoresSafeArea() }
-            .navigationTitle(showingAnalytics ? "Analytics" : "Transactions")
+            .navigationTitle("Transactions")
             .navigationBarTitleDisplayMode(.inline)
             .toolbarBackground(.hidden, for: .navigationBar)
             .toolbarColorScheme(isDark ? .dark : .light, for: .navigationBar)
             .toolbar { toolbarContent }
-            .sheet(item: $drillCategory) { category in
-                CategoryTransactionsSheet(
-                    category: category,
-                    initialDate: periodViewModel.selectedDate
-                )
+            .sheet(isPresented: $showAnalyticsSheet) {
+                analyticsSheet
             }
             .overlay(alignment: .bottom) {
                 VStack(spacing: 8) {
@@ -382,14 +366,12 @@ struct TransactionsView: View {
                 guard state == .recording || state == .processing else { return }
                 createTransactionSheet = nil
             }
-            // Tapping the Home tab again while the analytics view is showing returns to the
-            // transactions list, matching the tab-bar's "tap to go back" affordance.
+            // Tapping the Home tab again while analytics is up closes it and returns to
+            // the ledger, matching the tab-bar's "tap to go back" affordance.
             .proPaywall($paywallContext)
             .onReceive(NotificationCenter.default.publisher(for: .homeTabReselected)) { _ in
-                guard showingAnalytics else { return }
-                withAnimation(.easeInOut(duration: 0.2)) {
-                    showingAnalytics = false
-                }
+                guard showAnalyticsSheet else { return }
+                showAnalyticsSheet = false
             }
         }
     }
@@ -409,6 +391,34 @@ struct TransactionsView: View {
             ])
             voiceInline.beginCapture()
         }
+    }
+
+    /// Full analytics for the selected period. A sheet rather than an inline swap, so
+    /// the ledger keeps its scroll position and the period capsule stays put behind it.
+    /// The category drill lives in here, since a sheet cannot present another sheet
+    /// from its presenting view while it is up.
+    private var analyticsSheet: some View {
+        NavigationStack {
+            TransactionAnalyticsContent(
+                periodViewModel: periodViewModel,
+                drillCategory: $drillCategory
+            )
+            .background { canvas.ignoresSafeArea() }
+            .navigationTitle("Analytics")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                CustomSheetCloseToolbarItem()
+            }
+            .sheet(item: $drillCategory) { category in
+                CategoryTransactionsSheet(
+                    category: category,
+                    initialDate: periodViewModel.selectedDate
+                )
+            }
+        }
+        .presentationDetents([.large])
+        .presentationDragIndicator(.visible)
+        .presentationCornerRadius(24)
     }
 
     private var emptyLedger: some View {
