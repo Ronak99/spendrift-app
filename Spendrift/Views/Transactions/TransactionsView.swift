@@ -126,6 +126,15 @@ struct TransactionsView: View {
         return .hidden
     }
 
+    /// Same destination as the capsule's analytics toggle, reached by tapping the
+    /// summary card, so both entry points record the same audience tag.
+    private func showAnalytics() {
+        withAnimation(.easeInOut(duration: 0.2)) {
+            showingAnalytics = true
+        }
+        AudienceTags.markSeenAnalytics()
+    }
+
     private func openCreateTransactionSheet() {
         if hasEverCreatedTransaction {
             createTransactionSheet = .standard
@@ -147,6 +156,28 @@ struct TransactionsView: View {
                     emptyLedger
                 } else {
                     List {
+                        // Leads the ledger and scrolls away with it. 40% of the visible
+                        // list height, so the curve is readable without the rows below
+                        // losing the majority of the screen.
+                        Section {
+                            PeriodAnalyticsCard(
+                                transactions: transactions,
+                                periodStart: periodViewModel.periodStart,
+                                periodEnd: periodViewModel.periodEnd,
+                                expenses: formattedExpenses,
+                                income: formattedIncome,
+                                savings: formattedSavings,
+                                savingsValue: savings,
+                                onOpenAnalytics: { showAnalytics() }
+                            )
+                            .listRowInsets(EdgeInsets(top: 16, leading: 18, bottom: 16, trailing: 18))
+                            .containerRelativeFrame(.vertical) { height, _ in
+                                height * 0.4
+                            }
+                        } header: {
+                            Text("Analytics")
+                        }
+
                         ForEach(transactions.groupedByDateRecentFirst, id: \.dayStart) { section in
                             Section {
                                 ForEach(Array(section.transactions.enumerated()), id: \.element.id) { index, transaction in
@@ -171,7 +202,9 @@ struct TransactionsView: View {
                 }
             }
             .scrollingHeaderBar {
-                VStack(spacing: 16) {
+                // Only the period control is pinned now; the totals moved into the
+                // scrolling ledger as the analytics card.
+                VStack(spacing: 0) {
                     CapsuleDateSelector(
                         period: $periodViewModel.periodGranularity,
                         title: periodViewModel.capsuleTitle,
@@ -193,17 +226,7 @@ struct TransactionsView: View {
                     )
                     .padding(.horizontal)
                     .padding(.top, 8)
-
-                    if !showingAnalytics {
-                        PeriodLedgerSummary(
-                            expenses: formattedExpenses,
-                            income: formattedIncome,
-                            savings: formattedSavings,
-                            savingsValue: savings
-                        )
-                        .padding(.horizontal, 20)
-                        .padding(.bottom, 10)
-                    }
+                    .padding(.bottom, 10)
                 }
             }
             .background { canvas.ignoresSafeArea() }
@@ -471,58 +494,6 @@ struct TransactionsView: View {
             categories: categories,
             modelContext: modelContext
         )
-    }
-}
-
-private struct PeriodLedgerSummary: View {
-    let expenses: String
-    let income: String
-    let savings: String
-    let savingsValue: Double
-
-    var body: some View {
-        HStack(spacing: 20) {
-            VStack(alignment: .leading, spacing: 4) {
-                Text("Expenses")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                Text(expenses)
-                    .font(.headline)
-                    .monospacedDigit()
-                    .foregroundStyle(CategoryEnamel.expense)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.7)
-            }
-
-            Spacer()
-
-            VStack(alignment: .center, spacing: 4) {
-                Text("Income")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                Text(income)
-                    .font(.headline)
-                    .monospacedDigit()
-                    .foregroundStyle(CategoryEnamel.income)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.7)
-            }
-
-            Spacer()
-
-            VStack(alignment: .trailing, spacing: 4) {
-                Text("Savings")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                Text(savings)
-                    .font(.headline)
-                    .monospacedDigit()
-                    .foregroundStyle(savingsValue >= 0 ? CategoryEnamel.income : CategoryEnamel.expense)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.7)
-            }
-        }
-        .accessibilityElement(children: .combine)
     }
 }
 
