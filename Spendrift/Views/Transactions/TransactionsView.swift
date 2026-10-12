@@ -171,7 +171,7 @@ struct TransactionsView: View {
                             .listRowInsets(EdgeInsets(top: 16, leading: 18, bottom: 16, trailing: 18))
                             .frame(height: Self.analyticsCardHeight)
                         } header: {
-                            Text("Analytics")
+                            analyticsHeader
                         }
 
                         ForEach(transactions.groupedByDateRecentFirst, id: \.dayStart) { section in
@@ -403,9 +403,15 @@ struct TransactionsView: View {
                 periodViewModel: periodViewModel,
                 drillCategory: $drillCategory
             )
-            .background { canvas.ignoresSafeArea() }
+            .background {
+                // The analytics palette is dark-only, so the sheet pins dark appearance below.
+                AnalyticsAtmosphere()
+                    .ignoresSafeArea()
+            }
             .navigationTitle("Analytics")
             .navigationBarTitleDisplayMode(.inline)
+            .toolbarBackground(.hidden, for: .navigationBar)
+            .toolbarColorScheme(.dark, for: .navigationBar)
             .toolbar {
                 CustomSheetCloseToolbarItem()
             }
@@ -416,9 +422,26 @@ struct TransactionsView: View {
                 )
             }
         }
-        .presentationDetents([.large])
-        .presentationDragIndicator(.visible)
-        .presentationCornerRadius(24)
+        .preferredColorScheme(.dark)
+    }
+
+    /// Section header for the summary card. The whole row is one tap target, with a
+    /// trailing chevron so it reads as a way into the full analytics screen, not a label.
+    private var analyticsHeader: some View {
+        Button(action: showAnalytics) {
+            HStack {
+                Text("Analytics")
+                Spacer()
+                Image(systemName: "chevron.right")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.tertiary)
+            }
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Analytics")
+        .accessibilityHint("Opens analytics")
+        .accessibilityIdentifier("analyticsSectionHeader")
     }
 
     private var emptyLedger: some View {

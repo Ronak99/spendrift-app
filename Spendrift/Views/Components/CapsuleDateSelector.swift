@@ -105,17 +105,10 @@ struct CapsuleDateSelector: View {
                             .font(.headline)
                             .foregroundColor(.primary)
                     }
-
-                    Spacer().frame(width: 16)
-
-                    // Balances the leading period menu so the title stays centred.
-                    Image(systemName: "line.3.horizontal.decrease.circle")
-                        .font(.headline)
-                        .hidden()
-                        .accessibilityHidden(true)
                 }
                 .padding(.vertical, 16)
-                .padding(.horizontal, 20)
+                .padding(.leading, 20)
+                .padding(.trailing, 36)
                 .glassCapsule()
 
                 if showGestureHint {
