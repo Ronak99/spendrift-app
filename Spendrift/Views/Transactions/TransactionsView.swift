@@ -39,8 +39,12 @@ struct TransactionsView: View {
     /// Drives the transient "Transaction added" confirmation after a shared receipt is created.
     @State private var showReceiptShareCreated = false
     @State private var selectedTransaction: Transaction?
-    @State private var showingAnalytics = false
+    @State private var showAnalyticsSheet = false
     @State private var drillCategory: TransactionCategory?
+
+    /// Content height of the summary card's list row, excluding its row insets.
+    /// Enough for the totals, the curve, and the legend without crowding any of them.
+    private static let analyticsCardHeight: CGFloat = 164
     /// Ids of the trigger payloads already handled, so a `.task(id:)` that restarts on
     /// tab reappearance does not reprocess the same (already-consumed) file and resurrect
     /// a previously dismissed error.
@@ -126,6 +130,13 @@ struct TransactionsView: View {
         return .hidden
     }
 
+    /// Tapping the summary card is now the only way into the full analytics screen,
+    /// so this is where the audience tag is recorded.
+    private func showAnalytics() {
+        showAnalyticsSheet = true
+        AudienceTags.markSeenAnalytics()
+    }
+
     private func openCreateTransactionSheet() {
         if hasEverCreatedTransaction {
             createTransactionSheet = .standard
@@ -138,15 +149,31 @@ struct TransactionsView: View {
         @Bindable var periodViewModel = periodViewModel
         return NavigationStack {
             Group {
-                if showingAnalytics {
-                    TransactionAnalyticsContent(
-                        periodViewModel: periodViewModel,
-                        drillCategory: $drillCategory
-                    )
-                } else if transactions.isEmpty {
+                if transactions.isEmpty {
                     emptyLedger
                 } else {
                     List {
+                        // Leads the ledger and scrolls away with it. The height is fixed
+                        // rather than a fraction of the screen: inside a List a relative
+                        // height resolves against the row, not the scroll view, which
+                        // collapsed the card and clipped its labels.
+                        Section {
+                            PeriodAnalyticsCard(
+                                transactions: transactions,
+                                periodStart: periodViewModel.periodStart,
+                                periodEnd: periodViewModel.periodEnd,
+                                expenses: formattedExpenses,
+                                income: formattedIncome,
+                                savings: formattedSavings,
+                                savingsValue: savings,
+                                onOpenAnalytics: { showAnalytics() }
+                            )
+                            .listRowInsets(EdgeInsets(top: 16, leading: 18, bottom: 16, trailing: 18))
+                            .frame(height: Self.analyticsCardHeight)
+                        } header: {
+                            analyticsHeader
+                        }
+
                         ForEach(transactions.groupedByDateRecentFirst, id: \.dayStart) { section in
                             Section {
                                 ForEach(Array(section.transactions.enumerated()), id: \.element.id) { index, transaction in
@@ -171,7 +198,9 @@ struct TransactionsView: View {
                 }
             }
             .scrollingHeaderBar {
-                VStack(spacing: 16) {
+                // Only the period control is pinned now; the totals moved into the
+                // scrolling ledger as the analytics card.
+                VStack(spacing: 0) {
                     CapsuleDateSelector(
                         period: $periodViewModel.periodGranularity,
                         title: periodViewModel.capsuleTitle,
@@ -180,43 +209,21 @@ struct TransactionsView: View {
                         onPrevious: { periodViewModel.decrementPeriod() },
                         onNext: { periodViewModel.incrementPeriod() },
                         onToday: { periodViewModel.goToCurrentPeriod() },
-                        onJumpToDate: { periodViewModel.goToDate($0) },
-                        isShowingAnalytics: showingAnalytics,
-                        onAnalyticsToggle: {
-                            withAnimation(.easeInOut(duration: 0.2)) {
-                                showingAnalytics.toggle()
-                            }
-                            if showingAnalytics {
-                                AudienceTags.markSeenAnalytics()
-                            }
-                        }
+                        onJumpToDate: { periodViewModel.goToDate($0) }
                     )
                     .padding(.horizontal)
                     .padding(.top, 8)
-
-                    if !showingAnalytics {
-                        PeriodLedgerSummary(
-                            expenses: formattedExpenses,
-                            income: formattedIncome,
-                            savings: formattedSavings,
-                            savingsValue: savings
-                        )
-                        .padding(.horizontal, 20)
-                        .padding(.bottom, 10)
-                    }
+                    .padding(.bottom, 10)
                 }
             }
             .background { canvas.ignoresSafeArea() }
-            .navigationTitle(showingAnalytics ? "Analytics" : "Transactions")
+            .navigationTitle("Transactions")
             .navigationBarTitleDisplayMode(.inline)
             .toolbarBackground(.hidden, for: .navigationBar)
             .toolbarColorScheme(isDark ? .dark : .light, for: .navigationBar)
             .toolbar { toolbarContent }
-            .sheet(item: $drillCategory) { category in
-                CategoryTransactionsSheet(
-                    category: category,
-                    initialDate: periodViewModel.selectedDate
-                )
+            .sheet(isPresented: $showAnalyticsSheet) {
+                analyticsSheet
             }
             .overlay(alignment: .bottom) {
                 VStack(spacing: 8) {
@@ -359,14 +366,12 @@ struct TransactionsView: View {
                 guard state == .recording || state == .processing else { return }
                 createTransactionSheet = nil
             }
-            // Tapping the Home tab again while the analytics view is showing returns to the
-            // transactions list, matching the tab-bar's "tap to go back" affordance.
+            // Tapping the Home tab again while analytics is up closes it and returns to
+            // the ledger, matching the tab-bar's "tap to go back" affordance.
             .proPaywall($paywallContext)
             .onReceive(NotificationCenter.default.publisher(for: .homeTabReselected)) { _ in
-                guard showingAnalytics else { return }
-                withAnimation(.easeInOut(duration: 0.2)) {
-                    showingAnalytics = false
-                }
+                guard showAnalyticsSheet else { return }
+                showAnalyticsSheet = false
             }
         }
     }
@@ -386,6 +391,57 @@ struct TransactionsView: View {
             ])
             voiceInline.beginCapture()
         }
+    }
+
+    /// Full analytics for the selected period. A sheet rather than an inline swap, so
+    /// the ledger keeps its scroll position and the period capsule stays put behind it.
+    /// The category drill lives in here, since a sheet cannot present another sheet
+    /// from its presenting view while it is up.
+    private var analyticsSheet: some View {
+        NavigationStack {
+            TransactionAnalyticsContent(
+                periodViewModel: periodViewModel,
+                drillCategory: $drillCategory
+            )
+            .background {
+                // The analytics palette is dark-only, so the sheet pins dark appearance below.
+                AnalyticsAtmosphere()
+                    .ignoresSafeArea()
+            }
+            .navigationTitle("Analytics")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbarBackground(.hidden, for: .navigationBar)
+            .toolbarColorScheme(.dark, for: .navigationBar)
+            .toolbar {
+                CustomSheetCloseToolbarItem()
+            }
+            .sheet(item: $drillCategory) { category in
+                CategoryTransactionsSheet(
+                    category: category,
+                    initialDate: periodViewModel.selectedDate
+                )
+            }
+        }
+        .preferredColorScheme(.dark)
+    }
+
+    /// Section header for the summary card. The whole row is one tap target, with a
+    /// trailing chevron so it reads as a way into the full analytics screen, not a label.
+    private var analyticsHeader: some View {
+        Button(action: showAnalytics) {
+            HStack {
+                Text("Analytics")
+                Spacer()
+                Image(systemName: "chevron.right")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.tertiary)
+            }
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Analytics")
+        .accessibilityHint("Opens analytics")
+        .accessibilityIdentifier("analyticsSectionHeader")
     }
 
     private var emptyLedger: some View {
@@ -471,58 +527,6 @@ struct TransactionsView: View {
             categories: categories,
             modelContext: modelContext
         )
-    }
-}
-
-private struct PeriodLedgerSummary: View {
-    let expenses: String
-    let income: String
-    let savings: String
-    let savingsValue: Double
-
-    var body: some View {
-        HStack(spacing: 20) {
-            VStack(alignment: .leading, spacing: 4) {
-                Text("Expenses")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                Text(expenses)
-                    .font(.headline)
-                    .monospacedDigit()
-                    .foregroundStyle(CategoryEnamel.expense)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.7)
-            }
-
-            Spacer()
-
-            VStack(alignment: .center, spacing: 4) {
-                Text("Income")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                Text(income)
-                    .font(.headline)
-                    .monospacedDigit()
-                    .foregroundStyle(CategoryEnamel.income)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.7)
-            }
-
-            Spacer()
-
-            VStack(alignment: .trailing, spacing: 4) {
-                Text("Savings")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                Text(savings)
-                    .font(.headline)
-                    .monospacedDigit()
-                    .foregroundStyle(savingsValue >= 0 ? CategoryEnamel.income : CategoryEnamel.expense)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.7)
-            }
-        }
-        .accessibilityElement(children: .combine)
     }
 }
 

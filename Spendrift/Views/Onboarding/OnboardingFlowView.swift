@@ -2,9 +2,9 @@
 //  OnboardingFlowView.swift
 //  Spendrift
 //
-//  First run, full screen, three pages.
+//  First run, full screen, four pages.
 //
-//  The flow is a demo rather than a tour: the middle page records the user's actual
+//  The flow is a demo rather than a tour: the voice page records the user's actual
 //  voice, sends it to the actual parser, and writes the transaction to the ledger
 //  stamped with now. By the time they reach the end they have already used the
 //  feature the app is built on, and Home already has a row to show.
@@ -51,9 +51,15 @@ struct OnboardingFlowView: View {
         page(step)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .containerBackground(for: .navigation) {
-                ZStack {
-                    OnboardingSheetAtmosphericBackground(tintColor: step.accent)
-                    OnboardingCornerWatermark(mark: step.watermark)
+                OnboardingSheetAtmosphericBackground(tintColor: step.accent)
+            }
+            // Where they are in the walkthrough, so the end is in sight from the first
+            // counted page. The welcome page is the cover and carries no count.
+            .toolbar {
+                if let page = step.pageNumber {
+                    ToolbarItem(placement: .topBarTrailing) {
+                        OnboardingPageCounter(page: page, total: OnboardingStep.countedPageCount)
+                    }
                 }
             }
             // A real title keeps the inline bar from collapsing on the first page.
@@ -79,8 +85,10 @@ struct OnboardingFlowView: View {
                 voice: voice,
                 accounts: accounts,
                 categories: categories,
-                onContinue: { push(.notifications) }
+                onContinue: { push(.backup) }
             )
+        case .backup:
+            OnboardingBackupPage(onContinue: { push(.notifications) })
         case .notifications:
             OnboardingNotificationsPage(onFinish: complete)
         }
@@ -349,7 +357,82 @@ private struct OnboardingVoicePage: View {
     }
 }
 
-// MARK: - Page 3: Notifications
+// MARK: - Page 3: Backup
+
+/// Backup & restore, in brief. A pitch rather than a demo: the ledger holds one row at
+/// most by now, so there is nothing worth backing up yet. The page says what the
+/// feature does and where it lives, then steps aside.
+private struct OnboardingBackupPage: View {
+    let onContinue: () -> Void
+
+    private let accent = OnboardingStep.backup.accent
+
+    /// What a backup does for them, in the order it will matter. Another point is
+    /// another row.
+    private static let points: [OnboardingBackupPoint] = [
+        OnboardingBackupPoint(
+            symbolName: "square.and.arrow.up",
+            title: "Back up in one tap",
+            detail: "A full snapshot of your transactions, accounts, and categories."
+        ),
+        OnboardingBackupPoint(
+            symbolName: "arrow.counterclockwise",
+            title: "Restore anytime",
+            detail: "Bring everything back after a reinstall or a fresh start."
+        ),
+        OnboardingBackupPoint(
+            symbolName: "clock.arrow.circlepath",
+            title: "\(BackupService.retainedBackupCount) backups kept",
+            detail: "The newest replaces the oldest, so a recent one is always there."
+        ),
+    ]
+
+    var body: some View {
+        OnboardingPage {
+            OnboardingNarration(
+                headline: "Never lose a thing.",
+                detail: "Back up your ledger from Settings, and bring it back whenever you need."
+            )
+        } focus: {
+            VStack(spacing: 20) {
+                OnboardingHeroPlate(
+                    mark: .symbol("icloud.and.arrow.up.fill"),
+                    accent: accent
+                )
+
+                OnboardingCard(themeTint: accent) {
+                    VStack(alignment: .leading, spacing: 16) {
+                        ForEach(Self.points) { point in
+                            OnboardingFeatureRow(
+                                icon: point.symbolName,
+                                color: accent,
+                                title: point.title,
+                                description: point.detail
+                            )
+                        }
+                    }
+                }
+            }
+        } action: {
+            OnboardingActionButton(
+                title: "Next",
+                fill: accent,
+                action: onContinue
+            )
+        }
+    }
+}
+
+/// One row on the backup page.
+private struct OnboardingBackupPoint: Identifiable {
+    let symbolName: String
+    let title: String
+    let detail: String
+
+    var id: String { title }
+}
+
+// MARK: - Page 4: Notifications
 
 private struct OnboardingNotificationsPage: View {
     let onFinish: () -> Void

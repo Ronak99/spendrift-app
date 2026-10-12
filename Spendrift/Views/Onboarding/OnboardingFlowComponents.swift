@@ -17,6 +17,7 @@ import SwiftUI
 enum OnboardingStep: Int, CaseIterable, Identifiable, Hashable {
     case welcome
     case voice
+    case backup
     case notifications
 
     var id: Int { rawValue }
@@ -28,6 +29,9 @@ enum OnboardingStep: Int, CaseIterable, Identifiable, Hashable {
         // The tab bar's Speak control, so the plate the user is about to tap is already
         // the colour of the button they will look for afterwards.
         case .voice:   Color(hex: "#F57873")
+        // Sky blue, between the welcome cyan and the notifications violet, so the
+        // sequence of washes steps through the spectrum rather than doubling back.
+        case .backup:  Color(hex: "#5B9DFF")
         case .notifications: Color(hex: "#9B7BFF")
         }
     }
@@ -36,6 +40,7 @@ enum OnboardingStep: Int, CaseIterable, Identifiable, Hashable {
         switch self {
         case .welcome: "welcome"
         case .voice:   "voice"
+        case .backup:  "backup"
         case .notifications: "notifications"
         }
     }
@@ -44,14 +49,16 @@ enum OnboardingStep: Int, CaseIterable, Identifiable, Hashable {
         OnboardingStep(rawValue: rawValue + 1)
     }
 
-    /// Ultra-light watermark in the top-right, matching the ledger tabs.
-    var watermark: OnboardingHeroPlate.Mark {
-        switch self {
-        case .welcome: .asset(OnboardingVisualAsset.heroMark)
-        case .voice:   .symbol("mic.fill")
-        case .notifications: .symbol("bell.badge.fill")
-        }
+    /// Position in the counted run of pages, from 1. The welcome page is the cover and
+    /// is not counted, so the count starts where the walkthrough does: with the voice
+    /// demo.
+    var pageNumber: Int? {
+        guard self != .welcome else { return nil }
+        return rawValue - OnboardingStep.voice.rawValue + 1
     }
+
+    /// How many pages are counted. The "3" in "1/3".
+    static let countedPageCount = allCases.count - 1
 }
 
 // MARK: - Page scaffold
@@ -198,40 +205,19 @@ struct OnboardingHeroPlate: View {
     }
 }
 
-/// Ledger-style ultra-light mark, parked past the top-right corner so only a hint remains.
-struct OnboardingCornerWatermark: View {
-    let mark: OnboardingHeroPlate.Mark
-
-    /// Same size as tabs and Settings.
-    private let size: CGFloat = 176
-    /// Further off-canvas than the ledger (`x: 40, y: -28`) so the glyph reads as a
-    /// bleed, not a second hero.
-    private let hang = CGSize(width: 68, height: -45)
+/// "1/3" in the top-right of the bar: how far along the walkthrough they are, and how
+/// much is left. Sits where the back chevron sits on the other side, in the same quiet
+/// ink as the detail copy, so it informs without competing with the headline.
+struct OnboardingPageCounter: View {
+    let page: Int
+    let total: Int
 
     var body: some View {
-        glyph
-            .frame(width: size, height: size)
-            .foregroundStyle(OnboardingTheme.textPrimary.opacity(0.10))
-            .offset(x: hang.width, y: hang.height)
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
-            .allowsHitTesting(false)
-            .accessibilityHidden(true)
-            .contentTransition(.opacity)
-    }
-
-    @ViewBuilder
-    private var glyph: some View {
-        switch mark {
-        case .symbol(let name):
-            Image(systemName: name)
-                .font(.system(size: size, weight: .ultraLight))
-        case .asset(let name):
-            Image(name)
-                .resizable()
-                .renderingMode(.original)
-                .aspectRatio(contentMode: .fit)
-                .opacity(0.10)
-        }
+        Text("\(page)/\(total)")
+            .font(.system(size: 15, weight: .medium))
+            .monospacedDigit()
+            .foregroundStyle(OnboardingTheme.textSecondary)
+            .accessibilityLabel("Page \(page) of \(total)")
     }
 }
 

@@ -150,9 +150,23 @@ struct TransactionAnalyticsContent: View {
         }
     }
 
+    private var peakDay: DailySpendingData? {
+        guard let peak = dailySpending.max(by: { $0.amount < $1.amount }), peak.amount > 0 else {
+            return nil
+        }
+        return peak
+    }
+
+    private var peakWeekdayLabel: String? {
+        guard let peak = weekdaySpending.max(by: { $0.amount < $1.amount }), peak.amount > 0 else {
+            return nil
+        }
+        return peak.label
+    }
+
     var body: some View {
         ScrollView {
-            VStack(spacing: 24) {
+            VStack(spacing: 20) {
                 if periodTransactions.isEmpty {
                     emptyMonthState
                 } else if expenseTransactions.isEmpty {
@@ -177,40 +191,39 @@ struct TransactionAnalyticsContent: View {
                     weekdayPatternCard
                 }
             }
-            .padding(.top, 20)
+            .foregroundStyle(AnalyticsTheme.ink)
+            .padding(.top, 16)
             .padding(.bottom, 24)
         }
         .softScrollEdge()
     }
 
-    /// Palette blue shared by the daily average card and the daily trend chart.
-    private let trendColor = Color(hex: CategoryPalette.hex(matching: .blue))
-
     private var summaryGrid: some View {
-        LazyVGrid(columns: [GridItem(.flexible(), spacing: 16), GridItem(.flexible(), spacing: 16)], spacing: 16) {
+        LazyVGrid(columns: [GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12)], spacing: 12) {
             summaryCard(
                 title: "Spent",
                 value: totalSpent.formatCurrency,
                 caption: "\(expenseTransactions.count) expense transactions",
-                color: CategoryEnamel.expense
+                dot: AnalyticsTheme.spent
             )
             summaryCard(
                 title: "Income",
                 value: totalIncome.formatCurrency,
                 caption: "\(incomeTransactions.count) income transactions",
-                color: CategoryEnamel.income
+                dot: AnalyticsTheme.income
             )
+            // Net is the one tile whose value keeps color: it says which way the period went.
             summaryCard(
                 title: "Net",
-                value: netSavings.formatCurrency,
+                value: netSavings > 0 ? "+" + netSavings.formatCurrency : netSavings.formatCurrency,
                 caption: netSavings >= 0 ? "You saved money" : "You overspent",
-                color: netSavings >= 0 ? CategoryEnamel.income : CategoryEnamel.expense
+                valueColor: netSavings >= 0 ? AnalyticsTheme.income : AnalyticsTheme.spent
             )
             summaryCard(
                 title: "Daily Avg",
                 value: averageDailySpend.formatCurrency,
                 caption: "Average spend per day",
-                color: trendColor
+                dot: AnalyticsTheme.accent
             )
         }
         .padding(.horizontal)
@@ -219,36 +232,42 @@ struct TransactionAnalyticsContent: View {
     private var spendingBreakdownCard: some View {
         analyticsCard(
             title: "Spending Breakdown",
-            subtitle: "Tap a category to see its transactions for \(periodViewModel.periodDescription)"
+            subtitle: "Tap a category to see its transactions."
         ) {
             ZStack {
                 Chart(categoryBreakdown) { category in
                     SectorMark(
                         angle: .value("Amount", category.amount),
-                        innerRadius: .ratio(0.58),
-                        angularInset: 2
+                        innerRadius: .ratio(0.8),
+                        angularInset: 1.5
                     )
-                    .cornerRadius(6)
+                    .cornerRadius(3)
                     .foregroundStyle(category.color)
                 }
-                .frame(height: 260)
+                .frame(height: 220)
                 .chartLegend(.hidden)
                 .chartAngleSelection(value: $selectedAngle)
 
-                VStack(spacing: 6) {
+                VStack(spacing: 4) {
                     Text("Total Spent")
                         .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(AnalyticsTheme.inkSecondary)
                     Text(totalSpent.formatCurrency)
-                        .font(.title3.weight(.bold))
+                        .font(.system(size: 24, weight: .bold))
+                        .tracking(-0.3)
+                        .monospacedDigit()
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.6)
                     if let largestCategory {
-                        Text("\(largestCategory.name) \(largestCategory.percentageText)")
-                            .font(.caption.weight(.medium))
-                            .foregroundStyle(.secondary)
+                        Text("\(largestCategory.name) · \(largestCategory.percentageText)")
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(largestCategory.color)
                     }
                 }
+                .frame(maxWidth: 140)
                 .allowsHitTesting(false)
             }
+            .padding(.vertical, 10)
             .onChange(of: selectedAngle) { _, newValue in
                 guard let newValue else { return }
                 if let target = categoryData(atAngleValue: newValue)?.category {
@@ -258,16 +277,25 @@ struct TransactionAnalyticsContent: View {
             }
 
             VStack(spacing: 0) {
-                ForEach(categoryBreakdown) { category in
-                    if let target = category.category {
-                        Button {
-                            drillCategory = target
-                        } label: {
-                            categoryLegendRow(category, isDrillable: true)
+                ForEach(Array(categoryBreakdown.enumerated()), id: \.element.id) { index, category in
+                    Group {
+                        if let target = category.category {
+                            Button {
+                                drillCategory = target
+                            } label: {
+                                categoryLegendRow(category, isDrillable: true)
+                            }
+                            .buttonStyle(.plain)
+                        } else {
+                            categoryLegendRow(category, isDrillable: false)
                         }
-                        .buttonStyle(.plain)
-                    } else {
-                        categoryLegendRow(category, isDrillable: false)
+                    }
+                    .overlay(alignment: .top) {
+                        if index > 0 {
+                            Rectangle()
+                                .fill(AnalyticsTheme.grid)
+                                .frame(height: 1)
+                        }
                     }
                 }
             }
@@ -276,68 +304,148 @@ struct TransactionAnalyticsContent: View {
 
     private func categoryLegendRow(_ category: CategorySpendingData, isDrillable: Bool) -> some View {
         HStack(spacing: 12) {
-            Circle()
-                .fill(category.color)
-                .frame(width: 10, height: 10)
+            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                .fill(category.color.opacity(0.14))
+                .frame(width: 34, height: 34)
+                .overlay {
+                    Image(systemName: category.iconName)
+                        .font(.system(size: 15, weight: .semibold))
+                        .foregroundStyle(category.color)
+                }
 
-            Image(systemName: category.iconName)
-                .foregroundStyle(category.color)
-                .frame(width: 18)
+            VStack(spacing: 5) {
+                HStack(alignment: .firstTextBaseline, spacing: 8) {
+                    Text(category.name)
+                        .font(.subheadline.weight(.medium))
+                        .lineLimit(1)
+                    Spacer(minLength: 0)
+                    Text(category.amount.formatCurrency)
+                        .font(.subheadline.weight(.semibold))
+                        .monospacedDigit()
+                }
 
-            Text(category.name)
-                .font(.subheadline.weight(.medium))
-
-            Spacer()
-
-            Text(category.percentageText)
-                .font(.subheadline.weight(.semibold))
-                .foregroundStyle(.secondary)
-
-            Text(category.amount.formatCurrency)
-                .font(.subheadline.weight(.semibold))
+                HStack(spacing: 8) {
+                    shareBar(share: category.share, color: category.color)
+                    Text(category.percentageText)
+                        .font(.caption.weight(.semibold))
+                        .monospacedDigit()
+                        .foregroundStyle(AnalyticsTheme.inkSecondary)
+                        .frame(width: 34, alignment: .trailing)
+                }
+            }
 
             Image(systemName: "chevron.right")
                 .font(.caption.weight(.semibold))
-                .foregroundStyle(.tertiary)
+                .foregroundStyle(AnalyticsTheme.inkTertiary)
                 .opacity(isDrillable ? 1 : 0)
         }
+        .padding(.vertical, 8)
+        .frame(minHeight: 52)
         .contentShape(Rectangle())
-        .padding(.vertical, 6)
+    }
+
+    private func shareBar(share: Double, color: Color) -> some View {
+        GeometryReader { proxy in
+            ZStack(alignment: .leading) {
+                Capsule()
+                    .fill(AnalyticsTheme.track)
+                Capsule()
+                    .fill(color)
+                    .frame(width: proxy.size.width * min(max(share, 0), 1))
+            }
+        }
+        .frame(height: 4)
     }
 
     private var dailyTrendCard: some View {
         analyticsCard(
             title: "Daily Spending Trend",
-            subtitle: "See how your expenses changed over \(periodViewModel.periodDescription)"
+            subtitle: "See how your expenses changed."
         ) {
-            Chart(dailySpending) { day in
-                AreaMark(
-                    x: .value("Date", day.date),
-                    y: .value("Spent", day.amount)
-                )
-                .foregroundStyle(
-                    LinearGradient(
-                        colors: [trendColor.opacity(0.35), trendColor.opacity(0.05)],
-                        startPoint: .top,
-                        endPoint: .bottom
+            Chart {
+                ForEach(dailySpending) { day in
+                    AreaMark(
+                        x: .value("Date", day.date),
+                        y: .value("Spent", day.amount)
                     )
-                )
-                .interpolationMethod(.catmullRom)
+                    .foregroundStyle(
+                        LinearGradient(
+                            colors: [AnalyticsTheme.accent.opacity(0.28), AnalyticsTheme.accent.opacity(0)],
+                            startPoint: .top,
+                            endPoint: .bottom
+                        )
+                    )
+                    .interpolationMethod(.catmullRom)
 
-                LineMark(
-                    x: .value("Date", day.date),
-                    y: .value("Spent", day.amount)
-                )
-                .foregroundStyle(trendColor)
-                .lineStyle(StrokeStyle(lineWidth: 3, lineCap: .round, lineJoin: .round))
-                .interpolationMethod(.catmullRom)
+                    LineMark(
+                        x: .value("Date", day.date),
+                        y: .value("Spent", day.amount)
+                    )
+                    .foregroundStyle(AnalyticsTheme.accent)
+                    .lineStyle(StrokeStyle(lineWidth: 2.5, lineCap: .round, lineJoin: .round))
+                    .interpolationMethod(.catmullRom)
+                }
+
+                RuleMark(y: .value("Average", averageDailySpend))
+                    .foregroundStyle(AnalyticsTheme.inkSecondary)
+                    .lineStyle(StrokeStyle(lineWidth: 1, dash: [3, 4]))
+                    .annotation(position: .top, alignment: .leading, spacing: 2) {
+                        Text("Avg \(averageDailySpend.formatCurrencyRounded)")
+                            .font(.system(size: 10, weight: .semibold))
+                            .foregroundStyle(AnalyticsTheme.inkSecondary)
+                            .padding(.horizontal, 4)
+                            .background(AnalyticsTheme.card)
+                    }
+
+                if let peakDay {
+                    PointMark(
+                        x: .value("Date", peakDay.date),
+                        y: .value("Spent", peakDay.amount)
+                    )
+                    .symbolSize(220)
+                    .foregroundStyle(AnalyticsTheme.accentGlow)
+
+                    PointMark(
+                        x: .value("Date", peakDay.date),
+                        y: .value("Spent", peakDay.amount)
+                    )
+                    .symbolSize(70)
+                    .foregroundStyle(AnalyticsTheme.accent)
+                    .annotation(
+                        position: .top,
+                        spacing: 6,
+                        overflowResolution: .init(x: .fit(to: .chart), y: .disabled)
+                    ) {
+                        Text("\(peakDay.date.formatted(.dateTime.month(.abbreviated).day())) · \(peakDay.amount.formatCurrencyRounded)")
+                            .font(.system(size: 11, weight: .semibold))
+                            .monospacedDigit()
+                            .foregroundStyle(AnalyticsTheme.ink)
+                            .padding(.horizontal, 7)
+                            .padding(.vertical, 3)
+                            .background(
+                                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                                    .fill(AnalyticsTheme.chip)
+                                    .strokeBorder(AnalyticsTheme.edge, lineWidth: 1)
+                            )
+                    }
+                }
             }
             .frame(height: 220)
             .chartYAxis {
-                AxisMarks(position: .leading)
+                AxisMarks(position: .leading) { _ in
+                    AxisGridLine(stroke: StrokeStyle(lineWidth: 1))
+                        .foregroundStyle(AnalyticsTheme.grid)
+                    AxisValueLabel()
+                        .font(.system(size: 10))
+                        .foregroundStyle(AnalyticsTheme.inkSecondary)
+                }
             }
             .chartXAxis {
-                AxisMarks(values: .automatic(desiredCount: 6))
+                AxisMarks(values: .automatic(desiredCount: 6)) { _ in
+                    AxisValueLabel()
+                        .font(.system(size: 10))
+                        .foregroundStyle(AnalyticsTheme.inkSecondary)
+                }
             }
         }
     }
@@ -345,28 +453,48 @@ struct TransactionAnalyticsContent: View {
     private var weekdayPatternCard: some View {
         analyticsCard(
             title: "Weekday Pattern",
-            subtitle: "Which days of the week absorb most of your spend"
+            subtitle: "On which day you spend the most."
         ) {
+            // Only the heaviest day is solid, so the answer to the card's question reads first.
             Chart(weekdaySpending) { weekday in
+                let isPeak = weekday.label == peakWeekdayLabel
                 BarMark(
                     x: .value("Weekday", weekday.label),
                     y: .value("Spent", weekday.amount)
                 )
-                .foregroundStyle(
-                    LinearGradient(
-                        colors: [
-                            Color(hex: CategoryPalette.hex(matching: .purple)),
-                            Color(hex: CategoryPalette.hex(matching: .pink))
-                        ],
-                        startPoint: .top,
-                        endPoint: .bottom
-                    )
-                )
+                .foregroundStyle(isPeak ? AnalyticsTheme.accent : AnalyticsTheme.accentSoft)
                 .cornerRadius(8)
+                .annotation(position: .top, spacing: 6) {
+                    if isPeak {
+                        Text(weekday.amount.formatCurrencyRounded)
+                            .font(.system(size: 10, weight: .semibold))
+                            .monospacedDigit()
+                            .foregroundStyle(AnalyticsTheme.accent)
+                            .fixedSize()
+                    }
+                }
             }
             .frame(height: 220)
             .chartYAxis {
-                AxisMarks(position: .leading)
+                AxisMarks(position: .leading) { _ in
+                    AxisGridLine(stroke: StrokeStyle(lineWidth: 1))
+                        .foregroundStyle(AnalyticsTheme.grid)
+                    AxisValueLabel()
+                        .font(.system(size: 10))
+                        .foregroundStyle(AnalyticsTheme.inkSecondary)
+                }
+            }
+            .chartXAxis {
+                AxisMarks { value in
+                    AxisValueLabel {
+                        if let label = value.as(String.self) {
+                            let isPeak = label == peakWeekdayLabel
+                            Text(label)
+                                .font(.system(size: 11, weight: isPeak ? .semibold : .regular))
+                                .foregroundStyle(isPeak ? AnalyticsTheme.ink : AnalyticsTheme.inkSecondary)
+                        }
+                    }
+                }
             }
         }
     }
@@ -375,46 +503,65 @@ struct TransactionAnalyticsContent: View {
         VStack(spacing: 12) {
             Image(systemName: "chart.bar.xaxis")
                 .font(.system(size: 42))
-                .foregroundStyle(.secondary)
+                .foregroundStyle(AnalyticsTheme.inkSecondary)
 
             Text("No transactions in \(periodViewModel.periodDescription)")
                 .font(.headline)
 
             Text("Add some transactions for this period to unlock your analytics dashboard.")
                 .font(.subheadline)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(AnalyticsTheme.inkSecondary)
                 .multilineTextAlignment(.center)
         }
         .frame(maxWidth: .infinity)
         .padding(32)
-        .background(
-            RoundedRectangle(cornerRadius: 24, style: .continuous)
-                .fill(AppTheme.listGroupBackground)
-        )
+        .background(cardSurface(cornerRadius: 24))
         .padding(.horizontal)
         .padding(.top, 48)
     }
 
-    private func summaryCard(title: String, value: String, caption: String, color: Color) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text(title)
-                .font(.caption.weight(.semibold))
-                .foregroundStyle(.secondary)
+    private func summaryCard(
+        title: String,
+        value: String,
+        caption: String,
+        dot: Color? = nil,
+        valueColor: Color = AnalyticsTheme.ink
+    ) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            HStack(spacing: 6) {
+                if let dot {
+                    Circle()
+                        .fill(dot)
+                        .frame(width: 6, height: 6)
+                }
+                Text(title)
+            }
+            .font(.caption.weight(.semibold))
+            .foregroundStyle(AnalyticsTheme.inkSecondary)
 
             Text(value)
-                .font(.title3.weight(.bold))
-                .foregroundStyle(color)
+                .font(.system(size: 22, weight: .bold))
+                .tracking(-0.3)
+                .monospacedDigit()
+                .foregroundStyle(valueColor)
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
 
             Text(caption)
                 .font(.caption)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(AnalyticsTheme.inkSecondary)
+                .lineLimit(1)
+                .minimumScaleFactor(0.85)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(16)
-        .background(
-            RoundedRectangle(cornerRadius: 20, style: .continuous)
-                .fill(AppTheme.listGroupBackground)
-        )
+        .background(cardSurface(cornerRadius: 20))
+    }
+
+    private func cardSurface(cornerRadius: CGFloat) -> some View {
+        RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+            .fill(AnalyticsTheme.card)
+            .strokeBorder(AnalyticsTheme.edge, lineWidth: 1)
     }
 
     private func analyticsCard<Content: View>(
@@ -428,16 +575,13 @@ struct TransactionAnalyticsContent: View {
                     .font(.headline)
                 Text(subtitle)
                     .font(.subheadline)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(AnalyticsTheme.inkSecondary)
             }
 
             content()
         }
         .padding(20)
-        .background(
-            RoundedRectangle(cornerRadius: 24, style: .continuous)
-                .fill(AppTheme.listGroupBackground)
-        )
+        .background(cardSurface(cornerRadius: 24))
         .padding(.horizontal)
     }
 }
