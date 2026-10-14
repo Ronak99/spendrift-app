@@ -221,11 +221,11 @@ struct UpdateTransactionSheet: View {
     private var hero: some View {
         VStack(alignment: .leading, spacing: 0) {
             HStack(alignment: .center, spacing: 16) {
-                iconTile
+                categoryShortcut(identifier: "HeroCategoryIcon") { iconTile }
 
                 VStack(alignment: .leading, spacing: 2) {
                     amountLine
-                    metaLine
+                    categoryShortcut(identifier: "HeroCategoryName") { metaLine }
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
@@ -243,6 +243,23 @@ struct UpdateTransactionSheet: View {
             ColorWashBackground(color: accentColor, isDark: isDark)
                 .padding(.top, -120)
         }
+    }
+
+    /// Wraps a hero element so it opens the category picker, matching the `Category` row below.
+    /// Carries its own identifier because UI tests address the row by `Category`, and a second
+    /// element answering to that name would make those queries ambiguous.
+    private func categoryShortcut<Content: View>(
+        identifier: String,
+        @ViewBuilder content: () -> Content
+    ) -> some View {
+        Button(action: openCategoryPicker) {
+            content()
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityIdentifier(identifier)
+        .accessibilityLabel("Change category")
+        .accessibilityValue(categoryText)
     }
 
     private var iconTile: some View {

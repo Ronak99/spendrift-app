@@ -623,6 +623,24 @@ final class TransactionIntegrationTests: SpendriftUITestBase {
         XCTAssertTrue(app.staticTexts["Custom Food"].waitForExistence(timeout: 3))
     }
 
+    func testCategoryPicker_opensFromHeroIcon() {
+        navigateToTransactions()
+        openTransactionsManualEntryForm()
+        waitForTransactionEditor()
+
+        app.buttons["HeroCategoryIcon"].tap()
+        XCTAssertTrue(app.navigationBars["Expense Categories"].waitForExistence(timeout: 3))
+    }
+
+    func testCategoryPicker_opensFromHeroCategoryName() {
+        navigateToTransactions()
+        openTransactionsManualEntryForm()
+        waitForTransactionEditor()
+
+        app.buttons["HeroCategoryName"].tap()
+        XCTAssertTrue(app.navigationBars["Expense Categories"].waitForExistence(timeout: 3))
+    }
+
     // MARK: Statistics Bar
 
     func testTransactionStatistics_showsCorrectTotals() {
