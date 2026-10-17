@@ -112,9 +112,9 @@ struct HomeTabStrip: View {
         } label: {
             VStack(spacing: 6) {
                 Image(systemName: tab.symbol)
-                    .font(.system(size: 23, weight: .regular))
+                    .font(.system(size: 18, weight: .regular))
                     .foregroundStyle(AppTheme.ink)
-                    .frame(height: 26)
+                    .frame(height: 24)
 
                 HStack(spacing: 2) {
                     Text(label(for: tab))

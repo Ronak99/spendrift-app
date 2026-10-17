@@ -2,8 +2,8 @@
 //  HomeShellView.swift
 //  Spendrift
 //
-//  The app's one screen. A gold wash behind the title, a search bar and a tab
-//  strip that pin together, four panes that each own the width, and a tray at the
+//  The app's one screen. The editor heroes' blue atmosphere behind the title, a
+//  search bar and a tab strip that pin together, four panes that each own the
 //  bottom with the only control that creates a transaction.
 //
 
@@ -40,6 +40,7 @@ private struct CategoryEditRequest: Identifiable {
 
 struct HomeShellView: View {
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.colorScheme) private var colorScheme
     @Environment(AppRouter.self) private var router
     @Query(sort: \Transaction.date, order: .reverse) private var transactions: [Transaction]
     @Query(sort: \Account.createdOn) private var accounts: [Account]
@@ -96,6 +97,8 @@ struct HomeShellView: View {
     @State private var lastProcessedReceiptImportID: UUID?
 
     private let today = Date()
+
+    private var isDark: Bool { colorScheme == .dark }
 
     var body: some View {
         NavigationStack(path: $path) {
@@ -298,14 +301,12 @@ struct HomeShellView: View {
                     .padding(.bottom, 10)
             }
         }
-        .background {
-            // Extends under the status bar, so that strip is gold rather than canvas.
-            LinearGradient(
-                colors: [AppTheme.wash, AppTheme.canvas],
-                startPoint: .top,
-                endPoint: .bottom
-            )
-            .ignoresSafeArea(edges: .top)
+        .background(alignment: .top) {
+            // Same atmosphere as the editor heroes (`ColorWashBackground`): a top-down
+            // tint fading to the canvas, with a radial bloom anchored top-right. Extends
+            // under the status bar so that strip wears it too, instead of staying canvas.
+            ColorWashBackground(color: AppTheme.atmosphere, isDark: isDark)
+                .ignoresSafeArea(edges: .top)
         }
     }
 

@@ -27,8 +27,9 @@ enum AppTheme {
 
     // MARK: Home chrome
     //
-    // Near-black canvas, lifted card surfaces and a gold wash behind the status bar
-    // and title. One token per surface so the whole shell restyles from here.
+    // Near-black canvas, lifted card surfaces and the atmosphere's blue wash behind
+    // the status bar and title. One token per surface so the whole shell restyles
+    // from here.
 
     /// Page behind every Home pane.
     static let canvas = scheme(dark: "#17171C", light: "#F2F2F7")
@@ -39,10 +40,7 @@ enum AppTheme {
     /// Second surface: glyph plates, pressed chips, the "now" month in the picker.
     static let cardAlternate = scheme(dark: "#2B2B33", light: "#EDEDF2")
 
-    /// Gold wash behind the status bar, the title and the top of the header.
-    static let wash = scheme(dark: "#5A4C1C", light: "#EAD9A0")
-
-    /// Fill of the Home search bar, which sits on the wash.
+    /// Fill of the Home search bar, which sits on the atmosphere wash.
     static let searchField = scheme(dark: "#26261F", light: "#FFFFFF")
 
     /// Edge of the Home search bar.

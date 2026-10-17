@@ -781,7 +781,7 @@ Fix it before shipping.
 ## 16. Home Shell
 
 One screen carries the app.
-`HomeShellView` holds a gold wash behind the status bar and title, a search bar and a tab strip that pin together, four panes, and a bottom tray.
+`HomeShellView` holds the Spendrift Cyan editor-hero wash behind the status bar and title, a search bar and a tab strip that pin together, four panes, and a bottom tray.
 Sections 1 to 15 still describe the editors, sheets and enamel language; this section describes the chrome around them, and its surfaces win wherever the two disagree.
 
 **Surfaces.** Every value is a token on `AppTheme`, defined once with a dark and a light resolution.
@@ -791,12 +791,12 @@ Sections 1 to 15 still describe the editors, sheets and enamel language; this se
 | `canvas` | `#17171C` | Page behind every pane. |
 | `card` | `#202027` | Raised block: Home cards, ledger rows, search results. |
 | `cardAlternate` | `#2B2B33` | Glyph plates, chips, the current month in the picker. |
-| `wash` | `#5A4C1C` | Status bar, title bar, and the top of the pinned header. |
 | `searchField` | `#26261F` | Fill of the Home search bar, which sits on the wash. |
 | `actionBackground` / `actionForeground` | `#FFFFFF` at 92% / `#111111` | The one primary action on screen. |
 
-**Header.** The title and Settings scroll away; only the search bar and the tab strip pin.
-Switching tabs returns the scroll to the top, so the title comes back.
+**Header.** The title, search bar and tab strip sit above the pane, outside its scroll view, so the status bar and header always wear the wash and nothing can scroll out from under them.
+Only the title row collapses as the pane scrolls, the way a title does elsewhere in the app; it returns once the pane is back near the top, and switching tabs always starts there.
+The header's background is `ColorWashBackground(color: AppTheme.atmosphere, isDark:)`, the identical top-down tint and top-right radial bloom the editor heroes use, extended under the status bar with `ignoresSafeArea(edges: .top)`.
 The selected Transactions tab reads as its month and the selected Categories tab as its type, and a second tap on either opens the matching picker.
 Nothing in a title bar creates a record: Settings is the only control up there.
 
