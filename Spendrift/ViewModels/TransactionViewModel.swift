@@ -16,17 +16,26 @@ class TransactionViewModel {
     var selectedDate: Date = Date()
 
     /// Time-range scope; persisted for the whole app.
-    var periodGranularity: TransactionPeriod = .month {
+    ///
+    /// Seeded as the stored value rather than assigned in `init`, and written back only
+    /// on a real change. Views build this model in initializers that SwiftUI reruns on
+    /// every render, and every `UserDefaults` write invalidates every `@AppStorage` in
+    /// the app: a write here per init kept Home and any sheet over it re-rendering
+    /// forever, which froze the app.
+    var periodGranularity: TransactionPeriod = TransactionViewModel.storedGranularity() {
         didSet {
+            guard periodGranularity != oldValue else { return }
             UserDefaults.standard.set(periodGranularity.rawValue, forKey: transactionPeriodGranularityKey)
         }
     }
 
     var isLoading: Bool = false
 
-    init() {
+    init() {}
+
+    private static func storedGranularity() -> TransactionPeriod {
         let raw = UserDefaults.standard.string(forKey: transactionPeriodGranularityKey)
-        periodGranularity = TransactionPeriod(rawValue: raw ?? "") ?? .month
+        return TransactionPeriod(rawValue: raw ?? "") ?? .month
     }
 
     // MARK: - Current period range

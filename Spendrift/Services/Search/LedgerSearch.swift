@@ -389,12 +389,9 @@ enum LedgerSearch {
         return (0..<12).reversed().compactMap { offset in
             guard let date = calendar.date(byAdding: .month, value: -offset, to: today) else { return nil }
             let ref = MonthRef.of(date)
+            let range = ref.dateRange(calendar: calendar)
             let total = transactions
-                .filter {
-                    $0.transactionType == .expense
-                        && $0.date.year == ref.year
-                        && $0.date.month == ref.month
-                }
+                .filter { $0.transactionType == .expense && range.contains($0.date) }
                 .reduce(0) { $0 + $1.amount }
             return (ref, total)
         }

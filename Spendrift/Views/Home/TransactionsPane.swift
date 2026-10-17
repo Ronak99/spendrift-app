@@ -19,10 +19,9 @@ struct TransactionsPane: View {
     var onScroll: (CGFloat) -> Void
 
     private var monthTransactions: [Transaction] {
-        transactions.filter { transaction in
-            transaction.isPersisted
-                && transaction.date.year == month.year
-                && transaction.date.month == month.month
+        let range = month.dateRange()
+        return transactions.filter { transaction in
+            transaction.isPersisted && range.contains(transaction.date)
         }
     }
 

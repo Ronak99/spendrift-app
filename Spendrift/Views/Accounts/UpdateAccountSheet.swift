@@ -310,7 +310,7 @@ struct UpdateAccountSheet: View {
     /// Pushes the account ledger onto this sheet's navigation stack.
     private func transactionsLink(for account: Account) -> some View {
         NavigationLink {
-            AccountTransactionsSheet(account: account)
+            LazyDestination { AccountTransactionsSheet(account: account) }
         } label: {
             HStack(spacing: 8) {
                 Text("View Transactions")

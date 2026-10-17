@@ -30,6 +30,16 @@ private enum MonthPickerTarget: Identifiable {
     var id: Self { self }
 }
 
+/// What the add-budget sheet asked for, carried out once it has dismissed.
+private enum PendingBudgetAction {
+    case edit(TransactionCategory)
+    case create
+}
+
+extension CategoryType: Identifiable {
+    var id: Self { self }
+}
+
 /// A category editor opened with a reason, so the budget field can take focus.
 private struct CategoryEditRequest: Identifiable {
     let category: TransactionCategory
@@ -71,12 +81,17 @@ struct HomeShellView: View {
     @State private var transactionToEdit: Transaction?
     @State private var showCreateAccount = false
     @State private var accountToEdit: Account?
-    @State private var showCreateCategory = false
+    /// Type of the category being created, or nil when the create sheet is closed.
+    @State private var newCategoryType: CategoryType?
     @State private var categoryEdit: CategoryEditRequest?
     @State private var monthPicker: MonthPickerTarget?
     @State private var showTypePicker = false
     @State private var showTotalBudgetSheet = false
     @State private var showAddBudgetSheet = false
+    /// What the add-budget sheet asked for: edit a category's cap, or create one. The
+    /// editor opens only once that sheet has fully dismissed, since presenting a
+    /// second sheet while the first is still leaving can strand the presentation.
+    @State private var pendingBudgetAction: PendingBudgetAction?
     @State private var showSettings = false
     @State private var showStatementImport = false
     @State private var showReceiptCamera = false
@@ -140,8 +155,8 @@ struct HomeShellView: View {
         .sheet(item: $accountToEdit) { account in
             UpdateAccountSheet(account: account)
         }
-        .sheet(isPresented: $showCreateCategory) {
-            UpdateCategorySheet(category: nil, defaultTypeWhenCreating: categoryType)
+        .sheet(item: $newCategoryType) { type in
+            UpdateCategorySheet(category: nil, defaultTypeWhenCreating: type)
         }
         .sheet(item: $categoryEdit) { request in
             UpdateCategorySheet(category: request.category, focusBudgetWhenOpening: request.focusBudget)
@@ -169,10 +184,11 @@ struct HomeShellView: View {
         .sheet(isPresented: $showTotalBudgetSheet) {
             TotalBudgetSheet()
         }
-        .sheet(isPresented: $showAddBudgetSheet) {
-            AddCategoryBudgetSheet { category in
-                categoryEdit = CategoryEditRequest(category: category, focusBudget: true)
-            }
+        .sheet(isPresented: $showAddBudgetSheet, onDismiss: openPendingBudgetEditor) {
+            AddCategoryBudgetSheet(
+                onPick: { pendingBudgetAction = .edit($0) },
+                onCreate: { pendingBudgetAction = .create }
+            )
         }
         .alert("Keep at least one account", isPresented: $showLastAccountAlert) {
             Button("OK", role: .cancel) {}
@@ -348,6 +364,7 @@ struct HomeShellView: View {
                 onEditTotalBudget: { showTotalBudgetSheet = true },
                 onAddCategoryBudget: { showAddBudgetSheet = true },
                 onOpenCategory: { categoryEdit = CategoryEditRequest(category: $0) },
+                onEditCategoryBudget: { categoryEdit = CategoryEditRequest(category: $0, focusBudget: true) },
                 onOpenTransaction: { transactionToEdit = $0 },
                 onOpenTab: { selectedTab = $0 },
                 onAddTransaction: openCreateTransactionSheet,
@@ -379,7 +396,7 @@ struct HomeShellView: View {
                 type: categoryType,
                 month: MonthRef.of(today).stats(from: transactions, today: today),
                 onOpenCategory: { categoryEdit = CategoryEditRequest(category: $0) },
-                onCreateCategory: { showCreateCategory = true },
+                onCreateCategory: { newCategoryType = categoryType },
                 onDelete: { categoryToDelete = $0 },
                 onScroll: syncTitleRow(offset:)
             )
@@ -517,6 +534,19 @@ struct HomeShellView: View {
     }
 
     // MARK: Behaviour
+
+    /// Runs from the add-budget sheet's `onDismiss`, after its transition has finished.
+    private func openPendingBudgetEditor() {
+        guard let action = pendingBudgetAction else { return }
+        pendingBudgetAction = nil
+        switch action {
+        case .edit(let category):
+            categoryEdit = CategoryEditRequest(category: category, focusBudget: true)
+        case .create:
+            // Budgets only cap spending, so the new category starts as an expense.
+            newCategoryType = .expense
+        }
+    }
 
     private func openAnalytics() {
         analyticsPeriod.periodGranularity = .month
@@ -656,3 +686,4 @@ private struct HomeCaptureSheets: ViewModifier {
             }
     }
 }
+

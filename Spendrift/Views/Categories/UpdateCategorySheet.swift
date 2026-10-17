@@ -125,7 +125,24 @@ struct UpdateCategorySheet: View {
         NavigationStack {
             VStack(spacing: 0) {
                 hero
-                categoryMetaDetails
+                // Scrolls so the Budget field below Color and Icon stays reachable on
+                // small phones and above the keyboard once it takes focus.
+                ScrollViewReader { proxy in
+                    ScrollView {
+                        categoryMetaDetails
+                    }
+                    .scrollIndicators(.hidden)
+                    .scrollDismissesKeyboard(.interactively)
+                    .onChange(of: budgetFieldFocused) { _, focused in
+                        guard focused else { return }
+                        // Waits for the keyboard inset, so the field centres above it.
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                            withAnimation(.easeOut(duration: 0.25)) {
+                                proxy.scrollTo(Self.budgetAnchor, anchor: .center)
+                            }
+                        }
+                    }
+                }
             }
             .background(canvas.ignoresSafeArea())
             .overlayPreferenceValue(TypeMenuAnchorKey.self) { anchor in
@@ -368,6 +385,7 @@ struct UpdateCategorySheet: View {
             // Income has no cap, so the field only exists for expense categories.
             if type == .expense {
                 budgetSection
+                    .id(Self.budgetAnchor)
             }
             if let category {
                 transactionsLink(for: category)
@@ -376,8 +394,11 @@ struct UpdateCategorySheet: View {
         .padding(.horizontal, 20)
         .padding(.top, isCreating ? 28 : 8)
         .padding(.bottom, 44)
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .frame(maxWidth: .infinity, alignment: .topLeading)
     }
+
+    private static let budgetAnchor = "category-budget"
+
 
     private var persistedTransactionCount: Int {
         (category?.transactions ?? []).filter(\.isPersisted).count
@@ -390,7 +411,7 @@ struct UpdateCategorySheet: View {
     /// Pushes the category ledger onto this sheet's navigation stack.
     private func transactionsLink(for category: TransactionCategory) -> some View {
         NavigationLink {
-            CategoryTransactionsSheet(category: category, isPushed: true)
+            LazyDestination { CategoryTransactionsSheet(category: category, isPushed: true) }
         } label: {
             HStack(spacing: 8) {
                 Text("View Transactions")
@@ -567,7 +588,7 @@ struct UpdateCategorySheet: View {
                 TextField("No budget", text: $budgetText)
                     .font(.system(size: 28, weight: .bold))
                     .tracking(-0.8)
-                    .keyboardType(.decimalPad)
+                    .keyboardType(.numberPad)
                     .focused($budgetFieldFocused)
                     .tint(AppTheme.cursor)
                     .accessibilityIdentifier("Category budget")
@@ -625,7 +646,7 @@ struct UpdateCategorySheet: View {
     }
 
     private var enteredBudget: Double {
-        Double(budgetText.filter { $0.isNumber || $0 == "." }) ?? 0
+        MonthlyBudget.amount(from: budgetText)
     }
 
     // MARK: Chrome colours

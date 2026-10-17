@@ -63,10 +63,11 @@ struct MonthSpendStats {
         self.days = days
         self.elapsed = isCurrent ? min(days, today.day) : days
 
+        // Two date comparisons per row instead of two calendar lookups: Home builds a
+        // dozen of these per render, so this filter is the hot path.
+        let range = MonthRef(year: year, month: month).dateRange(calendar: calendar)
         let list = all.filter { transaction in
-            transaction.isPersisted
-                && transaction.date.year == year
-                && transaction.date.month == month
+            transaction.isPersisted && range.contains(transaction.date)
         }
         self.transactions = list.sorted { $0.date > $1.date }
 
@@ -84,7 +85,7 @@ struct MonthSpendStats {
                 continue
             }
             spent += transaction.amount
-            let day = transaction.date.day
+            let day = calendar.component(.day, from: transaction.date)
             if day >= 1, day <= days {
                 byDay[day] += transaction.amount
             }
@@ -255,5 +256,16 @@ struct MonthRef: Equatable, Hashable {
 
     func stats(from transactions: [Transaction], today: Date = Date()) -> MonthSpendStats {
         MonthSpendStats(transactions: transactions, year: year, month: month, today: today)
+    }
+
+    /// From the first instant of the month up to, not including, the next month's.
+    func dateRange(calendar: Calendar = .current) -> Range<Date> {
+        let start = calendar.date(from: DateComponents(year: year, month: month, day: 1)) ?? Date()
+        let end = calendar.date(byAdding: .month, value: 1, to: start) ?? start
+        return start..<end
+    }
+
+    func contains(_ date: Date) -> Bool {
+        dateRange().contains(date)
     }
 }

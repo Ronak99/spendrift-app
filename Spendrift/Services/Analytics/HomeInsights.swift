@@ -14,12 +14,21 @@ struct SpendInsight: Identifiable {
     let symbol: String
     let title: String
     let detail: String?
+    /// Set on budget insights: tapping the row opens this category on its Budget field.
+    let budgetCategory: TransactionCategory?
 
-    init(id: String, symbol: String, title: String, detail: String? = nil) {
+    init(
+        id: String,
+        symbol: String,
+        title: String,
+        detail: String? = nil,
+        budgetCategory: TransactionCategory? = nil
+    ) {
         self.id = id
         self.symbol = symbol
         self.title = title
         self.detail = detail
+        self.budgetCategory = budgetCategory
     }
 }
 
@@ -185,7 +194,8 @@ enum HomeInsights {
                 id: "over-budget",
                 symbol: "chart.line.uptrend.xyaxis",
                 title: "\(over.category.name) is over budget by \((-over.remaining).formatCurrencyRounded)",
-                detail: "\(over.spent.formatCurrencyRounded) spent of \(over.cap.formatCurrencyRounded), \(month.daysLeft) days to go"
+                detail: "\(over.spent.formatCurrencyRounded) spent of \(over.cap.formatCurrencyRounded), \(month.daysLeft) days to go",
+                budgetCategory: over.category
             )
         }
 
@@ -208,7 +218,8 @@ enum HomeInsights {
             id: "runway",
             symbol: "chart.line.uptrend.xyaxis",
             title: "\(soonest.budget.category.name) hits its budget in \(days) day\(days == 1 ? "" : "s") at this pace",
-            detail: "\(soonest.budget.remaining.formatCurrencyRounded) left of \(soonest.budget.cap.formatCurrencyRounded). Slow to \(slowTo.formatCurrencyRounded) a day to make it"
+            detail: "\(soonest.budget.remaining.formatCurrencyRounded) left of \(soonest.budget.cap.formatCurrencyRounded). Slow to \(slowTo.formatCurrencyRounded) a day to make it",
+            budgetCategory: soonest.budget.category
         )
     }
 
@@ -241,7 +252,8 @@ enum HomeInsights {
             id: "streak",
             symbol: "checkmark.circle",
             title: "\(best.budget.category.name) under budget \(best.months) months running",
-            detail: "Cap \(best.budget.cap.formatCurrencyRounded), averaging \(average.formatCurrencyRounded)"
+            detail: "Cap \(best.budget.cap.formatCurrencyRounded), averaging \(average.formatCurrencyRounded)",
+            budgetCategory: best.budget.category
         )
     }
 
@@ -265,7 +277,8 @@ enum HomeInsights {
             id: "uncapped",
             symbol: "tag",
             title: "No budget on \(uncapped.category.name), your \(rank) category",
-            detail: detail
+            detail: detail,
+            budgetCategory: uncapped.category
         )
     }
 

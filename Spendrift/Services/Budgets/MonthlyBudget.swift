@@ -23,6 +23,13 @@ enum MonthlyBudget {
         UserDefaults.standard.set(0.0, forKey: totalKey)
     }
 
+    /// Whole-unit amount typed into a budget field. Budgets carry no decimals, and the
+    /// fields use a number pad, so every non-digit is noise - including a pasted
+    /// grouping separator, which differs by region ("60,000", "60.000", "60 000").
+    static func amount(from text: String) -> Double {
+        Double(text.filter(\.isASCIIDigit)) ?? 0
+    }
+
     /// Cap for a category, or zero when it is uncapped. Income never carries one.
     static func cap(for category: TransactionCategory?) -> Double {
         guard let category, category.type == .expense, category.monthlyBudget > 0 else { return 0 }
@@ -108,4 +115,8 @@ struct CappedCategory: Identifiable {
     var used: Double { cap > 0 ? spent / cap : 0 }
     var remaining: Double { cap - spent }
     var isOver: Bool { spent > cap }
+}
+
+private extension Character {
+    var isASCIIDigit: Bool { ("0"..."9").contains(self) }
 }

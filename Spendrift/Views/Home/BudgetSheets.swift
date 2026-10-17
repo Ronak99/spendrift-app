@@ -31,7 +31,7 @@ struct TotalBudgetSheet: View {
     }
 
     private var enteredAmount: Double {
-        Double(amount.filter { $0.isNumber || $0 == "." }) ?? 0
+        MonthlyBudget.amount(from: amount)
     }
 
     var body: some View {
@@ -103,7 +103,7 @@ struct TotalBudgetSheet: View {
             TextField("No budget", text: $amount)
                 .font(.system(size: 40, weight: .bold))
                 .tracking(-0.8)
-                .keyboardType(.decimalPad)
+                .keyboardType(.numberPad)
                 .focused($fieldFocused)
                 .tint(AppTheme.cursor)
                 .accessibilityLabel("Monthly budget")
@@ -171,49 +171,98 @@ struct AddCategoryBudgetSheet: View {
     private var categories: [TransactionCategory]
 
     let onPick: (TransactionCategory) -> Void
+    /// Asks for a new expense category. Like `onPick`, the caller acts once this
+    /// sheet has gone.
+    let onCreate: () -> Void
+
+    private var expenseCategories: [TransactionCategory] {
+        categories.filter { $0.type == .expense }
+    }
 
     private var uncapped: [TransactionCategory] {
-        categories.filter { $0.type == .expense && MonthlyBudget.cap(for: $0) == 0 }
+        expenseCategories.filter { MonthlyBudget.cap(for: $0) == 0 }
+    }
+
+    /// Shown above the list when there is nothing to pick. With no expense categories
+    /// at all, "every category has a budget" would be vacuously true and misleading.
+    private var emptyMessage: String? {
+        if expenseCategories.isEmpty {
+            return "No expense categories yet. Create one to give it a budget."
+        }
+        if uncapped.isEmpty {
+            return "Every expense category already has a budget."
+        }
+        return nil
     }
 
     var body: some View {
         NavigationStack {
             ScrollView {
-                if uncapped.isEmpty {
-                    Text("Every expense category already has a budget.")
-                        .font(.system(size: 15))
-                        .foregroundStyle(AppTheme.inkSecondary)
-                        .multilineTextAlignment(.center)
-                        .padding(.horizontal, 32)
-                        .padding(.top, 48)
-                } else {
+                VStack(spacing: 14) {
+                    if let emptyMessage {
+                        Text(emptyMessage)
+                            .font(.system(size: 15))
+                            .foregroundStyle(AppTheme.inkSecondary)
+                            .multilineTextAlignment(.center)
+                            .padding(.horizontal, 16)
+                            .padding(.top, 24)
+                    }
+
                     HomeCard {
-                        ForEach(Array(uncapped.enumerated()), id: \.element.id) { index, category in
-                            if index > 0 {
-                                HomeRowDivider()
-                            }
+                        // First, so a long list never hides it.
+                        createRow
+                        ForEach(uncapped) { category in
+                            HomeRowDivider()
                             row(category)
                         }
                     }
-                    .padding(.horizontal, 16)
-                    .padding(.top, 8)
-                    .padding(.bottom, 40)
                 }
+                .padding(.horizontal, 16)
+                .padding(.top, 8)
+                .padding(.bottom, 40)
             }
             .scrollIndicators(.hidden)
             .background(AppTheme.canvas.ignoresSafeArea())
-            .navigationTitle("Budget for")
+            .navigationTitle("Budget")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar { CustomSheetCloseToolbarItem() }
         }
+    }
+
+    private var createRow: some View {
+        Button {
+            onCreate()
+            dismiss()
+        } label: {
+            HStack(spacing: 14) {
+                CreateSlotEnamel(side: 36)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Create category")
+                        .font(.system(size: 15.5, weight: .semibold))
+                    Text("A new expense category, with its own budget")
+                        .font(.system(size: 12))
+                        .foregroundStyle(AppTheme.inkSecondary)
+                }
+                Spacer(minLength: 8)
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(AppTheme.inkTertiary)
+            }
+            .padding(.vertical, 11)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(HomePressStyle(scale: 1))
+        .accessibilityIdentifier("budgetCreateCategory")
     }
 
     private func row(_ category: TransactionCategory) -> some View {
         let average = MonthlyBudget.suggestedCap(for: category, transactions: transactions)
 
         return Button {
-            dismiss()
+            // Records the pick, then leaves. The caller opens the editor from this
+            // sheet's onDismiss, never while it is still on screen.
             onPick(category)
+            dismiss()
         } label: {
             HStack(spacing: 14) {
                 EnamelBadge(

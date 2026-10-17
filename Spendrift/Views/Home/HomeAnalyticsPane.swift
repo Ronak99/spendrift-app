@@ -22,6 +22,8 @@ struct HomeAnalyticsPane: View {
     var onEditTotalBudget: () -> Void
     var onAddCategoryBudget: () -> Void
     var onOpenCategory: (TransactionCategory) -> Void
+    /// Opens a category's editor with its Budget field focused.
+    var onEditCategoryBudget: (TransactionCategory) -> Void
     var onOpenTransaction: (Transaction) -> Void
     var onOpenTab: (HomeTab) -> Void
     var onAddTransaction: () -> Void
@@ -50,7 +52,10 @@ struct HomeAnalyticsPane: View {
                 if !insights.isEmpty {
                     insightsBlock(insights)
                 }
-                breakdown(stats, previous: previous)
+                // Nothing to break down in a month with no spend.
+                if !stats.categorySpend.isEmpty {
+                    breakdown(stats, previous: previous)
+                }
                 recentBlock()
             }
             .padding(.horizontal, 16)
@@ -94,27 +99,41 @@ struct HomeAnalyticsPane: View {
             .padding(.top, 10)
 
             if totalBudget == 0 {
-                Button(action: onEditTotalBudget) {
-                    HStack(spacing: 6) {
-                        Image(systemName: "plus")
-                            .font(.system(size: 12, weight: .semibold))
-                        Text("Set a monthly budget")
-                            .font(.system(size: 13))
-                    }
-                    .foregroundStyle(AppTheme.inkSecondary)
-                    .padding(.top, 10)
-                    .contentShape(Rectangle())
-                }
-                .buttonStyle(HomePressStyle(scale: 1))
+                budgetLine(systemImage: "plus", title: "Set a monthly budget")
+            } else if stats.spent == 0 {
+                // With no curve to carry the budget label, the cap stays editable here.
+                budgetLine(systemImage: nil, title: "Budget \(totalBudget.formatCurrencyRounded)")
             }
 
-            HeroSpendPlot(month: stats, cap: totalBudget, onEditBudget: onEditTotalBudget)
-                .padding(.top, 22)
+            // No curve until there is spend to draw: an empty month is just its totals.
+            if stats.spent > 0 {
+                HeroSpendPlot(month: stats, cap: totalBudget, onEditBudget: onEditTotalBudget)
+                    .padding(.top, 22)
+            }
         }
         .frame(maxWidth: .infinity)
         .padding(.top, 8)
         // The curve bleeds past the pane's gutters, the way Expensa's does.
         .padding(.horizontal, -16)
+    }
+
+    /// Quiet line under the totals that opens the monthly budget sheet.
+    private func budgetLine(systemImage: String?, title: String) -> some View {
+        Button(action: onEditTotalBudget) {
+            HStack(spacing: 6) {
+                if let systemImage {
+                    Image(systemName: systemImage)
+                        .font(.system(size: 12, weight: .semibold))
+                }
+                Text(title)
+                    .font(.system(size: 13))
+            }
+            .foregroundStyle(AppTheme.inkSecondary)
+            .padding(.top, 10)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(HomePressStyle(scale: 1))
+        .accessibilityLabel(systemImage == nil ? "Edit monthly budget" : title)
     }
 
     private func heroFigure(_ caption: String, _ value: Double, tint: Color) -> some View {
@@ -372,7 +391,7 @@ struct HomeAnalyticsPane: View {
 
     private func budgetRow(_ budget: CappedCategory) -> some View {
         Button {
-            onOpenCategory(budget.category)
+            onEditCategoryBudget(budget.category)
         } label: {
             HStack(spacing: 12) {
                 EnamelBadge(
@@ -424,13 +443,22 @@ struct HomeAnalyticsPane: View {
                     if index > 0 {
                         HomeRowDivider()
                     }
-                    insightRow(insight)
+                    if let category = insight.budgetCategory {
+                        Button {
+                            onEditCategoryBudget(category)
+                        } label: {
+                            insightRow(insight, showsChevron: true)
+                        }
+                        .buttonStyle(HomePressStyle(scale: 1))
+                    } else {
+                        insightRow(insight, showsChevron: false)
+                    }
                 }
             }
         }
     }
 
-    private func insightRow(_ insight: SpendInsight) -> some View {
+    private func insightRow(_ insight: SpendInsight, showsChevron: Bool) -> some View {
         HStack(spacing: 14) {
             Image(systemName: insight.symbol)
                 .font(.system(size: 17))
@@ -450,7 +478,14 @@ struct HomeAnalyticsPane: View {
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
+
+            if showsChevron {
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(AppTheme.inkTertiary)
+            }
         }
+        .contentShape(Rectangle())
         .padding(.vertical, 12)
         .accessibilityElement(children: .combine)
     }
@@ -461,19 +496,12 @@ struct HomeAnalyticsPane: View {
         VStack(spacing: 10) {
             HomeSectionHeader(title: "Where it went", showsChevron: true, action: onOpenAnalytics)
             HomeCard {
-                if stats.categorySpend.isEmpty {
-                    Text("Nothing spent in \(month.name)")
-                        .font(.system(size: 13))
-                        .foregroundStyle(AppTheme.inkSecondary)
-                        .padding(.vertical, 12)
-                } else {
-                    stackedBar(stats)
-                    ForEach(Array(stats.categorySpend.prefix(4).enumerated()), id: \.element.id) { index, slice in
-                        if index > 0 {
-                            HomeRowDivider()
-                        }
-                        breakdownRow(slice, stats: stats, previous: previous)
+                stackedBar(stats)
+                ForEach(Array(stats.categorySpend.prefix(4).enumerated()), id: \.element.id) { index, slice in
+                    if index > 0 {
+                        HomeRowDivider()
                     }
+                    breakdownRow(slice, stats: stats, previous: previous)
                 }
                 HomeCardLink(title: "All categories") { onOpenTab(.categories) }
             }
