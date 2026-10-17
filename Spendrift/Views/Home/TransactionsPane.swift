@@ -83,39 +83,21 @@ struct TransactionsPane: View {
         .accessibilityIdentifier(transaction.notes)
     }
 
+    /// Same row as Home's empty Recent card. "First" only while the whole ledger is
+    /// empty: a quiet month in an active ledger asks for one in that month instead.
     private var emptyLedger: some View {
-        VStack(spacing: 0) {
-            EnamelBadge(
-                systemImage: "tray.fill",
-                color: CategoryEnamel.uncategorized,
-                side: 72,
-                showsShadow: true
+        let isLedgerEmpty = !transactions.contains(where: \.isPersisted)
+
+        return HomeCard {
+            AddTransactionRow(
+                title: isLedgerEmpty ? "Add your first transaction" : "Add a transaction",
+                subtitle: isLedgerEmpty
+                    ? "Every expense and income you log lands here"
+                    : "Nothing logged in \(month.name) \(String(month.year)) yet",
+                action: onAddTransaction
             )
-            .padding(.top, 40)
-
-            Text("No transactions")
-                .font(.system(size: 22, weight: .bold))
-                .tracking(-0.5)
-                .padding(.top, 16)
-
-            Text("Add one for \(month.name) \(String(month.year)).")
-                .font(.system(size: 14))
-                .foregroundStyle(AppTheme.inkSecondary)
-                .multilineTextAlignment(.center)
-                .padding(.top, 8)
-
-            Button(action: onAddTransaction) {
-                Text("Add transaction")
-                    .font(.system(size: 14, weight: .semibold))
-                    .padding(.horizontal, 18)
-                    .frame(height: 40)
-                    .background(AppTheme.actionBackground, in: Capsule())
-                    .foregroundStyle(AppTheme.actionForeground)
-            }
-            .buttonStyle(.plain)
-            .padding(.top, 24)
         }
-        .frame(maxWidth: .infinity)
-        .padding(.horizontal, 24)
+        .padding(.horizontal, 16)
+        .padding(.top, 18)
     }
 }

@@ -429,7 +429,7 @@ final class TransactionIntegrationTests: SpendriftUITestBase {
 
     func testTransactionsTab_showsEmptyState_whenNoTransactions() {
         navigateToTransactions()
-        XCTAssertTrue(app.staticTexts["No transactions"].waitForExistence(timeout: 3))
+        XCTAssertTrue(app.buttons["addTransactionRow"].waitForExistence(timeout: 3))
         XCTAssertTrue(app.buttons["addTransactionCTA"].exists)
     }
 
@@ -445,7 +445,7 @@ final class TransactionIntegrationTests: SpendriftUITestBase {
         openTransactionsManualEntryForm()
 
         app.navigationBars.buttons["xmark"].tap()
-        XCTAssertTrue(app.staticTexts["No transactions"].waitForExistence(timeout: 3))
+        XCTAssertTrue(app.buttons["addTransactionRow"].waitForExistence(timeout: 3))
     }
 
     // MARK: Create
@@ -549,7 +549,7 @@ final class TransactionIntegrationTests: SpendriftUITestBase {
         deleteRow(labelled: "Food")
 
         sleep(1)
-        XCTAssertTrue(app.staticTexts["No transactions"].waitForExistence(timeout: 3))
+        XCTAssertTrue(app.buttons["addTransactionRow"].waitForExistence(timeout: 3))
     }
 
     // MARK: Account Picker
@@ -799,7 +799,7 @@ final class CrossFeatureIntegrationTests: SpendriftUITestBase {
         // Transaction linked to Food should also be removed (cascade)
         navigateToTransactions()
         sleep(1)
-        XCTAssertTrue(app.staticTexts["No transactions"].waitForExistence(timeout: 3))
+        XCTAssertTrue(app.buttons["addTransactionRow"].waitForExistence(timeout: 3))
     }
 
     func testDeletingAccount_removesAssociatedTransactions() {
@@ -818,7 +818,7 @@ final class CrossFeatureIntegrationTests: SpendriftUITestBase {
         // Transaction linked to SBI should also be removed (cascade)
         navigateToTransactions()
         sleep(1)
-        XCTAssertTrue(app.staticTexts["No transactions"].waitForExistence(timeout: 3))
+        XCTAssertTrue(app.buttons["addTransactionRow"].waitForExistence(timeout: 3))
     }
 
     // MARK: Multi-Account

@@ -199,6 +199,35 @@ struct CreateSlotEnamel: View {
     }
 }
 
+/// List row that opens the create-transaction sheet. Stands in for a list with
+/// nothing in it, on Home's Recent card and on an empty Transactions month.
+struct AddTransactionRow: View {
+    var title: String = "Add your first transaction"
+    let subtitle: String
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 14) {
+                CreateSlotEnamel(side: 42)
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(title)
+                        .font(.system(size: 16, weight: .semibold))
+                    Text(subtitle)
+                        .font(.system(size: 12))
+                        .foregroundStyle(AppTheme.inkSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                Spacer(minLength: 0)
+            }
+            .padding(.vertical, 12)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(HomePressStyle(scale: 1))
+        .accessibilityIdentifier("addTransactionRow")
+    }
+}
+
 /// Press feedback for the whole-card buttons on Home.
 struct HomePressStyle: ButtonStyle {
     var scale: CGFloat = 0.99

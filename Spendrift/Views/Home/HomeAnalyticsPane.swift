@@ -42,12 +42,18 @@ struct HomeAnalyticsPane: View {
             today: today
         )
 
+        // A month with nothing logged has no persona, tiles or budgets to speak of:
+        // they would only read as zeros. The hero and Recent's add row carry it.
+        let hasMonthData = !stats.transactions.isEmpty
+
         return ScrollView {
             VStack(spacing: 26) {
                 hero(stats)
-                personaBlock(stats)
-                tiles(stats, previous: previous)
-                budgetsBlock(capped)
+                if hasMonthData {
+                    personaBlock(stats)
+                    tiles(stats, previous: previous)
+                    budgetsBlock(capped)
+                }
                 if !insights.isEmpty {
                     insightsBlock(insights)
                 }
@@ -601,22 +607,10 @@ struct HomeAnalyticsPane: View {
             HomeSectionHeader(title: "Recent")
             HomeCard {
                 if recent.isEmpty {
-                    Button(action: onAddTransaction) {
-                        HStack(spacing: 14) {
-                            CreateSlotEnamel(side: 42)
-                            VStack(alignment: .leading, spacing: 3) {
-                                Text("Add your first transaction")
-                                    .font(.system(size: 16, weight: .semibold))
-                                Text("It shows up here, and in every total above")
-                                    .font(.system(size: 12))
-                                    .foregroundStyle(AppTheme.inkSecondary)
-                            }
-                            Spacer(minLength: 0)
-                        }
-                        .padding(.vertical, 12)
-                        .contentShape(Rectangle())
-                    }
-                    .buttonStyle(HomePressStyle(scale: 1))
+                    AddTransactionRow(
+                        subtitle: "It shows up here, and in every total above",
+                        action: onAddTransaction
+                    )
                 } else {
                     ForEach(Array(recent.enumerated()), id: \.element.id) { index, transaction in
                         if index > 0 {
