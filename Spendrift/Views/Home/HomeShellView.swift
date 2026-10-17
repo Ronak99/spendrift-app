@@ -74,8 +74,6 @@ struct HomeShellView: View {
     @State private var ledgerMonth = MonthRef.of(Date())
     @State private var categoryType: CategoryType = .expense
     @State private var isTrayOpen = false
-    /// True once the visible pane has scrolled enough to put the title row away.
-    @State private var isTitleCollapsed = false
 
     @State private var createTransactionSheet: CreateTransactionSheetMode?
     @State private var transactionToEdit: Transaction?
@@ -112,6 +110,8 @@ struct HomeShellView: View {
     @State private var lastProcessedReceiptImportID: UUID?
 
     private let today = Date()
+    /// Screen top to the bottom of the tab strip. The wash is this tall on every tab.
+    @State private var atmosphereHeight: CGFloat = 0
 
     private var isDark: Bool { colorScheme == .dark }
 
@@ -239,9 +239,6 @@ struct HomeShellView: View {
             createTransactionSheet = nil
         }
         .onChange(of: selectedTab) { _, tab in
-            // Each pane owns its scroll, and a fresh one starts at the top: the title
-            // row comes back with it.
-            isTitleCollapsed = false
             Analytics.capture(.screenViewed, [Analytics.Key.tab: tab.eventName])
             Diagnostics.breadcrumb(
                 category: .navigation,
@@ -270,6 +267,17 @@ struct HomeShellView: View {
             pane
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
+        .background(alignment: .top) {
+            // Height is the tab strip's bottom edge. Same on every tab.
+            // A flexible wash was filling the screen and showing through Accounts'
+            // clear ledger row. Home and Transactions hid it behind opaque rows.
+            ColorWashBackground(color: AppTheme.atmosphere, isDark: isDark)
+                .frame(height: atmosphereHeight)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+                .clipped()
+                .ignoresSafeArea()
+                .allowsHitTesting(false)
+        }
         .background(AppTheme.canvas.ignoresSafeArea())
         .toolbar(.hidden, for: .navigationBar)
         .overlay(alignment: .bottom) { tray }
@@ -282,14 +290,10 @@ struct HomeShellView: View {
 
     /// Title, search and tab strip. The header sits above the pane rather than inside
     /// it, so the status bar always wears the wash and nothing can scroll out from
-    /// under it. Only the title row collapses, and it does so with the scroll.
+    /// under it.
     private var header: some View {
         VStack(spacing: 0) {
             HomeTitleBar(title: selectedTab.title) { showSettings = true }
-                .frame(height: titleRowHeight, alignment: .bottom)
-                .opacity(titleRowOpacity)
-                .clipped()
-                .accessibilityHidden(titleRowOpacity < 0.1)
 
             HomeSearchBar { path.append(.search) }
                 .padding(.horizontal, 16)
@@ -309,44 +313,10 @@ struct HomeShellView: View {
                     }
                 }
             )
-
-            if selectedTab == .accounts {
-                AccountLedgerSummary(accounts: accounts, transactions: transactions)
-                    .padding(.horizontal, 20)
-                    .padding(.top, 12)
-                    .padding(.bottom, 10)
-            }
         }
-        .background(alignment: .top) {
-            // Same atmosphere as the editor heroes (`ColorWashBackground`): a top-down
-            // tint fading to the canvas, with a radial bloom anchored top-right. Extends
-            // under the status bar so that strip wears it too, instead of staying canvas.
-            ColorWashBackground(color: AppTheme.atmosphere, isDark: isDark)
-                .ignoresSafeArea(edges: .top)
-        }
-    }
-
-    private var titleRowHeight: CGFloat { isTitleCollapsed ? 0 : Self.titleHeight }
-
-    private var titleRowOpacity: Double { isTitleCollapsed ? 0 : 1 }
-
-    private static let titleHeight: CGFloat = 56
-    /// Hysteresis: the title leaves after this much scroll and only comes back near
-    /// the top, so a pane whose viewport grows by the collapse cannot flap.
-    private static let collapseThreshold: CGFloat = 16
-    private static let expandThreshold: CGFloat = 4
-
-    /// Collapses or restores the title row for the pane's scroll position.
-    private func syncTitleRow(offset: CGFloat) {
-        let shouldCollapse: Bool
-        if isTitleCollapsed {
-            shouldCollapse = offset > Self.expandThreshold
-        } else {
-            shouldCollapse = offset > Self.collapseThreshold
-        }
-        guard shouldCollapse != isTitleCollapsed else { return }
-        withAnimation(.easeOut(duration: 0.22)) {
-            isTitleCollapsed = shouldCollapse
+        .onGeometryChange(for: CGFloat.self, of: { $0.frame(in: .global).maxY }) { bottom in
+            guard bottom > 0, bottom != atmosphereHeight else { return }
+            atmosphereHeight = bottom
         }
     }
 
@@ -368,8 +338,7 @@ struct HomeShellView: View {
                 onOpenTransaction: { transactionToEdit = $0 },
                 onOpenTab: { selectedTab = $0 },
                 onAddTransaction: openCreateTransactionSheet,
-                onOpenAnalytics: openAnalytics,
-                onScroll: syncTitleRow(offset:)
+                onOpenAnalytics: openAnalytics
             )
         case .transactions:
             TransactionsPane(
@@ -378,8 +347,7 @@ struct HomeShellView: View {
                 today: today,
                 onOpenTransaction: { transactionToEdit = $0 },
                 onAddTransaction: openCreateTransactionSheet,
-                onDelete: delete(transaction:),
-                onScroll: syncTitleRow(offset:)
+                onDelete: delete(transaction:)
             )
         case .accounts:
             AccountsPane(
@@ -387,8 +355,7 @@ struct HomeShellView: View {
                 transactions: transactions,
                 onOpenAccount: { accountToEdit = $0 },
                 onCreateAccount: { showCreateAccount = true },
-                onDelete: delete(account:),
-                onScroll: syncTitleRow(offset:)
+                onDelete: delete(account:)
             )
         case .categories:
             CategoriesPane(
@@ -397,8 +364,7 @@ struct HomeShellView: View {
                 month: MonthRef.of(today).stats(from: transactions, today: today),
                 onOpenCategory: { categoryEdit = CategoryEditRequest(category: $0) },
                 onCreateCategory: { newCategoryType = categoryType },
-                onDelete: { categoryToDelete = $0 },
-                onScroll: syncTitleRow(offset:)
+                onDelete: { categoryToDelete = $0 }
             )
         }
     }

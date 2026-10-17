@@ -17,7 +17,6 @@ struct CategoriesPane: View {
     var onOpenCategory: (TransactionCategory) -> Void
     var onCreateCategory: () -> Void
     var onDelete: (TransactionCategory) -> Void
-    var onScroll: (CGFloat) -> Void
 
     private let columns = Array(repeating: GridItem(.flexible(), spacing: 16), count: 3)
 
@@ -38,7 +37,6 @@ struct CategoriesPane: View {
         }
         .scrollIndicators(.hidden)
         .homeTrayClearance()
-        .reportingScrollOffset(onScroll)
     }
 
     private var createChip: some View {

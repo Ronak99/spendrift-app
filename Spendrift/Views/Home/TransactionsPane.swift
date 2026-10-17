@@ -16,7 +16,6 @@ struct TransactionsPane: View {
     var onOpenTransaction: (Transaction) -> Void
     var onAddTransaction: () -> Void
     var onDelete: (Transaction) -> Void
-    var onScroll: (CGFloat) -> Void
 
     private var monthTransactions: [Transaction] {
         let range = month.dateRange()
@@ -35,7 +34,6 @@ struct TransactionsPane: View {
                 }
                 .scrollIndicators(.hidden)
                 .homeTrayClearance()
-                .reportingScrollOffset(onScroll)
             } else {
                 List {
                     ForEach(days, id: \.dayStart) { section in
@@ -46,7 +44,6 @@ struct TransactionsPane: View {
                 .scrollContentBackground(.hidden)
                 .scrollIndicators(.hidden)
                 .homeTrayClearance()
-                .reportingScrollOffset(onScroll)
             }
         }
     }

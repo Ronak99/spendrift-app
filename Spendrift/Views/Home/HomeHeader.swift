@@ -2,8 +2,8 @@
 //  HomeHeader.swift
 //  Spendrift
 //
-//  Title bar, search entry and tab strip. Only the search bar and the strip pin:
-//  the title and Settings scroll away under the status bar as the user reads.
+//  Title bar, search entry and tab strip. All three stay put while the panes
+//  scroll beneath them.
 //
 
 import SwiftUI
@@ -26,7 +26,7 @@ private extension View {
     }
 }
 
-/// Title and Settings. Scrolls with the content rather than pinning.
+/// Title and Settings.
 struct HomeTitleBar: View {
     let title: String
     let onOpenSettings: () -> Void
@@ -34,16 +34,19 @@ struct HomeTitleBar: View {
     var body: some View {
         HStack {
             Text(title)
-                .font(.system(size: 22, weight: .bold))
+                .font(.system(size: 22, weight: .semibold))
                 .tracking(-0.4)
                 .accessibilityIdentifier("homeTitle")
             Spacer(minLength: 8)
             Button(action: onOpenSettings) {
-                Image(systemName: "gearshape")
-                    .font(.system(size: 20))
-                    .foregroundStyle(AppTheme.inkSecondary)
+                Image(systemName: "gearshape.fill")
+                    .font(.system(size: 14))
+                    .foregroundStyle(.white)
                     .frame(width: 36, height: 36)
-                    .contentShape(Rectangle())
+                    // Fixed black rather than ink, so the white glyph keeps its
+                    // contrast in dark mode, where ink turns light.
+                    .background(Color.black.opacity(0.45), in: Circle())
+                    .contentShape(Circle())
             }
             .buttonStyle(.plain)
             .accessibilityLabel("Profile and settings")
@@ -82,7 +85,7 @@ struct HomeSearchBar: View {
 
 /// Icon over label, with an underline under the selected tab. The selected
 /// Transactions tab reads as its month and the selected Categories tab as its
-/// type, and a second tap on either opens the matching picker.
+/// type, and a second tap on either opens the mat ching picker.
 struct HomeTabStrip: View {
     let selected: HomeTab
     /// Month name while Transactions is selected.
@@ -92,16 +95,50 @@ struct HomeTabStrip: View {
     let onSelect: (HomeTab) -> Void
     let onReselect: (HomeTab) -> Void
 
+    private static let stripInset: CGFloat = 6
+    private static let underlineInset: CGFloat = 10
+
     var body: some View {
         HStack(spacing: 0) {
             ForEach(HomeTab.allCases) { tab in
                 tabButton(tab)
             }
         }
-        .padding(.horizontal, 6)
+        .padding(.horizontal, Self.stripInset)
         .overlay(alignment: .bottom) {
             AppTheme.hairline.frame(height: 1)
         }
+        .overlay(alignment: .bottomLeading) { underline }
+    }
+
+    /// One underline that moves, rather than one per tab that appears and disappears.
+    /// Only its offset animates, so a tap mid-slide retargets the spring from where
+    /// the bar is instead of restarting from a view that is still being removed.
+    private var underline: some View {
+        GeometryReader { proxy in
+            let tabs = HomeTab.allCases
+            let tabWidth = (proxy.size.width - Self.stripInset * 2) / CGFloat(tabs.count)
+            let index = CGFloat(tabs.firstIndex(of: selected) ?? 0)
+
+            AppTheme.ink
+                .frame(width: max(tabWidth - Self.underlineInset * 2, 0), height: 3)
+                .clipShape(
+                    UnevenRoundedRectangle(
+                        topLeadingRadius: 3,
+                        bottomLeadingRadius: 0,
+                        bottomTrailingRadius: 0,
+                        topTrailingRadius: 3,
+                        style: .continuous
+                    )
+                )
+                .offset(x: Self.stripInset + index * tabWidth + Self.underlineInset)
+                .frame(maxHeight: .infinity, alignment: .bottom)
+                // Scoped to the bar so the caller needs no withAnimation and the
+                // labels swap instantly.
+                .animation(.snappy(duration: 0.25), value: selected)
+        }
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
     }
 
     private func label(for tab: HomeTab) -> String {
@@ -150,22 +187,6 @@ struct HomeTabStrip: View {
             .padding(.top, 8)
             .padding(.bottom, 11)
             .contentShape(Rectangle())
-            .overlay(alignment: .bottom) {
-                if isSelected {
-                    AppTheme.ink
-                        .frame(height: 3)
-                        .clipShape(
-                            UnevenRoundedRectangle(
-                                topLeadingRadius: 3,
-                                bottomLeadingRadius: 0,
-                                bottomTrailingRadius: 0,
-                                topTrailingRadius: 3,
-                                style: .continuous
-                            )
-                        )
-                        .padding(.horizontal, 10)
-                }
-            }
         }
         .buttonStyle(.plain)
         .accessibilityIdentifier("tab-\(tab.rawValue)")

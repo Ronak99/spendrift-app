@@ -212,17 +212,6 @@ struct HomePressStyle: ButtonStyle {
 }
 
 extension View {
-    /// Reports how far the scroll view in this view has travelled, clamped at zero so
-    /// a rubber-band bounce does not drive layout. Applied to each Home pane's own
-    /// scroll container, since the header lives outside it.
-    func reportingScrollOffset(_ action: @escaping (CGFloat) -> Void) -> some View {
-        onScrollGeometryChange(for: CGFloat.self) { geometry in
-            geometry.contentOffset.y + geometry.contentInsets.top
-        } action: { _, offset in
-            action(max(0, offset))
-        }
-    }
-
     /// Room under a pane for the bottom tray, which floats over it.
     func homeTrayClearance() -> some View {
         contentMargins(.bottom, 140, for: .scrollContent)

@@ -222,7 +222,7 @@ final class AccountIntegrationTests: SpendriftUITestBase {
     func testAccountsTab_showsEmptyState_whenNoAccounts() {
         navigateToAccounts()
         XCTAssertTrue(app.buttons["accountsCreateSlot"].waitForExistence(timeout: 3))
-        XCTAssertTrue(app.staticTexts["Add a bank, card, cash or wallet to start tracking."].exists)
+        XCTAssertFalse(app.staticTexts["Total balance"].exists)
     }
 
     func testAccountsCreateSlot_opensCreateSheet() {
@@ -670,12 +670,12 @@ final class TransactionIntegrationTests: SpendriftUITestBase {
             amount: "5000"
         )
 
-        // The ledger summary moved to the Accounts tab, pinned with the tab strip.
+        // One account has no total. The header appears from the second account on.
         navigateToAccounts()
 
-        XCTAssertTrue(app.staticTexts["Balance"].waitForExistence(timeout: 3))
-        XCTAssertTrue(app.staticTexts["Income"].exists)
-        XCTAssertTrue(app.staticTexts["Expenses"].exists)
+        XCTAssertFalse(app.staticTexts["Total balance"].exists)
+        XCTAssertFalse(app.staticTexts["Income"].exists)
+        XCTAssertFalse(app.staticTexts["Expenses"].exists)
     }
 }
 

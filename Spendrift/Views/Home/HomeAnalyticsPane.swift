@@ -29,7 +29,6 @@ struct HomeAnalyticsPane: View {
     var onAddTransaction: () -> Void
     /// Opens the full analytics for the picked month: charts, drills, the lot.
     var onOpenAnalytics: () -> Void
-    var onScroll: (CGFloat) -> Void
 
     var body: some View {
         let stats = month.stats(from: transactions, today: today)
@@ -63,7 +62,6 @@ struct HomeAnalyticsPane: View {
         }
         .scrollIndicators(.hidden)
         .homeTrayClearance()
-        .reportingScrollOffset(onScroll)
     }
 
     // MARK: Hero

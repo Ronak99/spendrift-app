@@ -2,7 +2,7 @@
 //  AccountsPane.swift
 //  Spendrift
 //
-//  One row per account under the pinned Balance / Income / Expenses strip.
+//  One row per account under a centred total balance.
 //  Creating lives inside the list it adds to: a dashed slot at the top, never
 //  another bare plus in the title bar.
 //
@@ -15,20 +15,21 @@ struct AccountsPane: View {
     var onOpenAccount: (Account) -> Void
     var onCreateAccount: () -> Void
     var onDelete: (Account) -> Void
-    var onScroll: (CGFloat) -> Void
 
     var body: some View {
         List {
+            if accounts.count >= 2 {
+                Section {
+                    AccountLedgerSummary(accounts: accounts)
+                        .listRowInsets(EdgeInsets(top: 32, leading: 16, bottom: 20, trailing: 16))
+                        .listRowBackground(Color.clear)
+                        .listRowSeparator(.hidden)
+                }
+            }
             Section {
                 createSlot
                 ForEach(Array(accounts.enumerated()), id: \.element.id) { index, account in
                     row(account, index: index + 1, count: accounts.count + 1)
-                }
-            } footer: {
-                if accounts.isEmpty {
-                    Text("Add a bank, card, cash or wallet to start tracking.")
-                        .font(.system(size: 13))
-                        .foregroundStyle(AppTheme.inkSecondary)
                 }
             }
         }
@@ -36,7 +37,6 @@ struct AccountsPane: View {
         .scrollContentBackground(.hidden)
         .scrollIndicators(.hidden)
         .homeTrayClearance()
-        .reportingScrollOffset(onScroll)
     }
 
     private var createSlot: some View {
@@ -83,52 +83,48 @@ struct AccountsPane: View {
     }
 }
 
-/// Balance, Income and Expenses across the whole ledger. Pinned with the tab strip,
-/// so it stays readable while the rows scroll.
+/// Sum of every account balance, centred like the All tab's "Total spent" hero.
+/// Lives in the accounts list so it scrolls away with the rows.
 struct AccountLedgerSummary: View {
     let accounts: [Account]
-    let transactions: [Transaction]
 
     private var balance: Double {
         accounts.reduce(0) { $0 + $1.currentBalance }
     }
 
-    /// Match the ledger: round the figures once there are enough rows that
-    /// decimals are noise rather than detail.
-    private var usesRounded: Bool { transactions.count > 10 }
-
-    private func money(_ value: Double) -> String {
-        usesRounded ? value.formatCurrencyRounded : value.formatCurrency
+    /// Two, three, and four are spelled out. Five and up use the number.
+    private var subline: String {
+        let count = accounts.count
+        let word: String
+        switch count {
+        case 2: word = "two"
+        case 3: word = "three"
+        case 4: word = "four"
+        default: word = "\(count)"
+        }
+        return "Across \(word) accounts"
     }
 
     var body: some View {
-        HStack(alignment: .top, spacing: 20) {
-            column("Balance", money(balance), tint: balance < 0 ? AppTheme.expense : AppTheme.ink, alignment: .leading)
-            Spacer(minLength: 8)
-            column("Income", money(transactions.totalIncome), tint: AppTheme.income, alignment: .center)
-            Spacer(minLength: 8)
-            column("Expenses", money(transactions.totalExpenses), tint: AppTheme.expense, alignment: .trailing)
-        }
-        .accessibilityElement(children: .combine)
-    }
-
-    private func column(
-        _ caption: String,
-        _ value: String,
-        tint: Color,
-        alignment: HorizontalAlignment
-    ) -> some View {
-        VStack(alignment: alignment, spacing: 4) {
-            Text(caption)
-                .font(.system(size: 12))
+        VStack(spacing: 6) {
+            Text("Total balance")
+                .font(.system(size: 17))
                 .foregroundStyle(AppTheme.inkSecondary)
-            Text(value)
-                .font(.system(size: 17, weight: .semibold))
-                .tracking(-0.3)
+
+            Text(balance.formatCurrencyRounded)
+                .font(.system(size: 56, weight: .semibold))
+                .tracking(-2)
                 .monospacedDigit()
-                .foregroundStyle(tint)
                 .lineLimit(1)
-                .minimumScaleFactor(0.7)
+                .minimumScaleFactor(0.5)
+                .foregroundStyle(balance < 0 ? AppTheme.expense : AppTheme.ink)
+
+            Text(subline)
+                .font(.system(size: 15))
+                .foregroundStyle(AppTheme.inkSecondary)
+                .multilineTextAlignment(.center)
         }
+        .frame(maxWidth: .infinity)
+        .accessibilityElement(children: .combine)
     }
 }
