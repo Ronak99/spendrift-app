@@ -9,6 +9,66 @@
 
 import SwiftUI
 
+// MARK: - Liquid Glass surfaces
+//
+// The tray's three controls are native Liquid Glass on iOS 26: true translucent
+// material with its own specular highlight, shadow and interactive squish on
+// press, grouped in one `GlassEffectContainer` so the mic and more orbs blend
+// into the Add transaction capsule as they pass close to it instead of reading
+// as three separate layers. Earlier systems fall back to the flat tinted circles
+// and the ink capsule this tray always drew.
+
+/// Groups the tray's glass controls so nearby surfaces sample and blend as one
+/// layer. Plain passthrough before iOS 26.
+private struct TrayGlassGroup<Content: View>: View {
+    @ViewBuilder var content: Content
+
+    var body: some View {
+        if #available(iOS 26.0, *) {
+            GlassEffectContainer(spacing: 12) { content }
+        } else {
+            content
+        }
+    }
+}
+
+private extension View {
+    /// Liquid Glass circle on iOS 26, tinted when the control reads as "on"
+    /// (the tray menu open). Falls back to the flat translucent fill this app
+    /// used before Liquid Glass.
+    @ViewBuilder
+    func glassOrb(tint: Color?) -> some View {
+        if #available(iOS 26.0, *) {
+            if let tint {
+                self.glassEffect(.regular.tint(tint).interactive(), in: .circle)
+            } else {
+                self.glassEffect(.regular.interactive(), in: .circle)
+            }
+        } else {
+            self
+                .background(tint?.opacity(0.18) ?? AppTheme.glass, in: Circle())
+                .overlay {
+                    Circle().strokeBorder(tint?.opacity(0.36) ?? AppTheme.glassEdge, lineWidth: 1)
+                }
+                .shadow(color: .black.opacity(0.25), radius: 15, y: 8)
+        }
+    }
+
+    /// Liquid Glass capsule tinted with the app's ink chrome, so the one global
+    /// create action keeps reading as the primary control once it is glass.
+    /// Falls back to the flat ink capsule.
+    @ViewBuilder
+    func glassActionCapsule() -> some View {
+        if #available(iOS 26.0, *) {
+            self.glassEffect(.regular.tint(AppTheme.actionBackground).interactive(), in: .capsule)
+        } else {
+            self
+                .background(AppTheme.actionBackground, in: Capsule())
+                .shadow(color: .black.opacity(0.3), radius: 15, y: 8)
+        }
+    }
+}
+
 struct HomeBottomTray: View {
     @Binding var isMenuOpen: Bool
     let voiceDisabled: Bool
@@ -16,40 +76,41 @@ struct HomeBottomTray: View {
     let onSpeak: () -> Void
 
     var body: some View {
-        HStack(spacing: 12) {
-            orb(
-                systemImage: "tray.and.arrow.down",
-                tint: isMenuOpen ? AppTheme.atmosphere : AppTheme.inkSecondary,
-                isOn: isMenuOpen,
-                label: "More ways to add"
-            ) {
-                isMenuOpen.toggle()
-            }
-
-            orb(
-                systemImage: "mic.fill",
-                tint: voiceDisabled ? AppTheme.inkTertiary : AppTheme.microphone,
-                isOn: false,
-                label: "Speak a transaction",
-                action: onSpeak
-            )
-            .disabled(voiceDisabled)
-
-            Button(action: onAddTransaction) {
-                HStack(spacing: 10) {
-                    Image(systemName: "plus")
-                        .font(.system(size: 18, weight: .bold))
-                    Text("Add transaction")
-                        .font(.system(size: 17, weight: .semibold))
+        TrayGlassGroup {
+            HStack(spacing: 12) {
+                orb(
+                    systemImage: "tray.and.arrow.down",
+                    iconTint: isMenuOpen ? AppTheme.atmosphere : AppTheme.inkSecondary,
+                    glassTint: isMenuOpen ? AppTheme.atmosphere : nil,
+                    label: "More ways to add"
+                ) {
+                    isMenuOpen.toggle()
                 }
-                .frame(maxWidth: .infinity)
-                .frame(height: 58)
-                .background(AppTheme.actionBackground, in: Capsule())
-                .foregroundStyle(AppTheme.actionForeground)
-                .shadow(color: .black.opacity(0.3), radius: 15, y: 8)
+
+                orb(
+                    systemImage: "mic.fill",
+                    iconTint: voiceDisabled ? AppTheme.inkTertiary : AppTheme.microphone,
+                    glassTint: nil,
+                    label: "Speak a transaction",
+                    action: onSpeak
+                )
+                .disabled(voiceDisabled)
+
+                Button(action: onAddTransaction) {
+                    HStack(spacing: 10) {
+                        Image(systemName: "plus")
+                            .font(.system(size: 18, weight: .bold))
+                        Text("Add transaction")
+                            .font(.system(size: 17, weight: .semibold))
+                    }
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 58)
+                    .foregroundStyle(AppTheme.actionForeground)
+                    .glassActionCapsule()
+                }
+                .buttonStyle(HomePressStyle(scale: 0.98))
+                .accessibilityIdentifier("addTransactionCTA")
             }
-            .buttonStyle(HomePressStyle(scale: 0.98))
-            .accessibilityIdentifier("addTransactionCTA")
         }
         .padding(.horizontal, 20)
         .padding(.top, 10)
@@ -66,27 +127,17 @@ struct HomeBottomTray: View {
 
     private func orb(
         systemImage: String,
-        tint: Color,
-        isOn: Bool,
+        iconTint: Color,
+        glassTint: Color?,
         label: String,
         action: @escaping () -> Void
     ) -> some View {
         Button(action: action) {
             Image(systemName: systemImage)
                 .font(.system(size: 22))
-                .foregroundStyle(tint)
+                .foregroundStyle(iconTint)
                 .frame(width: 58, height: 58)
-                .background(
-                    isOn ? AppTheme.atmosphere.opacity(0.18) : AppTheme.glass,
-                    in: Circle()
-                )
-                .overlay {
-                    Circle().strokeBorder(
-                        isOn ? AppTheme.atmosphere.opacity(0.36) : AppTheme.glassEdge,
-                        lineWidth: 1
-                    )
-                }
-                .shadow(color: .black.opacity(0.25), radius: 15, y: 8)
+                .glassOrb(tint: glassTint)
         }
         .buttonStyle(HomePressStyle(scale: 0.94))
         .accessibilityLabel(label)

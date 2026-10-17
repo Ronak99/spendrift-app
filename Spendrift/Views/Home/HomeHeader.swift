@@ -8,6 +8,24 @@
 
 import SwiftUI
 
+// MARK: - Liquid Glass surface
+
+private extension View {
+    /// Liquid Glass capsule on iOS 26: transparent, so the header's blue atmosphere
+    /// wash shows straight through it instead of sitting on a flat tinted fill.
+    /// Falls back to that flat fill on earlier systems.
+    @ViewBuilder
+    func glassSearchCapsule() -> some View {
+        if #available(iOS 26.0, *) {
+            self.glassEffect(.regular.interactive(), in: .capsule)
+        } else {
+            self
+                .background(AppTheme.searchField, in: Capsule())
+                .overlay(Capsule().strokeBorder(AppTheme.searchFieldEdge, lineWidth: 1))
+        }
+    }
+}
+
 /// Title and Settings. Scrolls with the content rather than pinning.
 struct HomeTitleBar: View {
     let title: String
@@ -44,18 +62,17 @@ struct HomeSearchBar: View {
         Button(action: action) {
             HStack(spacing: 12) {
                 Image(systemName: "magnifyingglass")
-                    .font(.system(size: 19, weight: .medium))
+                    .font(.system(size: 16, weight: .medium))
                     .foregroundStyle(AppTheme.ink)
                 Text("Search everything")
-                    .font(.system(size: 17))
+                    .font(.system(size: 16))
                     .foregroundStyle(AppTheme.inkSecondary)
                     .lineLimit(1)
                 Spacer(minLength: 0)
             }
             .padding(.horizontal, 18)
-            .frame(height: 54)
-            .background(AppTheme.searchField, in: Capsule())
-            .overlay(Capsule().strokeBorder(AppTheme.searchFieldEdge, lineWidth: 1))
+            .frame(height: 48)
+            .glassSearchCapsule()
         }
         .buttonStyle(HomePressStyle(scale: 1))
         .accessibilityLabel("Search transactions, categories and accounts")
