@@ -7,8 +7,20 @@
 
 import SwiftUI
 
+/// What the row shows under the amount.
+enum TransactionRowDate {
+    /// Time of day, for rows already grouped under a day header.
+    case time
+    /// Time today, "Yesterday", then "9 Oct" - for mixed-date lists like Recent and search.
+    case relative
+}
+
 struct TransactionListItem: View {
     let transaction: Transaction
+    /// Trailing date treatment.
+    var dateStyle: TransactionRowDate = .time
+    /// Query tokens to underline in the title, so a search hit shows why it matched.
+    var highlightTokens: [String] = []
 
     private let enamelSize: CGFloat = 42
 
@@ -50,6 +62,35 @@ struct TransactionListItem: View {
         transaction.isExpense ? CategoryEnamel.expense : CategoryEnamel.income
     }
 
+    /// Title with every matched word prefix underlined.
+    private var highlightedTitle: AttributedString {
+        var attributed = AttributedString(title)
+        guard !highlightTokens.isEmpty else { return attributed }
+        for token in highlightTokens where token.count >= 2 {
+            var searchRange = attributed.startIndex..<attributed.endIndex
+            while let found = attributed[searchRange].range(of: token, options: [.caseInsensitive]) {
+                attributed[found].underlineStyle = .single
+                searchRange = found.upperBound..<attributed.endIndex
+                if found.upperBound >= attributed.endIndex { break }
+            }
+        }
+        return attributed
+    }
+
+    private var trailingDate: some View {
+        Group {
+            switch dateStyle {
+            case .time:
+                Text(transaction.date, style: .time)
+            case .relative:
+                Text(TransactionRowDateText.relative(for: transaction.date))
+            }
+        }
+        .font(.system(size: 11))
+        .foregroundStyle(.secondary)
+        .monospacedDigit()
+    }
+
     var body: some View {
         if transaction.isPersisted {
             rowContent
@@ -66,7 +107,7 @@ struct TransactionListItem: View {
             .frame(width: enamelSize, height: enamelSize)
 
             VStack(alignment: .leading, spacing: 3) {
-                Text(title)
+                Text(highlightedTitle)
                     .font(.system(size: 16, weight: .semibold))
                     .foregroundStyle(.primary)
                     .lineLimit(1)
@@ -89,14 +130,28 @@ struct TransactionListItem: View {
                     .lineLimit(1)
                     .minimumScaleFactor(0.8)
 
-                Text(transaction.date, style: .time)
-                    .font(.system(size: 11))
-                    .foregroundStyle(.secondary)
-                    .monospacedDigit()
+                trailingDate
             }
         }
         .padding(.horizontal, 6)
         .accessibilityElement(children: .combine)
+    }
+}
+
+/// Shared relative-date wording for ledger rows.
+enum TransactionRowDateText {
+    static func relative(for date: Date) -> String {
+        let calendar = Calendar.current
+        if calendar.isDateInToday(date) {
+            return date.formatted(date: .omitted, time: .shortened)
+        }
+        if calendar.isDateInYesterday(date) {
+            return "Yesterday"
+        }
+        let sameYear = date.year == Date().year
+        return date.formatted(
+            .dateTime.day().month(.abbreviated).year(sameYear ? .omitted : .twoDigits)
+        )
     }
 }
 

@@ -21,6 +21,9 @@ final class TransactionCategory {
     var lastUsedAt: Date?
     /// User-picked display colour as `#RRGGBB`. Nil means fall back to the name-based map.
     var colorHex: String? = nil
+    /// Monthly spend cap. Zero means uncapped. Mirrors the app model so both targets
+    /// open the shared store with the same schema.
+    var monthlyBudget: Double = 0
 
     @Relationship(deleteRule: .cascade, inverse: \Transaction.category)
     var transactions: [Transaction]?

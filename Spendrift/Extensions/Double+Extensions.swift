@@ -43,3 +43,11 @@ extension Double {
         String(Int(self.rounded()))
     }
 }
+
+/// Currency chrome shared by the amount, balance and budget fields.
+enum AppCurrency {
+    /// Symbol for the user's region (Settings - General - Language & Region).
+    static var symbol: String {
+        Locale.autoupdatingCurrent.currencySymbol ?? "$"
+    }
+}

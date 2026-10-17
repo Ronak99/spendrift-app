@@ -3,9 +3,10 @@
 //  Spendrift
 //
 //  Created by Ronak Punase on 25/02/26.
-//  To Trigger Workflow
-
-// nakli comment to trigger staging workflow
+//
+//  Hosts the one screen the app has - `HomeShellView` - plus the launch plumbing
+//  that has to outlive any single pane: voice intents, shared receipts, the SMS
+//  inbox drain and quick actions.
 
 import Combine
 import SwiftData
@@ -15,164 +16,25 @@ import UIKit
 struct ContentView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.scenePhase) private var scenePhase
-    @Environment(\.colorScheme) private var colorScheme
     @Environment(AppRouter.self) private var router
     @Query(sort: \Account.createdOn) private var accounts: [Account]
     @Query(sort: \TransactionCategory.name) private var categories: [TransactionCategory]
-    @AppStorage("spendriftOnboardingVersion") private var onboardingVersion = 0
-    @State private var selectedTab = 0
-    @State private var categoryTabType: CategoryType = .expense
-    @State private var showCreateTransaction = false
-    @State private var showStatementImport = false
     @State private var paywallContext: PaywallContext?
     @State private var receiptImport: ReceiptSharePayload?
-    @State private var transactionPeriodViewModel = TransactionViewModel()
     @State private var messageInboxBanner: MessageInboxImportBanner?
     @State private var isMessageInboxSyncing = false
-    /// Owned here rather than by `TransactionsView` so voice capture can be started from - and
-    /// stay visible on top of - any tab.
+    /// Owned here rather than by the shell so a capture started by Siri or a widget
+    /// survives any view that comes and goes.
     @State private var voiceInline = VoiceInlineCaptureController()
-    /// Sentinel selection value for the voice CTA. It is never committed to `selectedTab`.
-    private static let voiceTabTag = 99
-
-    /// Turns the voice tab into an action: the setter starts capture and drops the tag on the
-    /// floor, so the current tab stays selected and its content is never swapped out.
-    private var tabSelection: Binding<Int> {
-        Binding {
-            selectedTab
-        } set: { newValue in
-            guard newValue != Self.voiceTabTag else {
-                startVoiceCaptureFromTabBar()
-                return
-            }
-            // Re-tapping the already-selected Home tab collapses its analytics view back to
-            // the transactions list; TransactionsView listens for this and no-ops otherwise.
-            if newValue == 0, selectedTab == 0 {
-                NotificationCenter.default.post(name: .homeTabReselected, object: nil)
-            }
-            selectedTab = newValue
-        }
-    }
-
-    /// Wash of the visible tab, used as TabView tint and the selected ledger icon colour.
-    private var selectedTabWash: Color {
-        switch selectedTab {
-//        case 0: AppTheme.atmosphere
-//        case 1: AccountEnamel.atmosphere(in: accounts)
-//        case 2: CategoryEnamel.atmosphere(in: categories, type: categoryTabType)
-        default: AppTheme.atmosphere
-        }
-    }
-
-    /// The Liquid Glass tab bar ignores SwiftUI foreground styles on tab labels, so icons that
-    /// must keep a specific colour are pre-tinted as `.alwaysOriginal` images.
-    private func voiceTabIcon(disabled: Bool) -> UIImage {
-        let activeTint: UIColor = colorScheme == .dark
-            ? UIColor(red: 0.96, green: 0.47, blue: 0.45, alpha: 1)
-            : UIColor(red: 0.76, green: 0.24, blue: 0.23, alpha: 1)
-        let tint = disabled
-            ? UIColor.tertiaryLabel
-            : activeTint
-        return UIImage(systemName: "mic.fill")?
-            .withTintColor(tint, renderingMode: .alwaysOriginal) ?? UIImage()
-    }
-
-    /// Selected ledger icons use the screen wash; unselected stay template so they remain gray.
-    private func ledgerTabIcon(_ systemName: String, selected: Bool) -> UIImage {
-        let image = UIImage(systemName: systemName) ?? UIImage()
-        guard selected else {
-            return image.withRenderingMode(.alwaysTemplate)
-        }
-        return image.withTintColor(UIColor(selectedTabWash), renderingMode: .alwaysOriginal)
-    }
 
     var body: some View {
         @Bindable var voice = voiceInline
 
-        return TabView(selection: tabSelection) {
-            Tab(value: 0) {
-                TransactionsView(
-                    periodViewModel: transactionPeriodViewModel,
-                    voiceInline: voiceInline,
-                    receiptImport: receiptImport,
-                    messageInboxBanner: $messageInboxBanner
-                )
-            } label: {
-                Label {
-                    Text("")
-                } icon: {
-                    Image(uiImage: ledgerTabIcon("house.fill", selected: selectedTab == 0))
-                }
-                .accessibilityLabel("Transactions")
-            }
-
-            Tab(value: 1) {
-                AccountsView()
-                    .voiceCaptureBar(controller: voiceInline)
-            } label: {
-                Label {
-                    Text("")
-                } icon: {
-                    Image(uiImage: ledgerTabIcon("building.columns.fill", selected: selectedTab == 1))
-                }
-                .accessibilityLabel("Accounts")
-            }
-
-            Tab(value: 2) {
-                CategoriesView(selectedType: $categoryTabType)
-                    .voiceCaptureBar(controller: voiceInline)
-            } label: {
-                Label {
-                    Text("")
-                } icon: {
-                    Image(uiImage: ledgerTabIcon("square.grid.2x2.fill", selected: selectedTab == 2))
-                }
-                .accessibilityLabel("Categories")
-            }
-
-            Tab(value: 3) {
-                SettingsView()
-                    .voiceCaptureBar(controller: voiceInline)
-            } label: {
-                Label {
-                    Text("")
-                } icon: {
-                    Image(uiImage: ledgerTabIcon("gearshape.fill", selected: selectedTab == 3))
-                }
-                .accessibilityLabel("Settings")
-            }
-
-            // `role: .search` is the only public API that lifts a tab item out of the tab bar
-            // into its own circular Liquid Glass button, which is the shape this CTA needs.
-            // Selection is intercepted in `tabSelection`, so the placeholder content below is
-            // never actually presented.
-            Tab(value: Self.voiceTabTag, role: .search) {
-                Color.clear
-            } label: {
-                Label {
-                    Text("Speak")
-                } icon: {
-                    Image(uiImage: voiceTabIcon(disabled: voice.blocksNewCapture))
-                }
-                .accessibilityLabel("Speak a transaction")
-                .accessibilityHint(
-                    voice.blocksNewCapture
-                        ? "Unavailable while a voice note is being recorded or processed"
-                        : "Records a voice note and turns it into a transaction"
-                )
-            }
-            // Must sit on the `Tab`, not on the `Label` inside it: disabling the label only
-            // dims the icon and leaves the tab item tappable, and a tap that lands while a
-            // capture is in flight commits `TabView` to this tab. `selectedTab` never takes
-            // the sentinel, so the binding reports no change, SwiftUI reasserts nothing, and
-            // the empty placeholder above stays on screen as a blank black screen until the
-            // user picks another tab by hand.
-            .disabled(voice.blocksNewCapture)
-        }
-        .tint(selectedTabWash)
-        .environment(\.openSettings) {
-            selectedTab = 3
-        }
+        return HomeShellView(
+            voiceInline: voiceInline,
+            receiptImport: receiptImport,
+            messageInboxBanner: $messageInboxBanner
+        )
         .onAppear {
             TransactionTypeMigration.normalizeNoneTypesIfNeeded(modelContext: modelContext)
             QuickActionsManager.setupQuickActions()
@@ -200,14 +62,6 @@ struct ContentView: View {
             PushNotifications.handleForeground()
             Analytics.captureAppOpened()
         }
-        .onChange(of: selectedTab) { _, newTab in
-            Analytics.capture(.screenViewed, [Analytics.Key.tab: Self.tabName(for: newTab)])
-            Diagnostics.breadcrumb(
-                category: .navigation,
-                message: "tab_changed",
-                data: [Diagnostics.Tag.tab: Self.tabName(for: newTab)]
-            )
-        }
         .onReceive(NotificationCenter.default.publisher(for: .voiceExpenseIntentTriggered)) { _ in
             handleVoiceIntentLaunchIfNeeded()
         }
@@ -221,45 +75,14 @@ struct ContentView: View {
             drainPendingRoute()
         }
         .proPaywall($paywallContext)
-        .sheet(isPresented: $showCreateTransaction) {
-            UpdateTransactionSheet(transaction: nil)
-        }
-        .sheet(isPresented: $showStatementImport) {
-            StatementImportView()
-        }
-        // Presented here rather than per-tab so a voice capture started from any tab can hand
-        // off to manual review.
+        // Presented here rather than inside the shell so a voice capture started from
+        // anywhere can hand off to manual review.
         .sheet(item: $voice.manualSheetPayload) { payload in
             UpdateTransactionSheet(
                 transaction: nil,
                 draft: payload.draft,
                 voiceReviewHint: payload.hint
             )
-        }
-    }
-
-    /// Entry point for the tab bar voice CTA. No-ops while a capture is already in flight so a
-    /// stray tap cannot interrupt an in-progress recording.
-    private func startVoiceCaptureFromTabBar() {
-        guard !voiceInline.blocksNewCapture else { return }
-        ProAccess.attempt(.voice, paywall: $paywallContext) {
-            UIImpactFeedbackGenerator(style: .light).impactOccurred()
-            Analytics.capture(.shortcutUsed, [
-                Analytics.Key.kind: "voice",
-                Analytics.Key.source: "tab_bar_cta"
-            ])
-            voiceInline.beginCapture()
-        }
-    }
-
-    
-    private static func tabName(for index: Int) -> String {
-        switch index {
-        case 0: "transactions"
-        case 1: "accounts"
-        case 2: "categories"
-        case 3: "settings"
-        default: "unknown"
         }
     }
 
@@ -275,29 +98,25 @@ struct ContentView: View {
 
         switch url.host {
         case "createTransaction":
-            showCreateTransaction = true
-            selectedTab = 0
+            NotificationCenter.default.post(name: .createTransactionRequested, object: nil)
         case "voiceExpense":
-            showCreateTransaction = false
-            selectedTab = 0
             ProAccess.attempt(.voice, paywall: $paywallContext) {
                 voiceInline.beginCapture()
             }
         case "importStatement":
-            showCreateTransaction = false
-            selectedTab = 0
             ProAccess.attempt(.statementImport, paywall: $paywallContext) {
-                showStatementImport = true
+                NotificationCenter.default.post(name: .statementImportRequested, object: nil)
             }
         default:
             break
         }
     }
 
+    /// A pushed route always means Settings, which the shell presents as a sheet.
     private func drainPendingRoute() {
         guard let route = router.consume() else { return }
-        selectedTab = 3
         router.settingsPath = [route.settingsDestination]
+        NotificationCenter.default.post(name: .settingsRequested, object: nil)
     }
 
     /// Picks up a receipt image shared via the Share Extension (stored in the App Group)
@@ -305,8 +124,6 @@ struct ContentView: View {
     /// there is nothing pending.
     private func handlePendingReceiptShareIfNeeded() {
         guard let url = ReceiptShareInbox.consumePendingImageURL() else { return }
-        showCreateTransaction = false
-        selectedTab = 0
         receiptImport = ReceiptSharePayload(id: UUID(), fileURL: url)
         Analytics.capture(.shortcutUsed, [Analytics.Key.kind: "receipt_share"])
     }
@@ -324,7 +141,6 @@ struct ContentView: View {
                 categories: categories
             ) {
                 messageInboxBanner = banner
-                selectedTab = 0
             }
         }
     }
@@ -336,8 +152,6 @@ struct ContentView: View {
             defaults.removeObject(forKey: VoiceExpenseIntent.pendingImportPathKey)
             let url = URL(fileURLWithPath: path)
             guard FileManager.default.fileExists(atPath: path) else { return }
-            showCreateTransaction = false
-            selectedTab = 0
             voiceInline.processImportedAudio(
                 fileURL: url,
                 modelContext: modelContext,
@@ -353,8 +167,6 @@ struct ContentView: View {
         }
 
         defaults.removeObject(forKey: VoiceExpenseIntent.launchTriggerKey)
-        showCreateTransaction = false
-        selectedTab = 0
         // A Siri/Shortcuts launch lands here with no capture started yet, so the gate
         // still gets a chance to show the paywall rather than a mid-flow error.
         ProAccess.attempt(.voice, paywall: $paywallContext) {

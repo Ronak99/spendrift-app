@@ -82,6 +82,8 @@ struct SettingsView: View {
                     EmailReceiptsSettingsView()
                 case .backup:
                     BackupSettingsView()
+                case .bankSMS:
+                    BankSMSSettingsView()
                 }
             }
         }

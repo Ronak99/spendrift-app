@@ -176,7 +176,7 @@ struct CapsuleDateSelector: View {
                 }
             )
         case .month, .threeMonths, .sixMonths:
-            MonthYearPickerSheet(date: date) { picked in
+            CapsuleMonthYearPicker(date: date) { picked in
                 onJumpToDate?(picked)
             }
         case .year:
@@ -241,7 +241,7 @@ private struct WeekJumpSheet: View {
 
 // MARK: - Month/Year Picker Sheet
 
-private struct MonthYearPickerSheet: View {
+private struct CapsuleMonthYearPicker: View {
     let initialDate: Date
     let onSelect: (Date) -> Void
 

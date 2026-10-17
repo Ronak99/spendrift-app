@@ -19,6 +19,7 @@ struct UpdateCategorySheet: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     @Query(sort: \TransactionCategory.name) private var allCategories: [TransactionCategory]
+    @Query(sort: \Transaction.date, order: .reverse) private var allTransactions: [Transaction]
 
     let category: TransactionCategory?
     /// When creating a category, pre-select this category type (for example from the transaction form).
@@ -26,18 +27,22 @@ struct UpdateCategorySheet: View {
     /// When creating from a tray search miss, pre-fill the hero with the query.
     let initialNameWhenCreating: String?
     var onCreated: ((TransactionCategory) -> Void)?
+    /// Opened from a budget flow: the Budget field takes focus instead of the name.
+    let focusBudgetWhenOpening: Bool
     private let eventSource: CategoryEventSource
 
     init(
         category: TransactionCategory?,
         defaultTypeWhenCreating: CategoryType? = nil,
         initialNameWhenCreating: String? = nil,
+        focusBudgetWhenOpening: Bool = false,
         onCreated: ((TransactionCategory) -> Void)? = nil,
         eventSource: CategoryEventSource = .manual
     ) {
         self.category = category
         self.defaultTypeWhenCreating = defaultTypeWhenCreating
         self.initialNameWhenCreating = initialNameWhenCreating
+        self.focusBudgetWhenOpening = focusBudgetWhenOpening
         self.onCreated = onCreated
         self.eventSource = eventSource
 
@@ -57,9 +62,15 @@ struct UpdateCategorySheet: View {
         )
         _didManuallyPickIcon = State(initialValue: category != nil)
         _didManuallyPickColor = State(initialValue: category?.colorHex != nil)
+        _budgetText = State(
+            initialValue: (category?.monthlyBudget ?? 0) > 0
+                ? (category?.monthlyBudget ?? 0).wholeAmountDisplayString
+                : ""
+        )
     }
 
     @FocusState private var nameFieldFocused: Bool
+    @FocusState private var budgetFieldFocused: Bool
 
     @State private var name: String
     @State private var type: CategoryType
@@ -71,6 +82,7 @@ struct UpdateCategorySheet: View {
     @State private var showIconPicker = false
     @State private var showCustomColor = false
     @State private var showTypeMenu = false
+    @State private var budgetText: String
 
     private var isCreating: Bool { category == nil }
 
@@ -145,7 +157,9 @@ struct UpdateCategorySheet: View {
                 Button("OK", role: .cancel) {}
             }
             .onAppear {
-                if isCreating {
+                if focusBudgetWhenOpening {
+                    focusBudgetFieldSoon()
+                } else if isCreating {
                     focusNameFieldSoon()
                 }
             }
@@ -351,6 +365,10 @@ struct UpdateCategorySheet: View {
         VStack(alignment: .leading, spacing: 28) {
             colorSection
             iconSection
+            // Income has no cap, so the field only exists for expense categories.
+            if type == .expense {
+                budgetSection
+            }
             if let category {
                 transactionsLink(for: category)
             }
@@ -516,6 +534,100 @@ struct UpdateCategorySheet: View {
         }
     }
 
+    // MARK: Budget
+
+    /// A cap that repeats every month until changed. Zero, or an empty field, means
+    /// the category is uncapped.
+    private var budgetSection: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            HStack(alignment: .firstTextBaseline) {
+                Text("Budget")
+                    .font(.system(size: 12, weight: .semibold))
+                    .tracking(0.8)
+                    .textCase(.uppercase)
+                    .foregroundStyle(.secondary)
+
+                Spacer()
+
+                if !budgetText.isEmpty {
+                    Button("Clear") {
+                        budgetText = ""
+                        budgetFieldFocused = false
+                    }
+                    .buttonStyle(.plain)
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(CategoryEnamel.expense)
+                }
+            }
+
+            HStack(alignment: .firstTextBaseline, spacing: 6) {
+                Text(AppCurrency.symbol)
+                    .font(.system(size: 22, weight: .bold))
+                    .foregroundStyle(heroPrimary.opacity(0.42))
+                TextField("No budget", text: $budgetText)
+                    .font(.system(size: 28, weight: .bold))
+                    .tracking(-0.8)
+                    .keyboardType(.decimalPad)
+                    .focused($budgetFieldFocused)
+                    .tint(AppTheme.cursor)
+                    .accessibilityIdentifier("Category budget")
+                    .accessibilityLabel("Monthly budget")
+                Text("per month")
+                    .font(.system(size: 13))
+                    .foregroundStyle(.secondary)
+            }
+
+            budgetHint
+        }
+    }
+
+    private var budgetHint: some View {
+        let average = category.map {
+            MonthlyBudget.suggestedCap(for: $0, transactions: allTransactions)
+        } ?? 0
+        let spent = category.map {
+            MonthRef.of(Date()).stats(from: allTransactions).spent(in: $0)
+        } ?? 0
+
+        return VStack(alignment: .leading, spacing: 10) {
+            if enteredBudget > 0 {
+                Text("\(spent.formatCurrencyRounded) spent this month")
+                    .font(.system(size: 12))
+                    .foregroundStyle(.tertiary)
+                BudgetBar(spent: spent, cap: enteredBudget, color: selectedColor)
+            } else {
+                Text("No cap. Spending here is counted, never flagged.")
+                    .font(.system(size: 12))
+                    .foregroundStyle(.tertiary)
+            }
+
+            if average > 0, enteredBudget != average {
+                Button {
+                    budgetText = average.wholeAmountDisplayString
+                } label: {
+                    HStack(spacing: 6) {
+                        Image(systemName: "chart.line.uptrend.xyaxis")
+                            .font(.system(size: 12))
+                        Text("Use \(average.formatCurrencyRounded), your 3-month average")
+                            .font(.system(size: 13, weight: .medium))
+                    }
+                    .foregroundStyle(.secondary)
+                    .padding(.horizontal, 12)
+                    .frame(height: 34)
+                    .background(
+                        Color.primary.opacity(isDark ? 0.08 : 0.05),
+                        in: Capsule()
+                    )
+                }
+                .buttonStyle(.plain)
+            }
+        }
+    }
+
+    private var enteredBudget: Double {
+        Double(budgetText.filter { $0.isNumber || $0 == "." }) ?? 0
+    }
+
     // MARK: Chrome colours
 
     private var canvas: Color {
@@ -567,6 +679,13 @@ struct UpdateCategorySheet: View {
         }
     }
 
+    /// Focuses the budget field when the sheet was opened to set one.
+    private func focusBudgetFieldSoon() {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+            budgetFieldFocused = true
+        }
+    }
+
     private func applyNameSuggestion(_ raw: String) {
         guard let match = CategoryNameSuggestion.match(name: raw) else { return }
         if !didManuallyPickIcon {
@@ -601,6 +720,7 @@ struct UpdateCategorySheet: View {
 
     private func attemptSave() {
         nameFieldFocused = false
+        budgetFieldFocused = false
         if let message = saveBlockedReason {
             saveAlertMessage = message
             return
@@ -623,6 +743,8 @@ struct UpdateCategorySheet: View {
             category.applyType(type)
             category.icon = icon
             category.colorHex = hex
+            // An income category cannot hold a cap, so switching type clears it.
+            category.monthlyBudget = type == .expense ? enteredBudget.rounded() : 0
         } else {
             let newCategory = TransactionCategory(
                 name: resolvedName,
@@ -630,6 +752,7 @@ struct UpdateCategorySheet: View {
                 icon: icon,
                 colorHex: hex
             )
+            newCategory.monthlyBudget = type == .expense ? enteredBudget.rounded() : 0
             modelContext.insert(newCategory)
             Analytics.capture(.categoryCreated, [
                 Analytics.Key.name: resolvedName,
@@ -659,24 +782,6 @@ private struct TypeMenuRowStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .background(configuration.isPressed ? highlight : Color.clear)
-    }
-}
-
-private extension CategoryType {
-    var displayName: String { rawValue.capitalized }
-
-    var menuSubtitle: String {
-        switch self {
-        case .expense: return "Money going out"
-        case .income: return "Money coming in"
-        }
-    }
-
-    var flowSymbolName: String {
-        switch self {
-        case .expense: return "arrow.up.right"
-        case .income: return "arrow.down.left"
-        }
     }
 }
 

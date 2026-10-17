@@ -132,6 +132,7 @@ enum BackupService {
                     isDefault: category.isDefault,
                     sortOrder: category.sortOrder,
                     colorHex: category.colorHex,
+                    monthlyBudget: category.monthlyBudget > 0 ? category.monthlyBudget : nil,
                     createdOn: category.createdOn,
                     lastUsedAt: category.lastUsedAt
                 )
@@ -221,6 +222,7 @@ enum BackupService {
                     sortOrder: record.sortOrder,
                     colorHex: record.colorHex
                 )
+                category.monthlyBudget = record.monthlyBudget ?? 0
                 category.lastUsedAt = record.lastUsedAt
                 modelContext.insert(category)
                 categoriesByID[record.id] = category

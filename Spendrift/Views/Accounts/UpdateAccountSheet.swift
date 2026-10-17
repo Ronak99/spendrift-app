@@ -85,7 +85,7 @@ struct UpdateAccountSheet: View {
     private var accentColor: Color { Color(hex: icon.enamelHex) }
 
     private var currencySymbol: String {
-        Locale.autoupdatingCurrent.currencySymbol ?? "$"
+        AppCurrency.symbol
     }
 
     private var featuredIcons: [AccountIcon] {

@@ -16,6 +16,7 @@ struct UpdateTransactionSheet: View {
     @Environment(\.colorScheme) private var colorScheme
     @Query(sort: \Account.name) private var accounts: [Account]
     @Query(sort: \TransactionCategory.name) private var categories: [TransactionCategory]
+    @Query(sort: \Transaction.date, order: .reverse) private var allTransactions: [Transaction]
 
     let transaction: Transaction?
     let draft: VoiceTransactionDraft?
@@ -126,7 +127,7 @@ struct UpdateTransactionSheet: View {
     }
 
     private var currencySymbol: String {
-        Locale.autoupdatingCurrent.currencySymbol ?? "$"
+        AppCurrency.symbol
     }
 
     init(
@@ -322,6 +323,7 @@ struct UpdateTransactionSheet: View {
 
                 VStack(spacing: 0) {
                     categoryRow
+                    budgetNote
                     accountRow
                     whenRow
                     notesRow
@@ -353,6 +355,45 @@ struct UpdateTransactionSheet: View {
         .accessibilityIdentifier("Category")
         .accessibilityLabel("Category")
         .accessibilityValue(categoryText)
+    }
+
+    /// What this transaction leaves of its category's budget. Only for the month in
+    /// progress, where the cap still has something to say.
+    @ViewBuilder
+    private var budgetNote: some View {
+        if let category = selectedCategory,
+           category.type == selectedCategoryType,
+           MonthlyBudget.cap(for: category) > 0,
+           Calendar.current.isDate(date, equalTo: Date(), toGranularity: .month) {
+            let cap = MonthlyBudget.cap(for: category)
+            let remaining = cap - spentThisMonthExcludingThis(in: category) - (Double(amount) ?? 0)
+
+            Text(
+                remaining >= 0
+                    ? "\(remaining.formatCurrencyRounded) left in \(category.name) after this"
+                    : "\((-remaining).formatCurrencyRounded) over budget in \(category.name) after this"
+            )
+            .font(.system(size: 12))
+            .foregroundStyle(remaining >= 0 ? Color.secondary : CategoryEnamel.expense)
+            .frame(maxWidth: .infinity, alignment: .trailing)
+            .padding(.top, 6)
+            .padding(.bottom, 2)
+            .accessibilityIdentifier("categoryBudgetNote")
+        }
+    }
+
+    /// Spend filed under the category this month, with the transaction being edited
+    /// taken back out so its own amount is not counted twice.
+    private func spentThisMonthExcludingThis(in category: TransactionCategory) -> Double {
+        let month = MonthRef.of(Date())
+        let total = month.stats(from: allTransactions).spent(in: category)
+        guard let existing = transaction,
+              existing.isPersisted,
+              existing.category?.id == category.id,
+              existing.transactionType == .expense,
+              Calendar.current.isDate(existing.date, equalTo: Date(), toGranularity: .month)
+        else { return total }
+        return max(0, total - existing.amount)
     }
 
     private var accountRow: some View {

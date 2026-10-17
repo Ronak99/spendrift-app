@@ -23,6 +23,9 @@ final class TransactionCategory {
     var lastUsedAt: Date?
     /// User-picked display colour as `#RRGGBB`. Nil means fall back to the name-based map.
     var colorHex: String? = nil
+    /// Monthly spend cap in the user's currency. Zero means the category is uncapped.
+    /// The cap repeats every month until changed, and applies to past months when looked back on.
+    var monthlyBudget: Double = 0
 
     @Relationship(deleteRule: .cascade, inverse: \Transaction.category)
     var transactions: [Transaction]?

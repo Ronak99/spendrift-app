@@ -25,35 +25,45 @@ class SpendriftUITestBase: XCTestCase {
 
     // MARK: - Tab Helpers
 
+    /// Taps a tab in the Home strip. Panes are children of the strip, so there is no tab bar.
+    func selectTab(_ identifier: String) {
+        let tab = app.buttons[identifier]
+        XCTAssertTrue(tab.waitForExistence(timeout: 5))
+        tab.tap()
+    }
+
+    func navigateToHome() {
+        selectTab("tab-all")
+    }
+
     func navigateToAccounts() {
-        app.tabBars.buttons["Accounts"].tap()
+        selectTab("tab-accounts")
     }
 
     func navigateToCategories() {
-        app.tabBars.buttons["Categories"].tap()
+        selectTab("tab-categories")
     }
 
     func navigateToTransactions() {
-        app.tabBars.buttons["Transactions"].tap()
+        selectTab("tab-transactions")
     }
 
     func navigateToSettings() {
-        app.tabBars.buttons["Settings"].tap()
+        let settings = app.buttons["openSettingsToolbar"]
+        XCTAssertTrue(settings.waitForExistence(timeout: 5))
+        settings.tap()
     }
 
-    /// Opens manual entry from the Transactions tab (toolbar **+** or empty-state **Add Transaction**).
+    /// Title of the visible pane, which follows the selected tab.
+    func paneTitle() -> String {
+        app.staticTexts["homeTitle"].label
+    }
+
+    /// Opens manual entry. The bottom pill is the only control that creates a transaction.
     func openTransactionsManualEntryForm() {
-        if app.buttons["Add Transaction"].waitForExistence(timeout: 2) {
-            app.buttons["Add Transaction"].tap()
-        } else {
-            let addButton = app.buttons["transactionsAddButton"].firstMatch
-            if addButton.waitForExistence(timeout: 2) {
-                addButton.tap()
-            } else {
-                XCTAssertTrue(app.navigationBars.buttons["plus"].waitForExistence(timeout: 3))
-                app.navigationBars.buttons["plus"].tap()
-            }
-        }
+        let cta = app.buttons["addTransactionCTA"]
+        XCTAssertTrue(cta.waitForExistence(timeout: 5))
+        cta.tap()
         waitForTransactionEditor()
     }
 
@@ -62,30 +72,48 @@ class SpendriftUITestBase: XCTestCase {
         XCTAssertTrue(app.navigationBars.buttons["Save"].waitForExistence(timeout: 3))
     }
 
-    /// Opens New Account from the Accounts tab (empty-state CTA, then toolbar **+**).
+    /// Opens New Account from the dashed slot at the top of the Accounts list.
     func openNewAccountSheet() {
-        if app.buttons["accountsEmptyAddButton"].waitForExistence(timeout: 2) {
-            app.buttons["accountsEmptyAddButton"].tap()
-        } else if app.buttons["accountsAddButton"].waitForExistence(timeout: 3) {
-            app.buttons["accountsAddButton"].tap()
-        } else {
-            XCTAssertTrue(app.navigationBars.buttons["plus"].waitForExistence(timeout: 3))
-            app.navigationBars.buttons["plus"].tap()
-        }
+        let slot = app.buttons["accountsCreateSlot"]
+        XCTAssertTrue(slot.waitForExistence(timeout: 5))
+        slot.tap()
     }
 
-    /// Opens New Category from the Categories tab via the toolbar **+**.
-    /// Defaults are always seeded, so the screen never shows an empty state.
+    /// Opens New Category from the dashed chip at the start of the grid.
     func openNewCategorySheet() {
-        XCTAssertTrue(app.navigationBars.buttons["plus"].waitForExistence(timeout: 3))
-        app.navigationBars.buttons["plus"].tap()
+        let slot = app.buttons["categoriesCreateSlot"]
+        XCTAssertTrue(slot.waitForExistence(timeout: 5))
+        slot.tap()
     }
 
-    /// Switches the Categories grid to the given segment ("Expense" or "Income").
+    /// Switches the Categories grid between Expense and Income. The selected tab reads
+    /// the type, and tapping it again opens the two-row picker.
     func selectCategorySegment(_ type: String) {
-        let segment = app.descendants(matching: .any)["type-picker"].buttons[type]
-        XCTAssertTrue(segment.waitForExistence(timeout: 3))
-        segment.tap()
+        navigateToCategories()
+        selectTab("tab-categories")
+        let row = app.buttons["type-\(type.lowercased())"]
+        XCTAssertTrue(row.waitForExistence(timeout: 3))
+        row.tap()
+    }
+
+    /// Swipes a ledger row left and takes the Delete action, confirming when a dialog
+    /// follows. Transactions and accounts delete by swipe; the category grid uses a
+    /// long press instead, since a grid chip has no swipe.
+    func deleteRow(labelled label: String, confirmTitle: String? = nil) {
+        let row = app.staticTexts[label].firstMatch
+        XCTAssertTrue(row.waitForExistence(timeout: 3))
+        row.swipeLeft()
+
+        let delete = app.buttons["Delete"]
+        XCTAssertTrue(delete.waitForExistence(timeout: 3))
+        delete.tap()
+
+        if let confirmTitle {
+            let confirm = app.buttons[confirmTitle]
+            if confirm.waitForExistence(timeout: 2) {
+                confirm.tap()
+            }
+        }
     }
 
     // MARK: - Account Helpers
@@ -119,8 +147,7 @@ class SpendriftUITestBase: XCTestCase {
 
     @discardableResult
     func createCategory(name: String, type: String = "Expense", iconIndex: Int? = nil) -> Self {
-        navigateToCategories()
-        // The New Category sheet inherits the selected segment, so switch before opening it.
+        // The New Category sheet inherits the visible type, so switch before opening it.
         selectCategorySegment(type)
         openNewCategorySheet()
 
@@ -194,14 +221,13 @@ final class AccountIntegrationTests: SpendriftUITestBase {
 
     func testAccountsTab_showsEmptyState_whenNoAccounts() {
         navigateToAccounts()
-        XCTAssertTrue(app.staticTexts["No accounts"].waitForExistence(timeout: 3))
-        XCTAssertTrue(app.staticTexts["Add a bank, card, or wallet to start tracking."].exists)
-        XCTAssertTrue(app.buttons["accountsEmptyAddButton"].exists)
+        XCTAssertTrue(app.buttons["accountsCreateSlot"].waitForExistence(timeout: 3))
+        XCTAssertTrue(app.staticTexts["Add a bank, card, cash or wallet to start tracking."].exists)
     }
 
-    func testAccountsEmptyState_addButtonOpensCreateSheet() {
+    func testAccountsCreateSlot_opensCreateSheet() {
         navigateToAccounts()
-        app.buttons["accountsEmptyAddButton"].tap()
+        openNewAccountSheet()
         XCTAssertTrue(app.textFields["Enter account name"].waitForExistence(timeout: 3))
     }
 
@@ -249,7 +275,7 @@ final class AccountIntegrationTests: SpendriftUITestBase {
         XCTAssertTrue(app.textFields["Enter account name"].waitForExistence(timeout: 3))
 
         app.navigationBars.buttons["xmark"].tap()
-        XCTAssertTrue(app.navigationBars["Accounts"].waitForExistence(timeout: 3))
+        XCTAssertEqual(paneTitle(), "Accounts")
     }
 
     func testCreateMultipleAccounts_allAppearInList() {
@@ -287,18 +313,10 @@ final class AccountIntegrationTests: SpendriftUITestBase {
         createAccount(name: "To Delete", balance: "100")
         XCTAssertTrue(app.staticTexts["To Delete"].waitForExistence(timeout: 3))
 
-        let cell = app.cells.containing(.staticText, identifier: "To Delete").element
-        cell.swipeLeft()
-
-        let deleteButton = app.buttons["Delete"]
-        if deleteButton.waitForExistence(timeout: 2) {
-            deleteButton.tap()
-        }
+        deleteRow(labelled: "To Delete")
 
         sleep(1)
-        let noAccountsExists = app.staticTexts["No accounts"].waitForExistence(timeout: 3)
-        let cellStillExists = app.staticTexts["To Delete"].exists
-        XCTAssertTrue(noAccountsExists || !cellStillExists)
+        XCTAssertFalse(app.staticTexts["To Delete"].exists)
     }
 }
 
@@ -411,14 +429,13 @@ final class TransactionIntegrationTests: SpendriftUITestBase {
 
     func testTransactionsTab_showsEmptyState_whenNoTransactions() {
         navigateToTransactions()
-        XCTAssertTrue(app.staticTexts["No Transactions"].waitForExistence(timeout: 3))
-        XCTAssertTrue(app.buttons["Add Transaction"].exists)
+        XCTAssertTrue(app.staticTexts["No transactions"].waitForExistence(timeout: 3))
+        XCTAssertTrue(app.buttons["addTransactionCTA"].exists)
     }
 
     func testTransactionsEmptyState_addButtonOpensCreateSheet() {
         navigateToTransactions()
-        app.buttons["Add Transaction"].tap()
-        waitForTransactionEditor()
+        openTransactionsManualEntryForm()
     }
 
     // MARK: Dismiss
@@ -428,7 +445,7 @@ final class TransactionIntegrationTests: SpendriftUITestBase {
         openTransactionsManualEntryForm()
 
         app.navigationBars.buttons["xmark"].tap()
-        XCTAssertTrue(app.staticTexts["No Transactions"].waitForExistence(timeout: 3))
+        XCTAssertTrue(app.staticTexts["No transactions"].waitForExistence(timeout: 3))
     }
 
     // MARK: Create
@@ -529,16 +546,10 @@ final class TransactionIntegrationTests: SpendriftUITestBase {
         navigateToTransactions()
         XCTAssertTrue(app.staticTexts["Food"].waitForExistence(timeout: 3))
 
-        let cell = app.cells.containing(.staticText, identifier: "Food").element
-        cell.swipeLeft()
-
-        let deleteButton = app.buttons["Delete"]
-        if deleteButton.waitForExistence(timeout: 2) {
-            deleteButton.tap()
-        }
+        deleteRow(labelled: "Food")
 
         sleep(1)
-        XCTAssertTrue(app.staticTexts["No Transactions"].waitForExistence(timeout: 3))
+        XCTAssertTrue(app.staticTexts["No transactions"].waitForExistence(timeout: 3))
     }
 
     // MARK: Account Picker
@@ -659,12 +670,12 @@ final class TransactionIntegrationTests: SpendriftUITestBase {
             amount: "5000"
         )
 
-        navigateToTransactions()
+        // The ledger summary moved to the Accounts tab, pinned with the tab strip.
+        navigateToAccounts()
 
-        // Verify the statistics labels exist
-        XCTAssertTrue(app.staticTexts["Expenses"].waitForExistence(timeout: 3))
+        XCTAssertTrue(app.staticTexts["Balance"].waitForExistence(timeout: 3))
         XCTAssertTrue(app.staticTexts["Income"].exists)
-        XCTAssertTrue(app.staticTexts["Savings"].exists)
+        XCTAssertTrue(app.staticTexts["Expenses"].exists)
     }
 }
 
@@ -749,13 +760,7 @@ final class CrossFeatureIntegrationTests: SpendriftUITestBase {
 
         // Delete the transaction
         navigateToTransactions()
-        let cell = app.cells.containing(.staticText, identifier: "Food").element
-        XCTAssertTrue(cell.waitForExistence(timeout: 3))
-        cell.swipeLeft()
-        let deleteButton = app.buttons["Delete"]
-        if deleteButton.waitForExistence(timeout: 2) {
-            deleteButton.tap()
-        }
+        deleteRow(labelled: "Food")
 
         // Balance should revert to original 50000
         navigateToAccounts()
@@ -794,7 +799,7 @@ final class CrossFeatureIntegrationTests: SpendriftUITestBase {
         // Transaction linked to Food should also be removed (cascade)
         navigateToTransactions()
         sleep(1)
-        XCTAssertTrue(app.staticTexts["No Transactions"].waitForExistence(timeout: 3))
+        XCTAssertTrue(app.staticTexts["No transactions"].waitForExistence(timeout: 3))
     }
 
     func testDeletingAccount_removesAssociatedTransactions() {
@@ -808,18 +813,12 @@ final class CrossFeatureIntegrationTests: SpendriftUITestBase {
 
         // Delete the account
         navigateToAccounts()
-        let accountCell = app.cells.containing(.staticText, identifier: "SBI").element
-        XCTAssertTrue(accountCell.waitForExistence(timeout: 3))
-        accountCell.swipeLeft()
-        let deleteButton = app.buttons["Delete"]
-        if deleteButton.waitForExistence(timeout: 2) {
-            deleteButton.tap()
-        }
+        deleteRow(labelled: "SBI")
 
         // Transaction linked to SBI should also be removed (cascade)
         navigateToTransactions()
         sleep(1)
-        XCTAssertTrue(app.staticTexts["No Transactions"].waitForExistence(timeout: 3))
+        XCTAssertTrue(app.staticTexts["No transactions"].waitForExistence(timeout: 3))
     }
 
     // MARK: Multi-Account
@@ -854,13 +853,16 @@ final class CrossFeatureIntegrationTests: SpendriftUITestBase {
 
     func testTabNavigation_allTabsAccessible() {
         navigateToTransactions()
-        XCTAssertTrue(app.navigationBars["Transactions"].waitForExistence(timeout: 3))
+        XCTAssertEqual(paneTitle(), "Transactions")
 
         navigateToAccounts()
-        XCTAssertTrue(app.navigationBars["Accounts"].waitForExistence(timeout: 3))
+        XCTAssertEqual(paneTitle(), "Accounts")
 
         navigateToCategories()
-        XCTAssertTrue(app.navigationBars["Categories"].waitForExistence(timeout: 3))
+        XCTAssertEqual(paneTitle(), "Categories")
+
+        navigateToHome()
+        XCTAssertEqual(paneTitle(), "Home")
 
         navigateToSettings()
         XCTAssertTrue(app.navigationBars["Settings"].waitForExistence(timeout: 3))

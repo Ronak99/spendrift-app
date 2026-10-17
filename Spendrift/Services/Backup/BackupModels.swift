@@ -42,6 +42,8 @@ struct BackupCategoryRecord: Codable, Equatable {
     let isDefault: Bool
     let sortOrder: Int
     let colorHex: String?
+    /// Monthly cap. Optional so backups written before budgets restore as uncapped.
+    let monthlyBudget: Double?
     let createdOn: Date
     let lastUsedAt: Date?
 
@@ -50,6 +52,7 @@ struct BackupCategoryRecord: Codable, Equatable {
         case isDefault = "is_default"
         case sortOrder = "sort_order"
         case colorHex = "color_hex"
+        case monthlyBudget = "monthly_budget"
         case createdOn = "created_on"
         case lastUsedAt = "last_used_at"
     }

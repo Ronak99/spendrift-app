@@ -775,3 +775,43 @@ Documented so new work closes them instead of copying the wrong variant.
 
 If a single box cannot be ticked, the screen is not in the system yet.
 Fix it before shipping.
+
+---
+
+## 16. Home Shell
+
+One screen carries the app.
+`HomeShellView` holds a gold wash behind the status bar and title, a search bar and a tab strip that pin together, four panes, and a bottom tray.
+Sections 1 to 15 still describe the editors, sheets and enamel language; this section describes the chrome around them, and its surfaces win wherever the two disagree.
+
+**Surfaces.** Every value is a token on `AppTheme`, defined once with a dark and a light resolution.
+
+| Token | Dark | Role |
+| --- | --- | --- |
+| `canvas` | `#17171C` | Page behind every pane. |
+| `card` | `#202027` | Raised block: Home cards, ledger rows, search results. |
+| `cardAlternate` | `#2B2B33` | Glyph plates, chips, the current month in the picker. |
+| `wash` | `#5A4C1C` | Status bar, title bar, and the top of the pinned header. |
+| `searchField` | `#26261F` | Fill of the Home search bar, which sits on the wash. |
+| `actionBackground` / `actionForeground` | `#FFFFFF` at 92% / `#111111` | The one primary action on screen. |
+
+**Header.** The title and Settings scroll away; only the search bar and the tab strip pin.
+Switching tabs returns the scroll to the top, so the title comes back.
+The selected Transactions tab reads as its month and the selected Categories tab as its type, and a second tap on either opens the matching picker.
+Nothing in a title bar creates a record: Settings is the only control up there.
+
+**Creating.** The bottom pill reads "Add transaction" on every tab and is the only control that makes one.
+Accounts and Categories each open with a dashed slot, first in the list so a long list never hides it, and each slot creates the thing its own list holds.
+The tray orb holds the slower paths: scan a receipt, import a statement, bank SMS.
+
+**Home is analytics.** The hero is the month's spend and its cumulative curve, bleeding to both gutters with no card around it.
+Under it sit the persona, four stat tiles, budgets, insights, where it went, and three recent rows.
+Every block recomputes for the month picked in the hero.
+
+**Budgets.** Two independent caps: one for the month, one per expense category.
+Income is never capped.
+A cap repeats every month until changed and applies to past months when looked back on.
+The total lives in `MonthlyBudget.total`, a category's in `TransactionCategory.monthlyBudget`, and a bar in the entity's own colour shows spend against it, turning red past the cap.
+
+**Search is global.** Tapping the bar pushes a screen; the active tab never influences the results.
+Back lives inside the field, with the query and a clear plate, and nothing else.
