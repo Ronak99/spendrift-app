@@ -164,7 +164,7 @@ struct CategoryTransactionsSheet: View {
                 .foregroundStyle(heroPrimary)
 
             Text("No transactions in \(category.name) for \(viewModel.periodDescription).")
-                .font(.system(size: 15))
+                .font(.system(size: 14))
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
         }

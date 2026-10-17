@@ -99,7 +99,7 @@ struct ExploreSettingsView: View {
                 .multilineTextAlignment(.center)
 
             Text(page.description)
-                .font(.system(size: 15))
+                .font(.system(size: 14))
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
                 .lineSpacing(3)

@@ -86,7 +86,7 @@ struct TransactionListItem: View {
                 Text(TransactionRowDateText.relative(for: transaction.date))
             }
         }
-        .font(.system(size: 11))
+        .font(.system(size: 10))
         .foregroundStyle(.secondary)
         .monospacedDigit()
     }

@@ -108,7 +108,7 @@ struct TotalBudgetSheet: View {
                 .tint(AppTheme.cursor)
                 .accessibilityLabel("Monthly budget")
             Text("per month")
-                .font(.system(size: 13))
+                .font(.system(size: 12))
                 .foregroundStyle(AppTheme.inkSecondary)
         }
     }
@@ -136,7 +136,7 @@ struct TotalBudgetSheet: View {
         } label: {
             HStack(spacing: 8) {
                 Image(systemName: "chart.line.uptrend.xyaxis")
-                    .font(.system(size: 13))
+                    .font(.system(size: 12))
                 Text("Use \(suggestion.formatCurrencyRounded), your 3-month average")
                     .font(.system(size: 14, weight: .medium))
             }
@@ -201,7 +201,7 @@ struct AddCategoryBudgetSheet: View {
                 VStack(spacing: 14) {
                     if let emptyMessage {
                         Text(emptyMessage)
-                            .font(.system(size: 15))
+                            .font(.system(size: 14))
                             .foregroundStyle(AppTheme.inkSecondary)
                             .multilineTextAlignment(.center)
                             .padding(.horizontal, 16)
@@ -238,14 +238,14 @@ struct AddCategoryBudgetSheet: View {
                 CreateSlotEnamel(side: 36)
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Create category")
-                        .font(.system(size: 15.5, weight: .semibold))
+                        .font(.system(size: 14, weight: .semibold))
                     Text("A new expense category, with its own budget")
                         .font(.system(size: 12))
                         .foregroundStyle(AppTheme.inkSecondary)
                 }
                 Spacer(minLength: 8)
                 Image(systemName: "chevron.right")
-                    .font(.system(size: 13, weight: .semibold))
+                    .font(.system(size: 12, weight: .semibold))
                     .foregroundStyle(AppTheme.inkTertiary)
             }
             .padding(.vertical, 11)
@@ -271,7 +271,7 @@ struct AddCategoryBudgetSheet: View {
                 )
                 VStack(alignment: .leading, spacing: 2) {
                     Text(category.name)
-                        .font(.system(size: 15.5, weight: .semibold))
+                        .font(.system(size: 14, weight: .semibold))
                     Text(
                         average > 0
                             ? "Averages \(average.formatCurrencyRounded) a month"
@@ -282,7 +282,7 @@ struct AddCategoryBudgetSheet: View {
                 }
                 Spacer(minLength: 8)
                 Image(systemName: "chevron.right")
-                    .font(.system(size: 13, weight: .semibold))
+                    .font(.system(size: 12, weight: .semibold))
                     .foregroundStyle(AppTheme.inkTertiary)
             }
             .padding(.vertical, 11)

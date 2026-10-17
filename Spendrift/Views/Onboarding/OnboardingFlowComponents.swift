@@ -214,7 +214,7 @@ struct OnboardingPageCounter: View {
 
     var body: some View {
         Text("\(page)/\(total)")
-            .font(.system(size: 15, weight: .medium))
+            .font(.system(size: 14, weight: .medium))
             .monospacedDigit()
             .foregroundStyle(OnboardingTheme.textSecondary)
             .accessibilityLabel("Page \(page) of \(total)")
@@ -407,7 +407,7 @@ struct OnboardingNotificationTile: View {
 
                 Text(notification.time)
                     .monospacedDigit()
-                    .font(.system(size: 11))
+                    .font(.system(size: 10))
                     .foregroundStyle(OnboardingTheme.textSecondary)
                     .lineLimit(1)
             }
@@ -569,7 +569,7 @@ struct OnboardingTapHint: View {
 
     var body: some View {
         Text(text ?? " ")
-            .font(.system(size: 15, weight: .medium))
+            .font(.system(size: 14, weight: .medium))
             .foregroundStyle(OnboardingTheme.textSecondary)
             .multilineTextAlignment(.center)
             .lineLimit(2, reservesSpace: true)
@@ -623,7 +623,7 @@ struct OnboardingHeardTransactionCard: View {
                     .minimumScaleFactor(0.8)
 
                 Text(heard.date, style: .time)
-                    .font(.system(size: 11))
+                    .font(.system(size: 10))
                     .foregroundStyle(OnboardingTheme.textSecondary)
                     .monospacedDigit()
             }
@@ -681,7 +681,7 @@ struct OnboardingActionButton: View {
 
             if style == .quiet {
                 Image(systemName: "arrow.right")
-                    .font(.system(size: 15, weight: .semibold))
+                    .font(.system(size: 14, weight: .semibold))
             }
         }
         .font(.headline)

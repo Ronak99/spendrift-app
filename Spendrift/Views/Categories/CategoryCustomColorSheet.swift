@@ -51,10 +51,10 @@ struct CategoryCustomColorSheet: View {
 
                     VStack(alignment: .leading, spacing: 4) {
                         Text(previewHex)
-                            .font(.system(size: 19, weight: .bold))
+                            .font(.system(size: 18, weight: .bold))
                             .tracking(-0.3)
                         Text("Tap a shade or drag the hue")
-                            .font(.system(size: 13))
+                            .font(.system(size: 12))
                             .foregroundStyle(.secondary)
                     }
                     Spacer()

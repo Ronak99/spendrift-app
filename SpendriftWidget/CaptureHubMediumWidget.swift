@@ -161,7 +161,7 @@ struct MediumWidgetView: View {
     private func actionRow(icon: String, label: String, color: Color) -> some View {
         HStack(spacing: 6) {
             Image(systemName: icon)
-                .font(.system(size: 13, weight: .semibold))
+                .font(.system(size: 12, weight: .semibold))
                 .foregroundStyle(color)
                 .frame(width: 20)
             Text(label)

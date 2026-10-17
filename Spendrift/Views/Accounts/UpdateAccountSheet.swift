@@ -187,7 +187,7 @@ struct UpdateAccountSheet: View {
                 .accessibilityLabel("About primary accounts")
                 .popover(isPresented: $showPrimaryInfo, arrowEdge: .bottom) {
                     Text("The primary account is where the AI, shortcuts and widgets create a transaction.")
-                        .font(.system(size: 15))
+                        .font(.system(size: 14))
                         .foregroundStyle(.primary)
                         .fixedSize(horizontal: false, vertical: true)
                         .padding(16)
@@ -227,7 +227,7 @@ struct UpdateAccountSheet: View {
     private var primaryControl: some View {
         Button(action: togglePrimary) {
             Text(isPrimary ? "Primary" : "Set as primary")
-                .font(.system(size: 15, weight: .semibold))
+                .font(.system(size: 14, weight: .semibold))
                 .foregroundStyle(setPrimaryLabel)
                 .lineLimit(1)
         }
@@ -269,7 +269,7 @@ struct UpdateAccountSheet: View {
         VStack(alignment: .leading, spacing: 6) {
             HStack(alignment: .firstTextBaseline) {
                 Text(isCreating ? "Opening balance" : "Balance")
-                    .font(.system(size: 13, weight: .semibold))
+                    .font(.system(size: 12, weight: .semibold))
                     .tracking(0.8)
                     .textCase(.uppercase)
                     .foregroundStyle(heroPrimary.opacity(0.78))
@@ -278,7 +278,7 @@ struct UpdateAccountSheet: View {
 
                 if isCreating {
                     Text("Required")
-                        .font(.system(size: 13, weight: .regular))
+                        .font(.system(size: 12, weight: .regular))
                         .foregroundStyle(accentColor)
                 }
             }
@@ -314,7 +314,7 @@ struct UpdateAccountSheet: View {
         } label: {
             HStack(spacing: 8) {
                 Text("View Transactions")
-                    .font(.system(size: 15, weight: .medium))
+                    .font(.system(size: 14, weight: .medium))
                     .foregroundStyle(heroPrimary)
                 Spacer(minLength: 12)
                 Text(transactionsValueText)
@@ -362,9 +362,9 @@ struct UpdateAccountSheet: View {
                     HStack(spacing: 3) {
                         Text("Browse all \(AccountIcon.selectable.count)")
                         Image(systemName: "chevron.right")
-                            .font(.system(size: 11, weight: .semibold))
+                            .font(.system(size: 10, weight: .semibold))
                     }
-                    .font(.system(size: 13, weight: .semibold))
+                    .font(.system(size: 12, weight: .semibold))
                     .foregroundStyle(accentColor)
                     .washMotion(value: icon.enamelHex)
                 }

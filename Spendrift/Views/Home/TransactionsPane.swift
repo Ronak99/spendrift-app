@@ -99,7 +99,7 @@ struct TransactionsPane: View {
                 .padding(.top, 16)
 
             Text("Add one for \(month.name) \(String(month.year)).")
-                .font(.system(size: 15))
+                .font(.system(size: 14))
                 .foregroundStyle(AppTheme.inkSecondary)
                 .multilineTextAlignment(.center)
                 .padding(.top, 8)

@@ -101,7 +101,7 @@ struct HomeBottomTray: View {
                         Image(systemName: "plus")
                             .font(.system(size: 18, weight: .bold))
                         Text("Add transaction")
-                            .font(.system(size: 17, weight: .semibold))
+                            .font(.system(size: 16, weight: .semibold))
                     }
                     .frame(maxWidth: .infinity)
                     .frame(height: 58)
@@ -177,7 +177,7 @@ struct CaptureTrayMenu: View {
             )
             HomeRowDivider()
             Text("Receipts and statements are read by an AI service. Bank SMS needs a Shortcuts automation, set up once.")
-                .font(.system(size: 11.5))
+                .font(.system(size: 10))
                 .foregroundStyle(AppTheme.inkTertiary)
                 .fixedSize(horizontal: false, vertical: true)
                 .padding(.top, 10)
@@ -207,7 +207,7 @@ struct CaptureTrayMenu: View {
                 EnamelBadge(systemImage: systemImage, color: color, side: 38)
                 VStack(alignment: .leading, spacing: 2) {
                     Text(title)
-                        .font(.system(size: 15.5, weight: .semibold))
+                        .font(.system(size: 14, weight: .semibold))
                     Text(subtitle)
                         .font(.system(size: 12))
                         .foregroundStyle(AppTheme.inkSecondary)
@@ -215,7 +215,7 @@ struct CaptureTrayMenu: View {
                 }
                 Spacer(minLength: 8)
                 Image(systemName: "chevron.right")
-                    .font(.system(size: 13, weight: .semibold))
+                    .font(.system(size: 12, weight: .semibold))
                     .foregroundStyle(AppTheme.inkTertiary)
             }
             .padding(.vertical, 13)

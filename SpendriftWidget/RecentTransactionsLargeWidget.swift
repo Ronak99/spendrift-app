@@ -220,7 +220,7 @@ struct LargeWidgetView: View {
                     .fill(txn.isExpense ? Color.red.opacity(0.12) : Color.green.opacity(0.12))
                     .frame(width: 34, height: 34)
                 Image(systemName: txn.categoryIconName)
-                    .font(.system(size: 13, weight: .medium))
+                    .font(.system(size: 12, weight: .medium))
                     .foregroundStyle(txn.isExpense ? .red : .green)
             }
 

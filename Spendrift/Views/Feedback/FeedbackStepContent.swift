@@ -77,13 +77,13 @@ struct FeedbackQuestionHeader: View {
         HStack(alignment: .firstTextBaseline, spacing: 12) {
             VStack(alignment: .leading, spacing: 3) {
                 Text(step.question)
-                    .font(.system(size: 15, weight: .semibold))
+                    .font(.system(size: 14, weight: .semibold))
                     .tracking(-0.1)
                     .foregroundStyle(heroPrimary)
 
                 if let prompt = step.prompt {
                     Text(prompt)
-                        .font(.system(size: 12.5, weight: .regular))
+                        .font(.system(size: 12, weight: .regular))
                         .foregroundStyle(promptColor)
                 }
             }
@@ -156,7 +156,7 @@ struct FeedbackChoiceRow: View {
     var body: some View {
         HStack(alignment: .center, spacing: 14) {
             Text(title)
-                .font(.system(size: 15, weight: isSelected ? .semibold : .regular))
+                .font(.system(size: 14, weight: isSelected ? .semibold : .regular))
                 .tracking(-0.1)
                 .foregroundStyle(isSelected ? Color.primary : unselectedLabel)
                 .multilineTextAlignment(.leading)

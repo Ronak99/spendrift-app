@@ -76,7 +76,7 @@ struct StreamingText: View {
     /// Visible copy, optionally with wait markers (`<500ms wait>`, `<1s wait>`).
     let text: String
     var cadence: StreamingTextCadence = .natural
-    var font: Font = .system(size: 17, weight: .medium)
+    var font: Font = .system(size: 16, weight: .medium)
     var textColor: Color = .primary
     var multilineTextAlignment: TextAlignment = .leading
     var contentAlignment: Alignment = .leading

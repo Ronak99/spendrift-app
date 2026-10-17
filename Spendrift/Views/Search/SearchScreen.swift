@@ -169,7 +169,7 @@ struct SearchScreen: View {
             .accessibilityLabel("Back")
 
             TextField("Search everything", text: $text)
-                .font(.system(size: 16.5))
+                .font(.system(size: 16))
                 .textFieldStyle(.plain)
                 .submitLabel(.search)
                 .autocorrectionDisabled()
@@ -281,13 +281,13 @@ struct SearchScreen: View {
                 VStack(spacing: 10) {
                     HStack(spacing: 8) {
                         Text("Recent")
-                            .font(.system(size: 13, weight: .semibold))
+                            .font(.system(size: 12, weight: .semibold))
                             .textCase(.uppercase)
                             .tracking(0.5)
                             .foregroundStyle(AppTheme.inkSecondary)
                         Spacer(minLength: 8)
                         Button("Clear") { recents.clear() }
-                            .font(.system(size: 13, weight: .medium))
+                            .font(.system(size: 12, weight: .medium))
                             .foregroundStyle(AppTheme.inkSecondary)
                     }
                     .padding(.horizontal, 4)
@@ -312,13 +312,13 @@ struct SearchScreen: View {
     private func recentRow(_ query: String) -> some View {
         HStack(spacing: 12) {
             Image(systemName: "clock")
-                .font(.system(size: 17))
+                .font(.system(size: 16))
                 .foregroundStyle(AppTheme.inkTertiary)
             Button {
                 text = query
             } label: {
                 Text(query)
-                    .font(.system(size: 15.5))
+                    .font(.system(size: 14))
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .contentShape(Rectangle())
             }
@@ -527,7 +527,7 @@ struct SearchScreen: View {
             VStack(spacing: 10) {
                 HStack(spacing: 8) {
                     Text(title)
-                        .font(.system(size: 13, weight: .semibold))
+                        .font(.system(size: 12, weight: .semibold))
                         .textCase(.uppercase)
                         .tracking(0.5)
                         .foregroundStyle(AppTheme.inkSecondary)
@@ -540,7 +540,7 @@ struct SearchScreen: View {
                                 expandedGroups.insert(key)
                             }
                         }
-                        .font(.system(size: 13, weight: .medium))
+                        .font(.system(size: 12, weight: .medium))
                         .foregroundStyle(AppTheme.inkSecondary)
                     }
                 }
@@ -568,7 +568,7 @@ struct SearchScreen: View {
                 } label: {
                     HStack(spacing: 6) {
                         Text(filter.label)
-                            .font(.system(size: 13, weight: .medium))
+                            .font(.system(size: 12, weight: .medium))
                         Image(systemName: "xmark")
                             .font(.system(size: 10, weight: .bold))
                             .foregroundStyle(AppTheme.inkSecondary)
@@ -598,7 +598,7 @@ struct SearchScreen: View {
                 showsShadow: true
             )
             Text("No results for “\(query.raw)”")
-                .font(.system(size: 19, weight: .bold))
+                .font(.system(size: 18, weight: .bold))
                 .padding(.top, 6)
             Text(
                 query.filters.contains(where: \.isDate)
@@ -612,7 +612,7 @@ struct SearchScreen: View {
             if let dateFilter = query.filters.first(where: \.isDate) {
                 Button("Search all dates") { remove(dateFilter) }
                     .buttonStyle(.plain)
-                    .font(.system(size: 14.5, weight: .semibold))
+                    .font(.system(size: 14, weight: .semibold))
                     .padding(.horizontal, 18)
                     .frame(height: 40)
                     .background(AppTheme.actionBackground, in: Capsule())
@@ -622,7 +622,7 @@ struct SearchScreen: View {
                 let name = query.tokens.joined(separator: " ").capitalized
                 Button("Add “\(name)” as a category") { newCategoryName = name }
                     .buttonStyle(.plain)
-                    .font(.system(size: 14.5, weight: .semibold))
+                    .font(.system(size: 14, weight: .semibold))
                     .padding(.horizontal, 18)
                     .frame(height: 40)
                     .background(AppTheme.actionBackground, in: Capsule())
@@ -733,11 +733,11 @@ struct FlowChips: View {
                                 .clipShape(Circle())
                         } else {
                             Image(systemName: chip.symbol)
-                                .font(.system(size: 15))
+                                .font(.system(size: 14))
                                 .foregroundStyle(AppTheme.inkSecondary)
                         }
                         Text(chip.title)
-                            .font(.system(size: 14.5, weight: .medium))
+                            .font(.system(size: 14, weight: .medium))
                             .foregroundStyle(chip.color == nil ? AppTheme.inkSecondary : AppTheme.ink)
                     }
                     .padding(.leading, chip.color == nil ? 14 : 6)

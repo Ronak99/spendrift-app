@@ -44,7 +44,7 @@ struct CategoriesPane: View {
             VStack(spacing: 10) {
                 CreateSlotEnamel(side: 80)
                 Text("New")
-                    .font(.system(size: 12.5, weight: .medium))
+                    .font(.system(size: 12, weight: .medium))
                     .foregroundStyle(AppTheme.inkSecondary)
                     .frame(height: 30, alignment: .top)
             }
@@ -131,7 +131,7 @@ struct CategoryTypePickerSheet: View {
                 )
                 VStack(alignment: .leading, spacing: 2) {
                     Text(type.displayName)
-                        .font(.system(size: 15.5, weight: .semibold))
+                        .font(.system(size: 14, weight: .semibold))
                     Text(type.menuSubtitle)
                         .font(.system(size: 12))
                         .foregroundStyle(AppTheme.inkSecondary)
@@ -139,7 +139,7 @@ struct CategoryTypePickerSheet: View {
                 Spacer(minLength: 8)
                 if selection == type {
                     Image(systemName: "checkmark")
-                        .font(.system(size: 15, weight: .semibold))
+                        .font(.system(size: 14, weight: .semibold))
                         .foregroundStyle(AppTheme.ink)
                 }
             }

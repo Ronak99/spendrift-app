@@ -136,7 +136,7 @@ struct AccountTransactionsSheet: View {
                 .foregroundStyle(heroPrimary)
 
             Text("No transactions in \(account.name) for \(viewModel.periodDescription).")
-                .font(.system(size: 15))
+                .font(.system(size: 14))
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
         }

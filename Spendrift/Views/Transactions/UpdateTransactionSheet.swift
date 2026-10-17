@@ -297,7 +297,7 @@ struct UpdateTransactionSheet: View {
 
     private var metaLine: some View {
         Text(metaLineText)
-            .font(.system(size: 13, weight: .regular))
+            .font(.system(size: 12, weight: .regular))
             .foregroundStyle(heroPrimary.opacity(0.6))
             .lineLimit(1)
     }
@@ -316,7 +316,7 @@ struct UpdateTransactionSheet: View {
             VStack(alignment: .leading, spacing: 0) {
                 if let voiceReviewHint, transaction == nil {
                     Text(voiceReviewHint)
-                        .font(.system(size: 13))
+                        .font(.system(size: 12))
                         .foregroundStyle(.secondary)
                         .padding(.bottom, 18)
                 }
@@ -457,7 +457,7 @@ struct UpdateTransactionSheet: View {
 
     private var chevron: some View {
         Image(systemName: "chevron.right")
-            .font(.system(size: 11, weight: .semibold))
+            .font(.system(size: 10, weight: .semibold))
             .foregroundStyle(heroPrimary.opacity(0.28))
     }
 
@@ -780,7 +780,7 @@ struct AccountPickerSheet: View {
                 .foregroundStyle(heroPrimary)
 
             Text("Add a bank, card, or wallet to start tracking.")
-                .font(.system(size: 15))
+                .font(.system(size: 14))
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
 
@@ -818,7 +818,7 @@ struct AccountPickerSheet: View {
     private var addButton: some View {
         Button(action: { showCreateAccountSheet = true }) {
             Image(systemName: "plus")
-                .font(.system(size: 15, weight: .semibold))
+                .font(.system(size: 14, weight: .semibold))
                 .foregroundStyle(addForeground)
                 .frame(width: 32, height: 32)
                 .background(addBackground, in: Circle())
@@ -969,7 +969,7 @@ struct CategoryPickerSheet: View {
                 .foregroundStyle(heroPrimary)
 
             Text("Add one to start grouping these transactions.")
-                .font(.system(size: 15))
+                .font(.system(size: 14))
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
 
@@ -1007,7 +1007,7 @@ struct CategoryPickerSheet: View {
     private var addButton: some View {
         Button(action: { openCreate() }) {
             Image(systemName: "plus")
-                .font(.system(size: 15, weight: .semibold))
+                .font(.system(size: 14, weight: .semibold))
                 .foregroundStyle(addForeground)
                 .frame(width: 32, height: 32)
                 .background(addBackground, in: Circle())

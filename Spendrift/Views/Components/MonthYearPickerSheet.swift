@@ -59,7 +59,7 @@ struct MonthYearPickerSheet: View {
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Done") { dismiss() }
-                        .font(.system(size: 15, weight: .semibold))
+                        .font(.system(size: 14, weight: .semibold))
                         .foregroundStyle(AppTheme.ink)
                 }
             }
@@ -122,7 +122,7 @@ struct MonthYearPickerSheet: View {
             dismiss()
         } label: {
             Text(HomeInsights.shortMonthName(month))
-                .font(.system(size: 15, weight: .medium))
+                .font(.system(size: 14, weight: .medium))
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 14)
                 .background(

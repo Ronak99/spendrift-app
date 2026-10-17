@@ -309,7 +309,7 @@ struct TransactionAnalyticsContent: View {
                 .frame(width: 34, height: 34)
                 .overlay {
                     Image(systemName: category.iconName)
-                        .font(.system(size: 15, weight: .semibold))
+                        .font(.system(size: 14, weight: .semibold))
                         .foregroundStyle(category.color)
                 }
 
@@ -417,7 +417,7 @@ struct TransactionAnalyticsContent: View {
                         overflowResolution: .init(x: .fit(to: .chart), y: .disabled)
                     ) {
                         Text("\(peakDay.date.formatted(.dateTime.month(.abbreviated).day())) · \(peakDay.amount.formatCurrencyRounded)")
-                            .font(.system(size: 11, weight: .semibold))
+                            .font(.system(size: 10, weight: .semibold))
                             .monospacedDigit()
                             .foregroundStyle(AnalyticsTheme.ink)
                             .padding(.horizontal, 7)
@@ -490,7 +490,7 @@ struct TransactionAnalyticsContent: View {
                         if let label = value.as(String.self) {
                             let isPeak = label == peakWeekdayLabel
                             Text(label)
-                                .font(.system(size: 11, weight: isPeak ? .semibold : .regular))
+                                .font(.system(size: 10, weight: isPeak ? .semibold : .regular))
                                 .foregroundStyle(isPeak ? AnalyticsTheme.ink : AnalyticsTheme.inkSecondary)
                         }
                     }

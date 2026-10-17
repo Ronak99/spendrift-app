@@ -108,19 +108,19 @@ struct AccountLedgerSummary: View {
     var body: some View {
         VStack(spacing: 6) {
             Text("Total balance")
-                .font(.system(size: 17))
+                .font(.system(size: 16))
                 .foregroundStyle(AppTheme.inkSecondary)
 
             Text(balance.formatCurrencyRounded)
-                .font(.system(size: 56, weight: .semibold))
-                .tracking(-2)
+                .font(.system(size: 48, weight: .semibold))
+                .tracking(-1.5)
                 .monospacedDigit()
                 .lineLimit(1)
                 .minimumScaleFactor(0.5)
                 .foregroundStyle(balance < 0 ? AppTheme.expense : AppTheme.ink)
 
             Text(subline)
-                .font(.system(size: 15))
+                .font(.system(size: 14))
                 .foregroundStyle(AppTheme.inkSecondary)
                 .multilineTextAlignment(.center)
         }

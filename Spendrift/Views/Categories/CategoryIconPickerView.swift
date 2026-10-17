@@ -74,7 +74,7 @@ struct CategoryIconPickerView: View {
                         ForEach(filteredGroups, id: \.title) { group in
                             VStack(alignment: .leading, spacing: 12) {
                                 Text(group.title)
-                                    .font(.system(size: 11, weight: .semibold))
+                                    .font(.system(size: 10, weight: .semibold))
                                     .tracking(0.8)
                                     .textCase(.uppercase)
                                     .foregroundStyle(.secondary)
@@ -144,7 +144,7 @@ struct CategoryIconCell: View {
 
                 if showsLabel {
                     Text(icon.pickerLabel)
-                        .font(.system(size: 10.5, weight: .semibold))
+                        .font(.system(size: 10, weight: .semibold))
                         .foregroundStyle(.secondary)
                         .lineLimit(1)
                         .minimumScaleFactor(0.8)

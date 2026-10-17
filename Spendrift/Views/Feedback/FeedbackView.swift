@@ -199,7 +199,7 @@ struct FeedbackView: View {
             FeedbackQuestionCard(isDark: isDark) {
                 ZStack(alignment: .topLeading) {
                     TextEditor(text: notesBinding)
-                        .font(.system(size: 14.5, weight: .regular))
+                        .font(.system(size: 14, weight: .regular))
                         .lineSpacing(3)
                         .foregroundStyle(heroPrimary)
                         .scrollContentBackground(.hidden)
@@ -211,7 +211,7 @@ struct FeedbackView: View {
 
                     if flow.draft.notes.isEmpty {
                         Text(flow.notesPlaceholder)
-                            .font(.system(size: 14.5))
+                            .font(.system(size: 14))
                             .foregroundStyle(promptColor)
                             .padding(.top, 18)
                             .padding(.leading, 17)

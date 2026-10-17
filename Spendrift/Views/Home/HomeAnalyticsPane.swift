@@ -71,7 +71,7 @@ struct HomeAnalyticsPane: View {
             Button(action: onPickMonth) {
                 HStack(spacing: 4) {
                     Text("Total spent in \(month.title(relativeTo: today))")
-                        .font(.system(size: 17))
+                        .font(.system(size: 16))
                     Image(systemName: "chevron.down")
                         .font(.system(size: 12, weight: .semibold))
                 }
@@ -83,8 +83,8 @@ struct HomeAnalyticsPane: View {
             .accessibilityValue(month.title(relativeTo: today))
 
             Text(stats.spent.formatCurrencyRounded)
-                .font(.system(size: 56, weight: .semibold))
-                .tracking(-2)
+                .font(.system(size: 48, weight: .semibold))
+                .tracking(-1.5)
                 .monospacedDigit()
                 .lineLimit(1)
                 .minimumScaleFactor(0.5)
@@ -124,7 +124,7 @@ struct HomeAnalyticsPane: View {
                         .font(.system(size: 12, weight: .semibold))
                 }
                 Text(title)
-                    .font(.system(size: 13))
+                    .font(.system(size: 12))
             }
             .foregroundStyle(AppTheme.inkSecondary)
             .padding(.top, 10)
@@ -143,7 +143,7 @@ struct HomeAnalyticsPane: View {
                 .foregroundStyle(tint)
                 .monospacedDigit()
         }
-        .font(.system(size: 13))
+        .font(.system(size: 12))
     }
 
     // MARK: Persona
@@ -182,14 +182,14 @@ struct HomeAnalyticsPane: View {
                     .font(.system(size: 20, weight: .bold))
                     .tracking(-0.3)
                 Text(persona.reason)
-                    .font(.system(size: 13))
+                    .font(.system(size: 12))
                     .foregroundStyle(AppTheme.inkSecondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
 
             Image(systemName: "chevron.right")
-                .font(.system(size: 13, weight: .semibold))
+                .font(.system(size: 12, weight: .semibold))
                 .foregroundStyle(AppTheme.inkTertiary)
         }
         .padding(.horizontal, 18)
@@ -213,7 +213,7 @@ struct HomeAnalyticsPane: View {
                     .font(.system(size: 20, weight: .bold))
                     .tracking(-0.3)
                 Text("Add a transaction and a persona appears.")
-                    .font(.system(size: 13))
+                    .font(.system(size: 12))
                     .foregroundStyle(AppTheme.inkSecondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
@@ -365,7 +365,7 @@ struct HomeAnalyticsPane: View {
             EnamelBadge(systemImage: "chart.line.uptrend.xyaxis", color: CategoryEnamel.uncategorized)
             VStack(alignment: .leading, spacing: 2) {
                 Text("No budgets yet")
-                    .font(.system(size: 15, weight: .semibold))
+                    .font(.system(size: 14, weight: .semibold))
                 Text("Cap the whole month, or one category at a time.")
                     .font(.system(size: 14))
                     .foregroundStyle(AppTheme.inkSecondary)
@@ -399,7 +399,7 @@ struct HomeAnalyticsPane: View {
 
                 VStack(alignment: .leading, spacing: 7) {
                     Text(budget.category.name)
-                        .font(.system(size: 15, weight: .semibold))
+                        .font(.system(size: 14, weight: .semibold))
                         .lineLimit(1)
                     BudgetBar(
                         spent: budget.spent,
@@ -418,7 +418,7 @@ struct HomeAnalyticsPane: View {
                     .font(.system(size: 14, weight: .semibold))
                     .foregroundStyle(budget.isOver ? AppTheme.expense : AppTheme.ink)
                     Text("\(budget.spent.formatCurrencyRounded) of \(budget.cap.formatCurrencyRounded)")
-                        .font(.system(size: 11.5))
+                        .font(.system(size: 10))
                         .foregroundStyle(AppTheme.inkSecondary)
                 }
                 .lineLimit(1)
@@ -459,14 +459,14 @@ struct HomeAnalyticsPane: View {
     private func insightRow(_ insight: SpendInsight, showsChevron: Bool) -> some View {
         HStack(spacing: 14) {
             Image(systemName: insight.symbol)
-                .font(.system(size: 17))
+                .font(.system(size: 16))
                 .foregroundStyle(AppTheme.ink)
                 .frame(width: 34, height: 34)
                 .background(AppTheme.cardAlternate, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(insight.title)
-                    .font(.system(size: 14.5))
+                    .font(.system(size: 14))
                     .fixedSize(horizontal: false, vertical: true)
                 if let detail = insight.detail {
                     Text(detail)
@@ -479,7 +479,7 @@ struct HomeAnalyticsPane: View {
 
             if showsChevron {
                 Image(systemName: "chevron.right")
-                    .font(.system(size: 13, weight: .semibold))
+                    .font(.system(size: 12, weight: .semibold))
                     .foregroundStyle(AppTheme.inkTertiary)
             }
         }
@@ -546,7 +546,7 @@ struct HomeAnalyticsPane: View {
 
                 VStack(alignment: .leading, spacing: 6) {
                     Text(slice.category.name)
-                        .font(.system(size: 15, weight: .medium))
+                        .font(.system(size: 14, weight: .medium))
                         .lineLimit(1)
                     if cap > 0 {
                         BudgetBar(spent: slice.amount, cap: cap, color: color)
@@ -555,12 +555,12 @@ struct HomeAnalyticsPane: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
 
                 Text("\(Int((stats.share(of: slice.amount) * 100).rounded()))%")
-                    .font(.system(size: 13))
+                    .font(.system(size: 12))
                     .foregroundStyle(AppTheme.inkSecondary)
                     .frame(width: 36, alignment: .trailing)
 
                 Text(slice.amount.formatCurrencyRounded)
-                    .font(.system(size: 15, weight: .semibold))
+                    .font(.system(size: 14, weight: .semibold))
                     .monospacedDigit()
                     .frame(width: 76, alignment: .trailing)
                     .lineLimit(1)

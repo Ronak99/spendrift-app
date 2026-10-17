@@ -46,14 +46,14 @@ struct HomeSectionHeader: View {
     private var label: some View {
         HStack(spacing: 8) {
             Text(title)
-                .font(.system(size: 13, weight: .semibold))
+                .font(.system(size: 12, weight: .semibold))
                 .textCase(.uppercase)
                 .tracking(0.5)
                 .foregroundStyle(AppTheme.inkSecondary)
             Spacer(minLength: 8)
             if showsChevron {
                 Image(systemName: "chevron.right")
-                    .font(.system(size: 13, weight: .semibold))
+                    .font(.system(size: 12, weight: .semibold))
                     .foregroundStyle(AppTheme.inkTertiary)
             }
         }
@@ -80,11 +80,11 @@ struct HomeCardLink: View {
             Button(action: action) {
                 HStack {
                     Text(title)
-                        .font(.system(size: 15, weight: .medium))
+                        .font(.system(size: 14, weight: .medium))
                         .foregroundStyle(AppTheme.ink)
                     Spacer(minLength: 8)
                     Image(systemName: "chevron.right")
-                        .font(.system(size: 13, weight: .semibold))
+                        .font(.system(size: 12, weight: .semibold))
                         .foregroundStyle(AppTheme.inkTertiary)
                 }
                 .padding(.top, 13)
@@ -145,7 +145,7 @@ struct HomeStatTile: View {
                     .monospacedDigit()
                 if let valueSuffix {
                     Text(valueSuffix)
-                        .font(.system(size: 13, weight: .medium))
+                        .font(.system(size: 12, weight: .medium))
                         .foregroundStyle(AppTheme.inkSecondary)
                 }
             }

@@ -43,7 +43,7 @@ struct SearchTopHitCard: View {
             EnamelBadge(systemImage: entity.symbol, color: entity.color, side: 48)
             VStack(alignment: .leading, spacing: 3) {
                 Text("Top hit · \(entity.kindLabel)")
-                    .font(.system(size: 11.5))
+                    .font(.system(size: 10))
                     .textCase(.uppercase)
                     .tracking(0.6)
                     .foregroundStyle(AppTheme.inkSecondary)
@@ -54,7 +54,7 @@ struct SearchTopHitCard: View {
             }
             Spacer(minLength: 8)
             Image(systemName: "chevron.right")
-                .font(.system(size: 13, weight: .semibold))
+                .font(.system(size: 12, weight: .semibold))
                 .foregroundStyle(AppTheme.inkTertiary)
         }
     }
@@ -95,7 +95,7 @@ struct SearchTopHitCard: View {
     ) -> some View {
         VStack(alignment: alignment, spacing: 3) {
             Text(caption)
-                .font(.system(size: 11.5))
+                .font(.system(size: 10))
                 .foregroundStyle(AppTheme.inkSecondary)
             Text(value)
                 .font(.system(size: 16, weight: .semibold))
@@ -194,7 +194,7 @@ struct SearchEntityRow: View {
                 EnamelBadge(systemImage: entity.symbol, color: entity.color)
                 VStack(alignment: .leading, spacing: 2) {
                     Text(highlighted(entity.name, tokens: tokens))
-                        .font(.system(size: 15.5, weight: .semibold))
+                        .font(.system(size: 14, weight: .semibold))
                         .lineLimit(1)
                     Text(subtitle)
                         .font(.system(size: 12))
@@ -202,7 +202,7 @@ struct SearchEntityRow: View {
                 }
                 Spacer(minLength: 8)
                 Text(trailing.text)
-                    .font(.system(size: 15, weight: .semibold))
+                    .font(.system(size: 14, weight: .semibold))
                     .monospacedDigit()
                     .foregroundStyle(trailing.tint)
                     .lineLimit(1)
@@ -237,7 +237,7 @@ struct SearchTransactionSection: View {
                     Spacer(minLength: 8)
                     Text("\(LedgerSearch.expenseTotal(transactions).formatCurrencyRounded) spent")
                 }
-                .font(.system(size: 13))
+                .font(.system(size: 12))
                 .foregroundStyle(AppTheme.inkSecondary)
                 .padding(.top, 12)
                 .padding(.bottom, 4)

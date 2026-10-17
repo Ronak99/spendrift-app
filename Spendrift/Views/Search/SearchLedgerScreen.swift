@@ -87,7 +87,7 @@ struct SearchLedgerScreen: View {
             BackChevronButton()
             VStack(alignment: .leading, spacing: 0) {
                 Text(request.title)
-                    .font(.system(size: 17, weight: .semibold))
+                    .font(.system(size: 16, weight: .semibold))
                     .lineLimit(1)
                 Text(request.subtitle)
                     .font(.system(size: 12))
@@ -184,7 +184,7 @@ struct SearchLedgerScreen: View {
                 Text(LedgerSearch.expenseTotal(group.transactions).formatCurrencyRounded)
                     .monospacedDigit()
             }
-            .font(.system(size: 13, weight: .semibold))
+            .font(.system(size: 12, weight: .semibold))
             .foregroundStyle(AppTheme.inkSecondary)
             .padding(.horizontal, 4)
             .padding(.bottom, 8)

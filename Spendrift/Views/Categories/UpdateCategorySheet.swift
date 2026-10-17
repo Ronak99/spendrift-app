@@ -252,7 +252,7 @@ struct UpdateCategorySheet: View {
                 Text(type.displayName)
                     .font(.system(size: 14, weight: .regular))
                 Image(systemName: "chevron.down")
-                    .font(.system(size: 11, weight: .semibold))
+                    .font(.system(size: 10, weight: .semibold))
                     .rotationEffect(.degrees(showTypeMenu ? 180 : 0))
             }
             .foregroundStyle(heroPrimary.opacity(showTypeMenu ? 0.85 : 0.6))
@@ -358,7 +358,7 @@ struct UpdateCategorySheet: View {
                 Spacer(minLength: 12)
 
                 Image(systemName: option.flowSymbolName)
-                    .font(.system(size: 15, weight: .semibold))
+                    .font(.system(size: 14, weight: .semibold))
                     .foregroundStyle(heroPrimary.opacity(0.6))
             }
             .padding(.horizontal, 16)
@@ -415,7 +415,7 @@ struct UpdateCategorySheet: View {
         } label: {
             HStack(spacing: 8) {
                 Text("View Transactions")
-                    .font(.system(size: 15, weight: .medium))
+                    .font(.system(size: 14, weight: .medium))
                     .foregroundStyle(heroPrimary)
                 Spacer(minLength: 12)
                 Text(transactionsValueText)
@@ -489,7 +489,7 @@ struct UpdateCategorySheet: View {
                         .overlay {
                             if isCustomColorSelected {
                                 Image(systemName: "checkmark")
-                                    .font(.system(size: 13, weight: .bold))
+                                    .font(.system(size: 12, weight: .bold))
                                     .foregroundStyle(Color(hex: "#0A0A0B"))
                             } else {
                                 Image(systemName: "plus")
@@ -526,9 +526,9 @@ struct UpdateCategorySheet: View {
                     HStack(spacing: 3) {
                         Text("Browse all")
                         Image(systemName: "chevron.right")
-                            .font(.system(size: 11, weight: .semibold))
+                            .font(.system(size: 10, weight: .semibold))
                     }
-                    .font(.system(size: 13, weight: .semibold))
+                    .font(.system(size: 12, weight: .semibold))
                     .foregroundStyle(selectedColor)
                     .washMotion(value: selectedHex)
                 }
@@ -576,7 +576,7 @@ struct UpdateCategorySheet: View {
                         budgetFieldFocused = false
                     }
                     .buttonStyle(.plain)
-                    .font(.system(size: 13, weight: .semibold))
+                    .font(.system(size: 12, weight: .semibold))
                     .foregroundStyle(CategoryEnamel.expense)
                 }
             }
@@ -594,7 +594,7 @@ struct UpdateCategorySheet: View {
                     .accessibilityIdentifier("Category budget")
                     .accessibilityLabel("Monthly budget")
                 Text("per month")
-                    .font(.system(size: 13))
+                    .font(.system(size: 12))
                     .foregroundStyle(.secondary)
             }
 
@@ -630,7 +630,7 @@ struct UpdateCategorySheet: View {
                         Image(systemName: "chart.line.uptrend.xyaxis")
                             .font(.system(size: 12))
                         Text("Use \(average.formatCurrencyRounded), your 3-month average")
-                            .font(.system(size: 13, weight: .medium))
+                            .font(.system(size: 12, weight: .medium))
                     }
                     .foregroundStyle(.secondary)
                     .padding(.horizontal, 12)

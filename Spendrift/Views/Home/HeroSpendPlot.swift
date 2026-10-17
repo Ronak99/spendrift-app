@@ -100,7 +100,7 @@ struct HeroSpendPlot: View {
     private var budgetLabel: some View {
         Button(action: onEditBudget) {
             Text("Budget \(cap.formatCurrencyRounded)")
-                .font(.system(size: 11))
+                .font(.system(size: 10))
                 .foregroundStyle(AppTheme.inkSecondary)
                 .contentShape(Rectangle())
         }
@@ -120,19 +120,19 @@ struct HeroSpendPlot: View {
                 Spacer(minLength: 8)
                 Text("\(shortMonth) \(month.days)")
             }
-            .font(.system(size: 11))
+            .font(.system(size: 10))
             .foregroundStyle(AppTheme.inkTertiary)
             .padding(.horizontal, 16)
 
             if let crossing = model.crossing {
                 Text(crossing.label)
-                    .font(.system(size: 11))
+                    .font(.system(size: 10))
                     .foregroundStyle(AppTheme.expense)
                     .fixedSize()
                     .position(x: model.clampedLabelX(crossing.x), y: 7)
             } else if month.isCurrent, let today = model.lastPoint {
                 Text("Today, \(shortMonth) \(month.elapsed)")
-                    .font(.system(size: 11))
+                    .font(.system(size: 10))
                     .foregroundStyle(AppTheme.inkSecondary)
                     .fixedSize()
                     .position(x: model.clampedLabelX(today.x), y: 7)

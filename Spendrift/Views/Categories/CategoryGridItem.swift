@@ -33,7 +33,7 @@ struct CategoryGridItem: View {
             }
 
             Text(category.name)
-                .font(.system(size: 12.5, weight: isSelected ? .semibold : .medium))
+                .font(.system(size: 12, weight: isSelected ? .semibold : .medium))
                 .foregroundStyle(.primary)
                 .multilineTextAlignment(.center)
                 .lineLimit(2)

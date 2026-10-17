@@ -148,7 +148,7 @@ struct VoiceInlineRecordingBar: View {
 
                 VStack(alignment: .leading, spacing: 6) {
                     Text(reason.title)
-                        .font(.system(size: 17, weight: .semibold))
+                        .font(.system(size: 16, weight: .semibold))
                         .tracking(-0.17)
                         .foregroundStyle(.primary)
                         .fixedSize(horizontal: false, vertical: true)
@@ -226,7 +226,7 @@ struct VoiceInlineRecordingBar: View {
 private struct VoiceFailurePrimaryButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .font(.system(size: 15, weight: .semibold))
+            .font(.system(size: 14, weight: .semibold))
             .foregroundStyle(Color(hex: "#062E35"))
             .frame(maxWidth: .infinity)
             .frame(height: 44)
@@ -239,7 +239,7 @@ private struct VoiceFailurePrimaryButtonStyle: ButtonStyle {
 private struct VoiceFailureSecondaryButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .font(.system(size: 15, weight: .medium))
+            .font(.system(size: 14, weight: .medium))
             .foregroundStyle(.primary)
             .frame(maxWidth: .infinity)
             .frame(height: 44)
@@ -291,7 +291,7 @@ private struct VoiceErrorDismissButton: View {
                     .transaction { $0.animation = nil }
 
                 Image(systemName: "xmark")
-                    .font(.system(size: 11, weight: .semibold))
+                    .font(.system(size: 10, weight: .semibold))
                     .foregroundStyle(.secondary)
             }
             .frame(width: 28, height: 28)

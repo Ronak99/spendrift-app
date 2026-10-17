@@ -52,7 +52,7 @@ struct CategoryFindField: View {
                 query = ""
             } label: {
                 Image(systemName: "xmark.circle.fill")
-                    .font(.system(size: 15, weight: .regular))
+                    .font(.system(size: 14, weight: .regular))
                     .symbolRenderingMode(.hierarchical)
                     .foregroundStyle(heroPrimary.opacity(hasQuery ? 0.42 : 0))
             }
@@ -171,7 +171,7 @@ struct CategorySearchMiss: View {
                 .multilineTextAlignment(.center)
 
             Text(bodyCopy)
-                .font(.system(size: 15))
+                .font(.system(size: 14))
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
 

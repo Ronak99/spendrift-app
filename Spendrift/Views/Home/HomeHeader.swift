@@ -172,13 +172,13 @@ struct HomeTabStrip: View {
 
                 HStack(spacing: 2) {
                     Text(label(for: tab))
-                        .font(.system(size: 12.5, weight: isSelected ? .bold : .regular))
+                        .font(.system(size: 12, weight: isSelected ? .bold : .regular))
                         .tracking(-0.1)
                         .lineLimit(1)
                         .minimumScaleFactor(0.85)
                     if hasPicker(tab) {
                         Image(systemName: "chevron.down")
-                            .font(.system(size: 9, weight: .bold))
+                            .font(.system(size: 8, weight: .bold))
                     }
                 }
                 .foregroundStyle(isSelected ? AppTheme.ink : AppTheme.inkSecondary)
