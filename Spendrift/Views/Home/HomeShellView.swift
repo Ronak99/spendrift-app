@@ -100,11 +100,6 @@ struct HomeShellView: View {
     /// Deletes that would take transactions with them wait here for confirmation.
     @State private var accountToDelete: DeleteConfirmation<Account>?
     @State private var categoryToDelete: DeleteConfirmation<TransactionCategory>?
-    @State private var showAnalyticsSheet = false
-    @State private var analyticsDrillCategory: TransactionCategory?
-    /// Scopes the full analytics screen. Re-anchored to the month Home is showing
-    /// whenever that screen is opened.
-    @State private var analyticsPeriod = TransactionViewModel()
     @State private var paywallContext: PaywallContext?
     @State private var receiptShare = ReceiptCaptureController()
     /// Drives the transient "Transaction added" confirmation after a shared receipt is created.
@@ -181,9 +176,6 @@ struct HomeShellView: View {
             CategoryTypePickerSheet(selection: categoryType) { picked in
                 categoryType = picked
             }
-        }
-        .sheet(isPresented: $showAnalyticsSheet) {
-            analyticsSheet
         }
         .sheet(isPresented: $showTotalBudgetSheet) {
             TotalBudgetSheet()
@@ -370,8 +362,7 @@ struct HomeShellView: View {
                 onEditCategoryBudget: { categoryEdit = CategoryEditRequest(category: $0, focusBudget: true) },
                 onOpenTransaction: { transactionToEdit = $0 },
                 onOpenTab: { selectedTab = $0 },
-                onAddTransaction: openCreateTransactionSheet,
-                onOpenAnalytics: openAnalytics
+                onAddTransaction: openCreateTransactionSheet
             )
         case .transactions:
             TransactionsPane(
@@ -471,35 +462,6 @@ struct HomeShellView: View {
         }
     }
 
-    /// Full analytics for the month Home is showing. A sheet rather than a pane, so
-    /// Home keeps its scroll behind it. The category drill lives in here, since a
-    /// presenting view cannot raise a second sheet while this one is up.
-    private var analyticsSheet: some View {
-        NavigationStack {
-            TransactionAnalyticsContent(
-                periodViewModel: analyticsPeriod,
-                drillCategory: $analyticsDrillCategory
-            )
-            .background {
-                // The analytics palette is dark-only, so the sheet pins dark appearance below.
-                AnalyticsAtmosphere()
-                    .ignoresSafeArea()
-            }
-            .navigationTitle("Analytics")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbarBackground(.hidden, for: .navigationBar)
-            .toolbarColorScheme(.dark, for: .navigationBar)
-            .toolbar { CustomSheetCloseToolbarItem() }
-            .sheet(item: $analyticsDrillCategory) { category in
-                CategoryTransactionsSheet(
-                    category: category,
-                    initialDate: analyticsPeriod.selectedDate
-                )
-            }
-        }
-        .preferredColorScheme(.dark)
-    }
-
     // MARK: Behaviour
 
     /// Runs from the add-budget sheet's `onDismiss`, after its transition has finished.
@@ -515,18 +477,10 @@ struct HomeShellView: View {
         }
     }
 
-    private func openAnalytics() {
-        analyticsPeriod.periodGranularity = .month
-        analyticsPeriod.selectedDate = monthAnchorDate
-        showAnalyticsSheet = true
-        AudienceTags.markSeenAnalytics()
-    }
-
     /// The drill sheet reads the persisted period scope, so pin it to a month first,
-    /// as `openAnalytics` does, or a saved week or year window would hide the rest of
-    /// the month Home was showing.
+    /// or a saved week or year window would hide the rest of the month Home was showing.
     private func openCategoryDrill(_ category: TransactionCategory) {
-        analyticsPeriod.periodGranularity = .month
+        TransactionViewModel().periodGranularity = .month
         categoryDrill = category
     }
 

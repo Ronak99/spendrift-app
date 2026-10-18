@@ -2,8 +2,9 @@
 //  HomeAnalyticsPane.swift
 //  Spendrift
 //
-//  Home is analytics. The hero carries the month's spend and its curve, then four
-//  blocks answer: who am I this month, am I okay, where did it go, what just happened.
+//  Home is analytics. The hero carries the month's spend and its curve, then the
+//  blocks answer: who am I this month, am I okay, where did it go, how the days
+//  and weekdays added up, and what just happened.
 //  Every block recomputes for the month picked in the hero.
 //
 
@@ -28,8 +29,9 @@ struct HomeAnalyticsPane: View {
     var onOpenTransaction: (Transaction) -> Void
     var onOpenTab: (HomeTab) -> Void
     var onAddTransaction: () -> Void
-    /// Opens the full analytics for the picked month: charts, drills, the lot.
-    var onOpenAnalytics: () -> Void
+
+    /// Stacked bar or donut. Remembered so the next visit opens the same picture.
+    @AppStorage("homeBreakdownChart") private var breakdownChart: BreakdownChart = .stack
 
     var body: some View {
         let stats = month.stats(from: transactions, today: today)
@@ -58,9 +60,11 @@ struct HomeAnalyticsPane: View {
                 if !insights.isEmpty {
                     insightsBlock(insights)
                 }
-                // Nothing to break down in a month with no spend.
-                if !stats.categorySpend.isEmpty {
+                // Nothing to chart in a month with no spend. Income alone stays in the hero.
+                if stats.spent > 0 {
                     breakdown(stats, previous: previous)
+                    dailyBlock(stats)
+                    weekdayBlock(stats)
                 }
                 recentBlock(stats)
             }
@@ -69,6 +73,12 @@ struct HomeAnalyticsPane: View {
         }
         .scrollIndicators(.hidden)
         .homeTrayClearance()
+        // The charts used to live on a sheet, and opening it set this tag.
+        // Home is that screen now, so seeing a month with spend counts.
+        .onChange(of: stats.spent, initial: true) { _, spent in
+            guard spent > 0 else { return }
+            AudienceTags.markSeenAnalytics()
+        }
     }
 
     // MARK: Hero
@@ -102,6 +112,13 @@ struct HomeAnalyticsPane: View {
                 heroFigure("Saved", stats.saved, tint: stats.saved >= 0 ? AppTheme.income : AppTheme.expense)
             }
             .padding(.top, 10)
+
+            if let caption = activityCaption(stats) {
+                Text(caption)
+                    .font(.system(size: 12))
+                    .foregroundStyle(AppTheme.inkTertiary)
+                    .padding(.top, 8)
+            }
 
             // No curve until there is spend to draw: an empty month is just its totals.
             if stats.spent > 0 {
@@ -144,6 +161,22 @@ struct HomeAnalyticsPane: View {
                 .monospacedDigit()
         }
         .font(.system(size: 12))
+    }
+
+    /// Expense and income counts. The amounts already sit above this line.
+    private func activityCaption(_ stats: MonthSpendStats) -> String? {
+        let expenses = stats.transactions.filter(\.isExpense).count
+        let income = stats.transactions.count - expenses
+        switch (expenses, income) {
+        case (0, 0):
+            return nil
+        case (let count, 0):
+            return "\(count) expense\(count == 1 ? "" : "s")"
+        case (0, let count):
+            return "\(count) income"
+        case (let expenses, let income):
+            return "\(expenses) expense\(expenses == 1 ? "" : "s") · \(income) income"
+        }
     }
 
     // MARK: Persona
@@ -491,11 +524,27 @@ struct HomeAnalyticsPane: View {
     // MARK: Where it went
 
     private func breakdown(_ stats: MonthSpendStats, previous: MonthSpendStats) -> some View {
-        VStack(spacing: 10) {
-            HomeSectionHeader(title: "Where it went", showsChevron: true, action: onOpenAnalytics)
+        let slices = HomeSpendChartData.slices(from: stats)
+
+        return VStack(spacing: 10) {
+            HStack(spacing: 0) {
+                HomeSectionHeader(title: "Where it went")
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                BreakdownChartToggle(selection: $breakdownChart)
+                    .padding(.trailing, 4)
+            }
             HomeCard {
-                CategorySpendDonut(slices: stats.categorySpend, spent: stats.spent)
-                ForEach(Array(stats.categorySpend.prefix(4).enumerated()), id: \.element.id) { index, slice in
+                Group {
+                    switch breakdownChart {
+                    case .stack:
+                        CategoryShareBar(slices: slices)
+                    case .donut:
+                        CategorySpendDonut(slices: slices, spent: stats.spent)
+                    }
+                }
+                .animation(.snappy(duration: 0.28), value: breakdownChart)
+
+                ForEach(Array(slices.enumerated()), id: \.element.id) { index, slice in
                     if index > 0 {
                         HomeRowDivider()
                     }
@@ -507,52 +556,81 @@ struct HomeAnalyticsPane: View {
     }
 
     private func breakdownRow(
-        _ slice: MonthSpendStats.CategorySpend,
+        _ slice: HomeSpendSlice,
         stats: MonthSpendStats,
         previous: MonthSpendStats
     ) -> some View {
-        let cap = MonthlyBudget.cap(for: slice.category)
-        let color = CategoryEnamel.color(for: slice.category)
-        let change = MonthSpendStats.change(from: previous.spent(in: slice.category), to: slice.amount)
+        let cap = slice.category.map { MonthlyBudget.cap(for: $0) } ?? 0
+        let previousAmount = slice.category.map { previous.spent(in: $0) }
+            ?? HomeSpendChartData.uncategorizedAmount(previous)
+        let change = MonthSpendStats.change(from: previousAmount, to: slice.amount)
 
-        return Button {
-            onShowCategoryTransactions(slice.category)
-        } label: {
-            HStack(spacing: 12) {
-                Circle()
-                    .fill(color)
-                    .frame(width: 10, height: 10)
+        let row = HStack(spacing: 12) {
+            Circle()
+                .fill(slice.color)
+                .frame(width: 10, height: 10)
 
-                VStack(alignment: .leading, spacing: 6) {
-                    Text(slice.category.name)
-                        .font(.system(size: 14, weight: .medium))
-                        .lineLimit(1)
-                    if cap > 0 {
-                        BudgetBar(spent: slice.amount, cap: cap, color: color)
-                    }
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
-
-                Text("\(Int((stats.share(of: slice.amount) * 100).rounded()))%")
-                    .font(.system(size: 12))
-                    .foregroundStyle(AppTheme.inkSecondary)
-                    .frame(width: 36, alignment: .trailing)
-
-                Text(slice.amount.formatCurrencyRounded)
-                    .font(.system(size: 14, weight: .semibold))
-                    .monospacedDigit()
-                    .frame(width: 76, alignment: .trailing)
+            VStack(alignment: .leading, spacing: 6) {
+                Text(slice.name)
+                    .font(.system(size: 14, weight: .medium))
                     .lineLimit(1)
-                    .minimumScaleFactor(0.7)
-
-                deltaBadge(change)
-                    .frame(width: 44, alignment: .trailing)
+                if cap > 0 {
+                    BudgetBar(spent: slice.amount, cap: cap, color: slice.color)
+                }
             }
-            .padding(.vertical, 11)
-            .contentShape(Rectangle())
+            .frame(maxWidth: .infinity, alignment: .leading)
+
+            Text("\(Int((stats.share(of: slice.amount) * 100).rounded()))%")
+                .font(.system(size: 12))
+                .foregroundStyle(AppTheme.inkSecondary)
+                .frame(width: 36, alignment: .trailing)
+
+            Text(slice.amount.formatCurrencyRounded)
+                .font(.system(size: 14, weight: .semibold))
+                .monospacedDigit()
+                .frame(width: 76, alignment: .trailing)
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
+
+            deltaBadge(change)
+                .frame(width: 44, alignment: .trailing)
         }
-        .buttonStyle(HomePressStyle(scale: 1))
+        .padding(.vertical, 11)
+        .contentShape(Rectangle())
         .accessibilityElement(children: .combine)
+
+        return Group {
+            if let category = slice.category {
+                Button {
+                    onShowCategoryTransactions(category)
+                } label: {
+                    row
+                }
+                .buttonStyle(HomePressStyle(scale: 1))
+            } else {
+                row
+            }
+        }
+    }
+
+    // MARK: Days and weekdays
+
+    private func dailyBlock(_ stats: MonthSpendStats) -> some View {
+        VStack(spacing: 10) {
+            HomeSectionHeader(title: "Each day")
+            HomeCard {
+                DailySpendPlot(stats: stats)
+            }
+        }
+    }
+
+    private func weekdayBlock(_ stats: MonthSpendStats) -> some View {
+        VStack(spacing: 10) {
+            HomeSectionHeader(title: "By weekday")
+            HomeCard {
+                WeekdaySpendBars(stats: stats)
+            }
+        }
     }
 
     private func deltaBadge(_ change: Int?) -> some View {
@@ -602,95 +680,5 @@ struct HomeAnalyticsPane: View {
                 }
             }
         }
-    }
-}
-
-/// Category split as a ring. Same enamel and the same 14pt weight and 2pt gaps
-/// as the share bar it replaces, so the colours stay in the card's own language.
-/// The rows underneath name the slices.
-private struct CategorySpendDonut: View {
-    let slices: [MonthSpendStats.CategorySpend]
-    let spent: Double
-
-    private let ring: CGFloat = 14
-    private let diameter: CGFloat = 168
-    private let gap: CGFloat = 2
-
-    var body: some View {
-        ZStack {
-            Canvas { context, size in
-                let total = slices.reduce(0) { $0 + $1.amount }
-                guard total > 0 else { return }
-
-                let center = CGPoint(x: size.width / 2, y: size.height / 2)
-                let radius = (min(size.width, size.height) - ring) / 2
-                guard radius > 0 else { return }
-
-                if slices.count == 1, let only = slices.first {
-                    ring(in: context, center: center, radius: radius, color: CategoryEnamel.color(for: only.category))
-                    return
-                }
-
-                let gapAngle = Double(gap / radius)
-                let sweepBudget = (2 * Double.pi) - gapAngle * Double(slices.count)
-                var cursor = -Double.pi / 2
-
-                for slice in slices {
-                    let sweep = sweepBudget * (slice.amount / total)
-                    var path = Path()
-                    path.addArc(
-                        center: center,
-                        radius: radius,
-                        startAngle: .radians(cursor),
-                        endAngle: .radians(cursor + sweep),
-                        clockwise: false
-                    )
-                    context.stroke(
-                        path,
-                        with: .color(CategoryEnamel.color(for: slice.category)),
-                        style: StrokeStyle(lineWidth: ring, lineCap: .butt)
-                    )
-                    cursor += sweep + gapAngle
-                }
-            }
-
-            VStack(spacing: 1) {
-                Text(spent.formatCurrencyRounded)
-                    .font(.system(size: 22, weight: .semibold))
-                    .tracking(-0.4)
-                    .monospacedDigit()
-                    .foregroundStyle(AppTheme.ink)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.5)
-                Text("spent")
-                    .font(.system(size: 12))
-                    .foregroundStyle(AppTheme.inkSecondary)
-            }
-            .frame(maxWidth: diameter - ring * 2 - 16)
-        }
-        .frame(width: diameter, height: diameter)
-        .frame(maxWidth: .infinity)
-        .padding(.top, 16)
-        .padding(.bottom, 6)
-        .accessibilityElement(children: .ignore)
-        .accessibilityLabel("Spending by category")
-        .accessibilityValue(spent.formatCurrencyRounded)
-    }
-
-    /// A full turn. `addArc` drops a sweep of exactly one circle, so one category
-    /// is drawn as a closed ring instead.
-    private func ring(in context: GraphicsContext, center: CGPoint, radius: CGFloat, color: Color) {
-        var path = Path()
-        path.addEllipse(in: CGRect(
-            x: center.x - radius,
-            y: center.y - radius,
-            width: radius * 2,
-            height: radius * 2
-        ))
-        context.stroke(
-            path,
-            with: .color(color),
-            style: StrokeStyle(lineWidth: ring)
-        )
     }
 }

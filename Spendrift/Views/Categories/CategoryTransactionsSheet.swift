@@ -5,8 +5,8 @@
 //  Colour-wash ledger of one category's transactions. Atmosphere, date
 //  capsule, enamel empty state, and row chrome match the Categories tab
 //  and the account transactions sheet so this surface feels like the same box.
-//  Pushed from the category editor. Presented as its own sheet from Analytics
-//  and from the spend rows on Home.
+//  Pushed from the category editor. Presented as its own sheet from the spend
+//  rows on Home.
 //
 
 import SwiftData
@@ -18,15 +18,15 @@ struct CategoryTransactionsSheet: View {
     @Query(sort: \Transaction.date, order: .reverse) private var allTransactions: [Transaction]
 
     let category: TransactionCategory
-    /// `true` when this ledger is pushed onto the category editor. Analytics
-    /// still presents it as a sheet, which keeps its own navigation stack.
+    /// `true` when this ledger is pushed onto the category editor. Home presents
+    /// it as a sheet, which keeps its own navigation stack.
     let isPushed: Bool
 
     @State private var viewModel: TransactionViewModel
     @State private var selectedTransaction: Transaction?
 
-    /// `initialDate` seeds the period window so drill-downs (for example from
-    /// Analytics) open on the same range the caller was viewing.
+    /// `initialDate` seeds the period window so a drill from Home opens on the
+    /// month that screen was showing.
     init(category: TransactionCategory, initialDate: Date = Date(), isPushed: Bool = false) {
         self.category = category
         self.isPushed = isPushed
