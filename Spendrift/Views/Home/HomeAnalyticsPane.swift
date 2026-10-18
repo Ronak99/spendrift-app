@@ -61,7 +61,7 @@ struct HomeAnalyticsPane: View {
                 if !stats.categorySpend.isEmpty {
                     breakdown(stats, previous: previous)
                 }
-                recentBlock()
+                recentBlock(stats)
             }
             .padding(.horizontal, 16)
             .padding(.top, 18)
@@ -600,8 +600,9 @@ struct HomeAnalyticsPane: View {
 
     // MARK: Recent
 
-    private func recentBlock() -> some View {
-        let recent = Array(transactions.filter(\.isPersisted).prefix(3))
+    private func recentBlock(_ stats: MonthSpendStats) -> some View {
+        // Same newest-first slice the month's other blocks use, not the ledger's latest rows.
+        let recent = Array(stats.transactions.prefix(3))
 
         return VStack(spacing: 10) {
             HomeSectionHeader(title: "Recent")

@@ -616,10 +616,6 @@ struct UpdateCategorySheet: View {
                     .font(.system(size: 12))
                     .foregroundStyle(.tertiary)
                 BudgetBar(spent: spent, cap: enteredBudget, color: selectedColor)
-            } else {
-                Text("No cap. Spending here is counted, never flagged.")
-                    .font(.system(size: 12))
-                    .foregroundStyle(.tertiary)
             }
 
             if average > 0, enteredBudget != average {
