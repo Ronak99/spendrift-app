@@ -29,10 +29,9 @@ struct TransactionsPane: View {
 
         return Group {
             if days.isEmpty {
-                ScrollView {
+                EmptyStateContainer {
                     emptyLedger
                 }
-                .scrollIndicators(.hidden)
                 .homeTrayClearance()
             } else {
                 List {
@@ -43,6 +42,8 @@ struct TransactionsPane: View {
                 .listStyle(.insetGrouped)
                 .scrollContentBackground(.hidden)
                 .scrollIndicators(.hidden)
+                // Air between the header bar and the first day, scrolling with the rows.
+                .contentMargins(.top, 12, for: .scrollContent)
                 .homeTrayClearance()
             }
         }
@@ -97,7 +98,5 @@ struct TransactionsPane: View {
                 action: onAddTransaction
             )
         }
-        .padding(.horizontal, 16)
-        .padding(.top, 18)
     }
 }

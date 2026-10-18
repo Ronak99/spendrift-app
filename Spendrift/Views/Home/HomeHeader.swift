@@ -67,25 +67,27 @@ struct HomeSearchBar: View {
                 Image(systemName: "magnifyingglass")
                     .font(.system(size: 16, weight: .medium))
                     .foregroundStyle(AppTheme.ink)
-                Text("Search everything")
+                CyclingSearchPlaceholder()
                     .font(.system(size: 16))
                     .foregroundStyle(AppTheme.inkSecondary)
-                    .lineLimit(1)
-                Spacer(minLength: 0)
             }
             .padding(.horizontal, 18)
             .frame(height: 48)
+            // Makes the whole capsule the tap target, not just the icon and words.
+            .contentShape(Capsule())
             .glassSearchCapsule()
         }
         .buttonStyle(HomePressStyle(scale: 1))
-        .accessibilityLabel("Search transactions, categories and accounts")
+        .accessibilityLabel(CyclingSearchPlaceholder.accessibilityText)
         .accessibilityIdentifier("homeSearchBar")
     }
 }
 
-/// Icon over label, with an underline under the selected tab. The selected
-/// Transactions tab reads as its month and the selected Categories tab as its
-/// type, and a second tap on either opens the mat ching picker.
+/// Icon over label, with an underline under the selected tab. The underline
+/// is one bar that slides, and its width follows the selected icon and label
+/// rather than the tab slot. The selected Transactions tab reads as its month
+/// and the selected Categories tab as its type, and a second tap on either
+/// opens the matching picker.
 struct HomeTabStrip: View {
     let selected: HomeTab
     /// Month name while Transactions is selected.
@@ -96,7 +98,12 @@ struct HomeTabStrip: View {
     let onReselect: (HomeTab) -> Void
 
     private static let stripInset: CGFloat = 6
-    private static let underlineInset: CGFloat = 10
+
+    /// Changes when the bar must move or resize, including a month or type swap
+    /// on the already selected tab. Labels themselves stay outside this animation.
+    private var indicatorToken: String {
+        "\(selected.rawValue)|\(label(for: selected))"
+    }
 
     var body: some View {
         HStack(spacing: 0) {
@@ -108,34 +115,36 @@ struct HomeTabStrip: View {
         .overlay(alignment: .bottom) {
             AppTheme.hairline.frame(height: 1)
         }
-        .overlay(alignment: .bottomLeading) { underline }
+        .overlayPreferenceValue(TabContentAnchorKey.self) { anchors in
+            underline(anchors: anchors)
+        }
     }
 
     /// One underline that moves, rather than one per tab that appears and disappears.
-    /// Only its offset animates, so a tap mid-slide retargets the spring from where
-    /// the bar is instead of restarting from a view that is still being removed.
-    private var underline: some View {
+    /// Width and offset both come from the selected tab's measured content, so a tap
+    /// mid-slide retargets the spring from where the bar is.
+    private func underline(anchors: [HomeTab: Anchor<CGRect>]) -> some View {
         GeometryReader { proxy in
-            let tabs = HomeTab.allCases
-            let tabWidth = (proxy.size.width - Self.stripInset * 2) / CGFloat(tabs.count)
-            let index = CGFloat(tabs.firstIndex(of: selected) ?? 0)
+            if let anchor = anchors[selected] {
+                let frame = proxy[anchor]
 
-            AppTheme.ink
-                .frame(width: max(tabWidth - Self.underlineInset * 2, 0), height: 3)
-                .clipShape(
-                    UnevenRoundedRectangle(
-                        topLeadingRadius: 3,
-                        bottomLeadingRadius: 0,
-                        bottomTrailingRadius: 0,
-                        topTrailingRadius: 3,
-                        style: .continuous
+                AppTheme.ink
+                    .frame(width: frame.width, height: 3)
+                    .clipShape(
+                        UnevenRoundedRectangle(
+                            topLeadingRadius: 3,
+                            bottomLeadingRadius: 0,
+                            bottomTrailingRadius: 0,
+                            topTrailingRadius: 3,
+                            style: .continuous
+                        )
                     )
-                )
-                .offset(x: Self.stripInset + index * tabWidth + Self.underlineInset)
-                .frame(maxHeight: .infinity, alignment: .bottom)
-                // Scoped to the bar so the caller needs no withAnimation and the
-                // labels swap instantly.
-                .animation(.snappy(duration: 0.25), value: selected)
+                    .offset(x: frame.minX)
+                    .frame(maxHeight: .infinity, alignment: .bottom)
+                    // Scoped to the bar so the caller needs no withAnimation and the
+                    // labels swap instantly.
+                    .animation(.snappy(duration: 0.25), value: indicatorToken)
+            }
         }
         .allowsHitTesting(false)
         .accessibilityHidden(true)
@@ -164,28 +173,32 @@ struct HomeTabStrip: View {
                 onSelect(tab)
             }
         } label: {
-            VStack(spacing: 6) {
+            VStack(spacing: 4) {
                 Image(systemName: tab.symbol)
-                    .font(.system(size: 18, weight: .regular))
+                    .font(.system(size: 15, weight: .regular))
                     .foregroundStyle(AppTheme.ink)
-                    .frame(height: 24)
+                    .frame(height: 18)
 
                 HStack(spacing: 2) {
                     Text(label(for: tab))
-                        .font(.system(size: 12, weight: isSelected ? .bold : .regular))
+                        .font(.system(size: 11, weight: isSelected ? .bold : .regular))
                         .tracking(-0.1)
                         .lineLimit(1)
                         .minimumScaleFactor(0.85)
                     if hasPicker(tab) {
                         Image(systemName: "chevron.down")
-                            .font(.system(size: 8, weight: .bold))
+                            .font(.system(size: 7, weight: .bold))
                     }
                 }
                 .foregroundStyle(isSelected ? AppTheme.ink : AppTheme.inkSecondary)
             }
+            // Hug the icon and label so the underline can match them. The frame
+            // below still fills the slot, which keeps the tap target full width.
+            .fixedSize(horizontal: true, vertical: false)
+            .anchorPreference(key: TabContentAnchorKey.self, value: .bounds) { [tab: $0] }
             .frame(maxWidth: .infinity)
-            .padding(.top, 8)
-            .padding(.bottom, 11)
+            .padding(.top, 6)
+            .padding(.bottom, 9)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
@@ -194,5 +207,17 @@ struct HomeTabStrip: View {
         .accessibilityValue(isSelected ? label(for: tab) : "")
         .accessibilityAddTraits(isSelected ? [.isSelected, .isButton] : .isButton)
         .accessibilityHint(hasPicker(tab) ? "Tap again to change" : "")
+    }
+}
+
+/// Bounds of each tab's icon-and-label stack, in the strip's coordinate space.
+private struct TabContentAnchorKey: PreferenceKey {
+    static var defaultValue: [HomeTab: Anchor<CGRect>] = [:]
+
+    static func reduce(
+        value: inout [HomeTab: Anchor<CGRect>],
+        nextValue: () -> [HomeTab: Anchor<CGRect>]
+    ) {
+        value.merge(nextValue(), uniquingKeysWith: { $1 })
     }
 }

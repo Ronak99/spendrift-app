@@ -5,7 +5,8 @@
 //  Colour-wash ledger of one category's transactions. Atmosphere, date
 //  capsule, enamel empty state, and row chrome match the Categories tab
 //  and the account transactions sheet so this surface feels like the same box.
-//  Pushed from the category editor. Presented as its own sheet from Analytics.
+//  Pushed from the category editor. Presented as its own sheet from Analytics
+//  and from the spend rows on Home.
 //
 
 import SwiftData
@@ -150,27 +151,27 @@ struct CategoryTransactionsSheet: View {
     // MARK: Empty
 
     private var emptyLedger: some View {
-        VStack(spacing: 16) {
-            CategoryEnamelTile(
-                systemImage: "tray.fill",
-                color: CategoryEnamel.uncategorized
-            )
-            .frame(width: 88, height: 88)
-            .padding(.top, 28)
+        EmptyStateContainer {
+            VStack(spacing: 16) {
+                CategoryEnamelTile(
+                    systemImage: "tray.fill",
+                    color: CategoryEnamel.uncategorized
+                )
+                .frame(width: 88, height: 88)
 
-            Text("No transactions")
-                .font(.system(size: 22, weight: .bold))
-                .tracking(-0.5)
-                .foregroundStyle(heroPrimary)
+                Text("No transactions")
+                    .font(.system(size: 22, weight: .bold))
+                    .tracking(-0.5)
+                    .foregroundStyle(heroPrimary)
 
-            Text("No transactions in \(category.name) for \(viewModel.periodDescription).")
-                .font(.system(size: 14))
-                .foregroundStyle(.secondary)
-                .multilineTextAlignment(.center)
+                Text("No transactions in \(category.name) for \(viewModel.periodDescription).")
+                    .font(.system(size: 14))
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+            }
+            .padding(.horizontal, 8)
+            .accessibilityElement(children: .combine)
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .padding(.horizontal, 24)
-        .accessibilityElement(children: .combine)
     }
 
     // MARK: Behaviour

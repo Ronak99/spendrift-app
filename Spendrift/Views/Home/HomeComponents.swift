@@ -234,6 +234,8 @@ struct HomePressStyle: ButtonStyle {
 
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
+            // Rows end in a Spacer and carry padding, which would otherwise not take taps.
+            .contentShape(Rectangle())
             .opacity(configuration.isPressed ? 0.7 : 1)
             .scaleEffect(configuration.isPressed ? scale : 1)
             .animation(.spring(response: 0.26, dampingFraction: 0.8), value: configuration.isPressed)

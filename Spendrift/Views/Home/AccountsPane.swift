@@ -14,9 +14,24 @@ struct AccountsPane: View {
     let transactions: [Transaction]
     var onOpenAccount: (Account) -> Void
     var onCreateAccount: () -> Void
+    /// Whether a swipe deletes the account straight away rather than asking first.
+    var deletesImmediately: (Account) -> Bool
     var onDelete: (Account) -> Void
 
     var body: some View {
+        if accounts.isEmpty {
+            EmptyStateContainer {
+                HomeCard {
+                    emptyCreateSlot
+                }
+            }
+            .homeTrayClearance()
+        } else {
+            accountList
+        }
+    }
+
+    private var accountList: some View {
         List {
             if accounts.count >= 2 {
                 Section {
@@ -41,25 +56,40 @@ struct AccountsPane: View {
 
     private var createSlot: some View {
         Button(action: onCreateAccount) {
-            HStack(spacing: 14) {
-                CreateSlotEnamel(side: 42)
-                VStack(alignment: .leading, spacing: 3) {
-                    Text("New account")
-                        .font(.system(size: 16, weight: .medium))
-                        .foregroundStyle(AppTheme.inkSecondary)
-                    Text("Bank, card, cash or wallet")
-                        .font(.system(size: 12))
-                        .foregroundStyle(AppTheme.inkSecondary)
-                }
-                Spacer(minLength: 0)
-            }
-            .padding(.horizontal, 6)
-            .listItemPositioned(index: 0, count: accounts.count + 1)
+            createSlotLabel
+                .padding(.horizontal, 6)
+                .listItemPositioned(index: 0, count: accounts.count + 1)
         }
         .buttonStyle(.plain)
         .listRowBackground(AppTheme.card)
         .accessibilityIdentifier("accountsCreateSlot")
         .accessibilityLabel("New account")
+    }
+
+    /// The same slot with no list to head, laid out like the Transactions tab's empty month.
+    private var emptyCreateSlot: some View {
+        Button(action: onCreateAccount) {
+            createSlotLabel
+                .padding(.vertical, 12)
+        }
+        .buttonStyle(HomePressStyle(scale: 1))
+        .accessibilityIdentifier("accountsCreateSlot")
+        .accessibilityLabel("New account")
+    }
+
+    private var createSlotLabel: some View {
+        HStack(spacing: 14) {
+            CreateSlotEnamel(side: 42)
+            VStack(alignment: .leading, spacing: 3) {
+                Text("New account")
+                    .font(.system(size: 16, weight: .medium))
+                    .foregroundStyle(AppTheme.inkSecondary)
+                Text("Bank, card, cash or wallet")
+                    .font(.system(size: 12))
+                    .foregroundStyle(AppTheme.inkSecondary)
+            }
+            Spacer(minLength: 0)
+        }
     }
 
     private func row(_ account: Account, index: Int, count: Int) -> some View {
@@ -72,11 +102,15 @@ struct AccountsPane: View {
         .buttonStyle(.plain)
         .listRowBackground(AppTheme.card)
         .swipeActions(edge: .trailing) {
-            Button(role: .destructive) {
+            // The destructive role makes the list slide the row away at once. That suits
+            // an immediate delete, but would hide the row behind a confirmation or the
+            // last-account alert, so those keep a plain red button.
+            Button(role: deletesImmediately(account) ? .destructive : nil) {
                 onDelete(account)
             } label: {
                 Label("Delete", systemImage: "trash")
             }
+            .tint(.red)
         }
         .accessibilityIdentifier(account.name)
         .accessibilityLabel(account.name)

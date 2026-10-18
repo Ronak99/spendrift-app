@@ -3,8 +3,8 @@
 //  Spendrift
 //
 //  One global create. The pill reads "Add transaction" on every tab and is the
-//  only control that makes one; the mic speaks one; the tray holds the slower
-//  ways in - receipts, statements and bank SMS.
+//  only control that makes one; the mic speaks one; the tray menu holds the
+//  slower ways in - receipts and statements.
 //
 
 import SwiftUI
@@ -33,22 +33,17 @@ private struct TrayGlassGroup<Content: View>: View {
 }
 
 private extension View {
-    /// Liquid Glass circle on iOS 26, tinted when the control reads as "on"
-    /// (the tray menu open). Falls back to the flat translucent fill this app
-    /// used before Liquid Glass.
+    /// Liquid Glass circle on iOS 26. Falls back to the flat translucent fill
+    /// this app used before Liquid Glass.
     @ViewBuilder
-    func glassOrb(tint: Color?) -> some View {
+    func glassOrb() -> some View {
         if #available(iOS 26.0, *) {
-            if let tint {
-                self.glassEffect(.regular.tint(tint).interactive(), in: .circle)
-            } else {
-                self.glassEffect(.regular.interactive(), in: .circle)
-            }
+            self.glassEffect(.regular.interactive(), in: .circle)
         } else {
             self
-                .background(tint?.opacity(0.18) ?? AppTheme.glass, in: Circle())
+                .background(AppTheme.glass, in: Circle())
                 .overlay {
-                    Circle().strokeBorder(tint?.opacity(0.36) ?? AppTheme.glassEdge, lineWidth: 1)
+                    Circle().strokeBorder(AppTheme.glassEdge, lineWidth: 1)
                 }
                 .shadow(color: .black.opacity(0.25), radius: 15, y: 8)
         }
@@ -70,30 +65,25 @@ private extension View {
 }
 
 struct HomeBottomTray: View {
-    @Binding var isMenuOpen: Bool
     let voiceDisabled: Bool
     let onAddTransaction: () -> Void
     let onSpeak: () -> Void
+    let onScanReceipt: () -> Void
+    let onImportStatement: () -> Void
 
     var body: some View {
         TrayGlassGroup {
             HStack(spacing: 12) {
-                orb(
-                    systemImage: "tray.and.arrow.down",
-                    iconTint: isMenuOpen ? AppTheme.atmosphere : AppTheme.inkSecondary,
-                    glassTint: isMenuOpen ? AppTheme.atmosphere : nil,
-                    label: "More ways to add"
-                ) {
-                    isMenuOpen.toggle()
-                }
+                captureMenu
 
-                orb(
-                    systemImage: "mic.fill",
-                    iconTint: voiceDisabled ? AppTheme.inkTertiary : AppTheme.microphone,
-                    glassTint: nil,
-                    label: "Speak a transaction",
-                    action: onSpeak
-                )
+                Button(action: onSpeak) {
+                    orbIcon(
+                        systemImage: "mic.fill",
+                        tint: voiceDisabled ? AppTheme.inkTertiary : AppTheme.microphone
+                    )
+                }
+                .buttonStyle(HomePressStyle(scale: 0.94))
+                .accessibilityLabel("Speak a transaction")
                 .disabled(voiceDisabled)
 
                 Button(action: onAddTransaction) {
@@ -125,94 +115,40 @@ struct HomeBottomTray: View {
         }
     }
 
-    private func orb(
-        systemImage: String,
-        iconTint: Color,
-        glassTint: Color?,
-        label: String,
-        action: @escaping () -> Void
-    ) -> some View {
-        Button(action: action) {
-            Image(systemName: systemImage)
-                .font(.system(size: 22))
-                .foregroundStyle(iconTint)
-                .frame(width: 58, height: 58)
-                .glassOrb(tint: glassTint)
-        }
-        .buttonStyle(HomePressStyle(scale: 0.94))
-        .accessibilityLabel(label)
-    }
-}
-
-/// The slower capture paths, grown out of the tray orb.
-struct CaptureTrayMenu: View {
-    let onScanReceipt: () -> Void
-    let onImportStatement: () -> Void
-    let onBankSMS: () -> Void
-
-    var body: some View {
-        VStack(spacing: 0) {
-            row(
-                systemImage: "camera",
-                color: AppTheme.atmosphere,
-                title: "Scan a receipt",
-                subtitle: "Photograph a bill or pick one from your library",
-                action: onScanReceipt
-            )
-            HomeRowDivider()
-            row(
-                systemImage: "doc.text",
-                color: Color(hex: "#6C8CFF"),
-                title: "Import a statement",
-                subtitle: "Read a bank PDF and pick the rows to keep",
-                action: onImportStatement
-            )
-            HomeRowDivider()
-            row(
-                systemImage: "message",
-                color: CategoryEnamel.uncategorized,
-                title: "Bank SMS",
-                subtitle: "Log transactions as the messages arrive",
-                action: onBankSMS
-            )
-        }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 6)
-        .background(AppTheme.card.opacity(0.95), in: RoundedRectangle(cornerRadius: 26, style: .continuous))
-        .overlay {
-            RoundedRectangle(cornerRadius: 26, style: .continuous)
-                .strokeBorder(AppTheme.glassEdge, lineWidth: 1)
-        }
-        .shadow(color: .black.opacity(0.45), radius: 25, y: 18)
-        .padding(.horizontal, 20)
-    }
-
-    private func row(
-        systemImage: String,
-        color: Color,
-        title: String,
-        subtitle: String,
-        action: @escaping () -> Void
-    ) -> some View {
-        Button(action: action) {
-            HStack(spacing: 14) {
-                EnamelBadge(systemImage: systemImage, color: color, side: 38)
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(title)
-                        .font(.system(size: 14, weight: .semibold))
-                    Text(subtitle)
-                        .font(.system(size: 12))
-                        .foregroundStyle(AppTheme.inkSecondary)
-                        .fixedSize(horizontal: false, vertical: true)
+    /// The slower capture paths. A native menu, so it grows out of the orb as
+    /// system Liquid Glass with the platform's own haptics and accessibility.
+    private var captureMenu: some View {
+        Menu {
+            Button(action: onScanReceipt) {
+                Label {
+                    Text("Scan a Receipt")
+                    Text("Photograph or pick a bill")
+                } icon: {
+                    Image(systemName: "camera")
                 }
-                Spacer(minLength: 8)
-                Image(systemName: "chevron.right")
-                    .font(.system(size: 12, weight: .semibold))
-                    .foregroundStyle(AppTheme.inkTertiary)
             }
-            .padding(.vertical, 13)
-            .contentShape(Rectangle())
+            Button(action: onImportStatement) {
+                Label {
+                    Text("Import Bank Statement")
+                    Text("Pick rows from a bank PDF")
+                } icon: {
+                    Image(systemName: "doc.text")
+                }
+            }
+        } label: {
+            orbIcon(systemImage: "ellipsis", tint: AppTheme.inkSecondary)
         }
-        .buttonStyle(HomePressStyle(scale: 1))
+        // Keep the written order even though the menu opens upward from the tray.
+        .menuOrder(.fixed)
+        .accessibilityLabel("More ways to add")
+        .accessibilityIdentifier("captureMenu")
+    }
+
+    private func orbIcon(systemImage: String, tint: Color) -> some View {
+        Image(systemName: systemImage)
+            .font(.system(size: 22))
+            .foregroundStyle(tint)
+            .frame(width: 58, height: 58)
+            .glassOrb()
     }
 }

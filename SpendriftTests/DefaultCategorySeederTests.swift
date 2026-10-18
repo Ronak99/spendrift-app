@@ -34,6 +34,31 @@ struct DefaultCategorySeederTests {
     }
 
     @Test
+    func doesNotRestoreDeletedDefaultsWhileAnyCategoryRemains() throws {
+        let context = try makeInMemoryContext()
+        context.insert(TransactionCategory(name: "Pets", type: .expense))
+        try context.save()
+
+        DefaultCategorySeeder.seedIfNeeded(modelContext: context)
+
+        let categories = try context.fetch(FetchDescriptor<TransactionCategory>())
+        #expect(categories.map(\.name) == ["Pets"])
+    }
+
+    @Test @MainActor
+    func dataSeederSeedsMissingAccountWithoutRestoringDefaults() throws {
+        let context = try makeInMemoryContext()
+        context.insert(TransactionCategory(name: "Pets", type: .expense))
+        try context.save()
+
+        DefaultDataSeeder.seedIfNeeded(modelContext: context)
+
+        let categories = try context.fetch(FetchDescriptor<TransactionCategory>())
+        #expect(categories.map(\.name) == ["Pets"])
+        #expect(try context.fetchCount(FetchDescriptor<Account>()) == 1)
+    }
+
+    @Test
     func backfillMarksLegacyBundledNamesAsDefault() throws {
         UserDefaults.standard.removeObject(forKey: DefaultCategoryMigration.didBackfillIsDefaultKey)
 

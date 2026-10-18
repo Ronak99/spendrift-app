@@ -50,6 +50,23 @@ struct EmptyStateView: View {
     }
 }
 
+/// Frame for whatever stands in for an empty list: a create row on a Home pane or
+/// the "No transactions" note on a ledger sheet. Every empty state sits at these
+/// margins under its header and scrolls like the list it replaces.
+struct EmptyStateContainer<Content: View>: View {
+    @ViewBuilder var content: Content
+
+    var body: some View {
+        ScrollView {
+            content
+                .frame(maxWidth: .infinity)
+                .padding(.horizontal, 16)
+                .padding(.top, 18)
+        }
+        .scrollIndicators(.hidden)
+    }
+}
+
 #Preview {
     EmptyStateView(
         icon: "tray",

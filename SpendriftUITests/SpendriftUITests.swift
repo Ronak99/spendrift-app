@@ -402,22 +402,23 @@ final class CategoryIntegrationTests: SpendriftUITestBase {
         XCTAssertTrue(deleteAction.waitForExistence(timeout: 3))
         deleteAction.tap()
 
-        let confirm = app.buttons["Delete Category and Its Transactions"]
-        XCTAssertTrue(confirm.waitForExistence(timeout: 3))
-        confirm.tap()
-
+        // A category with no transactions goes without a confirmation.
+        XCTAssertFalse(app.buttons["Delete."].waitForExistence(timeout: 1))
         XCTAssertFalse(app.staticTexts["Temporary"].waitForExistence(timeout: 2))
     }
 
-    func testDeleteCategory_defaultCategory_hasNoDeleteAction() {
+    func testDeleteCategory_defaultCategory_canBeDeleted() {
         navigateToCategories()
 
         let tile = app.staticTexts["Food"]
         XCTAssertTrue(tile.waitForExistence(timeout: 5))
         tile.press(forDuration: 1.0)
 
-        XCTAssertFalse(app.buttons["Delete"].waitForExistence(timeout: 2))
-        XCTAssertTrue(app.staticTexts["Food"].exists)
+        let deleteAction = app.buttons["Delete"]
+        XCTAssertTrue(deleteAction.waitForExistence(timeout: 3))
+        deleteAction.tap()
+
+        XCTAssertFalse(app.staticTexts["Food"].waitForExistence(timeout: 2))
     }
 }
 
@@ -774,7 +775,6 @@ final class CrossFeatureIntegrationTests: SpendriftUITestBase {
     // MARK: Category-Transaction Relationship
 
     func testDeletingCategory_removesAssociatedTransactions() {
-        // Defaults are permanent, so the cascade can only be exercised through a custom category.
         createCategory(name: "Hobby", type: "Expense")
         createAccount(name: "SBI", balance: "50000")
         createTransaction(
@@ -792,7 +792,7 @@ final class CrossFeatureIntegrationTests: SpendriftUITestBase {
         let deleteAction = app.buttons["Delete"]
         XCTAssertTrue(deleteAction.waitForExistence(timeout: 3))
         deleteAction.tap()
-        let confirm = app.buttons["Delete Category and Its Transactions"]
+        let confirm = app.buttons["Delete."]
         XCTAssertTrue(confirm.waitForExistence(timeout: 3))
         confirm.tap()
 

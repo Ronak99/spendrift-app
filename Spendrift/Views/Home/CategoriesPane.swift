@@ -46,7 +46,7 @@ struct CategoriesPane: View {
                 Text("New")
                     .font(.system(size: 12, weight: .medium))
                     .foregroundStyle(AppTheme.inkSecondary)
-                    .frame(height: 30, alignment: .top)
+                    .frame(height: CategoryGridItem.labelHeight(reservingBudgetRow: true), alignment: .top)
             }
             .frame(maxWidth: .infinity)
             .padding(.vertical, 4)
@@ -63,28 +63,18 @@ struct CategoriesPane: View {
         return Button {
             onOpenCategory(category)
         } label: {
-            VStack(spacing: 0) {
-                CategoryGridItem(category: category)
-                if cap > 0 {
-                    BudgetBar(
-                        spent: month.spent(in: category),
-                        cap: cap,
-                        color: CategoryEnamel.color(for: category),
-                        width: 44
-                    )
-                    .padding(.top, -4)
-                }
-            }
+            CategoryGridItem(
+                category: category,
+                budget: cap > 0 ? (month.spent(in: category), cap) : nil,
+                reservesBudgetRow: true
+            )
         }
         .buttonStyle(CategoryTilePressStyle())
         .accessibilityIdentifier(category.name)
         .accessibilityLabel(category.name)
         .contextMenu {
             Button("Edit", systemImage: "pencil") { onOpenCategory(category) }
-            // Bundled defaults are permanent; only user-created categories can go.
-            if !category.isDefault {
-                Button("Delete", systemImage: "trash", role: .destructive) { onDelete(category) }
-            }
+            Button("Delete", systemImage: "trash", role: .destructive) { onDelete(category) }
         }
     }
 }

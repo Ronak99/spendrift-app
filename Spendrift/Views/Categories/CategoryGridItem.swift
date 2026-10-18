@@ -11,8 +11,18 @@ import SwiftUI
 struct CategoryGridItem: View {
     let category: TransactionCategory
     var isSelected: Bool = false
+    /// Month-to-date spend against the category's cap, drawn as a bar under the name.
+    var budget: (spent: Double, cap: Double)?
+    /// Keeps the bar's room on tiles without a budget, so a grid mixing both stays level.
+    var reservesBudgetRow = false
 
     private let enamelSize: CGFloat = 80
+
+    /// Height under the enamel: two lines of the 12pt name, plus the bar's gap and
+    /// 3pt track when reserved. Shared with sibling tiles so grid rows line up.
+    static func labelHeight(reservingBudgetRow: Bool) -> CGFloat {
+        reservingBudgetRow ? 37 : 30
+    }
 
     private var enamelColor: Color {
         CategoryEnamel.color(for: category)
@@ -32,13 +42,22 @@ struct CategoryGridItem: View {
                     .opacity(isSelected ? 1 : 0)
             }
 
-            Text(category.name)
-                .font(.system(size: 12, weight: isSelected ? .semibold : .medium))
-                .foregroundStyle(.primary)
-                .multilineTextAlignment(.center)
-                .lineLimit(2)
-                .minimumScaleFactor(0.85)
-                .frame(height: 30, alignment: .top)
+            VStack(spacing: 4) {
+                Text(category.name)
+                    .font(.system(size: 12, weight: isSelected ? .semibold : .medium))
+                    .foregroundStyle(.primary)
+                    .multilineTextAlignment(.center)
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.85)
+
+                if let budget {
+                    BudgetBar(spent: budget.spent, cap: budget.cap, color: enamelColor, width: 44)
+                }
+            }
+            .frame(
+                height: Self.labelHeight(reservingBudgetRow: reservesBudgetRow || budget != nil),
+                alignment: .top
+            )
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 4)

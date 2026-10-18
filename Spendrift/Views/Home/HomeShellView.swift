@@ -22,14 +22,6 @@ enum CreateTransactionSheetMode: Identifiable {
     var quickStartFirstTransaction: Bool { self == .quickStartFirst }
 }
 
-/// Which screen's month the picker is about to change.
-private enum MonthPickerTarget: Identifiable {
-    case home
-    case ledger
-
-    var id: Self { self }
-}
-
 /// What the add-budget sheet asked for, carried out once it has dismissed.
 private enum PendingBudgetAction {
     case edit(TransactionCategory)
@@ -46,6 +38,14 @@ private struct CategoryEditRequest: Identifiable {
     var focusBudget = false
 
     var id: UUID { category.id }
+}
+
+/// A delete waiting on confirmation. The dialog's title and message read this
+/// snapshot rather than the model, which is already gone while the dialog animates out.
+private struct DeleteConfirmation<Model> {
+    let model: Model
+    let name: String
+    let transactionCount: Int
 }
 
 struct HomeShellView: View {
@@ -70,10 +70,9 @@ struct HomeShellView: View {
 
     @State private var selectedTab: HomeTab = .all
     @State private var path: [HomeRoute] = []
-    @State private var homeMonth = MonthRef.of(Date())
-    @State private var ledgerMonth = MonthRef.of(Date())
+    /// One month for Home and Transactions, so picking it on either tab carries over.
+    @State private var month = MonthRef.of(Date())
     @State private var categoryType: CategoryType = .expense
-    @State private var isTrayOpen = false
 
     @State private var createTransactionSheet: CreateTransactionSheetMode?
     @State private var transactionToEdit: Transaction?
@@ -82,7 +81,9 @@ struct HomeShellView: View {
     /// Type of the category being created, or nil when the create sheet is closed.
     @State private var newCategoryType: CategoryType?
     @State private var categoryEdit: CategoryEditRequest?
-    @State private var monthPicker: MonthPickerTarget?
+    @State private var showMonthPicker = false
+    /// The category whose transactions are listed, drilled into from Home's spend rows.
+    @State private var categoryDrill: TransactionCategory?
     @State private var showTypePicker = false
     @State private var showTotalBudgetSheet = false
     @State private var showAddBudgetSheet = false
@@ -95,7 +96,10 @@ struct HomeShellView: View {
     @State private var showReceiptCamera = false
     @State private var showReceiptLibrary = false
     @State private var showLastAccountAlert = false
-    @State private var categoryToDelete: TransactionCategory?
+    @State private var showLastCategoryAlert = false
+    /// Deletes that would take transactions with them wait here for confirmation.
+    @State private var accountToDelete: DeleteConfirmation<Account>?
+    @State private var categoryToDelete: DeleteConfirmation<TransactionCategory>?
     @State private var showAnalyticsSheet = false
     @State private var analyticsDrillCategory: TransactionCategory?
     /// Scopes the full analytics screen. Re-anchored to the month Home is showing
@@ -161,17 +165,17 @@ struct HomeShellView: View {
         .sheet(item: $categoryEdit) { request in
             UpdateCategorySheet(category: request.category, focusBudgetWhenOpening: request.focusBudget)
         }
-        .sheet(item: $monthPicker) { target in
+        .sheet(isPresented: $showMonthPicker) {
             MonthYearPickerSheet(
-                selection: target == .home ? homeMonth : ledgerMonth,
+                selection: month,
                 earliestYear: earliestYear,
                 today: today
             ) { picked in
-                switch target {
-                case .home: homeMonth = picked
-                case .ledger: ledgerMonth = picked
-                }
+                month = picked
             }
+        }
+        .sheet(item: $categoryDrill) { category in
+            CategoryTransactionsSheet(category: category, initialDate: monthAnchorDate)
         }
         .sheet(isPresented: $showTypePicker) {
             CategoryTypePickerSheet(selection: categoryType) { picked in
@@ -195,6 +199,27 @@ struct HomeShellView: View {
         } message: {
             Text("Spendrift records transactions against an account. Add another one before deleting this.")
         }
+        .alert("Keep at least one category", isPresented: $showLastCategoryAlert) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text("Spendrift sorts transactions into categories. Add another one before deleting this.")
+        }
+        .confirmationDialog(
+            "Delete “\(accountToDelete?.name ?? "")”?",
+            isPresented: Binding(
+                get: { accountToDelete != nil },
+                set: { if !$0 { accountToDelete = nil } }
+            ),
+            titleVisibility: .visible,
+            presenting: accountToDelete
+        ) { request in
+            Button("Delete.", role: .destructive) {
+                performDelete(request.model)
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: { request in
+            Text(Self.cascadeNotice(transactionCount: request.transactionCount))
+        }
         .confirmationDialog(
             "Delete “\(categoryToDelete?.name ?? "")”?",
             isPresented: Binding(
@@ -203,13 +228,13 @@ struct HomeShellView: View {
             ),
             titleVisibility: .visible,
             presenting: categoryToDelete
-        ) { category in
-            Button("Delete Category and Its Transactions", role: .destructive) {
-                delete(category)
+        ) { request in
+            Button("Delete.", role: .destructive) {
+                performDelete(request.model)
             }
             Button("Cancel", role: .cancel) {}
-        } message: { _ in
-            Text("Deleting a category also deletes all transactions assigned to it.")
+        } message: { request in
+            Text(Self.cascadeNotice(transactionCount: request.transactionCount))
         }
         .task(id: receiptImport?.id) {
             guard let payload = receiptImport, lastProcessedReceiptImportID != payload.id else { return }
@@ -262,7 +287,7 @@ struct HomeShellView: View {
     // MARK: Shell
 
     private var shell: some View {
-        pane
+        fadingPane
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .softScrollEdge()
             .scrollingHeaderBar { header }
@@ -280,9 +305,6 @@ struct HomeShellView: View {
             .background(AppTheme.canvas.ignoresSafeArea())
             .toolbar(.hidden, for: .navigationBar)
             .overlay(alignment: .bottom) { tray }
-            .overlay { trayScrim }
-            .overlay(alignment: .bottom) { trayMenu }
-            .animation(.spring(response: 0.42, dampingFraction: 0.82), value: isTrayOpen)
             .animation(.spring(response: 0.38, dampingFraction: 0.86), value: voiceInline.displayState)
             .animation(.spring(response: 0.38, dampingFraction: 0.86), value: receiptShare.isProcessing)
     }
@@ -301,12 +323,12 @@ struct HomeShellView: View {
 
             HomeTabStrip(
                 selected: selectedTab,
-                monthLabel: ledgerMonth.shortTitle,
+                monthLabel: month.shortTitle,
                 typeLabel: categoryType.displayName,
                 onSelect: { selectedTab = $0 },
                 onReselect: { tab in
                     switch tab {
-                    case .transactions: monthPicker = .ledger
+                    case .transactions: showMonthPicker = true
                     case .categories: showTypePicker = true
                     case .all, .accounts: break
                     }
@@ -319,6 +341,18 @@ struct HomeShellView: View {
         }
     }
 
+    /// Cross-fades the panes on a tab switch. The animation is scoped to the panes so
+    /// the title and tab strip keep their own timing, and the ZStack overlaps the
+    /// outgoing and incoming panes mid-fade instead of laying them out in turn.
+    private var fadingPane: some View {
+        ZStack {
+            pane
+                .id(selectedTab)
+                .transition(.opacity)
+        }
+        .animation(.easeInOut(duration: 0.22), value: selectedTab)
+    }
+
     @ViewBuilder
     private var pane: some View {
         switch selectedTab {
@@ -326,13 +360,13 @@ struct HomeShellView: View {
             HomeAnalyticsPane(
                 transactions: transactions,
                 categories: categories,
-                month: $homeMonth,
+                month: month,
                 totalBudget: totalBudget,
                 today: today,
-                onPickMonth: { monthPicker = .home },
+                onPickMonth: { showMonthPicker = true },
                 onEditTotalBudget: { showTotalBudgetSheet = true },
                 onAddCategoryBudget: { showAddBudgetSheet = true },
-                onOpenCategory: { categoryEdit = CategoryEditRequest(category: $0) },
+                onShowCategoryTransactions: openCategoryDrill,
                 onEditCategoryBudget: { categoryEdit = CategoryEditRequest(category: $0, focusBudget: true) },
                 onOpenTransaction: { transactionToEdit = $0 },
                 onOpenTab: { selectedTab = $0 },
@@ -342,7 +376,7 @@ struct HomeShellView: View {
         case .transactions:
             TransactionsPane(
                 transactions: transactions,
-                month: ledgerMonth,
+                month: month,
                 today: today,
                 onOpenTransaction: { transactionToEdit = $0 },
                 onAddTransaction: openCreateTransactionSheet,
@@ -354,6 +388,7 @@ struct HomeShellView: View {
                 transactions: transactions,
                 onOpenAccount: { accountToEdit = $0 },
                 onCreateAccount: { showCreateAccount = true },
+                deletesImmediately: deletesImmediately(_:),
                 onDelete: delete(account:)
             )
         case .categories:
@@ -363,7 +398,7 @@ struct HomeShellView: View {
                 month: MonthRef.of(today).stats(from: transactions, today: today),
                 onOpenCategory: { categoryEdit = CategoryEditRequest(category: $0) },
                 onCreateCategory: { newCategoryType = categoryType },
-                onDelete: { categoryToDelete = $0 }
+                onDelete: delete(category:)
             )
         }
     }
@@ -419,53 +454,20 @@ struct HomeShellView: View {
             }
 
             HomeBottomTray(
-                isMenuOpen: $isTrayOpen,
                 voiceDisabled: voiceInline.blocksNewCapture,
                 onAddTransaction: openCreateTransactionSheet,
-                onSpeak: startVoiceQuickAdd
-            )
-        }
-    }
-
-    @ViewBuilder
-    private var trayScrim: some View {
-        if isTrayOpen {
-            Button {
-                isTrayOpen = false
-            } label: {
-                Color.black.opacity(0.28)
-                    .ignoresSafeArea()
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel("Close menu")
-            .transition(.opacity)
-        }
-    }
-
-    @ViewBuilder
-    private var trayMenu: some View {
-        if isTrayOpen {
-            CaptureTrayMenu(
+                onSpeak: startVoiceQuickAdd,
                 onScanReceipt: {
-                    isTrayOpen = false
                     ProAccess.attempt(.receiptScan, paywall: $paywallContext) {
                         showReceiptCamera = true
                     }
                 },
                 onImportStatement: {
-                    isTrayOpen = false
                     ProAccess.attempt(.statementImport, paywall: $paywallContext) {
                         showStatementImport = true
                     }
-                },
-                onBankSMS: {
-                    isTrayOpen = false
-                    router.settingsPath = [.bankSMS]
-                    showSettings = true
                 }
             )
-            .padding(.bottom, 96)
-            .transition(.scale(scale: 0.5, anchor: .bottomLeading).combined(with: .opacity))
         }
     }
 
@@ -515,11 +517,23 @@ struct HomeShellView: View {
 
     private func openAnalytics() {
         analyticsPeriod.periodGranularity = .month
-        analyticsPeriod.selectedDate = Calendar.current.date(
-            from: DateComponents(year: homeMonth.year, month: homeMonth.month, day: 1)
-        ) ?? today
+        analyticsPeriod.selectedDate = monthAnchorDate
         showAnalyticsSheet = true
         AudienceTags.markSeenAnalytics()
+    }
+
+    /// The drill sheet reads the persisted period scope, so pin it to a month first,
+    /// as `openAnalytics` does, or a saved week or year window would hide the rest of
+    /// the month Home was showing.
+    private func openCategoryDrill(_ category: TransactionCategory) {
+        analyticsPeriod.periodGranularity = .month
+        categoryDrill = category
+    }
+
+    /// Where period-based screens open for the shared month: today while it is the
+    /// current month, so a week or day window lands on now, else the month's first day.
+    private var monthAnchorDate: Date {
+        month.contains(today) ? today : month.dateRange().lowerBound
     }
 
     private var earliestYear: Int {
@@ -527,14 +541,12 @@ struct HomeShellView: View {
     }
 
     private func openCreateTransactionSheet() {
-        isTrayOpen = false
         createTransactionSheet = hasEverCreatedTransaction ? .standard : .quickStartFirst
     }
 
     /// Starts an in-app voice quick-add and records the entry point.
     private func startVoiceQuickAdd() {
         guard !voiceInline.blocksNewCapture else { return }
-        isTrayOpen = false
         ProAccess.attempt(.voice, paywall: $paywallContext) {
             UIImpactFeedbackGenerator(style: .light).impactOccurred()
             Analytics.capture(.shortcutUsed, [
@@ -572,11 +584,29 @@ struct HomeShellView: View {
         try? modelContext.save()
     }
 
+    /// Deleting an account or category cascades to its transactions, so a delete that
+    /// would take any with it asks first. An empty one goes straight away.
     private func delete(account: Account) {
         guard accounts.count > 1 else {
             showLastAccountAlert = true
             return
         }
+        let count = Self.liveCount(account.transactions)
+        if count > 0 {
+            accountToDelete = DeleteConfirmation(model: account, name: account.name, transactionCount: count)
+        } else {
+            performDelete(account)
+        }
+    }
+
+    /// True when a swipe deletes the account with no alert or confirmation in between,
+    /// which is when the swipe button takes the destructive role.
+    private func deletesImmediately(_ account: Account) -> Bool {
+        accounts.count > 1 && Self.liveCount(account.transactions) == 0
+    }
+
+    private func performDelete(_ account: Account) {
+        guard accounts.count > 1 else { return }
         Analytics.capture(.accountDeleted, [Analytics.Key.name: account.name])
         let survivors = accounts.filter { $0.id != account.id }
         modelContext.delete(account)
@@ -589,16 +619,38 @@ struct HomeShellView: View {
         }
     }
 
-    private func delete(_ category: TransactionCategory) {
-        guard !category.isDefault else { return }
+    /// Any category can go, seeded ones included, as long as one is left. Every capture
+    /// path already saves a transaction uncategorized when its type has no category.
+    private func delete(category: TransactionCategory) {
+        guard categories.count > 1 else {
+            showLastCategoryAlert = true
+            return
+        }
+        let count = Self.liveCount(category.transactions)
+        if count > 0 {
+            categoryToDelete = DeleteConfirmation(model: category, name: category.name, transactionCount: count)
+        } else {
+            performDelete(category)
+        }
+    }
+
+    private func performDelete(_ category: TransactionCategory) {
+        guard categories.count > 1 else { return }
         Analytics.capture(.categoryDeleted, [
             Analytics.Key.name: category.name,
-            Analytics.Key.isDefault: false,
+            Analytics.Key.isDefault: category.isDefault,
             Analytics.Key.source: CategoryEventSource.manual.rawValue
         ])
         modelContext.delete(category)
         try? modelContext.save()
-        categoryToDelete = nil
+    }
+
+    private static func liveCount(_ transactions: [Transaction]?) -> Int {
+        (transactions ?? []).filter(\.isPersisted).count
+    }
+
+    private static func cascadeNotice(transactionCount count: Int) -> String {
+        "This also deletes all the associated transactions."
     }
 }
 

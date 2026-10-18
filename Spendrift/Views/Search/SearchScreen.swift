@@ -168,8 +168,18 @@ struct SearchScreen: View {
             .buttonStyle(.plain)
             .accessibilityLabel("Back")
 
-            TextField("Search everything", text: $text)
+            TextField("", text: $text)
                 .font(.system(size: 16))
+                .overlay(alignment: .leading) {
+                    if text.isEmpty {
+                        CyclingSearchPlaceholder()
+                            .font(.system(size: 16))
+                            .foregroundStyle(AppTheme.inkTertiary)
+                            .allowsHitTesting(false)
+                            .accessibilityHidden(true)
+                    }
+                }
+                .accessibilityLabel(CyclingSearchPlaceholder.accessibilityText)
                 .textFieldStyle(.plain)
                 .submitLabel(.search)
                 .autocorrectionDisabled()
@@ -201,7 +211,14 @@ struct SearchScreen: View {
         .padding(.leading, 4)
         .padding(.trailing, 8)
         .frame(height: 48)
-        .background(AppTheme.card, in: Capsule())
+        // The field itself is only one line tall, so the capsule behind it takes
+        // every other tap. It sits underneath, so it never competes with the
+        // field's own taps or the buttons.
+        .background {
+            Capsule()
+                .fill(AppTheme.card)
+                .onTapGesture { fieldFocused = true }
+        }
         .overlay(Capsule().strokeBorder(AppTheme.hairline, lineWidth: 1))
         .padding(.horizontal, 16)
         .padding(.top, 4)
@@ -775,6 +792,12 @@ struct FlowLayout: Layout {
         }
         total.width = max(total.width, rowWidth)
         total.height += rowHeight
+        // Take the whole offered width. Reporting only the widest row lets the
+        // centring stacks above centre each block of chips on its own width, so
+        // no two blocks lined up with each other or with the headers.
+        if let width = proposal.width, width.isFinite {
+            total.width = width
+        }
         return total
     }
 

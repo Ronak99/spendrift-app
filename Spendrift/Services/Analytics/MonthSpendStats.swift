@@ -174,17 +174,6 @@ struct MonthSpendStats {
         }
     }
 
-    /// First day the running total passed `cap`, or nil when it never did.
-    func dayCrossing(_ cap: Double) -> Int? {
-        guard cap > 0 else { return nil }
-        var running = 0.0
-        for day in 1...max(1, elapsed) where day <= elapsed {
-            running += byDay[day]
-            if running > cap { return day }
-        }
-        return nil
-    }
-
     /// Calendar day with the most spend, and what it cost.
     var biggestDay: (day: Int, amount: Double)? {
         guard elapsed >= 1 else { return nil }
