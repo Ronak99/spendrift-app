@@ -175,14 +175,6 @@ struct CaptureTrayMenu: View {
                 subtitle: "Log transactions as the messages arrive",
                 action: onBankSMS
             )
-            HomeRowDivider()
-            Text("Receipts and statements are read by an AI service. Bank SMS needs a Shortcuts automation, set up once.")
-                .font(.system(size: 10))
-                .foregroundStyle(AppTheme.inkTertiary)
-                .fixedSize(horizontal: false, vertical: true)
-                .padding(.top, 10)
-                .padding(.bottom, 10)
-                .padding(.horizontal, 2)
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 6)

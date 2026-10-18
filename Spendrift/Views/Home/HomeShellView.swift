@@ -262,35 +262,34 @@ struct HomeShellView: View {
     // MARK: Shell
 
     private var shell: some View {
-        VStack(spacing: 0) {
-            header
-            pane
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-        }
-        .background(alignment: .top) {
-            // Height is the tab strip's bottom edge. Same on every tab.
-            // A flexible wash was filling the screen and showing through Accounts'
-            // clear ledger row. Home and Transactions hid it behind opaque rows.
-            ColorWashBackground(color: AppTheme.atmosphere, isDark: isDark)
-                .frame(height: atmosphereHeight)
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-                .clipped()
-                .ignoresSafeArea()
-                .allowsHitTesting(false)
-        }
-        .background(AppTheme.canvas.ignoresSafeArea())
-        .toolbar(.hidden, for: .navigationBar)
-        .overlay(alignment: .bottom) { tray }
-        .overlay { trayScrim }
-        .overlay(alignment: .bottom) { trayMenu }
-        .animation(.spring(response: 0.42, dampingFraction: 0.82), value: isTrayOpen)
-        .animation(.spring(response: 0.38, dampingFraction: 0.86), value: voiceInline.displayState)
-        .animation(.spring(response: 0.38, dampingFraction: 0.86), value: receiptShare.isProcessing)
+        pane
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .softScrollEdge()
+            .scrollingHeaderBar { header }
+            .background(alignment: .top) {
+                // Height is the tab strip's bottom edge. Same on every tab.
+                // A flexible wash was filling the screen and showing through Accounts'
+                // clear ledger row. Home and Transactions hid it behind opaque rows.
+                ColorWashBackground(color: AppTheme.atmosphere, isDark: isDark)
+                    .frame(height: atmosphereHeight)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+                    .clipped()
+                    .ignoresSafeArea()
+                    .allowsHitTesting(false)
+            }
+            .background(AppTheme.canvas.ignoresSafeArea())
+            .toolbar(.hidden, for: .navigationBar)
+            .overlay(alignment: .bottom) { tray }
+            .overlay { trayScrim }
+            .overlay(alignment: .bottom) { trayMenu }
+            .animation(.spring(response: 0.42, dampingFraction: 0.82), value: isTrayOpen)
+            .animation(.spring(response: 0.38, dampingFraction: 0.86), value: voiceInline.displayState)
+            .animation(.spring(response: 0.38, dampingFraction: 0.86), value: receiptShare.isProcessing)
     }
 
-    /// Title, search and tab strip. The header sits above the pane rather than inside
-    /// it, so the status bar always wears the wash and nothing can scroll out from
-    /// under it.
+    /// Title, search and tab strip. The header has no fill of its own: it rides as a
+    /// bar over the pane, so at rest it shows the wash behind it, and the pane scrolls
+    /// beneath it under the soft scroll-edge blur that keeps it readable.
     private var header: some View {
         VStack(spacing: 0) {
             HomeTitleBar(title: selectedTab.title) { showSettings = true }
