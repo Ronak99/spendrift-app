@@ -172,14 +172,15 @@ struct SearchScreen: View {
                 .font(.system(size: 16))
                 .overlay(alignment: .leading) {
                     if text.isEmpty {
-                        CyclingSearchPlaceholder()
+                        Text(HomeSearchBar.placeholder)
                             .font(.system(size: 16))
+                            .lineLimit(1)
                             .foregroundStyle(AppTheme.inkTertiary)
                             .allowsHitTesting(false)
                             .accessibilityHidden(true)
                     }
                 }
-                .accessibilityLabel(CyclingSearchPlaceholder.accessibilityText)
+                .accessibilityLabel(HomeSearchBar.placeholder)
                 .textFieldStyle(.plain)
                 .submitLabel(.search)
                 .autocorrectionDisabled()

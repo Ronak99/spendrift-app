@@ -32,7 +32,6 @@ struct TransactionsView: View {
     /// Shared with `ContentView` so the capture started from the tab bar CTA is the same one
     /// this screen drives and renders.
     var voiceInline: VoiceInlineCaptureController
-    @State private var path: [HomeRoute] = []
     @State private var showMonthPicker = false
     @State private var createTransactionSheet: CreateTransactionSheetMode?
     @State private var showStatementImport = false
@@ -102,7 +101,7 @@ struct TransactionsView: View {
     }
 
     var body: some View {
-        NavigationStack(path: $path) {
+        NavigationStack {
             Group {
                 if transactions.isEmpty {
                     emptyLedger
@@ -110,23 +109,16 @@ struct TransactionsView: View {
                     ledger
                 }
             }
-            .scrollingHeaderBar { header }
+            .ledgerSearchHeader { monthRow }
             .background(AppTheme.canvas.ignoresSafeArea())
-            .navigationBarTitleDisplayMode(.inline)
+            .ledgerNavigationTitle(HomeTab.transactions.title)
             .toolbarBackground(.hidden, for: .navigationBar)
             .toolbar {
                 LedgerToolbar(
-                    title: HomeTab.transactions.title,
                     addAccessibilityLabel: "Add transaction",
                     addAccessibilityIdentifier: "transactionsAddButton",
                     onAdd: openCreateTransactionSheet
                 )
-            }
-            .navigationDestination(for: HomeRoute.self) { route in
-                switch route {
-                case .search:
-                    SearchScreen()
-                }
             }
             .overlay(alignment: .bottom) {
                 VStack(spacing: 8) {
@@ -276,33 +268,14 @@ struct TransactionsView: View {
 
     // MARK: Header
 
-    /// Search entry over the month row. Both stay pinned while the ledger scrolls beneath.
-    private var header: some View {
-        VStack(spacing: 10) {
-            HomeSearchBar { path.append(.search) }
-            monthRow
-        }
-        .padding(.horizontal, 16)
-        .padding(.top, 4)
-        .padding(.bottom, 10)
-    }
-
-    /// The month on show. The label opens the picker; the chevrons step a month at a time,
+    /// The month on show, pinned under the search bar. The label opens the picker; the chevrons step a month at a time,
     /// as the period capsule used to, and never past the month in progress.
     private var monthRow: some View {
         HStack(spacing: 8) {
             Button {
                 showMonthPicker = true
             } label: {
-                HStack(spacing: 5) {
-                    Text(month.title(relativeTo: today))
-                        .font(.system(size: 15, weight: .semibold))
-                        .tracking(-0.2)
-                    Image(systemName: "chevron.down")
-                        .font(.system(size: 10, weight: .bold))
-                }
-                .foregroundStyle(AppTheme.ink)
-                .contentShape(Rectangle())
+                LedgerDropdownLabel(text: month.title(relativeTo: today))
             }
             .buttonStyle(HomePressStyle(scale: 1))
             .accessibilityLabel("Change month")

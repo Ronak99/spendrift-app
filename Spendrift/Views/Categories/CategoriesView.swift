@@ -2,9 +2,8 @@
 //  CategoriesView.swift
 //  Spendrift
 //
-//  Tray of enamel category chips. Search lives in the leading
-//  navigation-bar slot; opening it swaps the type picker for a find
-//  field and searches every category.
+//  Tray of enamel category chips for one type. The type is a dropdown pinned
+//  under the global search bar, laid out like the Transactions month row.
 //
 
 import SwiftUI
@@ -21,8 +20,6 @@ struct CategoriesView: View {
     private var allCategories: [TransactionCategory]
 
     @Binding var selectedType: CategoryType
-    @State private var query = ""
-    @State private var isSearchActive = false
     @State private var showCreateSheet = false
     @State private var createDraftName: String?
     @State private var categoryToDelete: TransactionCategory?
@@ -32,29 +29,6 @@ struct CategoriesView: View {
 
     private var typeCategories: [TransactionCategory] {
         allCategories.filter { $0.type == selectedType }
-    }
-
-    private var catalogCategories: [TransactionCategory] {
-        allCategories.sorted { lhs, rhs in
-            if lhs.type != rhs.type {
-                return lhs.type == .expense
-            }
-            if lhs.sortOrder != rhs.sortOrder {
-                return lhs.sortOrder < rhs.sortOrder
-            }
-            return lhs.name.localizedStandardCompare(rhs.name) == .orderedAscending
-        }
-    }
-
-    private var visibleCategories: [TransactionCategory] {
-        if isSearchActive {
-            return CategorySearch.filter(catalogCategories, query: query)
-        }
-        return typeCategories
-    }
-
-    private var sourceCategories: [TransactionCategory] {
-        isSearchActive ? catalogCategories : typeCategories
     }
 
     private var isDark: Bool { colorScheme == .dark }
@@ -71,12 +45,8 @@ struct CategoriesView: View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 28) {
-                    trayChrome
-
-                    if sourceCategories.isEmpty {
+                    if typeCategories.isEmpty {
                         emptyState
-                    } else if visibleCategories.isEmpty {
-                        searchMiss
                     } else {
                         chipGrid
                     }
@@ -88,12 +58,12 @@ struct CategoriesView: View {
             .scrollDismissesKeyboard(.interactively)
             .scrollIndicators(.hidden)
             .softScrollEdge()
+            .ledgerSearchHeader { typeRow }
             .background(AppTheme.canvas.ignoresSafeArea())
-            .navigationBarTitleDisplayMode(.inline)
+            .ledgerNavigationTitle(HomeTab.categories.title)
             .toolbarBackground(.hidden, for: .navigationBar)
             .toolbar {
                 LedgerToolbar(
-                    title: HomeTab.categories.title,
                     addAccessibilityLabel: "Add category",
                     addAccessibilityIdentifier: "categoriesAddButton",
                     onAdd: { openCreate() }
@@ -137,40 +107,35 @@ struct CategoriesView: View {
 
     // MARK: Chrome
 
-    /// Type picker with the find toggle beside it. The title bar's trailing slots
-    /// belong to Add and Settings, so the find plate sits in the tray instead.
-    private var trayChrome: some View {
-        HStack(spacing: 10) {
-            Group {
-                if isSearchActive {
-                    CategoryFindField(query: $query, autoFocus: true)
-                } else {
-                    ChromeSegmentedPicker(
-                        selection: $selectedType,
-                        accessibilityLabel: "Category type"
-                    )
+    /// Expense or Income. A menu rather than a segmented control, so it reads as
+    /// the same kind of picker as the month on Transactions.
+    private var typeRow: some View {
+        HStack(spacing: 8) {
+            Menu {
+                Picker("Category type", selection: $selectedType) {
+                    ForEach(CategoryType.allCases, id: \.self) { type in
+                        Text(type.rawValue.capitalized).tag(type)
+                    }
                 }
+            } label: {
+                LedgerDropdownLabel(text: selectedType.rawValue.capitalized)
             }
-            .frame(maxWidth: .infinity)
+            .menuOrder(.fixed)
+            .sensoryFeedback(.selection, trigger: selectedType)
+            .accessibilityLabel("Category type")
+            .accessibilityValue(selectedType.rawValue.capitalized)
+            .accessibilityIdentifier("type-picker")
 
-            searchButton
+            Spacer(minLength: 8)
         }
-        .animation(typeMotion, value: isSearchActive)
-    }
-
-    private var searchMiss: some View {
-        CategorySearchMiss(
-            query: query,
-            type: selectedType,
-            onAdd: { openCreate(named: CategorySearch.needle(from: query)) }
-        )
+        .padding(.horizontal, 4)
     }
 
     // MARK: Grid
 
     private var chipGrid: some View {
         LazyVGrid(columns: columns, spacing: 12) {
-            ForEach(visibleCategories) { category in
+            ForEach(typeCategories) { category in
                 Button {
                     categoryToEdit = category
                 } label: {
@@ -194,7 +159,6 @@ struct CategoriesView: View {
         }
         .padding(.top, 4)
         .animation(typeMotion, value: selectedType)
-        .animation(typeMotion, value: isSearchActive)
     }
 
     // MARK: Empty
@@ -234,43 +198,11 @@ struct CategoriesView: View {
         .accessibilityElement(children: .combine)
     }
 
-    // MARK: Find
-
-    private var searchButton: some View { 
-        Button(action: toggleSearch) {
-            Image(systemName: isSearchActive ? "xmark" : "magnifyingglass")
-                .font(.system(size: 15, weight: .semibold))
-                .foregroundStyle(searchGlyph)
-                .frame(width: 32, height: 32)
-                .background(searchPlate, in: Circle())
-        }
-        .buttonStyle(.plain)
-        .sensoryFeedback(.selection, trigger: isSearchActive)
-        .accessibilityLabel(isSearchActive ? "Close search" : "Search categories")
-    }
-
-    private var searchPlate: Color {
-        isDark ? Color.white.opacity(0.14) : Color.black.opacity(0.08)
-    }
-
-    private var searchGlyph: Color {
-        isDark ? Color.white.opacity(0.8) : Color(hex: "#111111").opacity(0.7)
-    }
-
     private var addBackground: Color { AppTheme.actionBackground }
 
     private var addForeground: Color { AppTheme.actionForeground }
 
     // MARK: Behaviour
-
-    private func toggleSearch() {
-        withAnimation(typeMotion) {
-            isSearchActive.toggle()
-            if !isSearchActive {
-                query = ""
-            }
-        }
-    }
 
     private func openCreate(named name: String? = nil) {
         createDraftName = name

@@ -25,12 +25,12 @@ struct AccountsView: View {
                     accountList
                 }
             }
+            .ledgerSearchHeader()
             .background(AppTheme.canvas.ignoresSafeArea())
-            .navigationBarTitleDisplayMode(.inline)
+            .ledgerNavigationTitle(HomeTab.accounts.title)
             .toolbarBackground(.hidden, for: .navigationBar)
             .toolbar {
                 LedgerToolbar(
-                    title: HomeTab.accounts.title,
                     addAccessibilityLabel: "Add account",
                     addAccessibilityIdentifier: "accountsAddButton",
                     onAdd: { showCreateSheet = true }

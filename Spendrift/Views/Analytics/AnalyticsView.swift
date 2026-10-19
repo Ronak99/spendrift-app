@@ -39,15 +39,11 @@ struct AnalyticsView: View {
             )
             .softScrollEdge()
             .background(AppTheme.canvas.ignoresSafeArea())
-            .navigationBarTitleDisplayMode(.inline)
+            .ledgerNavigationTitle(HomeTab.analytics.title)
             .toolbarBackground(.hidden, for: .navigationBar)
             .toolbar {
-                LedgerToolbar(
-                    title: HomeTab.analytics.title,
-                    addAccessibilityLabel: "Add transaction",
-                    addAccessibilityIdentifier: "analyticsAddButton",
-                    onAdd: { showCreateTransaction = true }
-                )
+                // Analytics only reads the ledger, so Settings stands alone here.
+                LedgerToolbar()
             }
             .sheet(isPresented: $showMonthPicker) {
                 MonthYearPickerSheet(

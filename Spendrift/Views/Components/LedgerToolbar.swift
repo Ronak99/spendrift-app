@@ -2,35 +2,39 @@
 //  LedgerToolbar.swift
 //  Spendrift
 //
-//  One title bar for the four tabs: the tab's title at the leading edge, and the
+//  One title bar for the four tabs: the tab's title small and centred, and the
 //  add and Settings plates together at the trailing edge, so Settings is one tap
 //  away on every screen.
+//
+//  The title is the system inline navigation title rather than a Text in a
+//  toolbar item: iOS 26 sizes toolbar items to a narrow slot and clipped custom text.
 //
 
 import SwiftUI
 
-/// Leading title plus the trailing add and Settings plates.
+extension View {
+    /// Small, centred title for a tab's root screen.
+    func ledgerNavigationTitle(_ title: String) -> some View {
+        navigationTitle(title)
+            .navigationBarTitleDisplayMode(.inline)
+    }
+}
+
+/// Trailing add and Settings plates. Pair with `ledgerNavigationTitle(_:)`.
+/// Leave `onAdd` nil on a tab that creates nothing, and only Settings shows.
 struct LedgerToolbar: ToolbarContent {
-    let title: String
     /// VoiceOver name of the add plate, for example "Add transaction".
-    let addAccessibilityLabel: String
+    var addAccessibilityLabel: String = "Add"
     var addAccessibilityIdentifier: String? = nil
-    let onAdd: () -> Void
+    var onAdd: (() -> Void)? = nil
 
     var body: some ToolbarContent {
         if #available(iOS 26.0, *) {
-            ToolbarItem(placement: .navigationBarLeading) {
-                LedgerTitle(title: title)
-            }
-            .sharedBackgroundVisibility(.hidden)
             ToolbarItem(placement: .navigationBarTrailing) {
                 actions
             }
             .sharedBackgroundVisibility(.hidden)
         } else {
-            ToolbarItem(placement: .navigationBarLeading) {
-                LedgerTitle(title: title)
-            }
             ToolbarItem(placement: .navigationBarTrailing) {
                 actions
             }
@@ -39,28 +43,15 @@ struct LedgerToolbar: ToolbarContent {
 
     private var actions: some View {
         HStack(spacing: 10) {
-            LedgerAddButton(
-                accessibilityLabel: addAccessibilityLabel,
-                accessibilityIdentifier: addAccessibilityIdentifier,
-                action: onAdd
-            )
+            if let onAdd {
+                LedgerAddButton(
+                    accessibilityLabel: addAccessibilityLabel,
+                    accessibilityIdentifier: addAccessibilityIdentifier,
+                    action: onAdd
+                )
+            }
             ProfileSettingsToolbarButton()
         }
-    }
-}
-
-/// Title text at the leading edge of the navigation bar.
-struct LedgerTitle: View {
-    let title: String
-
-    var body: some View {
-        Text(title)
-            .font(.system(size: 22, weight: .semibold))
-            .tracking(-0.4)
-            .foregroundStyle(AppTheme.ink)
-            .lineLimit(1)
-            .accessibilityAddTraits(.isHeader)
-            .accessibilityIdentifier("homeTitle")
     }
 }
 
@@ -81,5 +72,23 @@ struct LedgerAddButton: View {
         .buttonStyle(.plain)
         .accessibilityLabel(accessibilityLabel)
         .accessibilityIdentifier(accessibilityIdentifier ?? "plus")
+    }
+}
+
+/// Value plus a down chevron, for the pickers pinned under the search bar: the
+/// month on Transactions and the type on Categories.
+struct LedgerDropdownLabel: View {
+    let text: String
+
+    var body: some View {
+        HStack(spacing: 5) {
+            Text(text)
+                .font(.system(size: 15, weight: .semibold))
+                .tracking(-0.2)
+            Image(systemName: "chevron.down")
+                .font(.system(size: 10, weight: .bold))
+        }
+        .foregroundStyle(AppTheme.ink)
+        .contentShape(Rectangle())
     }
 }
