@@ -617,7 +617,7 @@ These campaigns are not possible with current data, even if you sat in the OneSi
 
 | Desired audience | Why it fails today |
 | --- | --- |
-| Never opened Explore | No `explore_viewed`. Settings tab view is not the same thing. |
+| Never opened Explore | No `explore_viewed`. Opening the Settings sheet is not the same thing. |
 | Never added a shortcut from Explore | Tapping **Add shortcut** is not logged. Typed shortcut success is not logged. |
 | Learning section incomplete | Feature does not exist, and there is no completion event. |
 | Constantly runs out of trial / free AI credits | `quota_exhausted` exists but is an event, not a current state. Remaining credits are not tagged. Pro/trial/free is not tagged. |

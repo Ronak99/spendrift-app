@@ -37,8 +37,11 @@ class SpendriftUITestBase: XCTestCase {
         app.tabBars.buttons["Transactions"].tap()
     }
 
+    /// Settings is a sheet, opened from the gear beside the add button on every tab.
     func navigateToSettings() {
-        app.tabBars.buttons["Settings"].tap()
+        let gear = app.buttons["openSettingsToolbar"].firstMatch
+        XCTAssertTrue(gear.waitForExistence(timeout: 3))
+        gear.tap()
     }
 
     /// Opens manual entry from the Transactions tab (toolbar **+** or empty-state **Add Transaction**).

@@ -2,8 +2,8 @@
 //  AccountsView.swift
 //  Spendrift
 //
-//  Ledger of accounts. Empty state and add control match Transactions
-//  and Categories so the tabs feel like one box.
+//  Ledger of accounts under a centred total balance. Empty state and add control
+//  match Transactions and Categories so the tabs feel like one box.
 //
 
 import SwiftUI
@@ -11,59 +11,10 @@ import SwiftData
 
 struct AccountsView: View {
     @Environment(\.modelContext) private var modelContext
-    @Environment(\.colorScheme) private var colorScheme
     @Query(sort: \Account.createdOn) private var accounts: [Account]
-    @Query(sort: \Transaction.date, order: .reverse) private var allTransactions: [Transaction]
     @State private var showCreateSheet = false
     @State private var accountToEdit: Account?
     @State private var showLastAccountAlert = false
-
-    private var totalBalanceAllAccounts: Double {
-        accounts.reduce(0) { $0 + $1.currentBalance }
-    }
-
-    private var expenseSoFar: Double {
-        allTransactions.totalExpenses
-    }
-
-    private var incomeSoFar: Double {
-        allTransactions.totalIncome
-    }
-
-    /// Match Transactions: round summary figures when there are many transactions.
-    private var usesRoundedSummary: Bool {
-        allTransactions.count > 10
-    }
-
-    private var formattedExpenseSoFar: String {
-        usesRoundedSummary ? expenseSoFar.formatCurrencyRounded : expenseSoFar.formatCurrency
-    }
-
-    private var formattedIncomeSoFar: String {
-        usesRoundedSummary ? incomeSoFar.formatCurrencyRounded : incomeSoFar.formatCurrency
-    }
-
-    private var formattedTotalBalance: String {
-        totalBalanceAllAccounts.formatCurrency
-    }
-
-    private var isDark: Bool { colorScheme == .dark }
-
-    private var heroPrimary: Color {
-        isDark ? .white : Color(hex: "#111111")
-    }
-
-    private var addBackground: Color {
-        isDark ? Color.white.opacity(0.92) : Color(hex: "#111111")
-    }
-
-    private var addForeground: Color {
-        isDark ? Color(hex: "#111111") : .white
-    }
-
-    private var canvas: Color {
-        isDark ? Color(hex: "#0A0A0B") : AppTheme.listBackground
-    }
 
     var body: some View {
         NavigationStack {
@@ -71,44 +22,20 @@ struct AccountsView: View {
                 if accounts.isEmpty {
                     emptyVault
                 } else {
-                    List {
-                        ForEach(Array(accounts.enumerated()), id: \.element.id) { index, account in
-                            Button {
-                                accountToEdit = account
-                            } label: {
-                                AccountListItem(account: account)
-                                    .listItemPositioned(index: index, count: accounts.count)
-                            }
-                            .buttonStyle(.plain)
-                            .accessibilityIdentifier(account.name)
-                            .accessibilityLabel(account.name)
-                        }
-                        .onDelete { indexSet in
-                            deleteAccounts(at: indexSet)
-                        }
-                    }
-                    .listStyle(.insetGrouped)
-                    .scrollContentBackground(.hidden)
-                    .softScrollEdge()
-                    .scrollingHeaderBar {
-                        AccountLedgerSummary(
-                            balance: formattedTotalBalance,
-                            income: formattedIncomeSoFar,
-                            expenses: formattedExpenseSoFar,
-                            balanceValue: totalBalanceAllAccounts
-                        )
-                        .padding(.horizontal, 20)
-                        .padding(.top, 8)
-                        .padding(.bottom, 10)
-                    }
+                    accountList
                 }
             }
-            .background { canvas.ignoresSafeArea() }
-            .navigationTitle("Accounts")
+            .background(AppTheme.canvas.ignoresSafeArea())
             .navigationBarTitleDisplayMode(.inline)
             .toolbarBackground(.hidden, for: .navigationBar)
-            .toolbarColorScheme(isDark ? .dark : .light, for: .navigationBar)
-            .toolbar { toolbarContent }
+            .toolbar {
+                LedgerToolbar(
+                    title: HomeTab.accounts.title,
+                    addAccessibilityLabel: "Add account",
+                    addAccessibilityIdentifier: "accountsAddButton",
+                    onAdd: { showCreateSheet = true }
+                )
+            }
             .onAppear { healPrimaryAccount() }
             .alert("Keep at least one account", isPresented: $showLastAccountAlert) {
                 Button("OK", role: .cancel) {}
@@ -131,6 +58,43 @@ struct AccountsView: View {
         }
     }
 
+    // MARK: List
+
+    private var accountList: some View {
+        List {
+            // One account's total is its row. The sum only says something from two up.
+            if accounts.count >= 2 {
+                Section {
+                    AccountLedgerSummary(accounts: accounts)
+                        .listRowInsets(EdgeInsets(top: 32, leading: 16, bottom: 20, trailing: 16))
+                        .listRowBackground(Color.clear)
+                        .listRowSeparator(.hidden)
+                }
+            }
+            Section {
+                ForEach(Array(accounts.enumerated()), id: \.element.id) { index, account in
+                    Button {
+                        accountToEdit = account
+                    } label: {
+                        AccountListItem(account: account)
+                            .listItemPositioned(index: index, count: accounts.count)
+                    }
+                    .buttonStyle(.plain)
+                    .listRowBackground(AppTheme.card)
+                    .accessibilityIdentifier(account.name)
+                    .accessibilityLabel(account.name)
+                }
+                .onDelete { indexSet in
+                    deleteAccounts(at: indexSet)
+                }
+            }
+        }
+        .listStyle(.insetGrouped)
+        .scrollContentBackground(.hidden)
+        .scrollIndicators(.hidden)
+        .softScrollEdge()
+    }
+
     // MARK: Empty
 
     private var emptyVault: some View {
@@ -145,7 +109,7 @@ struct AccountsView: View {
             Text("No accounts")
                 .font(.system(size: 22, weight: .bold))
                 .tracking(-0.5)
-                .foregroundStyle(heroPrimary)
+                .foregroundStyle(AppTheme.ink)
 
             Text("Add a bank, card, or wallet to start tracking.")
                 .font(.system(size: 15))
@@ -157,8 +121,8 @@ struct AccountsView: View {
                     .font(.system(size: 14, weight: .semibold))
                     .padding(.horizontal, 16)
                     .padding(.vertical, 8)
-                    .background(addBackground, in: Capsule())
-                    .foregroundStyle(addForeground)
+                    .background(AppTheme.actionBackground, in: Capsule())
+                    .foregroundStyle(AppTheme.actionForeground)
             }
             .buttonStyle(.plain)
             .accessibilityIdentifier("accountsEmptyAddButton")
@@ -168,33 +132,7 @@ struct AccountsView: View {
         .padding(.horizontal, 24)
     }
 
-    // MARK: Toolbar
-
-    @ToolbarContentBuilder
-    private var toolbarContent: some ToolbarContent {
-        if #available(iOS 26.0, *) {
-            ToolbarItem(placement: .navigationBarTrailing) {
-                addButton
-            }
-            .sharedBackgroundVisibility(.hidden)
-        } else {
-            ToolbarItem(placement: .navigationBarTrailing) {
-                addButton
-            }
-        }
-    }
-
-    private var addButton: some View {
-        Button(action: { showCreateSheet = true }) {
-            Image(systemName: "plus")
-                .font(.system(size: 15, weight: .semibold))
-                .foregroundStyle(addForeground)
-                .frame(width: 32, height: 32)
-                .background(addBackground, in: Circle())
-        }
-        .accessibilityLabel("Add account")
-        .accessibilityIdentifier("accountsAddButton")
-    }
+    // MARK: Behaviour
 
     /// A ledger can lose its star to an older build or a restored backup. Hand
     /// it to an account on open so Voice and Shortcuts always have a target.
@@ -233,54 +171,48 @@ struct AccountsView: View {
     }
 }
 
-private struct AccountLedgerSummary: View {
-    let balance: String
-    let income: String
-    let expenses: String
-    let balanceValue: Double
+/// Sum of every account balance, centred like the Analytics tab's "Total spent" hero.
+/// Lives in the accounts list so it scrolls away with the rows.
+struct AccountLedgerSummary: View {
+    let accounts: [Account]
+
+    private var balance: Double {
+        accounts.reduce(0) { $0 + $1.currentBalance }
+    }
+
+    /// Two, three, and four are spelled out. Five and up use the number.
+    private var subline: String {
+        let count = accounts.count
+        let word: String
+        switch count {
+        case 2: word = "two"
+        case 3: word = "three"
+        case 4: word = "four"
+        default: word = "\(count)"
+        }
+        return "Across \(word) accounts"
+    }
 
     var body: some View {
-        HStack(spacing: 20) {
-            VStack(alignment: .leading, spacing: 4) {
-                Text("Balance")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                Text(balance)
-                    .font(.headline)
-                    .monospacedDigit()
-                    .foregroundStyle(balanceValue < 0 ? .red : .primary)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.7)
-            }
+        VStack(spacing: 6) {
+            Text("Total balance")
+                .font(.system(size: 16))
+                .foregroundStyle(AppTheme.inkSecondary)
 
-            Spacer()
+            Text(balance.formatCurrencyRounded)
+                .font(.system(size: 48, weight: .semibold))
+                .tracking(-1.5)
+                .monospacedDigit()
+                .lineLimit(1)
+                .minimumScaleFactor(0.5)
+                .foregroundStyle(balance < 0 ? AppTheme.expense : AppTheme.ink)
 
-            VStack(alignment: .center, spacing: 4) {
-                Text("Income")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                Text(income)
-                    .font(.headline)
-                    .monospacedDigit()
-                    .foregroundStyle(CategoryEnamel.income)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.7)
-            }
-
-            Spacer()
-
-            VStack(alignment: .trailing, spacing: 4) {
-                Text("Expenses")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                Text(expenses)
-                    .font(.headline)
-                    .monospacedDigit()
-                    .foregroundStyle(CategoryEnamel.expense)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.7)
-            }
+            Text(subline)
+                .font(.system(size: 14))
+                .foregroundStyle(AppTheme.inkSecondary)
+                .multilineTextAlignment(.center)
         }
+        .frame(maxWidth: .infinity)
         .accessibilityElement(children: .combine)
     }
 }

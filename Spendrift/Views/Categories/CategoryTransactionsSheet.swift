@@ -5,7 +5,8 @@
 //  Colour-wash ledger of one category's transactions. Atmosphere, date
 //  capsule, enamel empty state, and row chrome match the Categories tab
 //  and the account transactions sheet so this surface feels like the same box.
-//  Pushed from the category editor. Presented as its own sheet from Analytics.
+//  Pushed from the category editor. Presented as its own sheet from the spend
+//  rows on Home.
 //
 
 import SwiftData
@@ -17,15 +18,15 @@ struct CategoryTransactionsSheet: View {
     @Query(sort: \Transaction.date, order: .reverse) private var allTransactions: [Transaction]
 
     let category: TransactionCategory
-    /// `true` when this ledger is pushed onto the category editor. Analytics
-    /// still presents it as a sheet, which keeps its own navigation stack.
+    /// `true` when this ledger is pushed onto the category editor. Home presents
+    /// it as a sheet, which keeps its own navigation stack.
     let isPushed: Bool
 
     @State private var viewModel: TransactionViewModel
     @State private var selectedTransaction: Transaction?
 
-    /// `initialDate` seeds the period window so drill-downs (for example from
-    /// Analytics) open on the same range the caller was viewing.
+    /// `initialDate` seeds the period window so a drill from Home opens on the
+    /// month that screen was showing.
     init(category: TransactionCategory, initialDate: Date = Date(), isPushed: Bool = false) {
         self.category = category
         self.isPushed = isPushed
@@ -150,27 +151,27 @@ struct CategoryTransactionsSheet: View {
     // MARK: Empty
 
     private var emptyLedger: some View {
-        VStack(spacing: 16) {
-            CategoryEnamelTile(
-                systemImage: "tray.fill",
-                color: CategoryEnamel.uncategorized
-            )
-            .frame(width: 88, height: 88)
-            .padding(.top, 28)
+        EmptyStateContainer {
+            VStack(spacing: 16) {
+                CategoryEnamelTile(
+                    systemImage: "tray.fill",
+                    color: CategoryEnamel.uncategorized
+                )
+                .frame(width: 88, height: 88)
 
-            Text("No transactions")
-                .font(.system(size: 22, weight: .bold))
-                .tracking(-0.5)
-                .foregroundStyle(heroPrimary)
+                Text("No transactions")
+                    .font(.system(size: 22, weight: .bold))
+                    .tracking(-0.5)
+                    .foregroundStyle(heroPrimary)
 
-            Text("No transactions in \(category.name) for \(viewModel.periodDescription).")
-                .font(.system(size: 15))
-                .foregroundStyle(.secondary)
-                .multilineTextAlignment(.center)
+                Text("No transactions in \(category.name) for \(viewModel.periodDescription).")
+                    .font(.system(size: 14))
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+            }
+            .padding(.horizontal, 8)
+            .accessibilityElement(children: .combine)
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .padding(.horizontal, 24)
-        .accessibilityElement(children: .combine)
     }
 
     // MARK: Behaviour

@@ -67,10 +67,6 @@ struct CategoriesView: View {
         reduceMotion ? nil : .spring(response: 0.42, dampingFraction: 0.86)
     }
 
-    private var canvas: Color {
-        isDark ? Color(hex: "#0A0A0B") : AppTheme.listBackground
-    }
-
     var body: some View {
         NavigationStack {
             ScrollView {
@@ -92,12 +88,17 @@ struct CategoriesView: View {
             .scrollDismissesKeyboard(.interactively)
             .scrollIndicators(.hidden)
             .softScrollEdge()
-            .background { canvas.ignoresSafeArea() }
-            .navigationTitle("Categories")
+            .background(AppTheme.canvas.ignoresSafeArea())
             .navigationBarTitleDisplayMode(.inline)
             .toolbarBackground(.hidden, for: .navigationBar)
-            .toolbarColorScheme(isDark ? .dark : .light, for: .navigationBar)
-            .toolbar { toolbarContent }
+            .toolbar {
+                LedgerToolbar(
+                    title: HomeTab.categories.title,
+                    addAccessibilityLabel: "Add category",
+                    addAccessibilityIdentifier: "categoriesAddButton",
+                    onAdd: { openCreate() }
+                )
+            }
             .sheet(isPresented: $showCreateSheet, onDismiss: { createDraftName = nil }) {
                 UpdateCategorySheet(
                     category: nil,
@@ -136,18 +137,24 @@ struct CategoriesView: View {
 
     // MARK: Chrome
 
+    /// Type picker with the find toggle beside it. The title bar's trailing slots
+    /// belong to Add and Settings, so the find plate sits in the tray instead.
     private var trayChrome: some View {
-        Group {
-            if isSearchActive {
-                CategoryFindField(query: $query, autoFocus: true)
-            } else {
-                ChromeSegmentedPicker(
-                    selection: $selectedType,
-                    accessibilityLabel: "Category type"
-                )
+        HStack(spacing: 10) {
+            Group {
+                if isSearchActive {
+                    CategoryFindField(query: $query, autoFocus: true)
+                } else {
+                    ChromeSegmentedPicker(
+                        selection: $selectedType,
+                        accessibilityLabel: "Category type"
+                    )
+                }
             }
+            .frame(maxWidth: .infinity)
+
+            searchButton
         }
-        .frame(maxWidth: .infinity)
         .animation(typeMotion, value: isSearchActive)
     }
 
@@ -227,28 +234,7 @@ struct CategoriesView: View {
         .accessibilityElement(children: .combine)
     }
 
-    // MARK: Toolbar
-
-    @ToolbarContentBuilder
-    private var toolbarContent: some ToolbarContent {
-        if #available(iOS 26.0, *) {
-            ToolbarItem(placement: .navigationBarLeading) {
-                searchButton
-            }
-            .sharedBackgroundVisibility(.hidden)
-            ToolbarItem(placement: .navigationBarTrailing) {
-                addButton
-            }
-            .sharedBackgroundVisibility(.hidden)
-        } else {
-            ToolbarItem(placement: .navigationBarLeading) {
-                searchButton
-            }
-            ToolbarItem(placement: .navigationBarTrailing) {
-                addButton
-            }
-        }
-    }
+    // MARK: Find
 
     private var searchButton: some View { 
         Button(action: toggleSearch) {
@@ -258,6 +244,7 @@ struct CategoriesView: View {
                 .frame(width: 32, height: 32)
                 .background(searchPlate, in: Circle())
         }
+        .buttonStyle(.plain)
         .sensoryFeedback(.selection, trigger: isSearchActive)
         .accessibilityLabel(isSearchActive ? "Close search" : "Search categories")
     }
@@ -270,24 +257,9 @@ struct CategoriesView: View {
         isDark ? Color.white.opacity(0.8) : Color(hex: "#111111").opacity(0.7)
     }
 
-    private var addButton: some View {
-        Button(action: { openCreate() }) {
-            Image(systemName: "plus")
-                .font(.system(size: 15, weight: .semibold))
-                .foregroundStyle(addForeground)
-                .frame(width: 32, height: 32)
-                .background(addBackground, in: Circle())
-        }
-        .accessibilityLabel("Add category")
-    }
+    private var addBackground: Color { AppTheme.actionBackground }
 
-    private var addBackground: Color {
-        isDark ? Color.white.opacity(0.92) : Color(hex: "#111111")
-    }
-
-    private var addForeground: Color {
-        isDark ? Color(hex: "#111111") : .white
-    }
+    private var addForeground: Color { AppTheme.actionForeground }
 
     // MARK: Behaviour
 

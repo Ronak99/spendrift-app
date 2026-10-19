@@ -68,7 +68,7 @@ struct EmailReceiptsSettingsView: View {
                     Text("Forwarded emails are stored to be parsed. Forwarding one is your consent to that.")
                         .foregroundStyle(SettingsTokens.textTertiary)
                 }
-                .font(.system(size: 13))
+                .font(.system(size: 12))
                 .multilineTextAlignment(.center)
                 .frame(maxWidth: .infinity)
             }
@@ -105,7 +105,7 @@ struct EmailReceiptsSettingsView: View {
     private func stepRow(number: Int, text: LocalizedStringKey) -> some View {
         HStack(alignment: .top, spacing: 14) {
             Text("\(number)")
-                .font(.system(size: 13, weight: .semibold))
+                .font(.system(size: 12, weight: .semibold))
                 .foregroundStyle(Color(hex: "#0A0A0B"))
                 .frame(width: 28, height: 28)
                 .background(accent, in: RoundedRectangle(cornerRadius: 9, style: .continuous))

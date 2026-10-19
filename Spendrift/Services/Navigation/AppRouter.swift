@@ -19,6 +19,8 @@ final class AppRouter {
         case explore
         case emailReceipts
         case backup
+        /// Bank SMS capture, opened from the Home capture tray.
+        case bankSMS
     }
 
     var settingsPath: [SettingsDestination] = []

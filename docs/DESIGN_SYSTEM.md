@@ -386,7 +386,8 @@ Do not use `Picker` with `.segmented` on these surfaces.
 
 ### 5.6 Date capsule
 
-`CapsuleDateSelector` on Transactions.
+`CapsuleDateSelector` on the per-category and per-account transaction sheets.
+The Transactions tab itself uses the search bar plus a month row (label opens `MonthYearPickerSheet`, chevrons step a month).
 
 - Full pill of Ledger Surface.
 - 16pt vertical, 20pt horizontal padding.

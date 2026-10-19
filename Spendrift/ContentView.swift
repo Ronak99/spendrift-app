@@ -3,9 +3,11 @@
 //  Spendrift
 //
 //  Created by Ronak Punase on 25/02/26.
-//  To Trigger Workflow
-
-// nakli comment to trigger staging workflow
+//
+//  The tab bar - Transactions, Accounts, Categories, Analytics - plus the launch
+//  plumbing that has to outlive any single tab: voice intents, shared receipts,
+//  the SMS inbox drain and quick actions. Settings is a sheet, opened from the
+//  gear in every tab's title bar.
 
 import Combine
 import SwiftData
@@ -20,13 +22,15 @@ struct ContentView: View {
     @Query(sort: \Account.createdOn) private var accounts: [Account]
     @Query(sort: \TransactionCategory.name) private var categories: [TransactionCategory]
     @AppStorage("spendriftOnboardingVersion") private var onboardingVersion = 0
-    @State private var selectedTab = 0
+    @State private var selectedTab = HomeTab.transactions.rawValue
     @State private var categoryTabType: CategoryType = .expense
+    /// One month for Transactions and Analytics, so picking it on either tab carries over.
+    @State private var month = MonthRef.of(Date())
+    @State private var showSettings = false
     @State private var showCreateTransaction = false
     @State private var showStatementImport = false
     @State private var paywallContext: PaywallContext?
     @State private var receiptImport: ReceiptSharePayload?
-    @State private var transactionPeriodViewModel = TransactionViewModel()
     @State private var messageInboxBanner: MessageInboxImportBanner?
     @State private var isMessageInboxSyncing = false
     /// Owned here rather than by `TransactionsView` so voice capture can be started from - and
@@ -45,22 +49,7 @@ struct ContentView: View {
                 startVoiceCaptureFromTabBar()
                 return
             }
-            // Re-tapping the already-selected Home tab collapses its analytics view back to
-            // the transactions list; TransactionsView listens for this and no-ops otherwise.
-            if newValue == 0, selectedTab == 0 {
-                NotificationCenter.default.post(name: .homeTabReselected, object: nil)
-            }
             selectedTab = newValue
-        }
-    }
-
-    /// Wash of the visible tab, used as TabView tint and the selected ledger icon colour.
-    private var selectedTabWash: Color {
-        switch selectedTab {
-//        case 0: AppTheme.atmosphere
-//        case 1: AccountEnamel.atmosphere(in: accounts)
-//        case 2: CategoryEnamel.atmosphere(in: categories, type: categoryTabType)
-        default: AppTheme.atmosphere
         }
     }
 
@@ -77,69 +66,51 @@ struct ContentView: View {
             .withTintColor(tint, renderingMode: .alwaysOriginal) ?? UIImage()
     }
 
-    /// Selected ledger icons use the screen wash; unselected stay template so they remain gray.
-    private func ledgerTabIcon(_ systemName: String, selected: Bool) -> UIImage {
-        let image = UIImage(systemName: systemName) ?? UIImage()
-        guard selected else {
+    /// Selected ledger icons use the app wash; unselected stay template so they remain gray.
+    private func ledgerTabIcon(_ tab: HomeTab) -> UIImage {
+        let image = UIImage(systemName: tab.symbol) ?? UIImage()
+        guard selectedTab == tab.rawValue else {
             return image.withRenderingMode(.alwaysTemplate)
         }
-        return image.withTintColor(UIColor(selectedTabWash), renderingMode: .alwaysOriginal)
+        return image.withTintColor(UIColor(AppTheme.atmosphere), renderingMode: .alwaysOriginal)
     }
 
     var body: some View {
         @Bindable var voice = voiceInline
 
         return TabView(selection: tabSelection) {
-            Tab(value: 0) {
+            Tab(value: HomeTab.transactions.rawValue) {
                 TransactionsView(
-                    periodViewModel: transactionPeriodViewModel,
+                    month: $month,
                     voiceInline: voiceInline,
                     receiptImport: receiptImport,
                     messageInboxBanner: $messageInboxBanner
                 )
             } label: {
-                Label {
-                    Text("")
-                } icon: {
-                    Image(uiImage: ledgerTabIcon("house.fill", selected: selectedTab == 0))
-                }
-                .accessibilityLabel("Transactions")
+                tabLabel(.transactions)
             }
 
-            Tab(value: 1) {
+            Tab(value: HomeTab.accounts.rawValue) {
                 AccountsView()
                     .voiceCaptureBar(controller: voiceInline)
             } label: {
-                Label {
-                    Text("")
-                } icon: {
-                    Image(uiImage: ledgerTabIcon("building.columns.fill", selected: selectedTab == 1))
-                }
-                .accessibilityLabel("Accounts")
+                tabLabel(.accounts)
             }
 
-            Tab(value: 2) {
+            Tab(value: HomeTab.categories.rawValue) {
                 CategoriesView(selectedType: $categoryTabType)
                     .voiceCaptureBar(controller: voiceInline)
             } label: {
-                Label {
-                    Text("")
-                } icon: {
-                    Image(uiImage: ledgerTabIcon("square.grid.2x2.fill", selected: selectedTab == 2))
-                }
-                .accessibilityLabel("Categories")
+                tabLabel(.categories)
             }
 
-            Tab(value: 3) {
-                SettingsView()
-                    .voiceCaptureBar(controller: voiceInline)
-            } label: {
-                Label {
-                    Text("")
-                } icon: {
-                    Image(uiImage: ledgerTabIcon("gearshape.fill", selected: selectedTab == 3))
+            Tab(value: HomeTab.analytics.rawValue) {
+                AnalyticsView(month: $month) { tab in
+                    selectedTab = tab.rawValue
                 }
-                .accessibilityLabel("Settings")
+                .voiceCaptureBar(controller: voiceInline)
+            } label: {
+                tabLabel(.analytics)
             }
 
             // `role: .search` is the only public API that lifts a tab item out of the tab bar
@@ -169,9 +140,9 @@ struct ContentView: View {
             // user picks another tab by hand.
             .disabled(voice.blocksNewCapture)
         }
-        .tint(selectedTabWash)
+        .tint(AppTheme.atmosphere)
         .environment(\.openSettings) {
-            selectedTab = 3
+            showSettings = true
         }
         .onAppear {
             TransactionTypeMigration.normalizeNoneTypesIfNeeded(modelContext: modelContext)
@@ -221,6 +192,9 @@ struct ContentView: View {
             drainPendingRoute()
         }
         .proPaywall($paywallContext)
+        .sheet(isPresented: $showSettings) {
+            SettingsView()
+        }
         .sheet(isPresented: $showCreateTransaction) {
             UpdateTransactionSheet(transaction: nil)
         }
@@ -238,6 +212,15 @@ struct ContentView: View {
         }
     }
 
+    private func tabLabel(_ tab: HomeTab) -> some View {
+        Label {
+            Text("")
+        } icon: {
+            Image(uiImage: ledgerTabIcon(tab))
+        }
+        .accessibilityLabel(tab.title)
+    }
+
     /// Entry point for the tab bar voice CTA. No-ops while a capture is already in flight so a
     /// stray tap cannot interrupt an in-progress recording.
     private func startVoiceCaptureFromTabBar() {
@@ -252,15 +235,8 @@ struct ContentView: View {
         }
     }
 
-    
     private static func tabName(for index: Int) -> String {
-        switch index {
-        case 0: "transactions"
-        case 1: "accounts"
-        case 2: "categories"
-        case 3: "settings"
-        default: "unknown"
-        }
+        HomeTab(rawValue: index)?.eventName ?? "unknown"
     }
 
     private func handleQuickAction(url: URL) {
@@ -276,16 +252,16 @@ struct ContentView: View {
         switch url.host {
         case "createTransaction":
             showCreateTransaction = true
-            selectedTab = 0
+            selectedTab = HomeTab.transactions.rawValue
         case "voiceExpense":
             showCreateTransaction = false
-            selectedTab = 0
+            selectedTab = HomeTab.transactions.rawValue
             ProAccess.attempt(.voice, paywall: $paywallContext) {
                 voiceInline.beginCapture()
             }
         case "importStatement":
             showCreateTransaction = false
-            selectedTab = 0
+            selectedTab = HomeTab.transactions.rawValue
             ProAccess.attempt(.statementImport, paywall: $paywallContext) {
                 showStatementImport = true
             }
@@ -294,10 +270,12 @@ struct ContentView: View {
         }
     }
 
+    /// A pushed route always means Settings, which is presented as a sheet. The path is
+    /// set first so the sheet opens straight on the destination.
     private func drainPendingRoute() {
         guard let route = router.consume() else { return }
-        selectedTab = 3
         router.settingsPath = [route.settingsDestination]
+        showSettings = true
     }
 
     /// Picks up a receipt image shared via the Share Extension (stored in the App Group)
@@ -306,7 +284,7 @@ struct ContentView: View {
     private func handlePendingReceiptShareIfNeeded() {
         guard let url = ReceiptShareInbox.consumePendingImageURL() else { return }
         showCreateTransaction = false
-        selectedTab = 0
+        selectedTab = HomeTab.transactions.rawValue
         receiptImport = ReceiptSharePayload(id: UUID(), fileURL: url)
         Analytics.capture(.shortcutUsed, [Analytics.Key.kind: "receipt_share"])
     }
@@ -324,7 +302,7 @@ struct ContentView: View {
                 categories: categories
             ) {
                 messageInboxBanner = banner
-                selectedTab = 0
+                selectedTab = HomeTab.transactions.rawValue
             }
         }
     }
@@ -337,7 +315,7 @@ struct ContentView: View {
             let url = URL(fileURLWithPath: path)
             guard FileManager.default.fileExists(atPath: path) else { return }
             showCreateTransaction = false
-            selectedTab = 0
+            selectedTab = HomeTab.transactions.rawValue
             voiceInline.processImportedAudio(
                 fileURL: url,
                 modelContext: modelContext,
@@ -354,7 +332,7 @@ struct ContentView: View {
 
         defaults.removeObject(forKey: VoiceExpenseIntent.launchTriggerKey)
         showCreateTransaction = false
-        selectedTab = 0
+        selectedTab = HomeTab.transactions.rawValue
         // A Siri/Shortcuts launch lands here with no capture started yet, so the gate
         // still gets a chance to show the paywall rather than a mid-flow error.
         ProAccess.attempt(.voice, paywall: $paywallContext) {
