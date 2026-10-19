@@ -123,7 +123,7 @@ struct FeatureRequestView: View {
                         .foregroundStyle(heroPrimary)
 
                     Text("We read every message")
-                        .font(.system(size: 13, weight: .regular))
+                        .font(.system(size: 12, weight: .regular))
                         .foregroundStyle(heroPrimary.opacity(0.6))
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -171,7 +171,7 @@ struct FeatureRequestView: View {
                             Text(selectedImageData == nil ? "Attach" : "Attached")
                                 .foregroundStyle(heroPrimary)
                             Image(systemName: "chevron.right")
-                                .font(.system(size: 11, weight: .semibold))
+                                .font(.system(size: 10, weight: .semibold))
                                 .foregroundStyle(heroPrimary.opacity(0.28))
                         }
                     }

@@ -26,6 +26,15 @@ struct AccountListItem: View {
     }
 
     var body: some View {
+        // A list can redraw the row once more after its account is deleted and saved,
+        // before it drops the cell. Every attribute read on that detached model is a
+        // SwiftData fatal error, so the row draws nothing until it is gone.
+        if account.modelContext != nil {
+            row
+        }
+    }
+
+    private var row: some View {
         HStack(alignment: .center, spacing: 14) {
             CategoryEnamelTile(
                 systemImage: account.icon.systemImageName,

@@ -93,14 +93,14 @@ struct SettingsListItem: View {
                 .tint(SettingsTokens.chevron)
         case .externalLink:
             Image(systemName: "arrow.up.right.square")
-                .font(.system(size: 13, weight: .semibold))
+                .font(.system(size: 12, weight: .semibold))
                 .foregroundStyle(SettingsTokens.chevron)
         }
     }
 
     private var chevronGlyph: some View {
         Image(systemName: "chevron.right")
-            .font(.system(size: 11, weight: .semibold))
+            .font(.system(size: 10, weight: .semibold))
             .foregroundStyle(SettingsTokens.chevron)
     }
 }

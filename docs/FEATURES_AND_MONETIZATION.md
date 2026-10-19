@@ -116,12 +116,12 @@ This document reflects the **current codebase** (not git history): what the app 
 72. **Balance model** — `currentBalance` derived from opening balance plus income minus expenses on linked transactions.
 73. **Per-account transaction screen** — Filtered month view + same patterns as main transactions.
 
-### 13. Analytics (Statistics)
+### 13. Analytics tab
 
-74. **Month selector** — Same `CapsuleDateSelector` behavior as Transactions.
-75. **Summary grid** — Spent, Income, Net, Daily average (spend / days in month).
-76. **Category donut** — Swift Charts `SectorMark`; legend + row list with share **percentage**; “Uncategorized” bucket when no category.
-77. **Daily trend** — Spending by day in month.
+74. **Month selector** — The hero title opens `MonthYearPickerSheet`; the month is shared with the Transactions tab.
+75. **Hero and tiles** — Total spent with a cumulative curve (`HeroSpendPlot`), income and saved, then Daily average, On pace for / Safe to spend (current month) or Of income / Biggest day (past month), and No-spend days.
+76. **Persona and insights** — A label earned from the leading category, plus weekday rhythm, biggest mover and recurring charge rows when they apply (`HomeInsights`).
+77. **Where it went** — Stacked share bar or donut (`HomeSpendCharts`) with per-category rows and month-over-month deltas; “Uncategorized” bucket when no category. Each day and By weekday blocks follow.
 78. **Weekday pattern** — Aggregates expenses by weekday.
 79. **Empty states** — No transactions for month; or month has data but no expenses (charts gated).
 80. **Smart rounding** — Same **>10 transactions** rule for header-style summaries where implemented (Transactions tab); Statistics summary cards use **`formatCurrency`** (decimals up to 2) for the four summary tiles—**inconsistency** with Transactions header if you expect identical rules everywhere.

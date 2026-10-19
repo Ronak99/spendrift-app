@@ -37,8 +37,11 @@ class SpendriftUITestBase: XCTestCase {
         app.tabBars.buttons["Transactions"].tap()
     }
 
+    /// Settings is a sheet, opened from the gear beside the add button on every tab.
     func navigateToSettings() {
-        app.tabBars.buttons["Settings"].tap()
+        let gear = app.buttons["openSettingsToolbar"].firstMatch
+        XCTAssertTrue(gear.waitForExistence(timeout: 3))
+        gear.tap()
     }
 
     /// Opens manual entry from the Transactions tab (toolbar **+** or empty-state **Add Transaction**).
@@ -77,15 +80,20 @@ class SpendriftUITestBase: XCTestCase {
     /// Opens New Category from the Categories tab via the toolbar **+**.
     /// Defaults are always seeded, so the screen never shows an empty state.
     func openNewCategorySheet() {
-        XCTAssertTrue(app.navigationBars.buttons["plus"].waitForExistence(timeout: 3))
-        app.navigationBars.buttons["plus"].tap()
+        let add = app.buttons["categoriesAddButton"].firstMatch
+        XCTAssertTrue(add.waitForExistence(timeout: 3))
+        add.tap()
     }
 
-    /// Switches the Categories grid to the given segment ("Expense" or "Income").
+    /// Switches the Categories grid to the given type ("Expense" or "Income")
+    /// through the dropdown under the search bar.
     func selectCategorySegment(_ type: String) {
-        let segment = app.descendants(matching: .any)["type-picker"].buttons[type]
-        XCTAssertTrue(segment.waitForExistence(timeout: 3))
-        segment.tap()
+        let menu = app.buttons["type-picker"].firstMatch
+        XCTAssertTrue(menu.waitForExistence(timeout: 3))
+        menu.tap()
+        let option = app.buttons[type].firstMatch
+        XCTAssertTrue(option.waitForExistence(timeout: 3))
+        option.tap()
     }
 
     // MARK: - Account Helpers

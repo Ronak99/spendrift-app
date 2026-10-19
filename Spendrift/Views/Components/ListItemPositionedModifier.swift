@@ -44,13 +44,19 @@ enum ListItemPosition {
 struct ListItemPositionedModifier: ViewModifier {
     let position: ListItemPosition
 
+    /// At least the widest inset `.insetGrouped` puts between a row and its cell edge.
+    private static let rowInsetReach: CGFloat = 24
+
     func body(content: Content) -> some View {
         content
             .padding(.top, position.topPadding)
             .padding(.bottom, position.bottomPadding)
             // Rows are HStacks with a Spacer, so without an explicit shape a
             // .plain Button only reacts on its icon and text, not the gap.
-            .contentShape(Rectangle())
+            // The shape also reaches past the frame into the row insets the List
+            // adds around it, so the card's gutter opens the row too. Every caller
+            // is a List row, whose cell bounds keep this from reaching a neighbour.
+            .contentShape(Rectangle().inset(by: -Self.rowInsetReach))
     }
 }
 

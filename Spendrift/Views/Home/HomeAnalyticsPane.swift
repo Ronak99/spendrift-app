@@ -1,0 +1,531 @@
+//
+//  HomeAnalyticsPane.swift
+//  Spendrift
+//
+//  The Analytics tab. The hero carries the month's spend and its curve, then the
+//  blocks answer: who am I this month, am I okay, where did it go, how the days
+//  and weekdays added up, and what just happened.
+//  Every block recomputes for the month picked in the hero.
+//
+
+import SwiftUI
+
+struct HomeAnalyticsPane: View {
+    /// Whole ledger, newest first. Blocks slice the month they need out of it.
+    let transactions: [Transaction]
+    let month: MonthRef
+    let today: Date
+
+    var onPickMonth: () -> Void
+    /// Lists the category's transactions for the picked month.
+    var onShowCategoryTransactions: (TransactionCategory) -> Void
+    var onOpenTransaction: (Transaction) -> Void
+    var onOpenTab: (HomeTab) -> Void
+    var onAddTransaction: () -> Void
+
+    /// Stacked bar or donut. Remembered so the next visit opens the same picture.
+    @AppStorage("homeBreakdownChart") private var breakdownChart: BreakdownChart = .stack
+
+    var body: some View {
+        let stats = month.stats(from: transactions, today: today)
+        let previous = month.previous.stats(from: transactions, today: today)
+        let insights = HomeInsights.rows(
+            month: stats,
+            previous: previous,
+            allTransactions: transactions,
+            today: today
+        )
+
+        // A month with nothing logged has no persona or tiles to speak of: they
+        // would only read as zeros. The hero and Recent's add row carry it.
+        let hasMonthData = !stats.transactions.isEmpty
+
+        return ScrollView {
+            VStack(spacing: 26) {
+                hero(stats)
+                if hasMonthData {
+                    personaBlock(stats)
+                    tiles(stats, previous: previous)
+                }
+                if !insights.isEmpty {
+                    insightsBlock(insights)
+                }
+                // Nothing to chart in a month with no spend. Income alone stays in the hero.
+                if stats.spent > 0 {
+                    breakdown(stats, previous: previous)
+                    dailyBlock(stats)
+                    weekdayBlock(stats)
+                }
+                recentBlock(stats)
+            }
+            .padding(.horizontal, 16)
+            .padding(.top, 18)
+            .padding(.bottom, 32)
+        }
+        .scrollIndicators(.hidden)
+        // The charts used to live on a sheet, and opening it set this tag.
+        // This tab is that screen now, so seeing a month with spend counts.
+        .onChange(of: stats.spent, initial: true) { _, spent in
+            guard spent > 0 else { return }
+            AudienceTags.markSeenAnalytics()
+        }
+    }
+
+    // MARK: Hero
+
+    private func hero(_ stats: MonthSpendStats) -> some View {
+        VStack(spacing: 0) {
+            Button(action: onPickMonth) {
+                HStack(spacing: 4) {
+                    Text("Total spent in \(month.title(relativeTo: today))")
+                        .font(.system(size: 16))
+                    Image(systemName: "chevron.down")
+                        .font(.system(size: 12, weight: .semibold))
+                }
+                .foregroundStyle(AppTheme.inkSecondary)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(HomePressStyle(scale: 1))
+            .accessibilityLabel("Change month")
+            .accessibilityValue(month.title(relativeTo: today))
+
+            Text(stats.spent.formatCurrencyRounded)
+                .font(.system(size: 48, weight: .semibold))
+                .tracking(-1.5)
+                .monospacedDigit()
+                .lineLimit(1)
+                .minimumScaleFactor(0.5)
+                .padding(.top, 4)
+
+            HStack(spacing: 14) {
+                heroFigure("Income", stats.income, tint: AppTheme.income)
+                heroFigure("Saved", stats.saved, tint: stats.saved >= 0 ? AppTheme.income : AppTheme.expense)
+            }
+            .padding(.top, 10)
+
+            if let caption = activityCaption(stats) {
+                Text(caption)
+                    .font(.system(size: 12))
+                    .foregroundStyle(AppTheme.inkTertiary)
+                    .padding(.top, 8)
+            }
+
+            // No curve until there is spend to draw: an empty month is just its totals.
+            if stats.spent > 0 {
+                HeroSpendPlot(month: stats)
+                    .padding(.top, 22)
+            }
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.top, 8)
+        // The curve bleeds past the pane's gutters.
+        .padding(.horizontal, -16)
+    }
+
+    private func heroFigure(_ caption: String, _ value: Double, tint: Color) -> some View {
+        HStack(spacing: 4) {
+            Text(caption)
+                .foregroundStyle(AppTheme.inkSecondary)
+            Text(value.formatCurrencyRounded)
+                .fontWeight(.semibold)
+                .foregroundStyle(tint)
+                .monospacedDigit()
+        }
+        .font(.system(size: 12))
+    }
+
+    /// Expense and income counts. The amounts already sit above this line.
+    private func activityCaption(_ stats: MonthSpendStats) -> String? {
+        let expenses = stats.transactions.filter(\.isExpense).count
+        let income = stats.transactions.count - expenses
+        switch (expenses, income) {
+        case (0, 0):
+            return nil
+        case (let count, 0):
+            return "\(count) expense\(count == 1 ? "" : "s")"
+        case (0, let count):
+            return "\(count) income"
+        case (let expenses, let income):
+            return "\(expenses) expense\(expenses == 1 ? "" : "s") · \(income) income"
+        }
+    }
+
+    // MARK: Persona
+
+    private func personaBlock(_ stats: MonthSpendStats) -> some View {
+        Group {
+            if let persona = HomeInsights.persona(for: stats) {
+                Button {
+                    onShowCategoryTransactions(persona.category)
+                } label: {
+                    personaCard(persona, stats: stats)
+                }
+                .buttonStyle(HomePressStyle())
+            } else {
+                personaEmpty
+            }
+        }
+    }
+
+    private func personaCard(_ persona: SpendPersona, stats: MonthSpendStats) -> some View {
+        HStack(spacing: 14) {
+            EnamelBadge(
+                systemImage: persona.category.icon.systemImageName,
+                color: CategoryEnamel.color(for: persona.category),
+                side: 50,
+                showsShadow: true
+            )
+
+            VStack(alignment: .leading, spacing: 3) {
+                Text(stats.isCurrent ? "This month you are" : "In \(month.name) you were")
+                    .font(.system(size: 12))
+                    .textCase(.uppercase)
+                    .tracking(0.6)
+                    .foregroundStyle(AppTheme.inkSecondary)
+                Text(persona.label)
+                    .font(.system(size: 20, weight: .bold))
+                    .tracking(-0.3)
+                Text(persona.reason)
+                    .font(.system(size: 12))
+                    .foregroundStyle(AppTheme.inkSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+
+            Image(systemName: "chevron.right")
+                .font(.system(size: 12, weight: .semibold))
+                .foregroundStyle(AppTheme.inkTertiary)
+        }
+        .padding(.horizontal, 18)
+        .padding(.vertical, 16)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(AppTheme.card, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Your spending persona, \(persona.label)")
+    }
+
+    private var personaEmpty: some View {
+        HStack(spacing: 14) {
+            EnamelBadge(systemImage: "tray.fill", color: CategoryEnamel.uncategorized, side: 50)
+            VStack(alignment: .leading, spacing: 3) {
+                Text(month.title(relativeTo: today))
+                    .font(.system(size: 12))
+                    .textCase(.uppercase)
+                    .tracking(0.6)
+                    .foregroundStyle(AppTheme.inkSecondary)
+                Text("Nothing spent yet")
+                    .font(.system(size: 20, weight: .bold))
+                    .tracking(-0.3)
+                Text("Add a transaction and a persona appears.")
+                    .font(.system(size: 12))
+                    .foregroundStyle(AppTheme.inkSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .padding(.horizontal, 18)
+        .padding(.vertical, 16)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(AppTheme.card, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+    }
+
+    // MARK: Tiles
+
+    private func tiles(_ stats: MonthSpendStats, previous: MonthSpendStats) -> some View {
+        let columns = [GridItem(.flexible(), spacing: 10), GridItem(.flexible(), spacing: 10)]
+
+        return LazyVGrid(columns: columns, spacing: 10) {
+            HomeStatTile(
+                caption: "Daily average",
+                value: stats.dailyAverage.formatCurrencyRounded,
+                detail: deltaText(
+                    current: stats.dailyAverage,
+                    previous: previous.dailyAverage,
+                    suffix: previous.month == stats.month ? "last month" : HomeInsights.monthName(previous.month)
+                )
+            )
+
+            if stats.isCurrent {
+                paceTile(stats)
+                safeToSpendTile(stats)
+            } else {
+                ofIncomeTile(stats)
+                biggestDayTile(stats)
+            }
+
+            HomeStatTile(
+                caption: "No-spend days",
+                value: "\(stats.noSpendDays)",
+                valueSuffix: "of \(stats.elapsed)",
+                detail: Text("best streak \(stats.bestNoSpendStreak) day\(stats.bestNoSpendStreak == 1 ? "" : "s")")
+            )
+        }
+    }
+
+    private func paceTile(_ stats: MonthSpendStats) -> some View {
+        let pace = stats.projectedTotal
+        let detail: Text = pace <= stats.income
+            ? Text("\((stats.income - pace).formatCurrencyRounded) under income")
+            : Text("\((pace - stats.income).formatCurrencyRounded) over income")
+                .foregroundColor(AppTheme.expense)
+
+        return HomeStatTile(
+            caption: "On pace for",
+            value: pace.formatCurrencyRounded,
+            detail: detail
+        )
+    }
+
+    private func safeToSpendTile(_ stats: MonthSpendStats) -> some View {
+        let left = stats.daysLeft
+        let safe = left > 0 ? max(0, stats.income - stats.spent) / Double(left) : 0
+        let detail: Text = stats.spent > stats.income
+            ? Text("income already spent").foregroundColor(AppTheme.expense)
+            : Text("of income, \(left) day\(left == 1 ? "" : "s") left")
+
+        return HomeStatTile(
+            caption: "Safe to spend",
+            value: safe.formatCurrencyRounded,
+            valueSuffix: "/day",
+            detail: detail
+        )
+    }
+
+    private func ofIncomeTile(_ stats: MonthSpendStats) -> some View {
+        let share = stats.income > 0 ? Int((stats.spent / stats.income * 100).rounded()) : 0
+        return HomeStatTile(
+            caption: "Of income",
+            value: "\(share)",
+            valueSuffix: "%",
+            detail: Text("\(stats.saved.formatCurrencyRounded) saved")
+        )
+    }
+
+    private func biggestDayTile(_ stats: MonthSpendStats) -> some View {
+        guard let biggest = stats.biggestDay else {
+            return HomeStatTile(
+                caption: "Biggest day",
+                value: 0.0.formatCurrencyRounded,
+                detail: Text("nothing spent")
+            )
+        }
+        let date = Calendar.current.date(
+            from: DateComponents(year: stats.year, month: stats.month, day: biggest.day)
+        ) ?? today
+        return HomeStatTile(
+            caption: "Biggest day",
+            value: biggest.amount.formatCurrencyRounded,
+            detail: Text(date.formatted(.dateTime.weekday(.abbreviated).month(.abbreviated).day()))
+        )
+    }
+
+    private func deltaText(current: Double, previous: Double, suffix: String) -> Text {
+        guard let change = MonthSpendStats.change(from: previous, to: current) else {
+            return Text("")
+        }
+        if change == 0 {
+            return Text("same as \(suffix)")
+        }
+        let arrow = change > 0 ? "↑" : "↓"
+        return Text("\(arrow) \(abs(change))%")
+            .foregroundColor(change > 0 ? AppTheme.expense : AppTheme.income)
+            + Text(" vs \(suffix)")
+    }
+
+    // MARK: Insights
+
+    private func insightsBlock(_ insights: [SpendInsight]) -> some View {
+        VStack(spacing: 10) {
+            HomeSectionHeader(title: "Insights")
+            HomeCard {
+                ForEach(Array(insights.enumerated()), id: \.element.id) { index, insight in
+                    if index > 0 {
+                        HomeRowDivider()
+                    }
+                    insightRow(insight)
+                }
+            }
+        }
+    }
+
+    private func insightRow(_ insight: SpendInsight) -> some View {
+        HStack(spacing: 14) {
+            Image(systemName: insight.symbol)
+                .font(.system(size: 16))
+                .foregroundStyle(AppTheme.ink)
+                .frame(width: 34, height: 34)
+                .background(AppTheme.cardAlternate, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(insight.title)
+                    .font(.system(size: 14))
+                    .fixedSize(horizontal: false, vertical: true)
+                if let detail = insight.detail {
+                    Text(detail)
+                        .font(.system(size: 12))
+                        .foregroundStyle(AppTheme.inkSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .contentShape(Rectangle())
+        .padding(.vertical, 12)
+        .accessibilityElement(children: .combine)
+    }
+
+    // MARK: Where it went
+
+    private func breakdown(_ stats: MonthSpendStats, previous: MonthSpendStats) -> some View {
+        let slices = HomeSpendChartData.slices(from: stats)
+
+        return VStack(spacing: 10) {
+            HStack(spacing: 0) {
+                HomeSectionHeader(title: "Where it went")
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                BreakdownChartToggle(selection: $breakdownChart)
+                    .padding(.trailing, 4)
+            }
+            HomeCard {
+                Group {
+                    switch breakdownChart {
+                    case .stack:
+                        CategoryShareBar(slices: slices)
+                    case .donut:
+                        CategorySpendDonut(slices: slices, spent: stats.spent)
+                    }
+                }
+                .animation(.snappy(duration: 0.28), value: breakdownChart)
+
+                ForEach(Array(slices.enumerated()), id: \.element.id) { index, slice in
+                    if index > 0 {
+                        HomeRowDivider()
+                    }
+                    breakdownRow(slice, stats: stats, previous: previous)
+                }
+                HomeCardLink(title: "All categories") { onOpenTab(.categories) }
+            }
+        }
+    }
+
+    private func breakdownRow(
+        _ slice: HomeSpendSlice,
+        stats: MonthSpendStats,
+        previous: MonthSpendStats
+    ) -> some View {
+        let previousAmount = slice.category.map { previous.spent(in: $0) }
+            ?? HomeSpendChartData.uncategorizedAmount(previous)
+        let change = MonthSpendStats.change(from: previousAmount, to: slice.amount)
+
+        let row = HStack(spacing: 12) {
+            Circle()
+                .fill(slice.color)
+                .frame(width: 10, height: 10)
+
+            Text(slice.name)
+                .font(.system(size: 14, weight: .medium))
+                .lineLimit(1)
+                .frame(maxWidth: .infinity, alignment: .leading)
+
+            Text("\(Int((stats.share(of: slice.amount) * 100).rounded()))%")
+                .font(.system(size: 12))
+                .foregroundStyle(AppTheme.inkSecondary)
+                .frame(width: 36, alignment: .trailing)
+
+            Text(slice.amount.formatCurrencyRounded)
+                .font(.system(size: 14, weight: .semibold))
+                .monospacedDigit()
+                .frame(width: 76, alignment: .trailing)
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
+
+            deltaBadge(change)
+                .frame(width: 44, alignment: .trailing)
+        }
+        .padding(.vertical, 11)
+        .contentShape(Rectangle())
+        .accessibilityElement(children: .combine)
+
+        return Group {
+            if let category = slice.category {
+                Button {
+                    onShowCategoryTransactions(category)
+                } label: {
+                    row
+                }
+                .buttonStyle(HomePressStyle(scale: 1))
+            } else {
+                row
+            }
+        }
+    }
+
+    // MARK: Days and weekdays
+
+    private func dailyBlock(_ stats: MonthSpendStats) -> some View {
+        VStack(spacing: 10) {
+            HomeSectionHeader(title: "Each day")
+            HomeCard {
+                DailySpendPlot(stats: stats)
+            }
+        }
+    }
+
+    private func weekdayBlock(_ stats: MonthSpendStats) -> some View {
+        VStack(spacing: 10) {
+            HomeSectionHeader(title: "By weekday")
+            HomeCard {
+                WeekdaySpendBars(stats: stats)
+            }
+        }
+    }
+
+    private func deltaBadge(_ change: Int?) -> some View {
+        Group {
+            switch change {
+            case .none:
+                Text("new").foregroundStyle(AppTheme.inkTertiary)
+            case .some(0):
+                Text("same").foregroundStyle(AppTheme.inkTertiary)
+            case .some(let value):
+                Text("\(value > 0 ? "↑" : "↓")\(abs(value))%")
+                    .foregroundStyle(value > 0 ? AppTheme.expense : AppTheme.income)
+            }
+        }
+        .font(.system(size: 12))
+        .lineLimit(1)
+    }
+
+    // MARK: Recent
+
+    private func recentBlock(_ stats: MonthSpendStats) -> some View {
+        // Same newest-first slice the month's other blocks use, not the ledger's latest rows.
+        let recent = Array(stats.transactions.prefix(3))
+
+        return VStack(spacing: 10) {
+            HomeSectionHeader(title: "Recent")
+            HomeCard {
+                if recent.isEmpty {
+                    AddTransactionRow(
+                        subtitle: "It shows up here, and in every total above",
+                        action: onAddTransaction
+                    )
+                } else {
+                    ForEach(Array(recent.enumerated()), id: \.element.id) { index, transaction in
+                        if index > 0 {
+                            HomeRowDivider()
+                        }
+                        Button {
+                            onOpenTransaction(transaction)
+                        } label: {
+                            TransactionListItem(transaction: transaction, dateStyle: .relative)
+                                .padding(.vertical, 12)
+                        }
+                        .buttonStyle(HomePressStyle(scale: 1))
+                    }
+                    HomeCardLink(title: "All transactions") { onOpenTab(.transactions) }
+                }
+            }
+        }
+    }
+}

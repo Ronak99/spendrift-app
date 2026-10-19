@@ -2,14 +2,16 @@
 //  TransactionsView.swift
 //  Spendrift
 //
-//  Created by Ronak Punase on 25/02/26.
+//  One month of the ledger, grouped by day, under a search bar and a month row.
+//  Search is global: tapping the bar pushes the search screen over this tab.
+//
 
 import SwiftUI
 import SwiftData
 import UIKit
 
 /// Drives the manual create-transaction sheet so quick-start mode is chosen atomically with presentation.
-private enum CreateTransactionSheetMode: Identifiable {
+enum CreateTransactionSheetMode: Identifiable {
     case standard
     case quickStartFirst
 
@@ -22,14 +24,15 @@ private enum CreateTransactionSheetMode: Identifiable {
 
 struct TransactionsView: View {
     @Environment(\.modelContext) private var modelContext
-    @Environment(\.colorScheme) private var colorScheme
     @Query(sort: \Transaction.date, order: .reverse) private var allTransactions: [Transaction]
     @Query(sort: \Account.createdOn) private var accounts: [Account]
     @Query(sort: \TransactionCategory.name) private var categories: [TransactionCategory]
-    var periodViewModel: TransactionViewModel
+    /// Shared with Analytics, so picking a month on either tab carries over.
+    @Binding var month: MonthRef
     /// Shared with `ContentView` so the capture started from the tab bar CTA is the same one
     /// this screen drives and renders.
     var voiceInline: VoiceInlineCaptureController
+    @State private var showMonthPicker = false
     @State private var createTransactionSheet: CreateTransactionSheetMode?
     @State private var showStatementImport = false
     @State private var paywallContext: PaywallContext?
@@ -39,12 +42,7 @@ struct TransactionsView: View {
     /// Drives the transient "Transaction added" confirmation after a shared receipt is created.
     @State private var showReceiptShareCreated = false
     @State private var selectedTransaction: Transaction?
-    @State private var showAnalyticsSheet = false
-    @State private var drillCategory: TransactionCategory?
 
-    /// Content height of the summary card's list row, excluding its row insets.
-    /// Enough for the totals, the curve, and the legend without crowding any of them.
-    private static let analyticsCardHeight: CGFloat = 164
     /// Ids of the trigger payloads already handled, so a `.task(id:)` that restarts on
     /// tab reappearance does not reprocess the same (already-consumed) file and resurrect
     /// a previously dismissed error.
@@ -53,73 +51,37 @@ struct TransactionsView: View {
     let receiptImport: ReceiptSharePayload?
     @Binding var messageInboxBanner: MessageInboxImportBanner?
 
+    private let today = Date()
+
     init(
-        periodViewModel: TransactionViewModel,
+        month: Binding<MonthRef>,
         voiceInline: VoiceInlineCaptureController,
         receiptImport: ReceiptSharePayload? = nil,
         messageInboxBanner: Binding<MessageInboxImportBanner?> = .constant(nil)
     ) {
-        self.periodViewModel = periodViewModel
+        self._month = month
         self.voiceInline = voiceInline
         self.receiptImport = receiptImport
         self._messageInboxBanner = messageInboxBanner
     }
-    
+
     private var transactions: [Transaction] {
-        allTransactions.filter { transaction in
-            transaction.isPersisted &&
-            transaction.date >= periodViewModel.periodStart &&
-            transaction.date <= periodViewModel.periodEnd
+        let range = month.dateRange()
+        return allTransactions.filter { transaction in
+            transaction.isPersisted && range.contains(transaction.date)
         }
-    }
-    
-    
-    private var totalExpenses: Double {
-        transactions.totalExpenses
-    }
-
-    private var totalIncome: Double {
-        transactions.totalIncome
-    }
-
-    private var savings: Double {
-        transactions.savings
-    }
-
-    /// Round summary figures when there are many transactions — decimal precision
-    /// adds noise rather than clarity at that scale.
-    private var usesRoundedSummary: Bool {
-        transactions.count > 10
-    }
-
-    private var formattedExpenses: String {
-        usesRoundedSummary ? totalExpenses.formatCurrencyRounded : totalExpenses.formatCurrency
-    }
-
-    private var formattedIncome: String {
-        usesRoundedSummary ? totalIncome.formatCurrencyRounded : totalIncome.formatCurrency
-    }
-
-    private var formattedSavings: String {
-        usesRoundedSummary ? savings.formatCurrencyRounded : savings.formatCurrency
     }
 
     private var categoriesSortedByLastUsed: [TransactionCategory] {
         categories.sortedByLastUsage()
     }
 
-    private var isDark: Bool { colorScheme == .dark }
-
-    private var canvas: Color {
-        isDark ? Color(hex: "#0A0A0B") : AppTheme.listBackground
+    private var isCurrentMonth: Bool {
+        month.contains(today)
     }
 
-    private var addBackground: Color {
-        isDark ? Color.white.opacity(0.92) : Color(hex: "#111111")
-    }
-
-    private var addForeground: Color {
-        isDark ? Color(hex: "#111111") : .white
+    private var earliestYear: Int {
+        allTransactions.last(where: \.isPersisted)?.date.year ?? today.year
     }
 
     /// Status of the receipt shared into the app via the Share Extension.
@@ -128,13 +90,6 @@ struct TransactionsView: View {
     private var receiptShareStatus: ReceiptShareStatus {
         if showReceiptShareCreated { return .created }
         return .hidden
-    }
-
-    /// Tapping the summary card is now the only way into the full analytics screen,
-    /// so this is where the audience tag is recorded.
-    private func showAnalytics() {
-        showAnalyticsSheet = true
-        AudienceTags.markSeenAnalytics()
     }
 
     private func openCreateTransactionSheet() {
@@ -146,84 +101,24 @@ struct TransactionsView: View {
     }
 
     var body: some View {
-        @Bindable var periodViewModel = periodViewModel
-        return NavigationStack {
+        NavigationStack {
             Group {
                 if transactions.isEmpty {
                     emptyLedger
                 } else {
-                    List {
-                        // Leads the ledger and scrolls away with it. The height is fixed
-                        // rather than a fraction of the screen: inside a List a relative
-                        // height resolves against the row, not the scroll view, which
-                        // collapsed the card and clipped its labels.
-                        Section {
-                            PeriodAnalyticsCard(
-                                transactions: transactions,
-                                periodStart: periodViewModel.periodStart,
-                                periodEnd: periodViewModel.periodEnd,
-                                expenses: formattedExpenses,
-                                income: formattedIncome,
-                                savings: formattedSavings,
-                                savingsValue: savings,
-                                onOpenAnalytics: { showAnalytics() }
-                            )
-                            .listRowInsets(EdgeInsets(top: 16, leading: 18, bottom: 16, trailing: 18))
-                            .frame(height: Self.analyticsCardHeight)
-                        } header: {
-                            analyticsHeader
-                        }
-
-                        ForEach(transactions.groupedByDateRecentFirst, id: \.dayStart) { section in
-                            Section {
-                                ForEach(Array(section.transactions.enumerated()), id: \.element.id) { index, transaction in
-                                    TransactionListItem(transaction: transaction)
-                                        .listItemPositioned(index: index, count: section.transactions.count)
-                                    .contentShape(Rectangle())
-                                    .onTapGesture {
-                                        selectedTransaction = transaction
-                                    }
-                                }
-                                .onDelete { indexSet in
-                                    deleteTransactions(at: indexSet, in: section.transactions)
-                                }
-                            } header: {
-                                Text(section.title)
-                            }
-                        }
-                    }
-                    .listStyle(.insetGrouped)
-                    .scrollContentBackground(.hidden)
-                    .softScrollEdge()
+                    ledger
                 }
             }
-            .scrollingHeaderBar {
-                // Only the period control is pinned now; the totals moved into the
-                // scrolling ledger as the analytics card.
-                VStack(spacing: 0) {
-                    CapsuleDateSelector(
-                        period: $periodViewModel.periodGranularity,
-                        title: periodViewModel.capsuleTitle,
-                        date: periodViewModel.selectedDate,
-                        isCurrentPeriod: periodViewModel.isCurrentPeriod,
-                        onPrevious: { periodViewModel.decrementPeriod() },
-                        onNext: { periodViewModel.incrementPeriod() },
-                        onToday: { periodViewModel.goToCurrentPeriod() },
-                        onJumpToDate: { periodViewModel.goToDate($0) }
-                    )
-                    .padding(.horizontal)
-                    .padding(.top, 8)
-                    .padding(.bottom, 10)
-                }
-            }
-            .background { canvas.ignoresSafeArea() }
-            .navigationTitle("Transactions")
-            .navigationBarTitleDisplayMode(.inline)
+            .ledgerSearchHeader { monthRow }
+            .background(AppTheme.canvas.ignoresSafeArea())
+            .ledgerNavigationTitle(HomeTab.transactions.title)
             .toolbarBackground(.hidden, for: .navigationBar)
-            .toolbarColorScheme(isDark ? .dark : .light, for: .navigationBar)
-            .toolbar { toolbarContent }
-            .sheet(isPresented: $showAnalyticsSheet) {
-                analyticsSheet
+            .toolbar {
+                LedgerToolbar(
+                    addAccessibilityLabel: "Add transaction",
+                    addAccessibilityIdentifier: "transactionsAddButton",
+                    onAdd: openCreateTransactionSheet
+                )
             }
             .overlay(alignment: .bottom) {
                 VStack(spacing: 8) {
@@ -233,23 +128,15 @@ struct TransactionsView: View {
                             blockedCount: banner.blockedCount,
                             onUndo: {
                                 let ids = banner.transactionIDs
-                                withAnimation(.spring(response: 0.38, dampingFraction: 0.86)) {
-                                    messageInboxBanner = nil
-                                }
+                                dismissBanner()
                                 MessageInboxSyncService.undoImport(
                                     transactionIDs: ids,
                                     modelContext: modelContext
                                 )
                             },
-                            onDismiss: {
-                                withAnimation(.spring(response: 0.38, dampingFraction: 0.86)) {
-                                    messageInboxBanner = nil
-                                }
-                            },
+                            onDismiss: dismissBanner,
                             onUpgrade: {
-                                withAnimation(.spring(response: 0.38, dampingFraction: 0.86)) {
-                                    messageInboxBanner = nil
-                                }
+                                dismissBanner()
                                 paywallContext = .quotaExhausted(.messageImport)
                             }
                         )
@@ -285,6 +172,15 @@ struct TransactionsView: View {
             }
             .animation(.spring(response: 0.38, dampingFraction: 0.86), value: voiceInline.displayState)
             .animation(.spring(response: 0.38, dampingFraction: 0.86), value: receiptShare.isProcessing)
+            .sheet(isPresented: $showMonthPicker) {
+                MonthYearPickerSheet(
+                    selection: month,
+                    earliestYear: earliestYear,
+                    today: today
+                ) { picked in
+                    month = picked
+                }
+            }
             .sheet(isPresented: $showStatementImport) {
                 StatementImportView()
             }
@@ -360,22 +256,141 @@ struct TransactionsView: View {
                     showReceiptShareCreated = false
                 }
             }
-            // A capture can now be started from the tab bar CTA or a shortcut while this sheet
+            // A capture can be started from the tab bar CTA or a shortcut while this sheet
             // is open; close it so the recording bar is not hidden behind it.
             .onChange(of: voiceInline.displayState) { _, state in
                 guard state == .recording || state == .processing else { return }
                 createTransactionSheet = nil
             }
-            // Tapping the Home tab again while analytics is up closes it and returns to
-            // the ledger, matching the tab-bar's "tap to go back" affordance.
             .proPaywall($paywallContext)
-            .onReceive(NotificationCenter.default.publisher(for: .homeTabReselected)) { _ in
-                guard showAnalyticsSheet else { return }
-                showAnalyticsSheet = false
-            }
         }
     }
-    
+
+    // MARK: Header
+
+    /// The month on show, pinned under the search bar. The label opens the picker; the chevrons step a month at a time,
+    /// as the period capsule used to, and never past the month in progress.
+    private var monthRow: some View {
+        HStack(spacing: 8) {
+            Button {
+                showMonthPicker = true
+            } label: {
+                LedgerDropdownLabel(text: month.title(relativeTo: today))
+            }
+            .buttonStyle(HomePressStyle(scale: 1))
+            .accessibilityLabel("Change month")
+            .accessibilityValue(month.title(relativeTo: today))
+            .accessibilityIdentifier("transactionsMonthButton")
+
+            Spacer(minLength: 8)
+
+            monthStep(systemImage: "chevron.left", label: "Previous month", enabled: true) {
+                month = month.previous
+            }
+            monthStep(systemImage: "chevron.right", label: "Next month", enabled: !isCurrentMonth) {
+                month = month.next
+            }
+        }
+        .padding(.horizontal, 4)
+    }
+
+    private func monthStep(
+        systemImage: String,
+        label: String,
+        enabled: Bool,
+        action: @escaping () -> Void
+    ) -> some View {
+        Button(action: action) {
+            Image(systemName: systemImage)
+                .font(.system(size: 12, weight: .bold))
+                .foregroundStyle(AppTheme.inkSecondary)
+                .frame(width: 30, height: 30)
+                .background(AppTheme.cardAlternate, in: Circle())
+        }
+        .buttonStyle(.plain)
+        .disabled(!enabled)
+        .opacity(enabled ? 1 : 0.35)
+        .accessibilityLabel(label)
+    }
+
+    // MARK: Ledger
+
+    private var ledger: some View {
+        List {
+            ForEach(transactions.groupedByDateRecentFirst, id: \.dayStart) { section in
+                Section {
+                    ForEach(Array(section.transactions.enumerated()), id: \.element.id) { index, transaction in
+                        TransactionListItem(transaction: transaction)
+                            .listItemPositioned(index: index, count: section.transactions.count)
+                            .contentShape(Rectangle())
+                            .onTapGesture {
+                                selectedTransaction = transaction
+                            }
+                            .listRowBackground(AppTheme.card)
+                    }
+                    .onDelete { indexSet in
+                        deleteTransactions(at: indexSet, in: section.transactions)
+                    }
+                } header: {
+                    Text(section.title)
+                        .font(.system(size: 14, weight: .semibold))
+                        .tracking(-0.1)
+                        .textCase(nil)
+                        .foregroundStyle(AppTheme.inkSecondary)
+                }
+            }
+        }
+        .listStyle(.insetGrouped)
+        .scrollContentBackground(.hidden)
+        .scrollIndicators(.hidden)
+        // Air between the header bar and the first day, scrolling with the rows.
+        .contentMargins(.top, 4, for: .scrollContent)
+        .softScrollEdge()
+    }
+
+    private var emptyLedger: some View {
+        VStack {
+            CategoryEnamelTile(
+                systemImage: "tray.fill",
+                color: CategoryEnamel.uncategorized
+            )
+            .frame(width: 72, height: 72)
+            .padding(.top, 24)
+
+            Spacer()
+                .frame(height: 16)
+
+            Text("No transactions")
+                .font(.system(size: 22, weight: .bold))
+                .tracking(-0.5)
+
+            Spacer()
+                .frame(height: 8)
+
+            Text("Add one for \(month.title(relativeTo: today)).")
+                .font(.system(size: 15))
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+
+            Spacer()
+                .frame(height: 24)
+
+            Button(action: openCreateTransactionSheet) {
+                Text("Add transaction")
+                    .font(.system(size: 14, weight: .semibold))
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 8)
+                    .background(AppTheme.actionBackground, in: Capsule())
+                    .foregroundStyle(AppTheme.actionForeground)
+            }
+            .buttonStyle(.plain)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .padding(.horizontal, 24)
+    }
+
+    // MARK: Behaviour
+
     /// Starts an in-app voice quick-add and records the entry point. Fired for every
     /// in-app voice affordance (persistent mic, add-menu "Speak", empty-state "Speak")
     /// so voice-entry usage is tracked. The Siri/Shortcuts launch path fires its own
@@ -393,124 +408,10 @@ struct TransactionsView: View {
         }
     }
 
-    /// Full analytics for the selected period. A sheet rather than an inline swap, so
-    /// the ledger keeps its scroll position and the period capsule stays put behind it.
-    /// The category drill lives in here, since a sheet cannot present another sheet
-    /// from its presenting view while it is up.
-    private var analyticsSheet: some View {
-        NavigationStack {
-            TransactionAnalyticsContent(
-                periodViewModel: periodViewModel,
-                drillCategory: $drillCategory
-            )
-            .background {
-                // The analytics palette is dark-only, so the sheet pins dark appearance below.
-                AnalyticsAtmosphere()
-                    .ignoresSafeArea()
-            }
-            .navigationTitle("Analytics")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbarBackground(.hidden, for: .navigationBar)
-            .toolbarColorScheme(.dark, for: .navigationBar)
-            .toolbar {
-                CustomSheetCloseToolbarItem()
-            }
-            .sheet(item: $drillCategory) { category in
-                CategoryTransactionsSheet(
-                    category: category,
-                    initialDate: periodViewModel.selectedDate
-                )
-            }
+    private func dismissBanner() {
+        withAnimation(.spring(response: 0.38, dampingFraction: 0.86)) {
+            messageInboxBanner = nil
         }
-        .preferredColorScheme(.dark)
-    }
-
-    /// Section header for the summary card. The whole row is one tap target, with a
-    /// trailing chevron so it reads as a way into the full analytics screen, not a label.
-    private var analyticsHeader: some View {
-        Button(action: showAnalytics) {
-            HStack {
-                Text("Analytics")
-                Spacer()
-                Image(systemName: "chevron.right")
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(.tertiary)
-            }
-            .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel("Analytics")
-        .accessibilityHint("Opens analytics")
-        .accessibilityIdentifier("analyticsSectionHeader")
-    }
-
-    private var emptyLedger: some View {
-        VStack {
-            CategoryEnamelTile(
-                systemImage: "tray.fill",
-                color: CategoryEnamel.uncategorized
-            )
-            .frame(width: 72, height: 72)
-            .padding(.top, 24)
-            
-            Spacer()
-                .frame(height: 16)
-
-            Text("No transactions")
-                .font(.system(size: 22, weight: .bold))
-                .tracking(-0.5)
-            
-            Spacer()
-                .frame(height: 8)
-
-            Text("Add one for \(periodViewModel.periodDescription).")
-                .font(.system(size: 15))
-                .foregroundStyle(.secondary)
-                .multilineTextAlignment(.center)
-            
-            Spacer()
-                .frame(height: 24)
-
-            Button(action: openCreateTransactionSheet) {
-                Text("Add transaction")
-                    .font(.system(size: 14, weight: .semibold))
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 8)
-                    .background(addBackground, in: Capsule())
-                    .foregroundStyle(addForeground)
-            }
-            .buttonStyle(.plain)
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .padding(.horizontal, 24)
-    }
-
-    // MARK: Toolbar
-
-    @ToolbarContentBuilder
-    private var toolbarContent: some ToolbarContent {
-        if #available(iOS 26.0, *) {
-            ToolbarItem(placement: .navigationBarTrailing) {
-                addButton
-            }
-            .sharedBackgroundVisibility(.hidden)
-        } else {
-            ToolbarItem(placement: .navigationBarTrailing) {
-                addButton
-            }
-        }
-    }
-
-    private var addButton: some View {
-        Button(action: openCreateTransactionSheet) {
-            Image(systemName: "plus")
-                .font(.system(size: 15, weight: .semibold))
-                .foregroundStyle(addForeground)
-                .frame(width: 32, height: 32)
-                .background(addBackground, in: Circle())
-        }
-        .accessibilityLabel("Add transaction")
-        .accessibilityIdentifier("transactionsAddButton")
     }
 
     private func deleteTransactions(at offsets: IndexSet, in transactionsForDay: [Transaction]) {
@@ -530,9 +431,16 @@ struct TransactionsView: View {
     }
 }
 
+extension MonthRef {
+    /// The month after this one. The step buttons never go past the month in progress.
+    var next: MonthRef {
+        month == 12 ? MonthRef(year: year + 1, month: 1) : MonthRef(year: year, month: month + 1)
+    }
+}
+
 #Preview {
     TransactionsView(
-        periodViewModel: TransactionViewModel(),
+        month: .constant(MonthRef.of(Date())),
         voiceInline: VoiceInlineCaptureController()
     )
     .modelContainer(for: [Transaction.self, Account.self, TransactionCategory.self], inMemory: true)

@@ -11,7 +11,7 @@ import SwiftUI
 import UIKit
 
 enum SettingsTokens {
-    static let groupCard = AppTheme.listGroupBackground
+    static let groupCard = AppTheme.card
     static let chevron = Color.primary.opacity(0.28)
     static let textSecondary = Color(uiColor: .secondaryLabel)
     static let textTertiary = Color(uiColor: .tertiaryLabel)
@@ -22,7 +22,7 @@ enum SettingsTokens {
 
 enum SettingsChrome {
     static func canvas(isDark: Bool) -> Color {
-        isDark ? Color(hex: "#0A0A0B") : AppTheme.listBackground
+        AppTheme.canvas
     }
 
     static func heroPrimary(isDark: Bool) -> Color {
@@ -171,6 +171,7 @@ struct SettingsScreen<Content: View>: View {
     var body: some View {
         List {
             content
+                .listRowBackground(AppTheme.card)
         }
         .listStyle(.insetGrouped)
         .scrollContentBackground(.hidden)

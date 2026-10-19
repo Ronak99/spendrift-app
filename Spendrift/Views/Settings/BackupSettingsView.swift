@@ -92,7 +92,7 @@ struct BackupSettingsView: View {
 
                     VStack(alignment: .leading, spacing: 2) {
                         Text("Last backup")
-                            .font(.system(size: 13))
+                            .font(.system(size: 12))
                             .foregroundStyle(SettingsTokens.textSecondary)
                         Text(lastBackupLabel)
                             .font(.system(size: 18, weight: .semibold))
@@ -133,7 +133,7 @@ struct BackupSettingsView: View {
                         .tint(backupButtonInk)
                 } else {
                     Image(systemName: "square.and.arrow.up")
-                        .font(.system(size: 15, weight: .semibold))
+                        .font(.system(size: 14, weight: .semibold))
                 }
                 Text(isBackingUp ? "Backing up" : "Back up now")
                     .font(.system(size: 16, weight: .semibold))
@@ -192,7 +192,7 @@ struct BackupSettingsView: View {
         } footer: {
             if loadState == .loaded, !backups.isEmpty {
                 Text(restoreFooter)
-                    .font(.system(size: 13))
+                    .font(.system(size: 12))
                     .foregroundStyle(SettingsTokens.textSecondary)
             }
         }

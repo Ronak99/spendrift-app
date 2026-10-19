@@ -53,7 +53,7 @@ struct DeveloperUnlockSheet: View {
                     .modifier(ShakeEffect(shakes: CGFloat(failedAttempts)))
                 } footer: {
                     Text(showsError ? "Incorrect password." : "Enter the tester password to show developer tools.")
-                        .font(.system(size: 13))
+                        .font(.system(size: 12))
                         .foregroundStyle(showsError ? Color.red : SettingsTokens.textSecondary)
                 }
 

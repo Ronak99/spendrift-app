@@ -72,6 +72,8 @@ struct SettingsView: View {
 
                 versionSection
             }
+            // Settings is a sheet over the tabs, so the root carries its own close plate.
+            .toolbar { CustomSheetCloseToolbarItem() }
             .navigationDestination(for: AppRouter.SettingsDestination.self) { destination in
                 switch destination {
                 case .feedback:
@@ -82,6 +84,8 @@ struct SettingsView: View {
                     EmailReceiptsSettingsView()
                 case .backup:
                     BackupSettingsView()
+                case .bankSMS:
+                    BankSMSSettingsView()
                 }
             }
         }
